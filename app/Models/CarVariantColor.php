@@ -15,11 +15,6 @@ class CarVariantColor extends Model
         'color_code',
         'hex_code',
         'rgb_code',
-        'image_path',
-        'image_url',
-        'swatch_image',
-        'exterior_image',
-        'interior_image',
         'price_adjustment',
         'stock_quantity',
         'is_free',
@@ -39,22 +34,23 @@ class CarVariantColor extends Model
         'sort_order' => 'integer',
     ];
 
-    public function variant()
+    public function carVariant()
     {
         return $this->belongsTo(CarVariant::class, 'car_variant_id');
     }
 
     public function getImageUrlAttribute()
     {
-        $value = $this->attributes['image_url'] ?? null;
-        if ($value) {
-            // Check if it's already a full URL (starts with http or https)
-            if (filter_var($value, FILTER_VALIDATE_URL)) {
-                return $value;
-            }
-            // Otherwise, assume it's a local file path and prepend the storage path
-            return asset('storage/' . $value);
+        // Lấy ảnh chính từ bảng car_variant_images
+        $mainImage = $this->carVariant->images()
+            ->where('car_variant_color_id', $this->id)
+            ->where('image_type', 'color_main')
+            ->first();
+            
+        if ($mainImage && $mainImage->image_url) {
+            return $mainImage->image_url;
         }
+        
         return 'https://via.placeholder.com/100x100/cccccc/ffffff?text=Color';
     }
 }
