@@ -9,7 +9,7 @@ return new class extends Migration {
     {
         Schema::create('blogs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('admin_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('admin_id')->nullable()->constrained('users')->onDelete('set null');
             $table->string('title');
             $table->text('content');
             $table->string('image_path')->nullable();

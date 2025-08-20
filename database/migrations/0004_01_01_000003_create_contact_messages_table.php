@@ -10,9 +10,9 @@ return new class extends Migration
     {
         Schema::create('contact_messages', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('set null');
             $table->enum('contact_type', ['user', 'guest'])->default('guest');
-            $table->foreignId('showroom_id')->nullable()->constrained('showrooms')->nullOnDelete();
+            $table->foreignId('showroom_id')->nullable()->constrained('showrooms')->onDelete('set null');
             // Thông tin liên hệ (chỉ cần thiết khi contact_type = 'guest')
             // Khi contact_type = 'user', thông tin lấy từ users table qua user_id
             $table->string('name');
@@ -23,7 +23,7 @@ return new class extends Migration
             $table->enum('topic', ['sales', 'service', 'test_drive', 'warranty', 'finance', 'other'])->nullable();
             $table->enum('status', ['new', 'in_progress', 'resolved', 'closed'])->default('new');
             $table->dateTime('handled_at')->nullable();
-            $table->foreignId('handled_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('handled_by')->nullable()->constrained('users')->onDelete('set null');
             $table->string('source')->nullable(); // website, phone, chat, etc.
             $table->string('ip_address', 45)->nullable();
             $table->string('user_agent', 512)->nullable();

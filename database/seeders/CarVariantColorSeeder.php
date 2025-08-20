@@ -341,69 +341,9 @@ class CarVariantColorSeeder extends Seeder
             $name = $variant?->name ?: 'Sản phẩm';
             $label = $name;
             $resolved = 'https://placehold.co/800x600/111827/ffffff?text=' . urlencode($label);
-            
-            // Tạo màu sắc
-            $colorModel = CarVariantColor::create($color);
-            
-            // Tạo ảnh màu trong bảng car_variant_images
-            $this->createColorImages($colorModel, $resolved);
-        }
-    }
-    
-    /**
-     * Tạo ảnh màu trong bảng car_variant_images
-     */
-    private function createColorImages(CarVariantColor $color, string $baseImageUrl): void
-    {
-        $images = [
-            [
-                'image_type' => 'color_main',
-                'alt_text' => "Màu {$color->color_name}",
-                'caption' => "Màu {$color->color_name} - {$color->carVariant->name}",
-                'title' => "Màu {$color->color_name}",
-                'is_main' => true,
-                'sort_order' => 1
-            ],
-            [
-                'image_type' => 'color_swatch',
-                'alt_text' => "Mẫu màu {$color->color_name}",
-                'caption' => "Mẫu màu {$color->color_name}",
-                'title' => "Mẫu màu {$color->color_name}",
-                'is_main' => false,
-                'sort_order' => 2
-            ],
-            [
-                'image_type' => 'color_exterior',
-                'alt_text' => "Ngoại thất màu {$color->color_name}",
-                'caption' => "Ngoại thất màu {$color->color_name}",
-                'title' => "Ngoại thất màu {$color->color_name}",
-                'is_main' => false,
-                'sort_order' => 3
-            ],
-            [
-                'image_type' => 'color_interior',
-                'alt_text' => "Nội thất màu {$color->color_name}",
-                'caption' => "Nội thất màu {$color->color_name}",
-                'title' => "Nội thất màu {$color->color_name}",
-                'is_main' => false,
-                'sort_order' => 4
-            ]
-        ];
-        
-        foreach ($images as $imageData) {
-            $color->carVariant->images()->create([
-                'car_variant_color_id' => $color->id,
-                'image_path' => $baseImageUrl,
-                'image_url' => $baseImageUrl,
-                'alt_text' => $imageData['alt_text'],
-                'caption' => $imageData['caption'],
-                'title' => $imageData['title'],
-                'image_type' => $imageData['image_type'],
-                'is_main' => $imageData['is_main'],
-                'is_active' => true,
-                'sort_order' => $imageData['sort_order'],
-                'color_variant' => $color->color_name
-            ]);
+            $color['image_path'] = $resolved;
+            $color['image_url'] = $resolved;
+            CarVariantColor::create($color);
         }
     }
 }

@@ -11,7 +11,7 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('showroom_id')->constrained('showrooms')->onDelete('cascade');
-            $table->foreignId('assigned_technician_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('assigned_technician_id')->nullable()->constrained('users')->onDelete('set null');
             $table->foreignId('car_variant_id')->constrained('car_variants')->onDelete('cascade');
 
             // Thông tin xe - sử dụng foreign keys thay vì lưu trữ trùng lặp
@@ -58,7 +58,7 @@ return new class extends Migration {
             $table->mediumText('parts_used')->nullable();
             $table->mediumText('technician_notes')->nullable();
             $table->boolean('quality_check_passed')->default(false);
-            $table->foreignId('quality_check_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('quality_check_by')->nullable()->constrained('users')->onDelete('set null');
             $table->mediumText('quality_check_notes')->nullable();
             $table->boolean('vehicle_ready')->default(false);
             $table->string('vehicle_ready_time', 8)->nullable();

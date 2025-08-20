@@ -12,7 +12,7 @@ return new class extends Migration {
             $table->string('test_drive_number')->unique();
             $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('set null');
             $table->foreignId('car_variant_id')->constrained('car_variants')->onDelete('cascade');
-            $table->foreignId('showroom_id')->nullable()->constrained('showrooms')->nullOnDelete();
+            $table->foreignId('showroom_id')->nullable()->constrained('showrooms')->onDelete('set null');
             
             // Thông tin lịch hẹn - không trùng lặp với users table
             $table->date('preferred_date');

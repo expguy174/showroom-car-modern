@@ -10,7 +10,6 @@ return new class extends Migration {
         Schema::create('car_variant_images', function (Blueprint $table) {
             $table->id();
             $table->foreignId('car_variant_id')->constrained('car_variants')->onDelete('cascade');
-            $table->foreignId('car_variant_color_id')->nullable()->constrained('car_variant_colors')->onDelete('cascade');
 			$table->string('image_path', 2048)->nullable(); // Đường dẫn ảnh (nullable để hỗ trợ ảnh online)
 			$table->string('image_url', 2048)->nullable(); // URL ảnh (nếu cần)
             $table->string('alt_text')->nullable(); // Alt text cho SEO
@@ -18,7 +17,7 @@ return new class extends Migration {
             $table->string('title')->nullable(); // Tiêu đề ảnh
             
             // Metadata ảnh
-            $table->string('image_type')->default('gallery')->comment('gallery, thumbnail, hero, interior, exterior, detail, color_swatch, color_main, color_swatch, color_exterior, color_interior');
+            $table->string('image_type')->default('gallery')->comment('gallery, thumbnail, hero, interior, exterior, detail, color_swatch');
 			$table->unsignedInteger('width')->nullable(); // Chiều rộng ảnh
 			$table->unsignedInteger('height')->nullable(); // Chiều cao ảnh
             $table->string('file_size')->nullable(); // Kích thước file
@@ -37,14 +36,13 @@ return new class extends Migration {
             
             $table->timestamps();
             
-			            // Indexes
+			// Indexes
             $table->index(['car_variant_id', 'is_active']);
-            $table->index(['car_variant_color_id', 'is_active']);
             $table->index(['image_type', 'is_active']);
             $table->index(['is_main', 'is_active']);
             $table->index('sort_order');
             $table->index('color_variant');
-            $table->index('created_at');
+			$table->index('created_at');
             
             // Note: Business logic should ensure only one main image per variant
         });

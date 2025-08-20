@@ -10,7 +10,7 @@ return new class extends Migration {
         Schema::create('order_logs', function (Blueprint $table) {
             $table->id();
             $table->foreignId('order_id')->constrained('orders')->onDelete('cascade');
-            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('set null');
             $table->string('action'); // e.g. status_changed, note_added, payment_updated
             $table->json('details')->nullable(); // {from_status:..., to_status:...}
             $table->text('message')->nullable();

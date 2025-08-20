@@ -15,7 +15,12 @@ return new class extends Migration {
             $table->string('hex_code')->nullable(); // Mã màu hex
             $table->string('rgb_code')->nullable(); // Mã màu RGB
             
-            // Thông tin ảnh - Đã chuyển sang bảng car_variant_images
+            // Thông tin ảnh
+			$table->string('image_path', 2048)->nullable(); // Ảnh màu xe
+			$table->string('image_url', 2048)->nullable(); // Ảnh màu xe (URL)
+			$table->string('swatch_image', 2048)->nullable(); // Ảnh mẫu màu nhỏ
+			$table->string('exterior_image', 2048)->nullable(); // Ảnh ngoại thất
+			$table->string('interior_image', 2048)->nullable(); // Ảnh nội thất
             
             // Phân loại màu
             $table->enum('color_type', ['solid', 'metallic', 'pearlescent', 'matte', 'special'])->default('solid');

@@ -11,7 +11,6 @@ class CarVariantImage extends Model
 
     protected $fillable = [
         'car_variant_id',
-        'car_variant_color_id',
         'image_path',
         'image_url',
         'title',
@@ -40,14 +39,9 @@ class CarVariantImage extends Model
         'height' => 'integer',
     ];
 
-    public function carVariant()
+    public function variant()
     {
         return $this->belongsTo(CarVariant::class, 'car_variant_id');
-    }
-    
-    public function carVariantColor()
-    {
-        return $this->belongsTo(CarVariantColor::class, 'car_variant_color_id');
     }
 
     public function getImageUrlAttribute()
@@ -66,13 +60,5 @@ class CarVariantImage extends Model
             return 'https://via.placeholder.com/400x300/4f46e5/ffffff?text=Image';
         }
         return 'https://via.placeholder.com/400x300/4f46e5/ffffff?text=Image';
-    }
-    
-    public function getColorNameAttribute()
-    {
-        if ($this->car_variant_color_id && $this->carVariantColor) {
-            return $this->carVariantColor->color_name;
-        }
-        return null;
     }
 }

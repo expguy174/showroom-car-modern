@@ -19,7 +19,7 @@ return new class extends Migration {
             $table->decimal('shipping_fee', 15, 2)->default(0);
             $table->decimal('grand_total', 15, 2)->default(0);
             $table->text('note')->nullable();
-            $table->foreignId('payment_method_id')->nullable()->constrained('payment_methods')->nullOnDelete();
+            $table->foreignId('payment_method_id')->nullable()->constrained('payment_methods')->onDelete('set null');
             $table->string('payment_status')->default('pending');
             $table->string('transaction_id')->nullable();
             $table->timestamp('paid_at')->nullable();
@@ -51,8 +51,8 @@ return new class extends Migration {
             $table->text('delivery_notes')->nullable();
             
             // Sử dụng foreign keys thay vì lưu trữ dữ liệu trùng lặp
-            $table->foreignId('billing_address_id')->nullable()->constrained('addresses')->nullOnDelete();
-            $table->foreignId('shipping_address_id')->nullable()->constrained('addresses')->nullOnDelete();
+            $table->foreignId('billing_address_id')->nullable()->constrained('addresses')->onDelete('set null');
+            $table->foreignId('shipping_address_id')->nullable()->constrained('addresses')->onDelete('set null');
             
             // Trade-in information
             $table->boolean('has_trade_in')->default(false);
