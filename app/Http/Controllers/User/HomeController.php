@@ -8,43 +8,126 @@ use App\Models\Blog;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\CarVariant;
-use App\Models\Car;
+use App\Models\Showroom;
+use App\Models\CarBrand;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class HomeController extends Controller
 {
     public function index()
     {
-        // Lấy các hãng xe đang hoạt động
-        $cars = Car::with('carModels')->get();
-        // Lấy các mẫu xe đang hoạt động
-        $carModels = CarModel::where('is_active', true)->get();
-
-        // Lấy phụ kiện kèm sản phẩm
-        $accessories = Accessory::with('product')
-            ->where('is_active', 1)
+        // Featured brands for homepage (only featured brands)
+        $brands = CarBrand::where('is_active', 1)
+            ->where('is_featured', 1)
+            ->with(['carModels' => function ($q) {
+                $q->where('is_active', 1)->select('id', 'car_brand_id', 'name')
+                  ->whereHas('carVariants', function($q2){ $q2->where('is_active', 1); });
+            }])
+            ->withCount(['carModels' => function($q){
+                $q->where('is_active', 1)
+                  ->whereHas('carVariants', function($q2){ $q2->where('is_active', 1); });
+            }])
+            ->orderBy('name', 'asc')
             ->take(4)
             ->get();
+    
+        // Featured variants (cars) with eager loading
+        $featuredVariants = CarVariant::where('is_active', 1)
+            ->where('is_featured', 1)
+            ->with(['carModel.carBrand', 'images'])
+            ->withCount(['approvedReviews as approved_reviews_count'])
+            ->withAvg('approvedReviews as approved_reviews_avg', 'rating')
+            ->orderByDesc('updated_at')
+            ->take(8)
+            ->get();
+            
 
-        // Lấy 4 bài viết mới nhất
-        $blogs = Blog::latest()->take(4)->get();
 
-        $featuredCars = CarVariant::with('product', 'colors')->where('is_active', 1)->take(4)->get();
-        // Lấy các phiên bản xe (CarVariant) nổi bật
-        $featuredVariants = CarVariant::with('product')
-            ->where('is_active', 1)
+        // Featured accessories (top 4)
+        $featuredAccessories = \App\Models\Accessory::where('is_active', 1)
+            ->where('is_featured', 1)
+            ->withCount(['approvedReviews as approved_reviews_count'])
+            ->withAvg('approvedReviews as approved_reviews_avg', 'rating')
+            ->orderByDesc('updated_at')
             ->take(4)
             ->get();
+            
 
-        $carModelImages = CarModel::with('images')->get();
+
+        // Latest blogs/news (limit to 3) - Optimized with caching
+        $blogs = Cache::remember('home_latest_blogs', now()->addHours(6), function () {
+            $allBlogs = Blog::where('status', 'published')
+                ->where('is_active', 1)
+                ->where('is_published', 1)
+                ->with(['admin:id,name'])
+                ->orderBy('created_at', 'desc')
+                ->get(['id', 'admin_id', 'title', 'content', 'image_path', 'created_at']);
+            
+            // Ensure only 3 blogs are returned
+            return $allBlogs->take(3);
+        });
+
+        // Top 3 approved reviews: highest rating first, then newest
+        $recentReviews = \App\Models\Review::where('is_approved', true)
+            ->with(['user:id,name'])
+            ->with('reviewable') // Load reviewable models without specifying relationships
+            ->select('id', 'rating', 'comment', 'user_id', 'reviewable_type', 'reviewable_id', 'created_at')
+            ->orderByDesc('rating')
+            ->orderByDesc('created_at')
+            ->take(3)
+            ->get();
+
+        // Load additional relationships for car variants after getting reviews
+        foreach ($recentReviews as $review) {
+            if ($review->reviewable_type === CarVariant::class && $review->reviewable) {
+                $review->reviewable->load(['carModel.carBrand:id,name', 'images:id,car_variant_id,image_url']);
+            }
+        }
+
+        // Featured/active showrooms (for contact & map teaser)
+        $showrooms = Showroom::where('is_active', 1)
+            ->orderByDesc('is_featured')
+            ->orderBy('name')
+            ->take(3)
+            ->get(['id','name','phone','email','address','city','state','postal_code','opening_time','closing_time','latitude','longitude']);
+
+        // Quick search options - cache riêng vì ít thay đổi
+        $fuelTypes = Cache::remember('home_fuel_types', now()->addHours(6), function () {
+            return \App\Models\CarSpecification::where('spec_name', 'fuel_type')->distinct()->pluck('spec_value')->values();
+        });
+        $transmissions = Cache::remember('home_transmissions', now()->addHours(6), function () {
+            return \App\Models\CarSpecification::where('spec_name', 'transmission')->distinct()->pluck('spec_value')->values();
+        });
+
+        // Popular variants for quick test drive form
+        $testDriveVariants = CarVariant::where('is_active', 1)
+            ->with(['carModel.carBrand:id,name'])
+            ->select('id', 'name', 'car_model_id')
+            ->orderByDesc('view_count')
+            ->take(15)
+            ->get();
+
+        // Active promotions (top 3)
+        $promotions = \App\Models\Promotion::where('is_active', 1)
+            ->orderByDesc('start_date')
+            ->take(3)
+            ->get(['id','name','code','description','type','discount_value','start_date','end_date','is_active']);
+
+
 
         return view('user.home', compact(
-            'cars',
-            'carModels',
-            'accessories',
-            'blogs',
+            'brands',
             'featuredVariants',
-            'featuredCars',
-            'carModelImages'
+            'featuredAccessories',
+            'showrooms',
+            'fuelTypes',
+            'transmissions',
+            'blogs',
+            'testDriveVariants',
+            'recentReviews',
+            'promotions'
         ));
     }
 }

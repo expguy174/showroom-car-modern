@@ -1,16 +1,16 @@
 @extends('layouts.app')
 
-@section('title', $accessory->name)
+@section('title', $accessory->name . ' - AutoLux')
 
 @section('content')
-<div class="bg-gray-50 min-h-screen">
+<div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 accessory-show-page">
     <!-- Breadcrumb -->
-    <div class="bg-white border-b">
+    <div class="bg-white border-b border-gray-100 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <nav class="flex" aria-label="Breadcrumb">
                 <ol class="flex items-center space-x-4">
                     <li>
-                        <a href="{{ route('home') }}" class="text-gray-400 hover:text-gray-500">
+                        <a href="{{ route('home') }}" class="text-gray-400 hover:text-blue-600 transition-colors">
                             <i class="fas fa-home"></i>
                             <span class="sr-only">Trang chủ</span>
                         </a>
@@ -18,9 +18,17 @@
                     <li>
                         <div class="flex items-center">
                             <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-                            <a href="#" class="text-gray-500 hover:text-gray-700">Phụ kiện</a>
+                            <a href="{{ route('products.index', ['type' => 'accessory']) }}" class="text-gray-500 hover:text-blue-600 transition-colors">Phụ kiện</a>
                         </div>
                     </li>
+                    @if($accessory->category)
+                    <li>
+                        <div class="flex items-center">
+                            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                            <a href="{{ route('products.index', ['type' => 'accessory', 'acc_category' => $accessory->category]) }}" class="text-gray-500 hover:text-blue-600 transition-colors">{{ $accessory->category }}</a>
+                        </div>
+                    </li>
+                    @endif
                     <li>
                         <div class="flex items-center">
                             <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
@@ -35,563 +43,808 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
             <!-- Image Gallery -->
-            <div class="space-y-4">
-                <div class="relative">
-                    <img src="{{ $accessory->product->image_url }}"
-                         id="main-image"
-                         class="w-full h-96 object-cover rounded-2xl shadow-lg"
-                         alt="{{ $accessory->name }}">
-                    <div class="absolute top-4 left-4">
-                        <span class="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
-                            <i class="fas fa-tag mr-1"></i>Phụ kiện
-                        </span>
+            <div class="space-y-6">
+                <!-- Main Image -->
+                <div class="relative group">
+                    <div class="aspect-square bg-white rounded-3xl shadow-2xl overflow-hidden">
+                        <img src="{{ $accessory->image_url }}" 
+                             id="main-image"
+                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
+                             alt="{{ $accessory->name }}">
                     </div>
+                    
+                    <!-- Badges -->
+                    <div class="absolute top-6 left-6 flex flex-col gap-3">
+                        @if($accessory->is_featured)
+                        <div class="bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 px-4 py-2 rounded-full text-sm font-bold shadow-xl">
+                            <i class="fas fa-star mr-2"></i> Nổi bật
+                        </div>
+                        @endif
+                        @if($accessory->is_bestseller)
+                        <div class="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-xl">
+                            <i class="fas fa-fire mr-2"></i> Bán chạy
+                        </div>
+                        @endif
+                        @if($accessory->is_new_arrival)
+                        <div class="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-xl">
+                            <i class="fas fa-sparkles mr-2"></i> Mới
+                        </div>
+                        @endif
+                    </div>
+                    
+
+                    
+                    <!-- Discount Badge -->
+                    @if($accessory->has_discount && $accessory->discount_percentage > 0)
+                    <div class="absolute top-6 left-6 bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-xl">
+                        -{{ rtrim(rtrim(number_format($accessory->discount_percentage, 1), '0'), '.') }}%
+                    </div>
+                    @endif
                 </div>
                 
                 <!-- Thumbnail Gallery -->
+                @if($accessory->gallery && count(json_decode($accessory->gallery, true) ?? []) > 0)
                 <div class="grid grid-cols-4 gap-4">
-                    @for($i = 1; $i <= 4; $i++)
-                        <img src="{{ $accessory->product->image_url }}"
-                             class="w-full h-20 object-cover rounded-lg cursor-pointer hover:opacity-75 transition"
-                             onclick="changeMainImage(this.src)"
-                             alt="{{ $accessory->name }}">
-                    @endfor
+                    @foreach(json_decode($accessory->gallery, true) as $index => $image)
+                    <div class="aspect-square bg-white rounded-2xl shadow-lg overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 thumbnail-image" 
+                         data-image="{{ $image }}">
+                        <img src="{{ $image }}" alt="{{ $accessory->name }}" class="w-full h-full object-cover hover:scale-110 transition-transform duration-300">
+                    </div>
+                    @endforeach
                 </div>
+                @endif
             </div>
-
+            
             <!-- Product Info -->
-            <div class="space-y-6">
-                <div>
-                    <h1 class="text-4xl font-bold text-gray-900 mb-2">{{ $accessory->name }}</h1>
-                    <p class="text-lg text-gray-600 mb-4">Phụ kiện xe hơi cao cấp</p>
+            <div class="space-y-8">
+                <!-- Header -->
+                <div class="space-y-4">
+                    @if($accessory->brand)
+                    <div class="inline-flex items-center bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-sm font-semibold">
+                        <i class="fas fa-tag mr-2"></i>
+                        {{ $accessory->brand }}
+                    </div>
+                    @endif
+                    
+                    <h1 class="text-4xl lg:text-5xl font-black text-gray-900 leading-tight">{{ $accessory->name }}</h1>
+                    
+                    @if($accessory->short_description)
+                    <p class="text-xl text-gray-600 leading-relaxed">{{ $accessory->short_description }}</p>
+                    @endif
                     
                     <!-- Rating -->
-                    <div class="flex items-center mb-4">
-                        <div class="flex text-yellow-400">
+                    @php $avgInline = $accessory->approved_reviews_avg ?? $accessory->average_rating ?? 0; $accCount = $accessory->approved_reviews_count ?? $accessory->reviews()->where('is_approved', true)->count(); @endphp
+                    <div id="rating-summary-inline" class="flex items-center space-x-4 {{ ($avgInline>0?'':'hidden') }}">
+                        <div class="flex items-center space-x-1" id="rating-stars-inline" data-avg="{{ (float)$avgInline }}">
                             @for($i = 1; $i <= 5; $i++)
-                                <i class="fas fa-star"></i>
+                                @if($i <= $avgInline)
+                                    <i class="fas fa-star text-yellow-400 text-lg"></i>
+                                @elseif($i - $avgInline < 1)
+                                    <i class="fas fa-star-half-alt text-yellow-400 text-lg"></i>
+                                @else
+                                    <i class="far fa-star text-gray-300 text-lg"></i>
+                                @endif
                             @endfor
                         </div>
-                        <span class="ml-2 text-gray-600">(4.7/5) - 95 đánh giá</span>
+                        <span class="text-lg font-semibold text-gray-900"><span id="rating-avg-inline">{{ number_format((float)$avgInline, 1) }}</span></span>
+                        <span class="text-gray-500 {{ ($accCount>0?'':'hidden') }}">(<span id="rating-count-inline">{{ number_format($accCount ?? 0) }}</span> đánh giá)</span>
                     </div>
                 </div>
-
-                <!-- Price -->
-                <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-2xl">
-                    <div class="flex items-baseline gap-4">
-                        <span class="text-4xl font-bold text-green-600">{{ number_format($accessory->product->price) }} đ</span>
-                        <span class="text-lg text-gray-500 line-through">{{ number_format($accessory->product->price * 1.15) }} đ</span>
-                        <span class="bg-green-500 text-white px-2 py-1 rounded text-sm font-semibold">-15%</span>
-                    </div>
-                    <p class="text-gray-600 mt-2">Giá đã bao gồm thuế VAT</p>
-                </div>
-
-                <!-- Add to Cart -->
-                <div class="space-y-4">
-                    <form method="POST" action="{{ route('cart.add') }}" id="add-to-cart-form" class="space-y-4">
-                        @csrf
-                        <input type="hidden" name="product_id" value="{{ $accessory->product_id }}">
+                
+                <!-- Price Section -->
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-3xl p-8 border border-blue-100">
+                    <div class="space-y-4">
+                        @if($accessory->has_discount && $accessory->discount_percentage > 0)
+                        <div class="flex items-center space-x-4">
+                            <span class="text-4xl lg:text-5xl font-black text-red-600">
+                                {{ number_format($accessory->final_price, 0, ',', '.') }}₫
+                            </span>
+                            <span class="text-2xl text-gray-500 line-through">
+                                {{ number_format($accessory->original_price ?? $accessory->price, 0, ',', '.') }}₫
+                            </span>
+                        </div>
+                        <div class="inline-flex items-center bg-red-100 text-red-700 px-4 py-2 rounded-full text-sm font-bold">
+                            <i class="fas fa-tag mr-2"></i>
+                            Tiết kiệm {{ number_format($accessory->discount_amount, 0, ',', '.') }}₫
+                        </div>
+                        @else
+                        <div class="text-4xl lg:text-5xl font-black text-blue-600">
+                            {{ number_format($accessory->price, 0, ',', '.') }}₫
+                        </div>
+                        @endif
                         
-                        <div class="flex items-center gap-4">
-                            <label class="text-lg font-semibold text-gray-900">Số lượng:</label>
-                            <div class="flex items-center border border-gray-300 rounded-lg">
-                                <button type="button" onclick="changeQuantity(-1)" class="px-4 py-2 text-gray-600 hover:bg-gray-100">
-                                    <i class="fas fa-minus"></i>
-                                </button>
-                                <input type="number" name="quantity" value="1" min="1" 
-                                       class="w-16 text-center border-none focus:ring-0" id="quantity-input">
-                                <button type="button" onclick="changeQuantity(1)" class="px-4 py-2 text-gray-600 hover:bg-gray-100">
-                                    <i class="fas fa-plus"></i>
-                                </button>
+                        <!-- Stock Status -->
+                        <div class="flex items-center space-x-3">
+                            @if($accessory->is_available)
+                            <div class="flex items-center text-green-600">
+                                <i class="fas fa-check-circle mr-2"></i>
+                                <span class="font-semibold">Còn hàng</span>
                             </div>
+                            @else
+                            <div class="flex items-center text-red-600">
+                                <i class="fas fa-times-circle mr-2"></i>
+                                <span class="font-semibold">Hết hàng</span>
+                            </div>
+                            @endif
                         </div>
-
-                        <div class="flex gap-4">
-                            <button type="submit"
-                                    class="flex-1 bg-green-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-green-700 transition flex items-center justify-center gap-3 text-lg">
-                                <i class="fas fa-cart-plus"></i>
-                                Thêm vào giỏ hàng
-                            </button>
-                            @php
-                                $isInWishlist = false;
-                                if (auth()->check()) {
-                                    $isInWishlist = \App\Helpers\WishlistHelper::isInWishlist($accessory->product->id);
-                                }
-                            @endphp
-                            <button type="button"
-                                    class="px-6 py-4 border-2 border-gray-300 rounded-xl hover:border-green-500 transition"
-                                    data-product-id="{{ $accessory->product->id }}">
-                                <i class="{{ $isInWishlist ? 'fas fa-heart text-red-500' : 'far fa-heart' }} text-lg"></i>
-                            </button>
-                        </div>
-                    </form>
+                    </div>
                 </div>
-
-                <!-- Quick Info -->
-                <div class="grid grid-cols-2 gap-4 pt-6 border-t">
-                    <div class="text-center p-4 bg-gray-50 rounded-lg">
-                        <i class="fas fa-shipping-fast text-2xl text-green-600 mb-2"></i>
-                        <div class="text-sm font-semibold">Giao hàng miễn phí</div>
-                        <div class="text-xs text-gray-500">Trong 2-3 ngày</div>
+                
+                <!-- Action Buttons -->
+                <div class="space-y-4">
+                    @if($accessory->is_available)
+                    <!-- CTA row: full-width equal buttons -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <button type="button" class="action-btn action-ghost w-full js-wishlist-toggle" aria-label="Yêu thích" title="Yêu thích" data-item-type="accessory" data-item-id="{{ $accessory->id }}">
+                            <i class="fas fa-heart"></i><span>Yêu thích</span>
+                        </button>
+                        <form action="{{ route('cart.add') }}" method="POST" class="w-full add-to-cart-form" data-item-type="accessory" data-item-id="{{ $accessory->id }}">
+                            @csrf
+                            <input type="hidden" name="item_type" value="accessory">
+                            <input type="hidden" name="item_id" value="{{ $accessory->id }}">
+                            <input type="hidden" name="quantity" value="1">
+                            <button type="submit" class="action-btn action-primary w-full">
+                                <i class="fas fa-cart-plus"></i><span>Thêm vào giỏ</span>
+                            </button>
+                        </form>
                     </div>
-                    <div class="text-center p-4 bg-gray-50 rounded-lg">
-                        <i class="fas fa-shield-alt text-2xl text-green-600 mb-2"></i>
-                        <div class="text-sm font-semibold">Bảo hành 6 tháng</div>
-                        <div class="text-xs text-gray-500">Chính hãng</div>
-                    </div>
+                    @else
+                    <button disabled class="w-full bg-gray-400 text-white text-xl font-bold py-4 px-8 rounded-2xl cursor-not-allowed">
+                        <i class="fas fa-times mr-3"></i>
+                        Hết hàng
+                    </button>
+                    @endif
                 </div>
             </div>
         </div>
-
-        <!-- Product Details Tabs -->
+        
+        <!-- Tabs Section -->
         <div class="mt-16">
             <div class="border-b border-gray-200">
-                <nav class="-mb-px flex space-x-8">
-                    <button onclick="showTab('description')" 
-                            class="tab-button border-b-2 border-green-500 py-2 px-1 text-sm font-medium text-green-600">
+                <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                    <button class="tab-button border-b-2 border-blue-500 text-blue-600 whitespace-nowrap py-4 px-1 text-lg font-semibold" data-tab="description">
+                        <i class="fas fa-info-circle mr-2"></i>
                         Mô tả
                     </button>
-                    <button onclick="showTab('specifications')" 
-                            class="tab-button border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700">
-                        Thông số kỹ thuật
+                    <button class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 text-lg font-semibold" data-tab="specifications">
+                        <i class="fas fa-cog mr-2"></i>
+                        Thông số
                     </button>
-                    <button onclick="showTab('reviews')" 
-                            class="tab-button border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700">
-                        Đánh giá (95)
+                    <button class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 text-lg font-semibold" data-tab="compatibility">
+                        <i class="fas fa-car mr-2"></i>
+                        Tương thích
+                    </button>
+                    <button class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 text-lg font-semibold" data-tab="reviews">
+                        <i class="fas fa-star mr-2"></i>
+                        Đánh giá
                     </button>
                 </nav>
             </div>
-
-            <!-- Description Tab -->
-            <div id="description" class="tab-content py-8">
-                <div class="prose max-w-none">
-                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Mô tả sản phẩm</h3>
-                    <p class="text-gray-700 leading-relaxed mb-6">{{ $accessory->description }}</p>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-                        <div class="bg-white p-6 rounded-xl shadow-sm">
-                            <h4 class="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                                <i class="fas fa-cog text-green-600"></i> Tính năng nổi bật
-                            </h4>
-                            <ul class="space-y-2 text-gray-700">
-                                <li class="flex items-center gap-2">
-                                    <i class="fas fa-check text-green-500"></i>
-                                    Chất liệu cao cấp, bền bỉ
-                                </li>
-                                <li class="flex items-center gap-2">
-                                    <i class="fas fa-check text-green-500"></i>
-                                    Thiết kế hiện đại, dễ lắp đặt
-                                </li>
-                                <li class="flex items-center gap-2">
-                                    <i class="fas fa-check text-green-500"></i>
-                                    Tương thích với nhiều dòng xe
-                                </li>
-                                <li class="flex items-center gap-2">
-                                    <i class="fas fa-check text-green-500"></i>
-                                    Bảo hành chính hãng 6 tháng
-                                </li>
-                            </ul>
-                        </div>
-                        
-                        <div class="bg-white p-6 rounded-xl shadow-sm">
-                            <h4 class="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                                <i class="fas fa-info-circle text-green-600"></i> Thông tin bổ sung
-                            </h4>
-                            <ul class="space-y-2 text-gray-700">
-                                <li><strong>Xuất xứ:</strong> Chính hãng</li>
-                                <li><strong>Chất liệu:</strong> Cao cấp</li>
-                                <li><strong>Kích thước:</strong> Đa dạng</li>
-                                <li><strong>Màu sắc:</strong> Đen, Trắng, Xám</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Specifications Tab -->
-            <div id="specifications" class="tab-content py-8 hidden">
-                <h3 class="text-2xl font-bold text-gray-900 mb-6">Thông số kỹ thuật</h3>
-                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-                    <div class="grid grid-cols-1 md:grid-cols-2">
-                        <div class="p-6 border-b md:border-b-0 md:border-r border-gray-200">
-                            <h4 class="text-lg font-semibold text-gray-900 mb-4">Thông tin cơ bản</h4>
-                            <div class="space-y-3">
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">Tên sản phẩm:</span>
-                                    <span class="font-medium">{{ $accessory->name }}</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">Loại phụ kiện:</span>
-                                    <span class="font-medium">Phụ kiện xe hơi</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">Thương hiệu:</span>
-                                    <span class="font-medium">Chính hãng</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">Trạng thái:</span>
-                                    <span class="font-medium text-green-600">Còn hàng</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="p-6">
-                            <h4 class="text-lg font-semibold text-gray-900 mb-4">Thông số kỹ thuật</h4>
-                            <div class="space-y-3">
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">Kích thước:</span>
-                                    <span class="font-medium">Đa dạng</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">Trọng lượng:</span>
-                                    <span class="font-medium">0.5-2kg</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">Chất liệu:</span>
-                                    <span class="font-medium">Cao cấp</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">Bảo hành:</span>
-                                    <span class="font-medium">6 tháng</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Reviews Tab -->
-            <div id="reviews" class="tab-content py-8 hidden">
-                <div class="flex items-center justify-between mb-6">
-                    <h3 class="text-2xl font-bold text-gray-900">Đánh giá sản phẩm</h3>
-                    <button class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">
-                        Viết đánh giá
-                    </button>
-                </div>
-                
-                <div class="space-y-6">
-                    <!-- Review Stats -->
-                    <div class="bg-white p-6 rounded-xl shadow-sm">
-                        <div class="flex items-center gap-8">
-                            <div class="text-center">
-                                <div class="text-4xl font-bold text-green-600">4.7</div>
-                                <div class="flex text-yellow-400 justify-center my-2">
-                                    @for($i = 1; $i <= 5; $i++)
-                                        <i class="fas fa-star"></i>
-                                    @endfor
-                                </div>
-                                <div class="text-sm text-gray-600">95 đánh giá</div>
+            
+            <!-- Tab Content -->
+            <div class="py-12">
+                <!-- Description Tab -->
+                <div id="description" class="tab-content">
+                    <div class="prose prose-lg max-w-none">
+                        <div class="bg-white rounded-3xl shadow-xl p-8">
+                            <h3 class="text-2xl font-bold text-gray-900 mb-6">Mô tả chi tiết</h3>
+                            <div class="text-gray-700 leading-relaxed">
+                                {!! nl2br(e($accessory->description ?? 'Chưa có mô tả chi tiết cho sản phẩm này.')) !!}
                             </div>
                             
-                            <div class="flex-1">
-                                <div class="space-y-2">
-                                    @for($i = 5; $i >= 1; $i--)
-                                        <div class="flex items-center gap-2">
-                                            <span class="text-sm text-gray-600 w-8">{{ $i }} sao</span>
-                                            <div class="flex-1 bg-gray-200 rounded-full h-2">
-                                                <div class="bg-yellow-400 h-2 rounded-full" style="width: {{ 100 - ($i * 15) }}%"></div>
-                                            </div>
-                                            <span class="text-sm text-gray-600 w-12">{{ 100 - ($i * 15) }}%</span>
-                                        </div>
-                                    @endfor
+                            @if($accessory->features)
+                            <div class="mt-8">
+                                <h4 class="text-xl font-semibold text-gray-900 mb-4">Tính năng nổi bật</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    @foreach(json_decode($accessory->features, true) ?? [] as $feature => $value)
+                                    <div class="flex items-center space-x-3 bg-gray-50 rounded-xl p-4">
+                                        <i class="fas fa-check-circle text-green-500 text-lg"></i>
+                                        <span class="font-medium text-gray-900">{{ $feature }}: {{ $value }}</span>
+                                    </div>
+                                    @endforeach
                                 </div>
                             </div>
+                            @endif
                         </div>
                     </div>
-
-                    <!-- Sample Reviews -->
-                    <div class="space-y-4">
-                        <div class="bg-white p-6 rounded-xl shadow-sm">
-                            <div class="flex items-center justify-between mb-3">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                                        <span class="text-green-600 font-semibold">NV</span>
+                </div>
+                
+                <!-- Specifications Tab -->
+                <div id="specifications" class="tab-content hidden">
+                    <div class="bg-white rounded-3xl shadow-xl p-8">
+                        <h3 class="text-2xl font-bold text-gray-900 mb-6">Thông số kỹ thuật</h3>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <div class="space-y-6">
+                                <h4 class="text-xl font-semibold text-gray-900 mb-4">Thông tin cơ bản</h4>
+                                <div class="space-y-4">
+                                    @if($accessory->category)
+                                    <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                                        <span class="text-gray-600 font-medium">Danh mục:</span>
+                                        <span class="font-semibold text-gray-900">{{ $accessory->category }}</span>
                                     </div>
+                                    @endif
+                                    @if($accessory->subcategory)
+                                    <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                                        <span class="text-gray-600 font-medium">Danh mục con:</span>
+                                        <span class="font-semibold text-gray-900">{{ $accessory->subcategory }}</span>
+                                    </div>
+                                    @endif
+                                    @if($accessory->brand)
+                                    <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                                        <span class="text-gray-600 font-medium">Thương hiệu:</span>
+                                        <span class="font-semibold text-gray-900">{{ $accessory->brand }}</span>
+                                    </div>
+                                    @endif
+                                    @if($accessory->model)
+                                    <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                                        <span class="text-gray-600 font-medium">Model:</span>
+                                        <span class="font-semibold text-gray-900">{{ $accessory->model }}</span>
+                                    </div>
+                                    @endif
+                                    @if($accessory->sku)
+                                    <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                                        <span class="text-gray-600 font-medium">SKU:</span>
+                                        <span class="font-semibold text-gray-900 font-mono">{{ $accessory->sku }}</span>
+                                    </div>
+                                    @endif
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-6">
+                                <h4 class="text-xl font-semibold text-gray-900 mb-4">Thông số vật lý</h4>
+                                <div class="space-y-4">
+                                    @if($accessory->weight)
+                                    <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                                        <span class="text-gray-600 font-medium">Trọng lượng:</span>
+                                        <span class="font-semibold text-gray-900">{{ $accessory->weight }} kg</span>
+                                    </div>
+                                    @endif
+                                    @if($accessory->dimensions)
+                                    <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                                        <span class="text-gray-600 font-medium">Kích thước:</span>
+                                        <span class="font-semibold text-gray-900">{{ $accessory->dimensions }}</span>
+                                    </div>
+                                    @endif
+                                    @if($accessory->material)
+                                    <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                                        <span class="text-gray-600 font-medium">Chất liệu:</span>
+                                        <span class="font-semibold text-gray-900">{{ $accessory->material }}</span>
+                                    </div>
+                                    @endif
+                                    @if($accessory->warranty_months)
+                                    <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                                        <span class="text-gray-600 font-medium">Bảo hành:</span>
+                                        <span class="font-semibold text-gray-900">{{ $accessory->warranty_months }} tháng</span>
+                                    </div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                        
+                        @if($accessory->specifications)
+                        <div class="mt-8">
+                            <h4 class="text-xl font-semibold text-gray-900 mb-4">Thông số chi tiết</h4>
+                            <div class="bg-gray-50 rounded-2xl p-6">
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    @foreach(json_decode($accessory->specifications, true) ?? [] as $spec => $value)
+                                    <div class="bg-white rounded-xl p-4 shadow-sm">
+                                        <div class="text-sm text-gray-500 font-medium mb-1">{{ $spec }}</div>
+                                        <div class="text-lg font-semibold text-gray-900">{{ $value }}</div>
+                                    </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+                
+                <!-- Compatibility Tab -->
+                <div id="compatibility" class="tab-content hidden">
+                    <div class="bg-white rounded-3xl shadow-xl p-8">
+                        <h3 class="text-2xl font-bold text-gray-900 mb-6">Tương thích xe</h3>
+                        
+                        @if($accessory->compatible_car_brands || $accessory->compatible_car_models)
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            @if($accessory->compatible_car_brands)
+                            <div>
+                                <h4 class="text-xl font-semibold text-gray-900 mb-4">Thương hiệu tương thích</h4>
+                                <div class="space-y-3">
+                                    @foreach(json_decode($accessory->compatible_car_brands, true) ?? [] as $brand)
+                                    <div class="flex items-center space-x-3 bg-blue-50 rounded-xl p-4">
+                                        <i class="fas fa-car text-blue-500"></i>
+                                        <span class="font-medium text-gray-900">{{ $brand }}</span>
+                                    </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            @endif
+                            
+                            @if($accessory->compatible_car_models)
+                            <div>
+                                <h4 class="text-xl font-semibold text-gray-900 mb-4">Model tương thích</h4>
+                                <div class="space-y-3">
+                                    @foreach(json_decode($accessory->compatible_car_models, true) ?? [] as $model)
+                                    <div class="flex items-center space-x-3 bg-green-50 rounded-xl p-4">
+                                        <i class="fas fa-car-side text-green-500"></i>
+                                        <span class="font-medium text-gray-900">{{ $model }}</span>
+                                    </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            @endif
+                        </div>
+                        @else
+                        <div class="text-center py-12">
+                            <i class="fas fa-car text-gray-300 text-6xl mb-4"></i>
+                            <p class="text-gray-500 text-lg">Chưa có thông tin tương thích xe</p>
+                        </div>
+                        @endif
+                        
+                        @if($accessory->installation_service_available)
+                        <div class="mt-8 bg-gradient-to-r from-green-50 to-blue-50 rounded-2xl p-6 border border-green-200">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-tools text-white text-xl"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-xl font-semibold text-gray-900">Dịch vụ lắp đặt</h4>
+                                    <p class="text-gray-600">Chúng tôi cung cấp dịch vụ lắp đặt chuyên nghiệp</p>
+                                    @if($accessory->installation_fee)
+                                    <p class="text-green-600 font-semibold mt-2">Phí lắp đặt: {{ number_format($accessory->installation_fee, 0, ',', '.') }}₫</p>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+                
+                <!-- Reviews Tab with pagination & submit -->
+                <div id="reviews" class="tab-content hidden">
+                    <div class="bg-white rounded-3xl shadow-xl p-8">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-2xl font-bold text-gray-900">Đánh giá sản phẩm</h3>
+                            @auth
+                            <button type="button" id="open-review-form" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">
+                                <i class="fas fa-plus"></i> Viết đánh giá
+                            </button>
+                            @endauth
+                        </div>
+                        
+                        <div id="reviews-summary" class="mb-8">
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                <!-- Rating Summary - Centered and Prominent -->
+                                <div class="lg:col-span-1 text-center bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-100">
+                                    @php $avgRating = $accessory->approved_reviews_avg ?? $accessory->average_rating ?? 0; @endphp
+                                    <div id="reviews-avg" class="text-6xl font-black text-blue-600 mb-3">{{ number_format((float) $avgRating, 1) }}</div>
+                                    <div id="reviews-stars" class="flex items-center justify-center gap-1 mb-3">
+                                        @for($i = 1; $i <= 5; $i++)
+                                            @if($i <= $avgRating)
+                                                <i class="fas fa-star text-yellow-400 text-xl"></i>
+                                            @elseif($i - $avgRating < 1)
+                                                <i class="fas fa-star-half-alt text-yellow-400 text-xl"></i>
+                                            @else
+                                                <i class="far fa-star text-gray-300 text-xl"></i>
+                                            @endif
+                                        @endfor
+                                    </div>
+                                    @php $approvedCount2 = $accessory->approved_reviews_count ?? $accessory->reviews()->where('is_approved', true)->count(); @endphp
+                                    <div class="text-gray-700 font-medium text-lg">(<span id="reviews-count">{{ number_format($approvedCount2 ?? 0) }}</span> đánh giá)</div>
+                                </div>
+                                
+                                <!-- Rating Distribution Chart - Enhanced Design -->
+                                <div class="lg:col-span-2 bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                                    <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                        <i class="fas fa-chart-bar text-indigo-600"></i>
+                                        Phân bố đánh giá
+                                    </h4>
+                                    <div class="space-y-3">
+                                        @for($star = 5; $star >= 1; $star--)
+                                            @php
+                                                $starCount = \App\Models\Review::where('reviewable_type', 'App\\Models\\Accessory')
+                                                    ->where('reviewable_id', $accessory->id)
+                                                    ->where('is_approved', true)
+                                                    ->where('rating', $star)
+                                                    ->count();
+                                                $percentage = $approvedCount2 > 0 ? ($starCount / $approvedCount2) * 100 : 0;
+                                            @endphp
+                                            <div class="flex items-center gap-4">
+                                                <div class="flex items-center gap-2 w-20">
+                                                    <span class="text-sm font-medium text-gray-700">{{ $star }}</span>
+                                                    <i class="fas fa-star text-yellow-400"></i>
+                                                </div>
+                                                <div class="flex-1 bg-gray-100 rounded-full h-3 overflow-hidden">
+                                                    <div class="bg-gradient-to-r from-yellow-400 to-orange-400 h-3 rounded-full transition-all duration-500 ease-out rating-bar" data-star="{{ $star }}" data-percentage="{{ $percentage }}" style="width:0%"></div>
+                                                </div>
+                                                <div class="w-16 text-right">
+                                                    <span class="text-sm font-medium text-gray-700 review-star-count" data-star="{{ $star }}">{{ $starCount }}</span>
+                                                </div>
+                                            </div>
+                                        @endfor
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="reviews-list" class="space-y-6"></div>
+                        <div id="reviews-pagination" class="mt-6 flex items-center justify-center gap-2"></div>
+
+                        @auth
+                        <!-- Modal viết đánh giá (ẩn mặc định) -->
+                        <div id="review-modal" class="fixed inset-0 z-[10000] bg-black/60 hidden" style="display:none; align-items:center; justify-content:center;" role="dialog" aria-modal="true" aria-labelledby="review-modal-title">
+                            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-5 relative">
+                                <button type="button" class="absolute top-3 right-3 text-gray-400 hover:text-red-500" id="review-modal-close" aria-label="Đóng"><i class="fas fa-times text-lg"></i></button>
+                                <h4 id="review-modal-title" class="text-xl font-bold text-gray-900 mb-4">Viết đánh giá</h4>
+                                <div id="review-form-errors" class="hidden mb-3 p-3 rounded-lg bg-red-50 text-red-700 text-sm"></div>
+                                <form id="review-form" class="space-y-3">
+                                    <input type="hidden" name="reviewable_type" value="App\Models\Accessory">
+                                    <input type="hidden" name="reviewable_id" value="{{ $accessory->id }}">
                                     <div>
-                                        <div class="font-semibold text-gray-900">Nguyễn Văn A</div>
-                                        <div class="flex text-yellow-400 text-sm">
-                                            @for($i = 1; $i <= 5; $i++)
-                                                <i class="fas fa-star"></i>
+                                        <label class="block text-sm text-gray-700 mb-1">Chấm sao</label>
+                                        <div class="flex items-center gap-2">
+                                            @for($i=1;$i<=5;$i++)
+                                            <label class="inline-flex items-center gap-1 cursor-pointer">
+                                                <input type="radio" name="rating" value="{{ $i }}" class="accent-yellow-500" required>
+                                                <i class="fas fa-star text-yellow-400"></i>
+                                            </label>
                                             @endfor
                                         </div>
                                     </div>
-                                </div>
-                                <span class="text-sm text-gray-500">3 ngày trước</span>
-                            </div>
-                            <p class="text-gray-700">Phụ kiện chất lượng rất tốt, lắp đặt dễ dàng và phù hợp với xe của tôi!</p>
-                        </div>
-
-                        <div class="bg-white p-6 rounded-xl shadow-sm">
-                            <div class="flex items-center justify-between mb-3">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                                        <span class="text-green-600 font-semibold">TL</span>
+                                    <div>
+                                        <label class="block text-sm text-gray-700 mb-1">Tiêu đề (tuỳ chọn)</label>
+                                        <input type="text" name="title" class="w-full border rounded-lg px-3 py-2" maxlength="255">
                                     </div>
                                     <div>
-                                        <div class="font-semibold text-gray-900">Trần Lê B</div>
-                                        <div class="flex text-yellow-400 text-sm">
-                                            @for($i = 1; $i <= 4; $i++)
-                                                <i class="fas fa-star"></i>
-                                            @endfor
-                                            <i class="far fa-star"></i>
-                                        </div>
+                                        <label class="block text-sm text-gray-700 mb-1">Nội dung</label>
+                                        <textarea name="comment" class="w-full border rounded-lg px-3 py-2" rows="4" required minlength="10"></textarea>
                                     </div>
-                                </div>
-                                <span class="text-sm text-gray-500">1 tuần trước</span>
+                                    <div class="flex items-center justify-end gap-2 pt-2">
+                                        <button type="button" id="review-cancel" class="px-4 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">Hủy</button>
+                                        <button type="submit" class="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">Gửi đánh giá</button>
+                                    </div>
+                                </form>
                             </div>
-                            <p class="text-gray-700">Sản phẩm đẹp, giá cả hợp lý. Giao hàng nhanh và đóng gói cẩn thận.</p>
                         </div>
+                        @else
+                        <div class="mt-6 text-sm text-gray-600">Vui lòng đăng nhập để thêm đánh giá.</div>
+                        @endauth
                     </div>
                 </div>
             </div>
         </div>
-
+        
         <!-- Related Products -->
-        <div class="mt-16">
-            <h3 class="text-2xl font-bold text-gray-900 mb-8">Phụ kiện liên quan</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                @for($i = 1; $i <= 4; $i++)
-                    <div class="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition">
-                        <img src="https://via.placeholder.com/300x200/10b981/ffffff?text=Phụ+kiện+{{ $i }}" 
-                             class="w-full h-48 object-cover" alt="Phụ kiện {{ $i }}">
-                        <div class="p-4">
-                            <h4 class="font-semibold text-gray-900 mb-2">Phụ kiện liên quan {{ $i }}</h4>
-                            <p class="text-green-600 font-bold">{{ number_format(rand(500000, 2000000)) }} đ</p>
-                        </div>
-                    </div>
-                @endfor
+        @if(isset($relatedAccessories) && $relatedAccessories->count() > 0)
+        <div class="mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-black text-gray-900 mb-4">Sản phẩm liên quan</h2>
+                <p class="text-xl text-gray-600">Khám phá thêm các phụ kiện tương tự</p>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                @foreach($relatedAccessories as $related)
+                    @include('components.accessory-card', ['accessory' => $related])
+                @endforeach
             </div>
         </div>
+        @endif
     </div>
 </div>
 
-@push('scripts')
+<!-- Final CTA - Full Width Background -->
+<section class="bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900 text-white overflow-hidden">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8 py-10 text-center">
+        <h3 class="text-3xl font-bold mb-3">Sẵn sàng trải nghiệm {{ $accessory->name }}?</h3>
+        <p class="text-indigo-200 mb-6 max-w-2xl mx-auto">Liên hệ đội ngũ tư vấn hoặc khám phá thêm các phụ kiện khác.</p>
+        <div class="flex flex-col sm:flex-row gap-3 justify-center">
+            <a href="{{ route('contact') }}" class="inline-flex items-center px-6 py-3 rounded-xl bg-white text-slate-900 font-semibold hover:bg-indigo-50">
+                <i class="fas fa-phone mr-2"></i> Liên hệ tư vấn
+            </a>
+                                <a href="{{ route('products.index', ['type' => 'accessory']) }}" class="inline-flex items-center px-6 py-3 rounded-xl border border-white/30 text-white hover:bg-white/10">
+                        <i class="fas fa-th-large mr-2"></i> Xem tất cả phụ kiện
+                    </a>
+        </div>
+    </div>
+</section>
+
 <script>
-function changeMainImage(src) {
-    document.getElementById('main-image').src = src;
-}
-
-function changeQuantity(delta) {
-    const input = document.getElementById('quantity-input');
-    const newValue = Math.max(1, parseInt(input.value) + delta);
-    input.value = newValue;
-}
-
-function showTab(tabName) {
-    // Hide all tab contents
-    document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.add('hidden');
-    });
+document.addEventListener('DOMContentLoaded', function() {
+    // Tab functionality
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
     
-    // Remove active state from all tab buttons
-    document.querySelectorAll('.tab-button').forEach(button => {
-        button.classList.remove('border-green-500', 'text-green-600');
-        button.classList.add('border-transparent', 'text-gray-500');
-    });
-    
-    // Show selected tab content
-    document.getElementById(tabName).classList.remove('hidden');
-    
-    // Add active state to clicked button
-    event.target.classList.remove('border-transparent', 'text-gray-500');
-    event.target.classList.add('border-green-500', 'text-green-600');
-}
-
-// Add to cart with AJAX and animation
-document.addEventListener('DOMContentLoaded', function () {
-    const form = document.getElementById('add-to-cart-form');
-    const productImage = document.getElementById('main-image');
-    const addToCartButton = form.querySelector('button[type="submit"]');
-
-    form.addEventListener('submit', function (e) {
-        e.preventDefault();
-
-        // Show loading state
-        const originalText = addToCartButton.innerHTML;
-        addToCartButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang thêm...';
-        addToCartButton.disabled = true;
-
-        // Animation
-        if (productImage) {
-            const imageClone = productImage.cloneNode(true);
-            const rect = productImage.getBoundingClientRect();
-
-            imageClone.style.position = 'fixed';
-            imageClone.style.left = rect.left + 'px';
-            imageClone.style.top = rect.top + 'px';
-            imageClone.style.width = rect.width + 'px';
-            imageClone.style.height = rect.height + 'px';
-            imageClone.style.transition = 'all 0.75s ease-in-out';
-            imageClone.style.zIndex = 9999;
-            imageClone.style.borderRadius = '9999px';
-            imageClone.style.opacity = '0.9';
-
-            document.body.appendChild(imageClone);
-
-            setTimeout(() => {
-                imageClone.style.left = 'calc(100vw - 80px)';
-                imageClone.style.top = '20px';
-                imageClone.style.width = '40px';
-                imageClone.style.height = '40px';
-                imageClone.style.opacity = '0.1';
-            }, 50);
-
-            setTimeout(() => {
-                document.body.removeChild(imageClone);
-            }, 850);
-        }
-
-        // AJAX request
-        const formData = new FormData(form);
-        fetch(form.action, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showMessage(data.message || 'Đã thêm vào giỏ hàng!', 'success');
-                updateCartCount(data.cart_count);
-            } else {
-                showMessage(data.message || 'Có lỗi xảy ra khi thêm vào giỏ hàng', 'error');
-            }
-        })
-        .catch(error => {
-            showMessage('Có lỗi xảy ra khi thêm vào giỏ hàng', 'error');
-        })
-        .finally(() => {
-            // Restore button state
-            addToCartButton.innerHTML = originalText;
-            addToCartButton.disabled = false;
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const targetTab = button.getAttribute('data-tab');
+            
+            // Remove active state from all tabs
+            tabButtons.forEach(btn => {
+                btn.classList.remove('border-blue-500', 'text-blue-600');
+                btn.classList.add('border-transparent', 'text-gray-500');
+            });
+            
+            // Hide all tab contents
+            tabContents.forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // Activate clicked tab
+            button.classList.remove('border-transparent', 'text-gray-500');
+            button.classList.add('border-blue-500', 'text-blue-600');
+            
+            // Show target content
+            document.getElementById(targetTab).classList.remove('hidden');
         });
     });
-});
-
-// Show message function
-function showMessage(message, type) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full ${
-        type === 'success' ? 'bg-green-500' : 'bg-red-500'
-    } text-white`;
     
-    messageDiv.innerHTML = `
-        <div class="flex items-center">
-            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} mr-3"></i>
-            <span>${message}</span>
-            <button class="ml-auto text-white hover:text-gray-200" onclick="this.parentElement.parentElement.remove()">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-    `;
+    // Thumbnail gallery
+    const thumbnails = document.querySelectorAll('.thumbnail-image');
+    const mainImage = document.getElementById('main-image');
     
-    document.body.appendChild(messageDiv);
-    
-    // Animate in
-    setTimeout(() => {
-        messageDiv.classList.remove('translate-x-full');
-    }, 100);
-    
-    // Auto remove after 5 seconds
-    setTimeout(() => {
-        messageDiv.classList.add('translate-x-full');
-        setTimeout(() => messageDiv.remove(), 300);
-    }, 5000);
-}
-
-// Update cart count function
-function updateCartCount(count) {
-    const badge = document.getElementById('cart-count-badge');
-    if (badge) {
-        badge.textContent = count;
-        if (count === 0) {
-            badge.style.display = 'none';
-        } else {
-            badge.style.display = 'block';
-        }
-    } else if (count > 0) {
-        const cartIcon = document.getElementById('cart-icon');
-        if (cartIcon && cartIcon.parentElement) {
-            const newBadge = document.createElement('span');
-            newBadge.id = 'cart-count-badge';
-            newBadge.className = 'absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full px-2 py-0.5';
-            newBadge.textContent = count;
-            cartIcon.parentElement.appendChild(newBadge);
-        }
-    }
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    const wishlistBtn = document.querySelector('button[data-product-id]');
-    console.log('Wishlist button found:', wishlistBtn);
-    
-    if (wishlistBtn) {
-        wishlistBtn.addEventListener('click', function() {
-            console.log('Wishlist button clicked');
-            const productId = this.getAttribute('data-product-id');
-            const icon = this.querySelector('i');
-            const isInWishlist = icon.classList.contains('fas');
+    thumbnails.forEach(thumb => {
+        thumb.addEventListener('click', () => {
+            const newSrc = thumb.getAttribute('data-image');
+            mainImage.src = newSrc;
             
-            console.log('Product ID:', productId);
-            console.log('Is in wishlist:', isInWishlist);
+            // Update active thumbnail
+            thumbnails.forEach(t => t.classList.remove('ring-2', 'ring-blue-500'));
+            thumb.classList.add('ring-2', 'ring-blue-500');
+        });
+    });
+    
+    // Add to cart form handling
+    const addToCartForms = document.querySelectorAll('.add-to-cart-form');
+    addToCartForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
             
-            // Determine the URL based on current state
-            const url = isInWishlist 
-                ? '{{ route("wishlist.remove") }}'
-                : '{{ route("wishlist.add") }}';
+            const formData = new FormData(this);
+            const submitButton = this.querySelector('button[type="submit"]');
+            const originalText = submitButton.innerHTML;
             
-            console.log('Request URL:', url);
+            // Show loading state
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Đang thêm...';
             
-            fetch(url, {
+            fetch('/cart/add', {
                 method: 'POST',
+                body: formData,
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: `product_id=${productId}`
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
             })
-            .then(response => {
-                console.log('Response status:', response.status);
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
-                console.log('Response data:', data);
                 if (data.success) {
-                    // Toggle icon state
-                    if (isInWishlist) {
-                        icon.classList.remove('fas', 'text-red-500');
-                        icon.classList.add('far');
-                    } else {
-                        icon.classList.remove('far');
-                        icon.classList.add('fas', 'text-red-500');
+                    // Show success message
+                    submitButton.innerHTML = '<i class="fas fa-check mr-2"></i>Đã thêm!';
+                    submitButton.classList.add('bg-green-600');
+                    
+                    // Update cart count if available
+                    const cartCountBadge = document.querySelector('#cart-count-badge');
+                    if (cartCountBadge && data.cart_count !== undefined) {
+                        cartCountBadge.textContent = data.cart_count;
+                        cartCountBadge.classList.remove('hidden');
                     }
                     
-                    // Update wishlist count if the function exists
-                    if (typeof updateWishlistCount === 'function' && data.wishlist_count !== undefined) {
-                        updateWishlistCount(data.wishlist_count);
-                    }
-                    
-                    showMessage(data.message || (isInWishlist ? 'Đã xóa khỏi danh sách yêu thích' : 'Đã thêm vào danh sách yêu thích'), 'success');
+                    // Reset button after 2 seconds
+                    setTimeout(() => {
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = originalText;
+                        submitButton.classList.remove('bg-green-600');
+                    }, 2000);
                 } else {
-                    console.error('Request failed:', data.message);
-                    showMessage(data.message || 'Có lỗi xảy ra', 'error');
+                    throw new Error(data.message || 'Có lỗi xảy ra');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                showMessage('Có lỗi xảy ra', 'error');
+                
+                // Show error message
+                submitButton.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>Lỗi!';
+                submitButton.classList.add('bg-red-600');
+                
+                // Reset button after 2 seconds
+                setTimeout(() => {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalText;
+                    submitButton.classList.remove('bg-red-600');
+                }, 2000);
             });
         });
+    });
+    
+    // Simple reviews functionality
+    const reviewModal = document.getElementById('review-modal');
+    const openReviewFormBtn = document.getElementById('open-review-form');
+    const reviewModalClose = document.getElementById('review-modal-close');
+    const reviewCancelBtn = document.getElementById('review-cancel');
+    const reviewForm = document.getElementById('review-form');
+    
+    // Open review modal
+    if (openReviewFormBtn && reviewModal) {
+        openReviewFormBtn.addEventListener('click', () => {
+            reviewModal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        });
     }
+    
+    // Close review modal
+    if (reviewModalClose && reviewModal) {
+        reviewModalClose.addEventListener('click', () => {
+            reviewModal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+            if (reviewForm) reviewForm.reset();
+        });
+    }
+    
+    if (reviewCancelBtn && reviewModal) {
+        reviewCancelBtn.addEventListener('click', () => {
+            reviewModal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+            if (reviewForm) reviewForm.reset();
+        });
+    }
+    
+    // Close modal when clicking outside
+    if (reviewModal) {
+        reviewModal.addEventListener('click', (e) => {
+            if (e.target === reviewModal) {
+                reviewModal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+                if (reviewForm) reviewForm.reset();
+            }
+        });
+    }
+    
+    // Submit review is handled inside initAccessoryReviews to enable AJAX reload
+    
+    // Load and render reviews (like car-variant)
+    (function initAccessoryReviews(){
+        const listEl = document.getElementById('reviews-list');
+        const pagerEl = document.getElementById('reviews-pagination');
+        const openFormBtn = document.getElementById('open-review-form');
+        const reviewModal = document.getElementById('review-modal');
+        const reviewCloseBtn = document.getElementById('review-modal-close');
+        const reviewCancelBtn = document.getElementById('review-cancel');
+        const formEl = document.getElementById('review-form');
+        const errorBox = document.getElementById('review-form-errors');
+        if (!listEl || !pagerEl) return;
+        let currentPage = 1;
+        const accessoryId = Number('{{ $accessory->id }}');
+        const type = 'App%5CModels%5CAccessory';
+        function renderPager(meta){
+            pagerEl.innerHTML = '';
+            const current_page = meta && meta.current_page ? meta.current_page : 1;
+            const last_page = meta && meta.last_page ? meta.last_page : 1;
+            if (!current_page || !last_page || last_page <= 1) return;
+            const makeBtn = (p, label = p, active=false) => `<button data-page="${p}" class="px-3 py-1 rounded ${active?'bg-indigo-600 text-white':'bg-gray-100 hover:bg-gray-200'}">${label}</button>`;
+            const parts = [];
+            if (current_page>1) parts.push(makeBtn(current_page-1,'‹'));
+            for(let p=Math.max(1,current_page-1); p<=Math.min(last_page,current_page+1); p++){ parts.push(makeBtn(p,String(p),p===current_page)); }
+            if (current_page<last_page) parts.push(makeBtn(current_page+1,'›'));
+            pagerEl.innerHTML = parts.join('');
+        }
+        function renderList(data){
+            const items = (data && data.data) ? data.data : [];
+            if (items.length===0){ listEl.innerHTML = '<div class="text-center text-gray-500">Chưa có đánh giá nào</div>'; return; }
+            listEl.innerHTML = items.map(rv=>{
+                const stars = Array.from({length:5},(_,i)=> i<rv.rating?'<i class="fas fa-star text-yellow-400"></i>':'<i class="far fa-star text-gray-300"></i>').join('');
+                const name = ((rv.user && rv.user.name) ? rv.user.name : 'Khách hàng');
+                const time = (new Date(rv.created_at)).toLocaleDateString('vi-VN');
+                const safeComment = (rv.comment||'').replace(/</g,'&lt;');
+                return `<div class=\"border-b border-gray-100 pb-4\"><div class=\"flex items-center gap-3 mb-1\"><div class=\"w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center\"><i class=\"fas fa-user text-gray-500\"></i></div><div><div class=\"font-semibold text-gray-900\">${name}</div><div class=\"text-sm\">${stars}</div></div><div class=\"ml-auto text-xs text-gray-500\">${time}</div></div><div class=\"text-gray-700\">${safeComment}</div></div>`;
+            }).join('');
+            renderPager(data);
+        }
+        function updateInlineSummary(){
+            fetch(`{{ route('reviews.summary') }}?reviewable_type=${type}&reviewable_id=${accessoryId}`,{headers:{'X-Requested-With':'XMLHttpRequest'}})
+                .then(r=>r.json()).then(s=>{
+                    if (!s || !s.success) return;
+                    const avg = parseFloat(s.approved_avg||0);
+                    const count = parseInt(s.approved_count||0,10);
+                    const wrap = document.getElementById('rating-summary-inline');
+                    const avgEl = document.getElementById('rating-avg-inline');
+                    const cntEl = document.getElementById('rating-count-inline');
+                    const starsWrap = document.getElementById('rating-stars-inline');
+                    if (!wrap || !avgEl || !cntEl || !starsWrap) return;
+                    avgEl.textContent = avg.toFixed(1);
+                    cntEl.textContent = new Intl.NumberFormat('vi-VN').format(count);
+                    wrap.classList.toggle('hidden', avg <= 0);
+                    // Re-render stars
+                    const full = Math.floor(avg);
+                    const hasHalf = (avg - full) >= 0.5 ? 1 : 0;
+                    let html = '';
+                    for (let i=1;i<=5;i++){
+                        if (i<=full) html += '<i class="fas fa-star text-yellow-400 text-lg"></i>';
+                        else if (i===full+1 && hasHalf) html += '<i class="fas fa-star-half-alt text-yellow-400 text-lg"></i>';
+                        else html += '<i class="far fa-star text-gray-300 text-lg"></i>';
+                    }
+                    starsWrap.innerHTML = html;
 
+                    // Update reviews tab summary (big numbers and distribution)
+                    const avgBig = document.getElementById('reviews-avg');
+                    const starsBig = document.getElementById('reviews-stars');
+                    const countBig = document.getElementById('reviews-count');
+                    if (avgBig) avgBig.textContent = avg.toFixed(1);
+                    if (countBig) countBig.textContent = new Intl.NumberFormat('vi-VN').format(count);
+                    if (starsBig){
+                        let htmlBig='';
+                        for (let i=1;i<=5;i++){
+                            if (i<=full) htmlBig += '<i class="fas fa-star text-yellow-400 text-xl"></i>';
+                            else if (i===full+1 && hasHalf) htmlBig += '<i class="fas fa-star-half-alt text-yellow-400 text-xl"></i>';
+                            else htmlBig += '<i class="far fa-star text-gray-300 text-xl"></i>';
+                        }
+                        starsBig.innerHTML = htmlBig;
+                    }
+                    // Update distribution bars/counts if provided
+                    if (s.distribution){
+                        for (let star=1; star<=5; star++){
+                            const cnt = s.distribution[star] || 0;
+                            const pct = count>0 ? (cnt / count) * 100 : 0;
+                            const bar = document.querySelector(`.rating-bar[data-star="${star}"]`);
+                            const label = document.querySelector(`.review-star-count[data-star="${star}"]`);
+                            if (bar){ bar.setAttribute('data-percentage', pct.toFixed(2)); bar.style.width = pct + '%'; }
+                            if (label){ label.textContent = String(cnt); }
+                        }
+                    }
+                }).catch(()=>{});
+        }
+        function load(page){
+            fetch(`{{ route('reviews.get') }}?reviewable_type=${type}&reviewable_id=${accessoryId}&page=${page}`,{headers:{'X-Requested-With':'XMLHttpRequest'}})
+                .then(function(r){ return r.json(); })
+                .then(function(d){ currentPage = d.current_page||1; renderList(d); })
+                .catch(function(){ listEl.innerHTML='<div class="text-center text-gray-500">Không tải được đánh giá</div>'; });
+        }
+        pagerEl.addEventListener('click', function(e){ const btn=e.target.closest('button[data-page]'); if(!btn) return; load(parseInt(btn.getAttribute('data-page'),10)); });
+        // Open/close modal like car-variant
+        function openReview(){ if (!reviewModal) return; reviewModal.style.display='flex'; reviewModal.classList.remove('hidden'); document.body.style.overflow='hidden'; if (errorBox){ errorBox.classList.add('hidden'); errorBox.innerHTML=''; } }
+        function closeReview(){ if (!reviewModal) return; reviewModal.classList.add('hidden'); reviewModal.style.display='none'; document.body.style.overflow='auto'; }
+        if (openFormBtn && reviewModal){ openFormBtn.addEventListener('click', openReview); }
+        if (reviewCloseBtn){ reviewCloseBtn.addEventListener('click', closeReview); }
+        if (reviewCancelBtn){ reviewCancelBtn.addEventListener('click', closeReview); }
+        document.addEventListener('click', function(e){ const m = e.target.closest('#review-modal'); if (!m) return; if (e.target === m) closeReview(); });
+        document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeReview(); });
+
+        // AJAX submit
+        if (formEl){
+            formEl.addEventListener('submit', function(ev){ ev.preventDefault(); const fd=new FormData(formEl);
+                if (errorBox){ errorBox.classList.add('hidden'); errorBox.innerHTML=''; }
+                fetch(`{{ route('reviews.store') }}`,{method:'POST', headers:{'X-Requested-With':'XMLHttpRequest','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]').content}, body:fd})
+                .then(async function(r){
+                    const ct = r.headers.get('content-type')||''; const data = ct.includes('application/json') ? await r.json() : {};
+                    if (r.ok && data && data.success){
+                        closeReview(); formEl.reset(); load(1);
+                        if (typeof showMessage==='function'){ showMessage(data.message || 'Gửi đánh giá thành công','success'); }
+                        updateInlineSummary();
+                    } else {
+                        const errs = (data && (data.errors || data.message)) ? data : null;
+                        if (errs && errorBox){
+                            let html = '';
+                            if (errs.errors){ const list = Object.values(errs.errors).flat(); html = `<ul class="list-disc list-inside">${list.map(m=>`<li>${m}</li>`).join('')}</ul>`; }
+                            else if (errs.message){ html = `<div>${errs.message}</div>`; }
+                            if (html){ errorBox.innerHTML = html; errorBox.classList.remove('hidden'); }
+                        }
+                        if (typeof showMessage==='function'){ showMessage('Gửi đánh giá thất bại','error'); }
+                    }
+                })
+                .catch(function(){ if (typeof showMessage==='function'){ showMessage('Gửi đánh giá thất bại','error'); } });
+            });
+        }
+        load(1);
+        updateInlineSummary();
+    })();
+
+    // Animate rating bars
+    setTimeout(() => {
+        const ratingBars = document.querySelectorAll('.rating-bar');
+        ratingBars.forEach(bar => {
+            const percentage = bar.getAttribute('data-percentage');
+            bar.style.width = percentage + '%';
+        });
+    }, 500);
 });
-
-// Use the global updateWishlistCount function from layout
-// No need to redefine it here
 </script>
-@endpush
-@endsection 
+@endsection

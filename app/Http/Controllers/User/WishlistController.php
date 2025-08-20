@@ -4,10 +4,12 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Wishlist;
-use App\Models\Product;
+use App\Models\WishlistItem;
+use App\Models\CarVariant;
+use App\Models\Accessory;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class WishlistController extends Controller
 {
@@ -16,44 +18,22 @@ class WishlistController extends Controller
      */
     public function index()
     {
-        if (Auth::check()) {
-            // For authenticated users, get from database
-            $wishlistItems = Wishlist::where('user_id', Auth::id())
-                ->with(['product'])
-                ->get();
+        $wishlistItems = \App\Helpers\WishlistHelper::getWishlistItems();
 
-            // Load carVariant with images for products that are car variants
-            foreach ($wishlistItems as $item) {
-                if ($item->product->product_type === 'car_variant') {
-                    $item->product->load('carVariant.images');
-                } elseif ($item->product->product_type === 'accessory') {
-                    $item->product->load('accessory');
-                }
+        // Ensure necessary relations and review aggregates are loaded for rendering cards
+        foreach ($wishlistItems as $item) {
+            if (!$item->item) { continue; }
+            // Car variants
+            if ($item->item_type === 'car_variant' || $item->item instanceof \App\Models\CarVariant) {
+                $item->item->load(['images', 'carModel.carBrand']);
+                // Load aggregates for ratings
+                $item->item->loadCount(['approvedReviews as approved_reviews_count']);
+                $item->item->loadAvg('approvedReviews as approved_reviews_avg', 'rating');
             }
-        } else {
-            // For guest users, get from session
-            $wishlistIds = session()->get('wishlist', []);
-            $wishlistItems = collect();
-
-            if (!empty($wishlistIds)) {
-                $products = Product::whereIn('id', $wishlistIds)->get();
-
-                // Load carVariant with images for car variant products
-                foreach ($products as $product) {
-                    if ($product->product_type === 'car_variant') {
-                        $product->load('carVariant.images');
-                    } elseif ($product->product_type === 'accessory') {
-                        $product->load('accessory');
-                    }
-                }
-
-                $wishlistItems = $products->map(function ($product) {
-                    return (object) [
-                        'id' => 'session_' . $product->id,
-                        'product' => $product,
-                        'created_at' => now()
-                    ];
-                });
+            // Accessories
+            if ($item->item_type === 'accessory' || $item->item instanceof \App\Models\Accessory) {
+                $item->item->loadCount(['approvedReviews as approved_reviews_count']);
+                $item->item->loadAvg('approvedReviews as approved_reviews_avg', 'rating');
             }
         }
 
@@ -65,55 +45,30 @@ class WishlistController extends Controller
      */
     public function add(Request $request)
     {
-        $request->validate([
-            'product_id' => 'required|exists:products,id'
-        ]);
-
-        $productId = $request->input('product_id');
-
         try {
-            if (Auth::check()) {
-                // For authenticated users, save to database
-                $existingWishlist = Wishlist::where('user_id', Auth::id())
-                    ->where('product_id', $productId)
-                    ->first();
+            $validated = $request->validate([
+                'item_type' => 'required|in:car_variant,accessory',
+                'item_id' => 'required|integer|min:1'
+            ]);
 
-                if (!$existingWishlist) {
-                    Wishlist::create([
-                        'user_id' => Auth::id(),
-                        'product_id' => $productId
-                    ]);
-                }
-            } else {
-                // For guest users, save to session
-                $wishlist = session()->get('wishlist', []);
+            // Use WishlistHelper to add item
+            $result = \App\Helpers\WishlistHelper::addToWishlist(
+                $validated['item_type'], 
+                $validated['item_id']
+            );
 
-                if (!in_array($productId, $wishlist)) {
-                    $wishlist[] = $productId;
-                    session()->put('wishlist', $wishlist);
-                }
-            }
-
-            if ($request->ajax()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Đã thêm vào yêu thích!',
-                    'wishlist_count' => $this->getWishlistCount()
-                ]);
-            }
-
-            return redirect()->back()->with('success', 'Đã thêm vào yêu thích!');
+            return response()->json($result);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 422);
         } catch (\Exception $e) {
-            Log::error('Error adding to wishlist:', ['error' => $e->getMessage()]);
-
-            if ($request->ajax()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Có lỗi xảy ra khi thêm vào yêu thích'
-                ], 500);
-            }
-
-            return redirect()->back()->with('error', 'Có lỗi xảy ra khi thêm vào yêu thích');
+            Log::error('Error adding item to wishlist: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi thêm vào danh sách yêu thích!'
+            ], 500);
         }
     }
 
@@ -122,45 +77,30 @@ class WishlistController extends Controller
      */
     public function remove(Request $request)
     {
-        $request->validate([
-            'product_id' => 'required|exists:products,id'
-        ]);
-
-        $productId = $request->input('product_id');
-
         try {
-            if (Auth::check()) {
-                // For authenticated users, remove from database
-                Wishlist::where('user_id', Auth::id())
-                    ->where('product_id', $productId)
-                    ->delete();
-            } else {
-                // For guest users, remove from session
-                $wishlist = session()->get('wishlist', []);
-                $wishlist = array_diff($wishlist, [$productId]);
-                session()->put('wishlist', array_values($wishlist));
-            }
+            $validated = $request->validate([
+                'item_type' => 'required|in:car_variant,accessory',
+                'item_id' => 'required|integer'
+            ]);
 
-            if ($request->ajax()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Đã xóa khỏi yêu thích!',
-                    'wishlist_count' => $this->getWishlistCount()
-                ]);
-            }
+            // Use WishlistHelper to remove item
+            $result = \App\Helpers\WishlistHelper::removeFromWishlist(
+                $validated['item_type'], 
+                $validated['item_id']
+            );
 
-            return redirect()->back()->with('success', 'Đã xóa khỏi yêu thích!');
+            return response()->json($result);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 422);
         } catch (\Exception $e) {
-            Log::error('Error removing from wishlist:', ['error' => $e->getMessage()]);
-
-            if ($request->ajax()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Có lỗi xảy ra khi xóa khỏi yêu thích'
-                ], 500);
-            }
-
-            return redirect()->back()->with('error', 'Có lỗi xảy ra khi xóa khỏi yêu thích');
+            Log::error('Error removing item from wishlist: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi xóa khỏi danh sách yêu thích!'
+            ], 500);
         }
     }
 
@@ -170,108 +110,158 @@ class WishlistController extends Controller
     public function clear(Request $request)
     {
         try {
-            if (Auth::check()) {
-                // For authenticated users, clear from database
-                Wishlist::where('user_id', Auth::id())->delete();
-            } else {
-                // For guest users, clear from session
-                session()->forget('wishlist');
-            }
+            $result = \App\Helpers\WishlistHelper::clearWishlist();
 
-            if ($request->ajax()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Đã xóa toàn bộ yêu thích!',
-                    'wishlist_count' => 0
-                ]);
-            }
-
-            return redirect()->back()->with('success', 'Đã xóa toàn bộ yêu thích!');
+            return response()->json($result);
         } catch (\Exception $e) {
-            Log::error('Error clearing wishlist:', ['error' => $e->getMessage()]);
-
-            if ($request->ajax()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Có lỗi xảy ra khi xóa yêu thích'
-                ], 500);
-            }
-
-            return redirect()->back()->with('error', 'Có lỗi xảy ra khi xóa yêu thích');
+            Log::error('Error clearing wishlist: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi xóa danh sách yêu thích!'
+            ], 500);
         }
     }
 
     /**
-     * Check if product is in wishlist
+     * Check if item is in wishlist
      */
     public function check(Request $request)
     {
-        $productId = $request->input('product_id');
-        $isInWishlist = false;
+        try {
+            $validated = $request->validate([
+                'item_type' => 'required|in:car_variant,accessory',
+                'item_id' => 'required|integer'
+            ]);
 
-        if (Auth::check()) {
-            $isInWishlist = Wishlist::where('user_id', Auth::id())
-                ->where('product_id', $productId)
-                ->exists();
-        } else {
-            $wishlist = session()->get('wishlist', []);
-            $isInWishlist = in_array($productId, $wishlist);
+            $exists = \App\Helpers\WishlistHelper::isInWishlist(
+                $validated['item_type'], 
+                $validated['item_id']
+            );
+
+            return response()->json([
+                'success' => true,
+                'in_wishlist' => $exists
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Error checking wishlist item: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi kiểm tra danh sách yêu thích!'
+            ], 500);
         }
-
-        return response()->json([
-            'is_in_wishlist' => $isInWishlist
-        ]);
     }
 
     /**
-     * Get wishlist count for header
+     * Get wishlist count
      */
     public function getCount()
     {
-        $count = $this->getWishlistCount();
-        return response()->json([
-            'success' => true,
-            'wishlist_count' => $count
-        ]);
-    }
+        try {
+            $count = \App\Helpers\WishlistHelper::getWishlistCount();
 
-    /**
-     * Helper method to get wishlist count
-     */
-    private function getWishlistCount()
-    {
-        if (Auth::check()) {
-            return Wishlist::where('user_id', Auth::id())->count();
-        } else {
-            $wishlist = session()->get('wishlist', []);
-            return count($wishlist);
+            return response()->json([
+                'success' => true,
+                'wishlist_count' => $count
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error getting wishlist count: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi lấy số lượng danh sách yêu thích!'
+            ], 500);
         }
     }
 
     /**
-     * Move session wishlist to database when user logs in
+     * Check multiple items at once
+     */
+    public function checkBulk(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'item_type' => 'required|in:car_variant,accessory',
+                'item_ids' => 'required|array',
+                'item_ids.*' => 'integer'
+            ]);
+
+            $existingIds = [];
+            $itemType = $validated['item_type'];
+            $itemIds = $validated['item_ids'];
+
+            // Check each item individually using WishlistHelper
+            foreach ($itemIds as $itemId) {
+                if (\App\Helpers\WishlistHelper::isInWishlist($itemType, $itemId)) {
+                    $existingIds[] = $itemId;
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'existing_ids' => $existingIds,
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Error checking bulk wishlist items: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi kiểm tra danh sách yêu thích!'
+            ], 500);
+        }
+    }
+
+    /**
+     * Migrate session wishlist to database after user login
      */
     public function migrateSessionWishlist()
     {
-        if (Auth::check()) {
-            $sessionWishlist = session()->get('wishlist', []);
+        try {
+            if (!Auth::check()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Người dùng chưa đăng nhập!'
+                ]);
+            }
 
-            if (!empty($sessionWishlist)) {
-                foreach ($sessionWishlist as $productId) {
-                    $existingWishlist = Wishlist::where('user_id', Auth::id())
-                        ->where('product_id', $productId)
-                        ->first();
+            $wishlistData = session()->get('wishlist', []);
+            $migratedCount = 0;
 
-                    if (!$existingWishlist) {
-                        Wishlist::create([
-                            'user_id' => Auth::id(),
-                            'product_id' => $productId
-                        ]);
+            foreach ($wishlistData as $itemKey => $itemData) {
+                $itemType = $itemData['item_type'];
+                $itemId = $itemData['item_id'];
+
+                // Check if item already exists in database
+                if (!\App\Helpers\WishlistHelper::isInWishlist($itemType, $itemId)) {
+                    // Add to database
+                    $result = \App\Helpers\WishlistHelper::addToWishlist($itemType, $itemId);
+                    if ($result['success']) {
+                        $migratedCount++;
                     }
                 }
-
-                session()->forget('wishlist');
             }
+
+            // Clear session wishlist after migration
+            session()->forget('wishlist');
+
+            return response()->json([
+                'success' => true,
+                'message' => "Đã di chuyển {$migratedCount} sản phẩm vào danh sách yêu thích!",
+                'migrated_count' => $migratedCount
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error migrating session wishlist: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi di chuyển danh sách yêu thích!'
+            ], 500);
         }
     }
 }

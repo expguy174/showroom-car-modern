@@ -11,8 +11,32 @@ class CarVariantImage extends Model
 
     protected $fillable = [
         'car_variant_id',
+        'image_path',
         'image_url',
+        'title',
+        'caption',
+        'description',
+        'image_type',
+        'angle',
         'is_main',
+        'is_active',
+        'is_featured',
+        'alt_text',
+        'sort_order',
+        'width',
+        'height',
+        'file_size',
+        'file_format',
+        'color_variant',
+    ];
+
+    protected $casts = [
+        'is_main' => 'boolean',
+        'is_active' => 'boolean',
+        'is_featured' => 'boolean',
+        'sort_order' => 'integer',
+        'width' => 'integer',
+        'height' => 'integer',
     ];
 
     public function variant()
@@ -22,13 +46,18 @@ class CarVariantImage extends Model
 
     public function getImageUrlAttribute()
     {
-        if ($this->attributes['image_url']) {
-            // Check if it's an external URL (starts with http)
-            if (filter_var($this->attributes['image_url'], FILTER_VALIDATE_URL)) {
-                return $this->attributes['image_url'];
+        $value = $this->attributes['image_url'] ?? null;
+        if ($value) {
+            // Check if it's an external URL (starts with http and not example.com)
+            if (filter_var($value, FILTER_VALIDATE_URL) && !str_contains($value, 'example.com')) {
+                return $value;
             }
             // If it's a local file path, prepend storage path
-            return asset('storage/' . $this->attributes['image_url']);
+            if (!str_starts_with($value, 'http')) {
+                return asset('storage/' . $value);
+            }
+            // If it's example.com or invalid URL, return placeholder
+            return 'https://via.placeholder.com/400x300/4f46e5/ffffff?text=Image';
         }
         return 'https://via.placeholder.com/400x300/4f46e5/ffffff?text=Image';
     }

@@ -1,66 +1,313 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🚗 Showroom Car Management System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## 📋 Mô tả dự án
 
-## About Laravel
+Hệ thống quản lý showroom xe hơi toàn diện được xây dựng trên Laravel 10, cung cấp đầy đủ chức năng cho việc quản lý bán hàng, quản lý khách hàng, và vận hành showroom xe hơi.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## ✨ Tính năng chính
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### 🏢 **Quản lý Showroom**
+- Quản lý đại lý và showroom
+- Quản lý nhân viên bán hàng
+- Hệ thống phân quyền chi tiết
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 🚙 **Quản lý Xe hơi**
+- Quản lý thương hiệu, dòng xe, biến thể
+- Hình ảnh và màu sắc xe
+- Tính năng và tùy chọn xe
+- Thông số kỹ thuật chi tiết
 
-## Learning Laravel
+### 🛒 **E-commerce**
+- Giỏ hàng và đặt hàng
+- Quản lý đơn hàng
+- Danh sách yêu thích
+- Hệ thống thanh toán
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### 👥 **Quản lý Khách hàng**
+- Hồ sơ khách hàng
+- Đặt lịch lái thử
+- Hệ thống đánh giá
+- Tin nhắn liên hệ
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+### 💰 **Dịch vụ Tài chính**
+- Tùy chọn trả góp
+- Giao dịch thanh toán
+- Hoàn tiền và quản lý nợ
+- Lịch trình trả góp
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 📱 **Marketing & Communication**
+- Khuyến mãi và ưu đãi
+- Blog và tin tức
+- Hệ thống thông báo
+- SEO tối ưu
 
-## Laravel Sponsors
+## 🛠️ Công nghệ sử dụng
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### **Backend**
+- **Laravel 10** - PHP Framework
+- **MySQL/SQLite** - Database
+- **Redis** - Cache & Sessions
+- **Queue Jobs** - Xử lý bất đồng bộ
 
-### Premium Partners
+### **Frontend**
+- **Blade Templates** - View Engine
+- **Tailwind CSS** - Styling
+- **Alpine.js** - Interactive Components
+- **Chart.js** - Data Visualization
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+### **Libraries & Tools**
+- **Laravel Sanctum** - API Authentication
+- **Laravel Mail** - Email System
+- **Laravel Notifications** - Notification System
+- **Laravel Events** - Event Handling
 
-## Contributing
+## 📁 Cấu trúc dự án
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```
+showroom-car-1/
+├── app/
+│   ├── Application/          # Use Cases & Business Logic
+│   ├── Console/              # Artisan Commands
+│   ├── Enums/                # Enumerations
+│   ├── Events/               # Event Classes
+│   ├── Helpers/              # Helper Functions
+│   ├── Http/                 # Controllers & Middleware
+│   ├── Listeners/            # Event Listeners
+│   ├── Mail/                 # Mail Classes
+│   ├── Models/               # Eloquent Models
+│   ├── Notifications/        # Notification Classes
+│   ├── Observers/            # Model Observers
+│   ├── Providers/            # Service Providers
+│   └── Services/             # Business Services
+├── database/
+│   ├── migrations/           # Database Migrations
+│   ├── seeders/              # Database Seeders
+│   └── factories/            # Model Factories
+├── resources/
+│   ├── views/                # Blade Templates
+│   ├── css/                  # Stylesheets
+│   └── js/                   # JavaScript
+├── routes/                   # Route Definitions
+├── storage/                  # File Storage
+└── tests/                    # Test Files
+```
 
-## Code of Conduct
+## 🚀 Cài đặt và chạy
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### **Yêu cầu hệ thống**
+- PHP >= 8.1
+- Composer
+- Node.js & NPM
+- MySQL/SQLite
 
-## Security Vulnerabilities
+### **Bước 1: Clone dự án**
+```bash
+git clone <repository-url>
+cd showroom-car-1
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### **Bước 2: Cài đặt dependencies**
+```bash
+composer install
+npm install
+```
 
-## License
+### **Bước 3: Cấu hình môi trường**
+```bash
+cp .env.example .env
+php artisan key:generate
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### **Bước 4: Cấu hình database**
+```bash
+# Trong file .env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=showroom_car
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+### **Bước 5: Chạy migrations và seeders**
+```bash
+php artisan migrate
+php artisan db:seed
+```
+
+### **Bước 6: Tạo storage link**
+```bash
+php artisan storage:link
+```
+
+### **Bước 7: Chạy dự án**
+```bash
+# Terminal 1: Laravel
+php artisan serve
+
+# Terminal 2: Frontend assets (nếu cần)
+npm run dev
+```
+
+## 🔐 Tài khoản mặc định
+
+### **Admin**
+- Email: `admin@showroom.com`
+- Password: `password`
+
+### **Sales Person**
+- Email: `sales@showroom.com`
+- Password: `password`
+
+### **Customer**
+- Email: `customer@showroom.com`
+- Password: `password`
+
+## 📊 Database Schema
+
+Dự án sử dụng 30+ bảng được thiết kế theo kiến trúc chuẩn:
+
+- **Core System**: Users, Addresses, Payment Methods
+- **Car Management**: Brands, Models, Variants, Images, Colors, Features
+- **Business Operations**: Dealerships, Showrooms, Accessories
+- **E-commerce**: Cart, Orders, Wishlist
+- **Customer Management**: Profiles, Test Drives, Reviews
+- **Financial Services**: Finance Options, Transactions, Installments
+- **Marketing**: Promotions, Notifications, Blogs
+
+Xem chi tiết tại: [Database Migrations README](database/migrations/README.md)
+
+## 🧪 Testing
+
+### **Chạy tests**
+```bash
+# Tất cả tests
+php artisan test
+
+# Tests cụ thể
+php artisan test --filter=AuthTest
+php artisan test --filter=OrderTest
+```
+
+### **Test Coverage**
+```bash
+# Với Xdebug
+php artisan test --coverage
+```
+
+## 📈 Performance & Optimization
+
+### **Caching**
+- Database query caching
+- View caching
+- Route caching
+- Config caching
+
+### **Database Optimization**
+- Indexes tối ưu
+- Query optimization
+- Connection pooling
+
+### **Frontend Optimization**
+- Asset minification
+- Image optimization
+- Lazy loading
+
+## 🔒 Security Features
+
+- **Authentication**: Laravel Sanctum
+- **Authorization**: Role-based access control
+- **CSRF Protection**: Built-in CSRF tokens
+- **SQL Injection**: Eloquent ORM protection
+- **XSS Protection**: Blade template escaping
+- **File Upload Security**: Validation & scanning
+
+## 📱 API Endpoints
+
+### **Authentication**
+```
+POST /api/auth/login
+POST /api/auth/register
+POST /api/auth/logout
+```
+
+### **Cars**
+```
+GET /api/cars
+GET /api/cars/{id}
+GET /api/cars/{id}/variants
+```
+
+### **Orders**
+```
+GET /api/orders
+POST /api/orders
+GET /api/orders/{id}
+PUT /api/orders/{id}
+```
+
+## 🚀 Deployment
+
+### **Production Checklist**
+- [ ] Environment variables configured
+- [ ] Database migrations run
+- [ ] Storage link created
+- [ ] Cache cleared
+- [ ] Queue workers started
+- [ ] SSL certificate installed
+- [ ] Backup system configured
+
+### **Deployment Commands**
+```bash
+# Production deployment
+composer install --optimize-autoloader --no-dev
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+php artisan queue:restart
+```
+
+## 📚 Documentation
+
+- [Database Schema](database/migrations/README.md)
+- [API Documentation](docs/api.md)
+- [User Manual](docs/user-manual.md)
+- [Admin Guide](docs/admin-guide.md)
+
+## 🤝 Contributing
+
+1. Fork dự án
+2. Tạo feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Mở Pull Request
+
+## 📄 License
+
+Dự án này được phân phối dưới giấy phép MIT. Xem file `LICENSE` để biết thêm chi tiết.
+
+## 📞 Support
+
+- **Email**: support@showroom.com
+- **Documentation**: [docs.showroom.com](https://docs.showroom.com)
+- **Issues**: [GitHub Issues](https://github.com/username/showroom-car-1/issues)
+
+## 🎯 Roadmap
+
+### **Version 2.0**
+- [ ] Mobile App (React Native)
+- [ ] AI-powered recommendations
+- [ ] Advanced analytics dashboard
+- [ ] Multi-language support
+- [ ] Advanced reporting system
+
+### **Version 3.0**
+- [ ] IoT integration
+- [ ] Blockchain for vehicle history
+- [ ] AR/VR showroom experience
+- [ ] Predictive maintenance
+- [ ] Advanced CRM integration
+
+---
+
+**Made with ❤️ by Showroom Team**

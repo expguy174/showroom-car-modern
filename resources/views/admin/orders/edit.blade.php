@@ -36,7 +36,7 @@
 
             <div class="form-group">
                 <label>Phương thức thanh toán</label>
-                <input type="text" name="payment_method" value="{{ strtoupper($order->payment_method) }}" class="form-control bg-light" disabled>
+                <input type="text" value="{{ optional($order->paymentMethod)->name ?? 'N/A' }}" class="form-control bg-light" disabled>
             </div>
 
             <div class="form-group">

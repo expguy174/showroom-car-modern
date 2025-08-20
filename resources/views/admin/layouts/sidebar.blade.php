@@ -73,12 +73,7 @@
         </a>
     </li>
 
-    <li class="nav-item {{ request()->routeIs('admin.products.*') ? 'active' : '' }}">
-        <a class="nav-link" href="{{ route('admin.products.index') }}">
-            <i class="fas fa-box-open"></i>
-            <span>All Products</span>
-        </a>
-    </li>
+    {{-- Inventory module removed --}}
 
     <!-- Divider -->
     <hr class="sidebar-divider">

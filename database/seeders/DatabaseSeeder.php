@@ -2,8 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -13,38 +11,67 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        if (!User::where('email', 'admin@example.com')->exists()) {
-            User::create([
-                'name' => 'Admin',
-                'email' => 'admin@example.com',
-                'phone' => '0123456789',
-                'password' => Hash::make('password'),
-                'role' => 'admin',
-            ]);
-        }
-
-        if (!User::where('email', 'user@example.com')->exists()) {
-            User::create([
-                'name' => 'User',
-                'email' => 'user@example.com',
-                'phone' => '0987654321',
-                'password' => Hash::make('password'),
-                'role' => 'user',
-            ]);
-        }
-
+        // 1. Core data - phải chạy trước
         $this->call([
-            CarSeeder::class,
+            PaymentMethodSeeder::class,
+            FinanceOptionSeeder::class,
+        ]);
+
+        // 2. Business entities
+        $this->call([
+            DealershipSeeder::class,
+            ShowroomSeeder::class,
+        ]);
+
+        // 3. Car data
+        $this->call([
+            CarBrandSeeder::class,
             CarModelSeeder::class,
-            AccessorySeeder::class,
-            ProductSeeder::class,
             CarVariantSeeder::class,
-            CarVariantColorSeeder::class,
-            CarVariantImageSeeder::class,
-            CarVariantOptionSeeder::class,
-            OrderSeeder::class,
-            BlogSeeder::class,
+            CarSpecificationSeeder::class,
             CarModelImageSeeder::class,
+            CarVariantImageSeeder::class,
+            CarVariantColorSeeder::class,
+            CarVariantFeatureSeeder::class,
+            CarVariantOptionSeeder::class,
+        ]);
+
+        // 4. Accessories
+        $this->call([
+            AccessorySeeder::class,
+        ]);
+
+        // 5. Users and profiles
+        $this->call([
+            UserSeeder::class,
+            AddressSeeder::class,
+            CustomerProfileSeeder::class,
+        ]);
+
+        // 6. Business transactions
+        $this->call([
+            OrderSeeder::class,
+            OrderItemSeeder::class,
+            OrderLogSeeder::class,
+            PaymentTransactionSeeder::class,
+            InstallmentSeeder::class,
+            RefundSeeder::class,
+        ]);
+
+        // 7. Services
+        $this->call([
+            ServiceSeeder::class,
+            TestDriveSeeder::class,
+            ServiceAppointmentSeeder::class,
+        ]);
+
+        // 8. Content and communication
+        $this->call([
+            BlogSeeder::class,
+            PromotionSeeder::class,
+            ReviewSeeder::class,
+            ContactMessageSeeder::class,
+            NotificationSeeder::class,
         ]);
     }
 }

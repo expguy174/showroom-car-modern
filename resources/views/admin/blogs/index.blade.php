@@ -30,9 +30,9 @@
                                 <td class="text-center">{{ $blog->id }}</td>
                                 <td>{{ $blog->title }}</td>
                                 <td class="text-center">
-                                    @if ($blog->image_path)
-                                        <img src="{{ asset('storage/' . $blog->image_path) }}" alt="Ảnh" style="height: 50px;"
-                                            class="img-thumbnail">
+                                    @php $img = $blog->image_url ?? null; @endphp
+                                    @if ($img)
+                                        <img src="{{ $img }}" alt="Ảnh" style="height: 50px;" class="img-thumbnail" onerror="this.onerror=null;this.src='https://via.placeholder.com/100x60?text=No+Image';">
                                     @else
                                         <span class="text-muted">Không có ảnh</span>
                                     @endif

@@ -3,9 +3,9 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Order;
-use App\Models\OrderItem;
 use App\Models\CarVariant;
+use App\Application\Orders\UseCases\PlaceOrder;
+use Illuminate\Support\Facades\Auth;
 
 class UserOrderController extends Controller
 {
@@ -13,31 +13,29 @@ class UserOrderController extends Controller
     {
         $request->validate([
             'fullName' => 'required|string|max:255',
-            'phone' => 'required|phone|max:20',
+            'phone' => 'required|string|max:20',
             'email' => 'required|email|max:255',
             'variant' => 'required|exists:car_variants,id',
             'color' => 'required|exists:car_variant_colors,id',
             'additionalNotes' => 'nullable|string|max:1000',
         ]);
 
-        $variant = CarVariant::with('product')->findOrFail($request->variant);
+        $variant = CarVariant::findOrFail($request->variant);
 
-        $order = Order::create([
+        $useCase = app(PlaceOrder::class);
+        $order = $useCase->handle([
+            'user_id' => Auth::id(),
             'name' => $request->fullName,
             'phone' => $request->phone,
             'email' => $request->email,
             'note' => $request->additionalNotes,
-            'total_price' => $variant->product->price ?? 0,
-            'status' => 'pending',
-        ]);
-
-        OrderItem::create([
-            'order_id' => $order->id,
-            'product_id' => $variant->product->id,
-            'variant_id' => $variant->id,
-            'color_id' => $request->color,
-            'quantity' => 1,
-            'price' => $variant->product->price ?? 0,
+            'address' => '',
+            'items' => [[
+                'item_type' => 'car_variant',
+                'item_id' => $variant->id,
+                'color_id' => $request->color,
+                'quantity' => 1,
+            ]],
         ]);
 
         return redirect()->back()->with('success', 'Đặt hàng thành công!');

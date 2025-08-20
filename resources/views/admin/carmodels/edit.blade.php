@@ -32,7 +32,7 @@
                 <label for="car_id">Hãng xe</label>
                 <select name="car_id" id="car_id" class="form-control" required>
                     @foreach($cars as $car)
-                        <option value="{{ $car->id }}" {{ $carModel->car_id == $car->id ? 'selected' : '' }}>{{ $car->name }}</option>
+                        <option value="{{ $car->id }}" {{ $carModel->car_brand_id == $car->id ? 'selected' : '' }}>{{ $car->name }}</option>
                     @endforeach
                 </select>
             </div>

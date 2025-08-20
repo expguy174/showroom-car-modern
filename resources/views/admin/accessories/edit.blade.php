@@ -13,7 +13,7 @@
         {{-- Tên phụ kiện --}}
         <div class="mb-4">
             <label for="name" class="block text-sm font-semibold text-gray-700 mb-1">Tên phụ kiện</label>
-            <input type="text" id="name" name="name" value="{{ old('name', $accessory->product->name) }}"
+            <input type="text" id="name" name="name" value="{{ old('name', $accessory->name) }}"
                 class="w-full border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring focus:ring-indigo-200 shadow-sm"
                 required>
         </div>
@@ -21,7 +21,7 @@
         {{-- Giá --}}
         <div class="mb-4">
             <label for="price" class="block text-sm font-semibold text-gray-700 mb-1">Giá</label>
-            <input type="number" step="0.01" id="price" name="price" value="{{ old('price', $accessory->product->price) }}"
+            <input type="number" step="0.01" id="price" name="price" value="{{ old('price', $accessory->price) }}"
                 class="w-full border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring focus:ring-indigo-200 shadow-sm"
                 required>
         </div>
@@ -29,7 +29,7 @@
         {{-- Link ảnh --}}
         <div class="mb-4">
             <label for="image_url" class="block text-sm font-semibold text-gray-700 mb-1">Link hình ảnh</label>
-            <input type="url" id="image_url" name="image_url" value="{{ old('image_url', $accessory->product->image_url) }}"
+            <input type="url" id="image_url" name="image_url" value="{{ old('image_url', $accessory->image_url) }}"
                 class="w-full border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring focus:ring-indigo-200 shadow-sm">
         </div>
 
@@ -37,13 +37,13 @@
         <div class="mb-4">
             <label for="description" class="block text-sm font-semibold text-gray-700 mb-1">Mô tả</label>
             <textarea id="description" name="description" rows="4"
-                class="w-full border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring focus:ring-indigo-200 shadow-sm">{{ old('description', $accessory->product->description) }}</textarea>
+                class="w-full border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring focus:ring-indigo-200 shadow-sm">{{ old('description', $accessory->description) }}</textarea>
         </div>
 
         {{-- Trạng thái --}}
         <div class="mb-4 flex items-center gap-3">
             <input type="checkbox" id="is_active" name="is_active" value="1" class="text-indigo-600 rounded"
-                {{ old('is_active', $accessory->product->is_active) ? 'checked' : '' }}>
+                {{ old('is_active', $accessory->is_active) ? 'checked' : '' }}>
             <label for="is_active" class="text-sm text-gray-700">Hiển thị</label>
         </div>
 

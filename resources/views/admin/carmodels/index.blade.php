@@ -31,7 +31,7 @@
                     <tr>
                         <td>{{ $model->id }}</td>
                         <td>{{ $model->name }}</td>
-                        <td>{{ $model->car->name ?? 'N/A' }}</td>
+                        <td>{{ $model->carBrand->name ?? 'N/A' }}</td>
                         <td>
                             @if ($model->is_active)
                                 <span class="badge badge-success">Hiển thị</span>

@@ -11,8 +11,31 @@ class CarModelImage extends Model
 
     protected $fillable = [
         'car_model_id',
+        'image_path',
         'image_url',
+        'title',
+        'caption',
+        'description',
+        'image_type',
         'is_main',
+        'is_active',
+        'is_featured',
+        'alt_text',
+        'sort_order',
+        'width',
+        'height',
+        'file_size',
+        'file_format',
+        'color_variant',
+    ];
+
+    protected $casts = [
+        'is_main' => 'boolean',
+        'is_active' => 'boolean',
+        'is_featured' => 'boolean',
+        'sort_order' => 'integer',
+        'width' => 'integer',
+        'height' => 'integer',
     ];
 
     public function carModel()

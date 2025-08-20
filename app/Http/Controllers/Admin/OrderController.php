@@ -8,6 +8,7 @@ use App\Models\OrderLog;
 use App\Models\OrderItem;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class OrderController extends Controller
 {
@@ -39,13 +40,13 @@ class OrderController extends Controller
 
     public function show($id)
     {
-        $order = Order::with(['user', 'items.product'])->findOrFail($id);
+        $order = Order::with(['user', 'items', 'paymentMethod'])->findOrFail($id);
         return view('admin.orders.show', compact('order'));
     }
 
     public function edit($id)
     {
-        $order = Order::with('items.product')->findOrFail($id);
+        $order = Order::with(['items', 'paymentMethod'])->findOrFail($id);
         $users = User::all();
         $statuses = ['pending', 'confirmed', 'shipping', 'delivered', 'cancelled'];
         return view('admin.orders.edit', compact('order', 'users', 'statuses'));
@@ -60,7 +61,6 @@ class OrderController extends Controller
             'email' => $order->email,
             'phone' => $order->phone,
             'address' => $order->address,
-            'payment_method' => $order->payment_method,
         ]);
 
         $validated = $request->validate([
@@ -71,10 +71,34 @@ class OrderController extends Controller
             'address' => 'required|string',
             'note' => 'nullable|string',
             'status' => 'required|in:pending,confirmed,shipping,delivered,cancelled',
-            'payment_method' => 'required|in:cod,bank_transfer,vnpay,momo',
+            'payment_method_id' => 'nullable|exists:payment_methods,id',
         ]);
 
+        $before = [
+            'status' => $order->status,
+            'payment_status' => $order->payment_status,
+            'payment_method_id' => $order->payment_method_id,
+        ];
+
         $order->update($validated);
+
+        $after = [
+            'status' => $order->status,
+            'payment_status' => $order->payment_status,
+            'payment_method_id' => $order->payment_method_id,
+        ];
+
+        OrderLog::create([
+            'order_id' => $order->id,
+            'user_id' => Auth::id(),
+            'action' => 'order_updated',
+            'details' => [
+                'before' => $before,
+                'after' => $after,
+            ],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
 
         return redirect('/admin/orders')->with('success', 'Cập nhật đơn hàng thành công!');
     }
@@ -105,8 +129,14 @@ class OrderController extends Controller
 
             OrderLog::create([
                 'order_id' => $order->id,
-                'user_id' => auth()->id(),
-                'action' => "Chuyển trạng thái từ [$currentStatus] sang [$newStatus]",
+                'user_id' => Auth::id(),
+                'action' => 'status_changed',
+                'details' => [
+                    'from' => $currentStatus,
+                    'to' => $newStatus,
+                ],
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
             ]);
 
             return redirect()->back()->with('success', 'Chuyển trạng thái thành công.');
@@ -115,17 +145,38 @@ class OrderController extends Controller
         return redirect()->back()->with('error', 'Không thể chuyển trạng thái.');
     }
 
-    public function cancel(Order $order)
+    public function cancel(Request $request, Order $order)
     {
         $oldStatus = $order->status;
 
         if ($oldStatus !== 'cancelled') {
+            // Restock items
+            foreach ($order->items as $it) {
+                if ($it->item_type === 'car_variant') {
+                    $variant = \App\Models\CarVariant::find($it->item_id);
+                    if ($variant) {
+                        if ($it->color_id) {
+                            $color = $variant->colors()->find($it->color_id);
+                            if ($color) { $color->increment('stock_quantity', (int) $it->quantity); }
+                        } else {
+                            $variant->increment('stock_quantity', (int) $it->quantity);
+                        }
+                    }
+                }
+            }
             $order->update(['status' => 'cancelled']);
 
             OrderLog::create([
                 'order_id' => $order->id,
-                'user_id' => auth()->id(),
-                'action' => "Huỷ đơn hàng (trạng thái cũ: [$oldStatus])",
+                'user_id' => Auth::id(),
+                'action' => 'order_cancelled',
+                'details' => [
+                    'from' => $oldStatus,
+                    'to' => 'cancelled',
+                    'reason' => $request->get('reason'),
+                ],
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
             ]);
 
             return redirect()->back()->with('success', 'Đơn hàng đã bị huỷ.');

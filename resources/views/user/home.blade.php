@@ -1,140 +1,356 @@
 @extends('layouts.app')
 
-@section('title', 'Home')
+@section('title', 'AutoLux - Premium Auto Showroom')
 
 @section('content')
-@php
-use Illuminate\Support\Str;
-@endphp
+@push('head')
+<script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "AutoDealer",
+        "name": "AutoLux Showroom",
+        "url": "{{ url('/') }}",
+        "telephone": "+84-123-456-789",
+        "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "{{ optional($showrooms->first())->address ?? '123 Đường ABC' }}",
+            "addressLocality": "{{ optional($showrooms->first())->city ?? 'TP.HCM' }}",
+            "postalCode": "{{ optional($showrooms->first())->postal_code ?? '700000' }}",
+            "addressCountry": "VN"
+        }
+    }
+</script>
+@endpush
+<!-- Success/Error Messages -->
+<div id="message-container" class="fixed top-4 right-4 z-50"></div>
 
-{{-- ===== Hero Banner ===== --}}
-<section class="relative h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-indigo-800 flex items-center justify-center text-white overflow-hidden">
-    <div class="absolute inset-0 bg-black/40"></div>
-    <div class="absolute inset-0">
-        <div class="absolute inset-0 bg-gradient-to-r from-indigo-600/20 to-purple-600/20"></div>
-        <div class="absolute top-0 left-0 w-full h-full">
-            <div class="absolute top-20 left-20 w-72 h-72 bg-indigo-500/30 rounded-full blur-3xl"></div>
-            <div class="absolute bottom-20 right-20 w-96 h-96 bg-purple-500/30 rounded-full blur-3xl"></div>
-        </div>
+{{-- ===== Hero Section ===== --}}
+<section class="relative min-h-[70vh] sm:min-h-[65vh] lg:min-h-[60vh] bg-gradient-to-br from-neutral-950 via-slate-900 to-black overflow-hidden z-0 pt-16">
+    <!-- Background Pattern -->
+    <div class="absolute inset-0 opacity-10 z-0">
+        <div class="absolute inset-0" style="background-image: radial-gradient(circle at 25% 25%, white 2px, transparent 2px), radial-gradient(circle at 75% 75%, white 2px, transparent 2px); background-size: 50px 50px;"></div>
     </div>
-    <div class="relative z-10 text-center px-6 max-w-4xl mx-auto">
-        <h1 class="text-5xl md:text-7xl font-extrabold mb-6 drop-shadow-lg animate-fade-in-up">
-            <span class="bg-gradient-to-r from-white to-indigo-200 bg-clip-text text-transparent">
-                Showroom Xe Hơi
-            </span>
-        </h1>
-        <p class="text-xl md:text-2xl font-medium mb-8 drop-shadow max-w-2xl mx-auto leading-relaxed">
-            Khám phá bộ sưu tập xe hơi cao cấp và phụ kiện chất lượng. Trải nghiệm dịch vụ tốt nhất.
-        </p>
-        <div class="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="#featured" class="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-full font-semibold transition duration-300 transform hover:scale-105">
-                <i class="fas fa-car mr-2"></i>Khám phá xe
-            </a>
-            <a href="#accessories" class="bg-white/20 hover:bg-white/30 text-white px-8 py-4 rounded-full font-semibold transition duration-300 backdrop-blur-sm">
-                <i class="fas fa-tools mr-2"></i>Phụ kiện
-            </a>
-        </div>
-    </div>
-    <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-        <i class="fas fa-chevron-down text-2xl text-white/70"></i>
-    </div>
-</section>
 
-{{-- ===== Car Brands Section ===== --}}
-<section class="py-16 bg-white">
-    <div class="container mx-auto px-6">
-        <div class="text-center mb-12">
-            <h2 class="text-4xl font-extrabold text-gray-900 mb-4">Hãng xe đối tác</h2>
-            <p class="text-lg text-gray-600 max-w-2xl mx-auto">Chúng tôi hợp tác với các hãng xe hàng đầu thế giới để mang đến những sản phẩm chất lượng nhất</p>
-        </div>
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-8">
-            @foreach ($cars as $car)
-            <div class="cursor-pointer group car-brand-logo" data-car-id="{{ $car->id }}">
-                <div class="bg-gray-50 rounded-2xl p-6 hover:bg-indigo-50 transition duration-300 group-hover:shadow-lg">
-                    <img src="{{ $car->logo_url }}"
-                        class="w-20 h-20 object-contain mx-auto mb-4 transition-transform group-hover:scale-110"
-                        alt="{{ $car->name }}">
-                    <p class="text-gray-800 font-semibold text-center">{{ $car->name }}</p>
-                </div>
-            </div>
-            @endforeach
-        </div>
+    <!-- Main Content -->
+    <div class="relative z-0 min-h-[60vh] sm:min-h-[55vh] lg:min-h-[50vh] flex items-center justify-center pt-8 pb-36 sm:pb-44 lg:pb-52">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-4xl mx-auto text-center">
+                <!-- Main Heading -->
+                <h1 class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black mb-6 sm:mb-8 leading-tight">
+                    <span class="bg-gradient-to-r from-white via-purple-200 to-white bg-clip-text text-transparent">
+                        Premium
+                    </span>
+                    <br>
+                    <span class="text-purple-300 font-light">Auto Showroom</span>
+                </h1>
 
-        @foreach ($cars as $car)
-        @if($car->carModels->count())
-        <div id="models-{{ $car->id }}" class="mt-12 hidden">
-            <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-8">
-                <h3 class="text-3xl font-bold mb-6 text-center text-gray-900">{{ $car->name }} - Dòng xe</h3>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-                    @foreach ($car->carModels as $model)
-                    <a href="{{ route('car_models.show', $model->id) }}"
-                        class="block bg-white rounded-xl p-4 hover:shadow-lg transition duration-300 transform hover:-translate-y-1">
-                        <img src="{{ $carModelImages->where('id', $model->id)->first()->image_url ?? 'default-image.jpg' }}" alt="{{ $model->name }}" class="w-full h-32 object-cover rounded-lg mb-3">
-                        <h4 class="text-center font-semibold text-gray-800">{{ $model->name }}</h4>
-                    </a>
-                    @endforeach
-                </div>
-            </div>
-        </div>
-        @endif
-        @endforeach
-    </div>
-</section>
+                <!-- Subtitle -->
+                <p class="text-lg sm:text-xl md:text-2xl text-gray-300 mb-8 sm:mb-12 max-w-2xl mx-auto leading-relaxed px-4">
+                    Khám phá bộ sưu tập xe hơi cao cấp với công nghệ hiện đại và dịch vụ chuyên nghiệp
+                </p>
 
-{{-- ===== Featured Variants Section ===== --}}
-<section id="featured" class="py-20 bg-gradient-to-br from-gray-50 to-indigo-50">
-    <div class="container mx-auto px-6">
-        <div class="text-center mb-12">
-            <h2 class="text-4xl font-extrabold text-gray-900 mb-4">
-                <i class="fas fa-star text-yellow-500 mr-3"></i>Sản phẩm nổi bật
-            </h2>
-            <p class="text-lg text-gray-600 max-w-2xl mx-auto">Những mẫu xe được yêu thích nhất với thiết kế hiện đại và công nghệ tiên tiến</p>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-            @foreach ($featuredVariants as $variant)
-            <div class="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition duration-300 group relative transform hover:-translate-y-2">
-                @if($variant->product)
-                <div class="absolute top-4 right-4 z-10">
-                    @php
-                        $isInWishlist = \App\Helpers\WishlistHelper::isInWishlist($variant->product->id);
-                    @endphp
-                    <button class="bg-white/90 backdrop-blur-sm p-3 rounded-full hover:bg-red-500 hover:text-white transition duration-300 shadow-lg wishlist-btn"
-                            data-product-id="{{ $variant->product->id }}">
-                        <i class="{{ $isInWishlist ? 'fas fa-heart text-red-500' : 'far fa-heart' }} text-lg"></i>
-                    </button>
-                </div>
-                @endif
-                                        <a href="{{ route('car_variants.show', $variant->id) }}" class="block hover:no-underline text-gray-800">
-                    <div class="relative overflow-hidden">
-                        <img src="{{ $variant->image_url }}"
-                            class="w-full h-56 object-cover group-hover:scale-110 transition duration-500"
-                            alt="{{ $variant->name }}" />
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition duration-300"></div>
-                    </div>
-                    <div class="p-6">
-                        <h3 class="font-bold text-xl text-gray-800 mb-3 group-hover:text-indigo-600 transition">{{ $variant->name }}</h3>
-                        <p class="text-gray-600 mb-4 line-clamp-2 text-sm leading-relaxed">{{ $variant->description }}</p>
-                        <div class="flex items-center justify-between">
-                            <span class="text-2xl font-bold text-indigo-600">{{ $variant->product ? number_format($variant->product->price) : '0' }} đ</span>
-                            <div class="flex items-center text-yellow-500">
-                                <i class="fas fa-star text-sm"></i>
-                                <span class="text-sm text-gray-600 ml-1">4.8</span>
-                            </div>
-                        </div>
-                    </div>
-                </a>
-                @if($variant->product)
-                <div class="px-6 pb-6">
-                    <form method="POST" action="{{ route('cart.add') }}" class="add-to-cart-form">
-                        @csrf
-                        <input type="hidden" name="product_id" value="{{ $variant->product->id }}">
-                        <input type="hidden" name="quantity" value="1">
-                        <button type="submit"
-                            class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition duration-300 flex items-center justify-center gap-2 shadow-lg">
-                            <i class="fas fa-cart-plus"></i>
-                            Thêm vào giỏ hàng
+                <!-- Search + Quick actions -->
+                <div class="max-w-3xl mx-auto mt-6 sm:mt-8 px-4">
+                    <form method="GET" action="{{ route('products.index') }}" class="relative">
+                        <input type="search" name="q" placeholder="Tìm xe, hãng, model hoặc phụ kiện..." aria-label="Tìm kiếm"
+                               class="w-full rounded-full border border-white/30 bg-white/90 backdrop-blur px-5 sm:px-6 py-3 sm:py-4 pr-28 text-slate-800 placeholder-slate-500 focus:ring-4 focus:ring-purple-400/40 focus:border-white shadow-xl" />
+                        <button type="submit" class="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold hover:from-indigo-700 hover:to-purple-700 shadow-md">
+                            <i class="fas fa-search"></i>
+                            <span class="hidden sm:inline">Tìm kiếm</span>
                         </button>
                     </form>
+                    <div class="flex flex-wrap justify-center gap-2 sm:gap-3 mt-4">
+                        <a href="{{ route('products.index', ['type' => 'car']) }}" class="px-3 sm:px-4 py-1.5 rounded-full bg-white/10 text-white border border-white/20 hover:bg-white/20 text-sm">
+                            <i class="fas fa-car-side mr-1"></i> Xe hơi
+                        </a>
+                        <a href="{{ route('products.index', ['type' => 'accessory']) }}" class="px-3 sm:px-4 py-1.5 rounded-full bg-white/10 text-white border border-white/20 hover:bg-white/20 text-sm">
+                            <i class="fas fa-puzzle-piece mr-1"></i> Phụ kiện
+                        </a>
+                        <a href="#featured" class="px-3 sm:px-4 py-1.5 rounded-full bg-white/10 text-white border border-white/20 hover:bg-white/20 text-sm">
+                            <i class="fas fa-star mr-1"></i> Nổi bật
+                        </a>
+                        <a href="#promotions" class="px-3 sm:px-4 py-1.5 rounded-full bg-white/10 text-white border border-white/20 hover:bg-white/20 text-sm">
+                            <i class="fas fa-tags mr-1"></i> Khuyến mãi
+                        </a>
+                    </div>
+                    @if(isset($fuelTypes) || isset($transmissions))
+                    <!-- Quick Filters: horizontal scroll -->
+                    <div class="mt-5 space-y-3">
+                        @if(isset($fuelTypes) && count($fuelTypes))
+                        <div class="text-white/80 text-sm mb-1">Nhiên liệu</div>
+                        <div class="flex gap-2 overflow-x-auto no-scrollbar snap-x snap-mandatory py-1">
+                            @foreach($fuelTypes->take(8) as $ft)
+                            <a href="{{ route('products.index', ['fuel_type' => $ft]) }}" class="snap-start shrink-0 px-3 py-1.5 rounded-full bg-white/10 text-white border border-white/20 hover:bg-white/20 text-sm whitespace-nowrap">{{ $ft }}</a>
+                            @endforeach
+                        </div>
+                        @endif
+                        @if(isset($transmissions) && count($transmissions))
+                        <div class="text-white/80 text-sm mb-1">Hộp số</div>
+                        <div class="flex gap-2 overflow-x-auto no-scrollbar snap-x snap-mandatory py-1">
+                            @foreach($transmissions->take(8) as $tm)
+                            <a href="{{ route('products.index', ['transmission' => $tm]) }}" class="snap-start shrink-0 px-3 py-1.5 rounded-full bg-white/10 text-white border border-white/20 hover:bg-white/20 text-sm whitespace-nowrap">{{ $tm }}</a>
+                            @endforeach
+                        </div>
+                        @endif
+                        
+                    </div>
+                    @endif
+                </div>
+
+                
+
+                <!-- Scroll Indicator -->
+                <div class="absolute bottom-8 sm:bottom-12 left-1/2 transform -translate-x-1/2 z-0">
+                    <div class="flex flex-col items-center text-white/70 animate-bounce">
+                        <span class="text-xs sm:text-sm mb-1 sm:mb-2">Scroll</span>
+                        <i class="fas fa-chevron-down text-lg sm:text-xl"></i>
+                    </div>
+                </div>
+</section>
+
+{{-- Test Drive section removed as requested --}}
+{{-- Promotions moved below accessories --}}
+
+{{-- ===== Car Brands Section ===== --}}
+<section id="brands" class="py-20 sm:py-28 bg-gradient-to-b from-white to-slate-50">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16 sm:mb-20">
+            <div class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full text-sm font-semibold mb-6 shadow-lg">
+                <i class="fas fa-handshake mr-3"></i>
+                Đối tác chính thức
+            </div>
+            <h2 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">Hãng xe đối tác</h2>
+            <p class="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+                Chúng tôi tự hào là đại lý chính thức của các thương hiệu xe hơi hàng đầu thế giới
+            </p>
+        </div>
+
+        <!-- Featured Brands Grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-8 sm:gap-10 max-w-6xl mx-auto">
+            @foreach($brands as $brand)
+            @include('components.brand-card', ['brand' => $brand])
+            @endforeach
+        </div>
+
+        <!-- View All Brands Button -->
+        <div class="text-center mt-12">
+            <a href="{{ route('brands.index') }}"
+                class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-full hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
+                <span>Xem tất cả hãng xe</span>
+                <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+            </a>
+        </div>
+    </div>
+</section>
+
+{{-- ===== Featured Cars Section ===== --}}
+<section id="featured" class="py-20 sm:py-28 bg-gradient-to-b from-slate-50 to-white">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16 sm:mb-20">
+            <div class="inline-flex items-center px-4 py-2 bg-emerald-100 text-emerald-800 rounded-full text-sm font-medium mb-4">
+                <i class="fas fa-star mr-2"></i>
+                Xe nổi bật
+            </div>
+            <h2 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">Xe hơi nổi bật</h2>
+            <p class="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+                Những mẫu xe mới nhất và được yêu thích nhất từ các hãng xe hàng đầu
+            </p>
+        </div>
+
+        <!-- Featured Cars Carousel/Grid -->
+        <div class="relative">
+            <div class="md:hidden absolute -left-3 top-1/2 -translate-y-1/2 z-10">
+                <button type="button" class="carousel-prev inline-flex items-center justify-center w-9 h-9 rounded-full bg-white shadow border border-gray-200" data-target="#featured-cars">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+            </div>
+            <div class="md:hidden absolute -right-3 top-1/2 -translate-y-1/2 z-10">
+                <button type="button" class="carousel-next inline-flex items-center justify-center w-9 h-9 rounded-full bg-white shadow border border-gray-200" data-target="#featured-cars">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+            <div id="featured-cars" class="flex md:grid overflow-x-auto md:overflow-visible snap-x snap-mandatory md:snap-none gap-4 sm:gap-6 lg:gap-8 md:grid-cols-3 xl:grid-cols-4 no-scrollbar">
+                @foreach($featuredVariants as $variant)
+                <div class="snap-start shrink-0 w-[78%] xs:w-[70%] sm:w-[60%] md:w-auto">
+                    @include('components.variant-card', ['variant' => $variant, 'showCompare' => true])
+                </div>
+                @endforeach
+            </div>
+        </div>
+
+        <!-- View All Cars Button -->
+        <div class="text-center mt-12">
+            <a href="{{ route('products.index') }}"
+                class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-full hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
+                <span>Xem tất cả xe</span>
+                <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+            </a>
+        </div>
+    </div>
+</section>
+
+{{-- Reviews moved below Accessories --}}
+
+{{-- ===== Featured Accessories Section ===== --}}
+@if(isset($featuredAccessories) && $featuredAccessories->count())
+<section id="featured-accessories" class="py-20 sm:py-28 bg-gradient-to-b from-white to-slate-50">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16 sm:mb-20">
+            <div class="inline-flex items-center px-4 py-2 bg-amber-100 text-amber-800 rounded-full text-sm font-medium mb-4">
+                <i class="fas fa-puzzle-piece mr-2"></i>
+                Phụ kiện nổi bật
+            </div>
+            <h2 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">Phụ kiện nổi bật</h2>
+            <p class="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+                Sản phẩm chính hãng, tương thích đa dạng mẫu xe, sẵn sàng giao nhanh
+            </p>
+        </div>
+        <div class="relative">
+            <div class="md:hidden absolute -left-3 top-1/2 -translate-y-1/2 z-10">
+                <button type="button" class="carousel-prev inline-flex items-center justify-center w-9 h-9 rounded-full bg-white shadow border border-gray-200" data-target="#featured-accs">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+            </div>
+            <div class="md:hidden absolute -right-3 top-1/2 -translate-y-1/2 z-10">
+                <button type="button" class="carousel-next inline-flex items-center justify-center w-9 h-9 rounded-full bg-white shadow border border-gray-200" data-target="#featured-accs">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+            <div id="featured-accs" class="flex md:grid overflow-x-auto md:overflow-visible snap-x snap-mandatory md:snap-none gap-4 sm:gap-6 lg:gap-8 md:grid-cols-3 xl:grid-cols-4 no-scrollbar">
+                @foreach($featuredAccessories as $acc)
+                <div class="snap-start shrink-0 w-[78%] xs:w-[70%] sm:w-[60%] md:w-auto">
+                    @include('components.accessory-card', ['accessory' => $acc])
+                </div>
+                @endforeach
+            </div>
+        </div>
+        <div class="text-center mt-12">
+            <a href="{{ route('products.index', ['type' => 'accessory']) }}"
+                class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-amber-500 to-rose-500 text-white font-semibold rounded-full hover:from-amber-600 hover:to-rose-600 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
+                <span>Xem tất cả phụ kiện</span>
+                <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+            </a>
+        </div>
+    </div>
+</section>
+@endif
+
+{{-- ===== Promotions Section (after accessories) ===== --}}
+@if(isset($promotions) && $promotions->count())
+<section id="promotions" class="py-16 sm:py-20 bg-gradient-to-b from-slate-50 to-white">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8 sm:mb-12">
+            <div>
+                <div class="inline-flex items-center px-4 py-2 bg-amber-100 text-amber-800 rounded-full text-sm font-medium mb-3">
+                    <i class="fas fa-tags mr-2"></i>
+                    Ưu đãi hiện hành
+                </div>
+                <h2 class="text-3xl sm:text-4xl font-bold text-gray-900">Khuyến mãi hấp dẫn</h2>
+            </div>
+            <a href="{{ route('products.index') }}" class="inline-flex items-center gap-2 text-amber-700 font-semibold hover:text-amber-800">
+                Xem xe áp dụng <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+            @foreach($promotions as $promo)
+            <div class="bg-white rounded-2xl border border-amber-100 shadow p-5">
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900">{{ $promo->name }}</h3>
+                        @if($promo->code)
+                        <div class="mt-1 inline-flex items-center gap-2 text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full">
+                            Mã: {{ $promo->code }}
+                        </div>
+                        @endif
+                    </div>
+                    <div class="text-right">
+                        <div class="text-2xl font-extrabold text-amber-600">
+                            @if($promo->type === 'percentage')
+                                -{{ (int) $promo->discount_value }}%
+                            @else
+                                -{{ number_format((int) $promo->discount_value, 0, ',', '.') }}₫
+                            @endif
+                        </div>
+                        <div class="text-xs text-gray-500">{{ optional($promo->start_date)->format('d/m') }} - {{ optional($promo->end_date)->format('d/m') }}</div>
+                    </div>
+                </div>
+                @if($promo->description)
+                <p class="mt-3 text-sm text-gray-700 line-clamp-2">{{ $promo->description }}</p>
+                @endif
+            </div>
+            @endforeach
+        </div>
+    </div>
+    </section>
+@endif
+
+{{-- ===== Reviews Section (moved) ===== --}}
+@if(isset($recentReviews) && $recentReviews->count())
+<section id="reviews" class="py-20 sm:py-28 bg-gradient-to-b from-white to-slate-50">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12 sm:mb-16">
+            <div class="inline-flex items-center px-4 py-2 bg-amber-100 text-amber-800 rounded-full text-sm font-medium mb-4">
+                <i class="fas fa-star mr-2"></i>
+                Đánh giá mới nhất
+            </div>
+            <h2 class="text-4xl sm:text-5xl font-bold text-gray-900">Khách hàng nói gì</h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            @foreach($recentReviews as $review)
+            <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div>
+                            <div class="font-semibold text-gray-900">{{ optional($review->user)->name ?? 'Khách hàng' }}</div>
+                            <div class="text-xs text-gray-500">{{ $review->created_at->format('d/m/Y') }}</div>
+                        </div>
+                    </div>
+                    <div class="text-yellow-400">
+                        {!! $review->stars !!}
+                    </div>
+                </div>
+                <div class="text-gray-700 line-clamp-3">{{ $review->comment }}</div>
+                @php($rv = $review->reviewable)
+                @if($rv)
+                <div class="mt-4 text-sm text-gray-600">
+                    @if($review->reviewable_type === \App\Models\CarVariant::class)
+                    @php($brand = optional(optional($rv->carModel)->carBrand)->name)
+                    @php($model = optional($rv->carModel)->name)
+                    @php($firstImg = ($rv->images && $rv->images->count()) ? ($rv->images->first()) : null)
+                    @php($rawSrc = $firstImg ? ($firstImg->image_url ?? ($firstImg->image_path ?? ($firstImg->path ?? null))) : null)
+                    @php($isAbs = $rawSrc && (str_starts_with($rawSrc, 'http://') || str_starts_with($rawSrc, 'https://')))
+                    @php($thumb = $rawSrc ? ($isAbs ? $rawSrc : asset('storage/'.$rawSrc)) : null)
+                    <div class="flex items-center gap-2">
+                        <span class="text-gray-500">Về:</span>
+                        @if($thumb)
+                        <img src="{{ $thumb }}" alt="Ảnh xe" class="w-8 h-8 rounded object-cover border border-gray-200" loading="lazy">
+                        @else
+                        <span class="w-8 h-8 rounded bg-gray-100 flex items-center justify-center text-gray-400 border border-gray-200"><i class="fas fa-car text-[11px]"></i></span>
+                        @endif
+                        <a href="{{ route('car_variants.show', $rv->id) }}" class="font-medium text-gray-800 hover:text-indigo-600 truncate">
+                            {{ trim(($brand ? $brand.' ' : '').($model ? $model.' • ' : '').($rv->name ?? '')) }}
+                        </a>
+                    </div>
+                    @elseif($review->reviewable_type === \App\Models\Accessory::class)
+                    @php($accRaw = $rv->image_url ?? ($rv->main_image_path ?? ($rv->image_path ?? null)))
+                    @php($accAbs = $accRaw && (str_starts_with($accRaw, 'http://') || str_starts_with($accRaw, 'https://')))
+                    @php($accThumb = $accRaw ? ($accAbs ? $accRaw : asset('storage/'.$accRaw)) : null)
+                    <div class="flex items-center gap-2">
+                        <span class="text-gray-500">Về:</span>
+                        @if($accThumb)
+                        <img src="{{ $accThumb }}" alt="Ảnh phụ kiện" class="w-8 h-8 rounded object-cover border border-gray-200" loading="lazy">
+                        @else
+                        <span class="w-8 h-8 rounded bg-gray-100 flex items-center justify-center text-gray-400 border border-gray-200"><i class="fas fa-puzzle-piece text-[11px]"></i></span>
+                        @endif
+                        <a href="{{ route('accessories.show', $rv->id) }}" class="font-medium text-gray-800 hover:text-indigo-600 truncate">
+                            {{ $rv->name ?? 'Phụ kiện' }}
+                        </a>
+                    </div>
+                    @endif
                 </div>
                 @endif
             </div>
@@ -142,301 +358,203 @@ use Illuminate\Support\Str;
         </div>
     </div>
 </section>
+@endif
 
-{{-- ===== Accessories Section ===== --}}
-<section id="accessories" class="py-20 bg-white">
-    <div class="container mx-auto px-6">
+{{-- ===== Our Showrooms Section (moved before Services) ===== --}}
+@if(isset($showrooms) && $showrooms->count())
+<section id="showrooms" class="py-20 sm:py-28 bg-gradient-to-b from-slate-50 to-white">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-12">
-            <h2 class="text-4xl font-extrabold text-gray-900 mb-4">
-                <i class="fas fa-tools text-indigo-600 mr-3"></i>Phụ kiện xe hơi
-            </h2>
-            <p class="text-lg text-gray-600 max-w-2xl mx-auto">Phụ kiện chất lượng cao, thiết kế hiện đại cho xe của bạn</p>
+            <h2 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">Hệ thống Showroom</h2>
+            <p class="text-lg text-gray-600">Liên hệ tư vấn – lái thử – bảo dưỡng</p>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-            @foreach ($accessories as $item)
-                <div class="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition duration-300 group relative transform hover:-translate-y-2">
-                    @if($item->product)
-                    <div class="absolute top-4 right-4 z-10">
-                        @php
-                            $isInWishlist = \App\Helpers\WishlistHelper::isInWishlist($item->product->id);
-                        @endphp
-                        <button class="bg-white/90 backdrop-blur-sm p-3 rounded-full hover:bg-red-500 hover:text-white transition duration-300 shadow-lg wishlist-btn"
-                                data-product-id="{{ $item->product->id }}">
-                            <i class="{{ $isInWishlist ? 'fas fa-heart text-red-500' : 'far fa-heart' }} text-lg"></i>
-                        </button>
-                    </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            @foreach($showrooms as $s)
+            <div class="bg-white rounded-2xl shadow p-6 border">
+                <h3 class="text-xl font-semibold text-gray-900">{{ $s->name }}</h3>
+                <p class="text-gray-600 mt-1">{{ $s->full_address ?? ( ($s->address ?? '') . ( $s->city ? ', '.$s->city : '') ) }}</p>
+                <div class="mt-3 text-sm text-gray-700 space-y-1">
+                    @if($s->phone)
+                    <div><i class="fas fa-phone mr-2 text-gray-500"></i>{{ $s->phone }}</div>
                     @endif
-                    <a href="{{ route('accessories.show', $item->id) }}" class="block hover:no-underline text-gray-800">
-                        <div class="relative overflow-hidden">
-                            <img src="{{ $item->image_path }}" 
-                                 class="w-full h-56 object-cover group-hover:scale-110 transition duration-500" 
-                                 alt="{{ $item->name }}">
-                            <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition duration-300"></div>
-                        </div>
-                        <div class="p-6">
-                            <h3 class="font-bold text-xl text-gray-800 mb-3 group-hover:text-indigo-600 transition">{{ $item->name }}</h3>
-                            <p class="text-gray-600 mb-4 line-clamp-2 text-sm leading-relaxed">{{ $item->description }}</p>
-                            <div class="flex items-center justify-between">
-                                <span class="text-2xl font-bold text-indigo-600">{{ $item->product ? number_format($item->product->price) : '0' }} đ</span>
-                                <div class="flex items-center text-yellow-500">
-                                    <i class="fas fa-star text-sm"></i>
-                                    <span class="text-sm text-gray-600 ml-1">4.7</span>
-                                </div>
-                            </div>
-                        </div>
-                    </a>
-                    @if($item->product)
-                    <div class="px-6 pb-6">
-                        <form action="{{ route('cart.add') }}" method="POST" class="add-to-cart-form">
-                            @csrf
-                            <input type="hidden" name="product_id" value="{{ $item->product->id }}">
-                            <input type="hidden" name="quantity" value="1">
-                            <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition duration-300 flex items-center justify-center gap-2 shadow-lg">
-                                <i class="fas fa-cart-plus"></i>
-                                Thêm vào giỏ hàng
-                            </button>
-                        </form>
-                    </div>
+                    @if($s->email)
+                    <div><i class="fas fa-envelope mr-2 text-gray-500"></i>{{ $s->email }}</div>
+                    @endif
+                    @if($s->opening_time && $s->closing_time)
+                    <div><i class="fas fa-clock mr-2 text-gray-500"></i>Mở cửa: {{ $s->opening_time }} - {{ $s->closing_time }}</div>
                     @endif
                 </div>
+            </div>
             @endforeach
         </div>
     </div>
 </section>
+@endif
 
-{{-- ===== Customer Reviews Section ===== --}}
-<section class="py-20 bg-gradient-to-br from-indigo-50 to-purple-50">
-    <div class="container mx-auto px-6 text-center">
-        <h2 class="text-4xl font-extrabold text-gray-900 mb-4">Khách hàng nói gì?</h2>
-        <p class="text-lg text-gray-600 mb-12 max-w-2xl mx-auto">Những đánh giá chân thực từ khách hàng đã sử dụng dịch vụ của chúng tôi</p>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div class="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition duration-300 transform hover:-translate-y-2">
-                <div class="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full mx-auto mb-6 flex items-center justify-center">
-                    <span class="text-white text-2xl font-bold">NV</span>
-                </div>
-                <div class="flex justify-center mb-4">
-                    <i class="fas fa-star text-yellow-500"></i>
-                    <i class="fas fa-star text-yellow-500"></i>
-                    <i class="fas fa-star text-yellow-500"></i>
-                    <i class="fas fa-star text-yellow-500"></i>
-                    <i class="fas fa-star text-yellow-500"></i>
-                </div>
-                <p class="text-gray-700 italic mb-6 leading-relaxed">"Xe đẹp, chất lượng cao và dịch vụ rất tốt! Nhân viên tư vấn rất nhiệt tình và chuyên nghiệp."</p>
-                <div class="font-bold text-indigo-700">Nguyễn Văn An</div>
-                <div class="text-sm text-gray-500">Khách hàng VIP</div>
-            </div>
-            <div class="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition duration-300 transform hover:-translate-y-2">
-                <div class="w-20 h-20 bg-gradient-to-br from-pink-500 to-red-600 rounded-full mx-auto mb-6 flex items-center justify-center">
-                    <span class="text-white text-2xl font-bold">TT</span>
-                </div>
-                <div class="flex justify-center mb-4">
-                    <i class="fas fa-star text-yellow-500"></i>
-                    <i class="fas fa-star text-yellow-500"></i>
-                    <i class="fas fa-star text-yellow-500"></i>
-                    <i class="fas fa-star text-yellow-500"></i>
-                    <i class="fas fa-star text-yellow-500"></i>
-                </div>
-                <p class="text-gray-700 italic mb-6 leading-relaxed">"Lần đầu mua xe mà cảm thấy hài lòng đến vậy. Quy trình mua bán rất minh bạch và nhanh chóng."</p>
-                <div class="font-bold text-indigo-700">Trần Thị Bình</div>
-                <div class="text-sm text-gray-500">Doanh nhân</div>
-            </div>
-            <div class="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition duration-300 transform hover:-translate-y-2">
-                <div class="w-20 h-20 bg-gradient-to-br from-green-500 to-teal-600 rounded-full mx-auto mb-6 flex items-center justify-center">
-                    <span class="text-white text-2xl font-bold">LH</span>
-                </div>
-                <div class="flex justify-center mb-4">
-                    <i class="fas fa-star text-yellow-500"></i>
-                    <i class="fas fa-star text-yellow-500"></i>
-                    <i class="fas fa-star text-yellow-500"></i>
-                    <i class="fas fa-star text-yellow-500"></i>
-                    <i class="fas fa-star text-yellow-500"></i>
-                </div>
-                <p class="text-gray-700 italic mb-6 leading-relaxed">"Tôi sẽ giới thiệu showroom này cho bạn bè! Dịch vụ hậu mãi rất tốt và chăm sóc khách hàng chu đáo."</p>
-                <div class="font-bold text-indigo-700">Lê Hoàng Cường</div>
-                <div class="text-sm text-gray-500">Kỹ sư</div>
-            </div>
-        </div>
-    </div>
-</section>
-
-{{-- ===== About Section ===== --}}
-<section class="py-20 bg-white">
-    <div class="container mx-auto px-6">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div class="space-y-6">
-                <h2 class="text-4xl font-extrabold text-gray-900 mb-6">Hành trình của chúng tôi</h2>
-                <p class="text-lg text-gray-600 leading-relaxed mb-6">
-                    Showroom của chúng tôi được thành lập với sứ mệnh mang đến những chiếc xe tuyệt vời nhất đến tay người dùng. 
-                    Với đội ngũ chuyên nghiệp, tận tâm và đam mê công nghệ, chúng tôi không ngừng cải tiến để phục vụ bạn tốt hơn.
-                </p>
-                <div class="grid grid-cols-2 gap-6">
-                    <div class="text-center p-4 bg-indigo-50 rounded-xl">
-                        <div class="text-3xl font-bold text-indigo-600 mb-2">500+</div>
-                        <div class="text-gray-600">Khách hàng hài lòng</div>
-                    </div>
-                    <div class="text-center p-4 bg-purple-50 rounded-xl">
-                        <div class="text-3xl font-bold text-purple-600 mb-2">50+</div>
-                        <div class="text-gray-600">Mẫu xe đa dạng</div>
-                    </div>
-                </div>
-                <a href="#" class="inline-block bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition duration-300">
-                    Tìm hiểu thêm
-                </a>
-            </div>
-            <div class="relative">
-                <div class="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-8 text-white">
-                    <h3 class="text-2xl font-bold mb-4">Tại sao chọn chúng tôi?</h3>
-                    <ul class="space-y-4">
-                        <li class="flex items-center">
-                            <i class="fas fa-check-circle mr-3 text-green-300"></i>
-                            <span>Chất lượng xe được kiểm định nghiêm ngặt</span>
-                        </li>
-                        <li class="flex items-center">
-                            <i class="fas fa-check-circle mr-3 text-green-300"></i>
-                            <span>Dịch vụ hậu mãi 24/7</span>
-                        </li>
-                        <li class="flex items-center">
-                            <i class="fas fa-check-circle mr-3 text-green-300"></i>
-                            <span>Giá cả cạnh tranh nhất thị trường</span>
-                        </li>
-                        <li class="flex items-center">
-                            <i class="fas fa-check-circle mr-3 text-green-300"></i>
-                            <span>Đội ngũ tư vấn chuyên nghiệp</span>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-{{-- ===== Blog Section ===== --}}
-<section class="py-20 bg-gradient-to-br from-gray-50 to-indigo-50">
-    <div class="container mx-auto px-6">
-        <div class="text-center mb-12">
-            <h2 class="text-4xl font-extrabold text-gray-900 mb-4">
-                <i class="fas fa-newspaper text-indigo-600 mr-3"></i>Tin tức & Blog
-            </h2>
-            <p class="text-lg text-gray-600 max-w-2xl mx-auto">Cập nhật những tin tức mới nhất về xe hơi, công nghệ và xu hướng thị trường</p>
-        </div>
-        
-        @if($blogs->count() > 0)
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            @foreach ($blogs as $blog)
-            <article class="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition duration-300 transform hover:-translate-y-2 group">
-                <div class="relative overflow-hidden">
-                    <img src="{{ Str::startsWith($blog->image_path, ['http://', 'https://']) ? $blog->image_path : ($blog->image_path ? asset('storage/' . $blog->image_path) : asset('images/default-blog.jpg')) }}"
-                        class="w-full h-56 object-cover group-hover:scale-110 transition duration-500" 
-                        alt="{{ $blog->title }}" />
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition duration-300"></div>
-                    <div class="absolute top-4 left-4">
-                        <span class="bg-indigo-600 text-white px-3 py-1 rounded-full text-xs font-semibold">
-                            <i class="fas fa-tag mr-1"></i>Tin tức
-                        </span>
-                    </div>
-                    <div class="absolute bottom-4 left-4 text-white opacity-0 group-hover:opacity-100 transition duration-300">
-                        <div class="flex items-center text-sm">
-                            <i class="fas fa-calendar-alt mr-2"></i>
-                            <span>{{ $blog->created_at ? $blog->created_at->format('d/m/Y') : 'N/A' }}</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="p-6">
-                    <div class="flex items-center mb-3">
-                        <div class="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center mr-3">
-                            <i class="fas fa-user text-white text-xs"></i>
-                        </div>
-                        <span class="text-sm text-gray-500">Admin</span>
-                        <span class="mx-2 text-gray-300">•</span>
-                        <span class="text-sm text-gray-500">{{ $blog->created_at ? $blog->created_at->diffForHumans() : 'N/A' }}</span>
-                    </div>
-                    
-                    <h3 class="font-bold text-xl mb-3 line-clamp-2 text-gray-800 group-hover:text-indigo-600 transition duration-300">
-                        {{ $blog->title }}
-                    </h3>
-                    
-                    <p class="text-gray-600 mb-4 line-clamp-3 text-sm leading-relaxed">
-                        {{ Str::limit($blog->content, 150) }}
-                    </p>
-                    
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center text-gray-500 text-sm">
-                            <i class="fas fa-eye mr-1"></i>
-                            <span>1.2k lượt xem</span>
-                            <span class="mx-2">•</span>
-                            <i class="fas fa-comment mr-1"></i>
-                            <span>5 bình luận</span>
-                        </div>
-                        <a href="#" class="inline-flex items-center text-indigo-600 font-semibold hover:text-indigo-700 transition duration-300 group-hover:scale-105">
-                            Đọc thêm
-                            <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition duration-300"></i>
-                        </a>
-                    </div>
-                </div>
-            </article>
-            @endforeach
-        </div>
-        
-        <div class="text-center mt-12">
-            <a href="#" class="inline-flex items-center bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition duration-300 transform hover:scale-105 shadow-lg">
+{{-- ===== Latest News Section ===== --}}
+<section class="py-20 sm:py-28 bg-gradient-to-b from-white to-slate-50">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16 sm:mb-20">
+            <div class="inline-flex items-center px-4 py-2 bg-purple-100 text-purple-800 rounded-full text-sm font-medium mb-4">
                 <i class="fas fa-newspaper mr-2"></i>
-                Xem tất cả tin tức
+                Tin tức mới nhất
+            </div>
+            <h2 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">Tin tức & Sự kiện</h2>
+            <p class="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+                Cập nhật những tin tức mới nhất về ngành ô tô, đánh giá xe mới và các sự kiện đặc biệt
+            </p>
+        </div>
+
+        <!-- News Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            @foreach($blogs as $blog)
+            @include('components.blog-card', ['blog' => $blog])
+            @endforeach
+        </div>
+
+        <!-- View All News Button -->
+        <div class="text-center mt-12">
+            <a href="{{ route('blogs.index') }}"
+                class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-full hover:from-purple-700 hover:to-pink-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
+                <span>Xem tất cả tin tức</span>
+                <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
             </a>
         </div>
-        @else
-        <div class="text-center py-12">
-            <div class="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-6 flex items-center justify-center">
-                <i class="fas fa-newspaper text-gray-400 text-3xl"></i>
-            </div>
-            <h3 class="text-xl font-semibold text-gray-600 mb-2">Chưa có tin tức nào</h3>
-            <p class="text-gray-500">Chúng tôi sẽ cập nhật tin tức mới nhất sớm nhất có thể!</p>
+    </div>
+</section>
+
+{{-- Promotions moved above; old block removed --}}
+
+{{-- ===== CTA Section ===== --}}
+<section class="py-20 sm:py-28 bg-gradient-to-br from-slate-900 via-neutral-900 to-black">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <h2 class="text-4xl sm:text-5xl font-bold text-white mb-6">
+            Sẵn sàng sở hữu xe mơ ước?
+        </h2>
+        <p class="text-xl text-gray-300 mb-8 max-w-2xl mx-auto leading-relaxed">
+            Hãy để chúng tôi giúp bạn tìm được chiếc xe hoàn hảo với dịch vụ chuyên nghiệp và giá cả hợp lý
+        </p>
+
+        <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <a href="{{ route('products.index') }}"
+                class="group bg-white text-slate-900 px-8 py-4 rounded-full font-bold text-lg transition-all duration-300 hover:bg-purple-100 hover:scale-[1.02] shadow-xl">
+                <i class="fas fa-car mr-2 group-hover:rotate-12 transition-transform"></i>
+                Khám phá xe ngay
+            </a>
+            <a href="{{ route('contact') }}"
+                class="border-2 border-white/30 text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-white/10 transition-all duration-300 backdrop-blur-sm">
+                <i class="fas fa-phone mr-2"></i>
+                Liên hệ tư vấn
+            </a>
         </div>
-        @endif
     </div>
 </section>
 
 @endsection
 
+@push('scripts')
+<script>
+    // Compare logic moved to layout (global)
+
+    
+
+    // Toast notification function
+    function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg text-white font-medium shadow-lg transform translate-x-full transition-transform duration-300`;
+
+        if (type === 'success') {
+            toast.className += ' bg-green-500';
+        } else if (type === 'error') {
+            toast.className += ' bg-red-500';
+        } else {
+            toast.className += ' bg-blue-500';
+        }
+
+        toast.textContent = message;
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.classList.remove('translate-x-full');
+        }, 100);
+
+        setTimeout(() => {
+            toast.classList.add('translate-x-full');
+            setTimeout(() => {
+                document.body.removeChild(toast);
+            }, 300);
+        }, 3000);
+    }
+
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
+
+    // Intersection Observer for animations
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('animate-fade-in');
+            }
+        });
+    }, observerOptions);
+
+    // Observe all sections
+    document.querySelectorAll('section').forEach(section => {
+        observer.observe(section);
+    });
+
+    // Carousel controls
+    document.querySelectorAll('.carousel-prev, .carousel-next').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const targetSel = btn.getAttribute('data-target');
+            const container = document.querySelector(targetSel);
+            if (!container) return;
+            const card = container.querySelector('> div');
+            const delta = (card ? card.clientWidth + 16 : 280) * (btn.classList.contains('carousel-next') ? 1 : -1);
+            container.scrollBy({ left: delta, behavior: 'smooth' });
+        });
+    });
+
+    // Toggle quick search on mobile
+    document.getElementById('toggle-quick-search')?.addEventListener('click', function() {
+        const el = document.getElementById('quick-search-card');
+        if (!el) return;
+        const isHidden = el.classList.contains('hidden');
+        if (isHidden) {
+            el.classList.remove('hidden');
+        } else {
+            el.classList.add('hidden');
+        }
+    });
+
+    // Test drive form removed
+</script>
+@endpush
+
 @push('styles')
 <style>
-    @keyframes fadeInBottom {
-        from {
-            opacity: 0;
-            transform: translateY(30px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    @keyframes slideInUp {
-        from {
-            opacity: 0;
-            transform: translateY(50px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .animate-fade-in-up {
-        animation: fadeInBottom 1s ease-out forwards;
-        animation-delay: 0.5s;
-        opacity: 0;
-    }
-
-    .animate-slide-in-up {
-        animation: slideInUp 1s ease-out forwards;
-    }
-
     .line-clamp-2 {
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
+        line-clamp: 2;
     }
 
     .line-clamp-3 {
@@ -444,204 +562,39 @@ use Illuminate\Support\Str;
         -webkit-line-clamp: 3;
         -webkit-box-orient: vertical;
         overflow: hidden;
+        line-clamp: 3;
     }
+
+    .animate-fade-in {
+        animation: fadeInUp 0.8s ease-out forwards;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Hover effects for cards */
+    .group:hover .group-hover\:scale-110 {
+        transform: scale(1.1);
+    }
+
+    /* Smooth transitions - chỉ áp dụng cho các element cụ thể */
+    .transition-smooth {
+        transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 150ms;
+    }
+
+    /* Horizontal scroll helpers */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 </style>
-@endpush
-
-@push('scripts')
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script>
-    // Toggle models
-    function toggleModels(id) {
-        document.querySelectorAll('[id^="models-"]').forEach(el => el.classList.add('hidden'));
-        document.getElementById('models-' + id).classList.remove('hidden');
-    }
-
-    // Function to initialize page functionality
-    function initializePage() {
-        // Initialize car brand logos
-        document.querySelectorAll('.car-brand-logo').forEach(function(el) {
-            // Remove existing listeners to prevent duplicates
-            el.removeEventListener('click', handleCarBrandClick);
-            el.addEventListener('click', handleCarBrandClick);
-        });
-
-        // Initialize smooth scrolling for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            // Remove existing listeners to prevent duplicates
-            anchor.removeEventListener('click', handleSmoothScroll);
-            anchor.addEventListener('click', handleSmoothScroll);
-        });
-
-        // Initialize wishlist buttons
-        initializeWishlistButtons();
-
-        // Ensure wishlist count is up to date
-        updateWishlistCountFromServer();
-    }
-
-    // Event handlers
-    function handleCarBrandClick() {
-        toggleModels(this.getAttribute('data-car-id'));
-    }
-
-    function handleSmoothScroll(e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-            target.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
-        }
-    }
-
-    // Initialize on DOM ready
-    document.addEventListener('DOMContentLoaded', initializePage);
-
-    // Initialize on page show (for browser navigation)
-    window.addEventListener('pageshow', initializePage);
-
-    // Initialize on turbolinks load (if using turbolinks)
-    if (typeof Turbolinks !== 'undefined') {
-        document.addEventListener('turbolinks:load', initializePage);
-    }
-
-    // Additional navigation handling
-    window.addEventListener('focus', function() {
-        // Re-initialize when window gains focus (user returns to tab)
-        setTimeout(initializePage, 100);
-    });
-
-    // Handle browser back/forward buttons
-    window.addEventListener('popstate', function() {
-        setTimeout(initializePage, 100);
-    });
-
-    // Handle tab visibility change
-    document.addEventListener('visibilitychange', function() {
-        if (!document.hidden) {
-            // User returned to the tab
-            setTimeout(initializePage, 100);
-        }
-    });
-
-    // Wishlist functionality
-    function toggleWishlist(productId) {
-        const button = $(`[data-product-id="${productId}"]`);
-        const icon = button.find('i');
-        const isInWishlist = icon.hasClass('fas');
-
-        if (isInWishlist) {
-            // Remove from wishlist
-            removeFromWishlist(productId, button);
-        } else {
-            // Add to wishlist
-            addToWishlist(productId, button);
-        }
-    }
-
-    function addToWishlist(productId, button) {
-        $.ajax({
-            url: '{{ route("wishlist.add") }}',
-            method: 'POST',
-            data: {
-                product_id: productId,
-                _token: '{{ csrf_token() }}'
-            },
-            success: function(response) {
-                if (response.success) {
-                    const icon = button.find('i');
-                    icon.removeClass('far').addClass('fas fa-heart text-red-500 text-lg');
-                    updateWishlistCount(response.wishlist_count);
-                    showMessage(response.message, 'success');
-                }
-            },
-            error: function() {
-                showMessage('Có lỗi xảy ra khi thêm vào yêu thích', 'error');
-            }
-        });
-    }
-
-    function removeFromWishlist(productId, button) {
-        $.ajax({
-            url: '{{ route("wishlist.remove") }}',
-            method: 'POST',
-            data: {
-                product_id: productId,
-                _token: '{{ csrf_token() }}'
-            },
-            success: function(response) {
-                if (response.success) {
-                    const icon = button.find('i');
-                    icon.removeClass('fas text-red-500').addClass('far fa-heart text-lg');
-                    updateWishlistCount(response.wishlist_count);
-                    showMessage(response.message, 'success');
-                }
-            },
-            error: function() {
-                showMessage('Có lỗi xảy ra khi xóa khỏi yêu thích', 'error');
-            }
-        });
-    }
-
-    // Use the global updateWishlistCount function from layout
-    // No need to redefine it here
-
-    function updateWishlistCountFromServer() {
-        $.ajax({
-            url: '{{ route("wishlist.count") }}',
-            method: 'GET',
-            success: function(response) {
-                if (response.success) {
-                    updateWishlistCount(response.wishlist_count);
-                }
-            },
-            error: function() {
-                // Silently fail, don't show error for count updates
-            }
-        });
-    }
-
-    function showMessage(message, type) {
-        // Create message element
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full ${
-            type === 'success' ? 'bg-green-500' : 'bg-red-500'
-        } text-white`;
-        
-        messageDiv.innerHTML = `
-            <div class="flex items-center">
-                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} mr-3"></i>
-                <span>${message}</span>
-                <button class="ml-auto text-white hover:text-gray-200" onclick="this.parentElement.parentElement.remove()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-        `;
-        
-        document.body.appendChild(messageDiv);
-        
-        // Animate in
-        setTimeout(() => {
-            messageDiv.classList.remove('translate-x-full');
-        }, 100);
-        
-        // Auto remove after 5 seconds
-        setTimeout(() => {
-            messageDiv.classList.add('translate-x-full');
-            setTimeout(() => messageDiv.remove(), 300);
-        }, 5000);
-    }
-
-    function initializeWishlistButtons() {
-        // Use event delegation instead of direct listeners
-        // This ensures buttons work even if added dynamically
-        $(document).off('click', '.wishlist-btn').on('click', '.wishlist-btn', function(e) {
-            e.preventDefault();
-            const productId = $(this).data('product-id');
-            toggleWishlist(productId);
-        });
-    }
-</script>
 @endpush

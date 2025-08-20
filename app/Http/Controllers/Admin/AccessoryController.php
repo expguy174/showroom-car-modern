@@ -4,14 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Accessory;
-use App\Models\Product;
 use Illuminate\Http\Request;
 
 class AccessoryController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Accessory::with('product');
+        $query = Accessory::query();
 
         if ($request->has('search') && $request->search !== '') {
             $query->where('name', 'like', '%' . $request->search . '%');
@@ -40,17 +39,12 @@ class AccessoryController extends Controller
             'is_active' => 'required|boolean',
         ]);
 
-        $product = Product::create([
+        Accessory::create([
             'name' => $validated['name'],
             'description' => $validated['description'] ?? '',
             'price' => $validated['price'],
             'image_path' => $validated['image_path'] ?? null,
-            'product_type' => 'accessory',
             'is_active' => $validated['is_active'],
-        ]);
-
-        Accessory::create([
-            'product_id' => $product->id,
         ]);
 
         return redirect()->route('admin.accessories.index')->with('success', 'Thêm phụ kiện thành công!');
@@ -58,13 +52,13 @@ class AccessoryController extends Controller
 
     public function edit($id)
     {
-        $accessory = Accessory::with('product')->findOrFail($id);
+        $accessory = Accessory::findOrFail($id);
         return view('admin.accessories.edit', compact('accessory'));
     }
 
     public function update(Request $request, $id)
     {
-        $accessory = Accessory::with('product')->findOrFail($id);
+        $accessory = Accessory::findOrFail($id);
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -74,7 +68,7 @@ class AccessoryController extends Controller
             'is_active' => 'required|boolean',
         ]);
 
-        $accessory->product->update([
+        $accessory->update([
             'name' => $validated['name'],
             'description' => $validated['description'] ?? '',
             'price' => $validated['price'],

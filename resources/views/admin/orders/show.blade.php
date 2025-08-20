@@ -40,7 +40,7 @@
                 <p><strong>Địa chỉ:</strong> {{ $order->address }}</p>
             </div>
             <div class="col-md-6">
-                <p><strong>Phương thức thanh toán:</strong> {{ strtoupper($order->payment_method) }}</p>
+                <p><strong>Phương thức thanh toán:</strong> {{ optional($order->paymentMethod)->name ?? 'N/A' }}</p>
                 <p><strong>Trạng thái:</strong>
                     @php
                         $colors = [
@@ -77,10 +77,10 @@
                     @foreach ($order->items as $index => $item)
                         <tr>
                             <td>{{ $index + 1 }}</td>
-                            <td>{{ $item->product->name ?? '-' }}</td>
+                            <td>{{ $item->item_name ?? ($item->item->name ?? '-') }}</td>
                             <td>
-                                @if ($item->product->image_url)
-                                    <img src="{{ $item->product->image_url }}" alt="image" width="60">
+                                @if (isset($item->item->image_url) && $item->item->image_url)
+                                    <img src="{{ $item->item->image_url }}" alt="image" width="60">
                                 @else
                                     <span class="text-muted">Không ảnh</span>
                                 @endif
@@ -97,6 +97,8 @@
         <div class="text-right font-weight-bold text-lg mt-4">
             Tổng tiền: {{ number_format($order->total_price, 0, ',', '.') }} đ
         </div>
+        @php($logs = $order->logs()->with('user')->orderByDesc('created_at')->limit(50)->get())
+        @include('admin.orders.partials.timeline', ['logs' => $logs])
     </div>
 </div>
 @endsection

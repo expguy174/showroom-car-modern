@@ -33,7 +33,7 @@
             {{-- Giá --}}
             <div class="form-group">
                 <label for="price">Giá (VNĐ)</label>
-                <input type="number" name="price" value="{{ old('price', $carvariant->product->price ?? 0) }}" class="form-control" required>
+                <input type="number" name="price" value="{{ old('price', $carvariant->price ?? 0) }}" class="form-control" required>
             </div>
 
             {{-- Mô tả --}}

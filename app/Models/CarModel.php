@@ -4,16 +4,54 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CarModel extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
-    protected $fillable = ['car_id', 'name', 'description', 'is_active'];
+    protected $fillable = [
+        'car_brand_id',
+        'name',
+        'slug',
+        'description',
+        'body_type',
+        'segment',
+        'fuel_type',
+        'production_start_year',
+        'production_end_year',
+        'generation',
+        'meta_title',
+        'meta_description',
+        'keywords',
+        'is_active',
+        'is_featured',
+        'is_new',
+        'is_discontinued',
+        'sort_order',
+        'total_variants',
+        'starting_price',
+        'average_rating',
+        'rating_count',
+    ];
 
-    public function car()
+    protected $casts = [
+        'is_active' => 'boolean',
+        'is_featured' => 'boolean',
+        'is_new' => 'boolean',
+        'is_discontinued' => 'boolean',
+        'production_start_year' => 'integer',
+        'production_end_year' => 'integer',
+        'total_variants' => 'integer',
+        'starting_price' => 'decimal:2',
+        'average_rating' => 'decimal:2',
+        'rating_count' => 'integer',
+        'sort_order' => 'integer',
+    ];
+
+    public function carBrand()
     {
-        return $this->belongsTo(Car::class);
+        return $this->belongsTo(CarBrand::class);
     }
 
     public function variants()
@@ -21,9 +59,47 @@ class CarModel extends Model
         return $this->hasMany(CarVariant::class);
     }
 
+    /**
+     * Backwards-compatible alias: many parts of the app reference `carVariants`.
+     */
+    public function carVariants()
+    {
+        return $this->hasMany(CarVariant::class);
+    }
+
     public function images()
     {
         return $this->hasMany(CarModelImage::class);
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (CarModel $model) {
+            if (empty($model->slug) && !empty($model->name)) {
+                $model->slug = static::generateUniqueSlug($model->name);
+            }
+        });
+
+        static::updating(function (CarModel $model) {
+            if ($model->isDirty('name') && empty($model->slug)) {
+                $model->slug = static::generateUniqueSlug($model->name, $model->id);
+            }
+        });
+    }
+
+    protected static function generateUniqueSlug(string $name, ?int $ignoreId = null): string
+    {
+        $base = \Illuminate\Support\Str::slug($name);
+        $slug = $base;
+        $i = 2;
+        while (static::query()
+            ->when($ignoreId, fn($q) => $q->where('id', '!=', $ignoreId))
+            ->where('slug', $slug)
+            ->exists()) {
+            $slug = $base . '-' . $i;
+            $i++;
+        }
+        return $slug;
     }
 
     public function getMainImageUrlAttribute()
@@ -49,10 +125,7 @@ class CarModel extends Model
         if ($firstImage) {
             return $firstImage->image_url;
         }
-
-        // Fall back to placeholder
-        $variantName = $this->name ?? 'Model';
-        $encodedName = urlencode($variantName);
-        return "https://via.placeholder.com/400x300/4f46e5/ffffff?text={$encodedName}";
+        $label = $this->name ?? 'Sản phẩm';
+        return 'https://placehold.co/1200x800/111827/ffffff?text=' . urlencode($label);
     }
 }

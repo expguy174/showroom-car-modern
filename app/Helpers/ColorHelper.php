@@ -2,6 +2,10 @@
 
 namespace App\Helpers;
 
+use App\Models\CarVariantColor;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
+
 class ColorHelper
 {
     public static function getColorHex($colorName)
@@ -134,10 +138,55 @@ class ColorHelper
             'dark silver' => '#A9A9A9',
             'bạc nhạt' => '#F5F5F5',
             'bac nhat' => '#F5F5F5',
-            'light silver' => '#F5F5F5'
+            'light silver' => '#F5F5F5',
+
+            // Custom showroom mappings
+            'midnight black' => '#0B0B0D', // đen đêm
+            'pearl white' => '#F8F8FF',   // trắng ngọc trai (gần ghostwhite)
+            'racing red' => '#C00000',    // đỏ đua (đỏ đậm hơn)
+            'midnight-black' => '#0B0B0D',
+            'pearl-white' => '#F8F8FF',
+            'racing-red' => '#C00000'
         ];
         
-        $normalizedName = strtolower(trim($colorName));
-        return $colorMap[$normalizedName] ?? '#CCCCCC'; // Default gray if not found
+        // Normalize input
+        $normalizedName = strtolower(trim((string) $colorName));
+        $normalizedName = preg_replace('/\s+/', ' ', str_replace(['_', '-'], ' ', $normalizedName));
+
+        // 1) Try static map first
+        if (isset($colorMap[$normalizedName])) {
+            return $colorMap[$normalizedName];
+        }
+
+        // 2) Try DB-backed lookup (seeded colors)
+        try {
+            // Guard when running without table (migrations not run yet)
+            if (!Schema::hasTable('car_variant_colors')) {
+                return '#CCCCCC';
+            }
+
+            $cacheKey = 'color_hex_lookup_' . md5($normalizedName);
+            return Cache::remember($cacheKey, now()->addHours(12), function () use ($normalizedName) {
+                // Case-insensitive exact match on color_name
+                $hex = CarVariantColor::whereRaw('LOWER(color_name) = ?', [$normalizedName])
+                    ->whereNotNull('hex_code')
+                    ->value('hex_code');
+
+                if ($hex) {
+                    return strtoupper($hex);
+                }
+
+                // Loose match: contains words in order (fallback)
+                $like = '%' . str_replace(' ', '%', $normalizedName) . '%';
+                $hex = CarVariantColor::where('color_name', 'LIKE', $like)
+                    ->whereNotNull('hex_code')
+                    ->value('hex_code');
+
+                return $hex ? strtoupper($hex) : '#CCCCCC';
+            });
+        } catch (\Throwable $e) {
+            // Fallback to default gray on any error
+            return '#CCCCCC';
+        }
     }
 } 

@@ -10,74 +10,139 @@ use App\Http\Controllers\Admin\CarController;
 use App\Http\Controllers\Admin\CarModelController;
 use App\Http\Controllers\Admin\CarVariantController;
 use App\Http\Controllers\Admin\OrderController;
-use App\Http\Controllers\Admin\ProductController;
+
 use App\Http\Controllers\Admin\CartItemController;
 use App\Http\Controllers\Admin\BlogController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\AccessoryController;
 use App\Http\Controllers\Admin\OrderLogController;
-
+use App\Http\Controllers\Admin\ReviewController;
+use App\Http\Controllers\Admin\TestDriveController;
+use App\Http\Controllers\Admin\PaymentMethodController;
+// use App\Http\Controllers\Admin\LoyaltyProgramController; // removed module
+// use App\Http\Controllers\Admin\InventoryController; // removed module
+use App\Http\Controllers\Admin\AnalyticsController;
+use App\Http\Controllers\Admin\CustomerProfileController;
+use App\Http\Controllers\Admin\ServiceAppointmentController;
 
 // Public Controllers
 use App\Http\Controllers\User\HomeController;
 use App\Http\Controllers\User\CartController;
 use App\Http\Controllers\User\UserOrderController;
-use App\Http\Controllers\User\WishlistController;
+
 use App\Http\Controllers\User\UserCarVariantController;
 use App\Http\Controllers\User\AccessoryController as UserAccessoryController;
+use App\Http\Controllers\User\ReviewController as UserReviewController;
+use App\Http\Controllers\User\TestDriveController as UserTestDriveController;
 
+use App\Http\Controllers\User\SearchController;
+// use App\Http\Controllers\User\ProductListingController; // removed
+use App\Http\Controllers\User\ProductController;
+
+// New User Controllers
+use App\Http\Controllers\User\BrandController;
+use App\Http\Controllers\User\ServiceController;
+use App\Http\Controllers\User\FinanceController;
+// use App\Http\Controllers\User\InventoryController as UserInventoryController; // removed module
+
+// use App\Http\Controllers\User\DepositController; // removed module
+use App\Http\Controllers\User\PaymentController as UserPaymentController;
+use App\Http\Controllers\User\AddressController as UserAddressController;
+use App\Http\Controllers\User\WishlistController;
 
 // --- Trang chủ ---
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
+
+
+
+
+
+
+
+
 // --- Dashboard cho user ---
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    return redirect()->route('home');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-// Wishlist (User)
-Route::prefix('wishlist')->name('wishlist.')->group(function () {
-    Route::get('/', [WishlistController::class, 'index'])->name('index');
-    Route::post('/add', [WishlistController::class, 'add'])->name('add');
-    Route::post('/remove', [WishlistController::class, 'remove'])->name('remove');
-    Route::post('/clear', [WishlistController::class, 'clear'])->name('clear');
-    Route::get('/check', [WishlistController::class, 'check'])->name('check');
-    Route::get('/count', [WishlistController::class, 'getCount'])->name('count');
-})->middleware('migrate.wishlist');
 
-// Carvariant detail (User)
-Route::get('/car-variants/{id}', [UserCarVariantController::class, 'show'])->name('car_variants.show');
+
+// Carvariant detail (User) - support slug or id
+Route::get('/car-variants/{slugOrId}', [UserCarVariantController::class, 'show'])->name('car_variants.show');
 
 // Accessory detail (User)
 Route::get('/accessories/{id}', [UserAccessoryController::class, 'show'])->name('accessories.show');
 
-// Test route for debugging
-Route::get('/test-variant/{id}', function ($id) {
-    $variant = \App\Models\CarVariant::with('product')->find($id);
-    if ($variant) {
-        echo "Variant: " . $variant->name . "<br>";
-        echo "Product: " . ($variant->product ? $variant->product->name : 'No product') . "<br>";
-        echo "Product ID: " . ($variant->product ? $variant->product->id : 'No ID') . "<br>";
-    } else {
-        echo "Variant not found";
-    }
+// Reviews
+Route::prefix('reviews')->name('reviews.')->group(function () {
+    Route::post('/store', [UserReviewController::class, 'store'])->name('store')->middleware('auth');
+    Route::get('/get', [UserReviewController::class, 'getReviews'])->name('get');
+    Route::get('/summary', [UserReviewController::class, 'summary'])->name('summary');
 });
 
-// Test wishlist route
-Route::get('/test-wishlist', function () {
-    try {
-        $wishlist = new \App\Models\Wishlist();
-        echo "Wishlist model created successfully<br>";
-        echo "Table name: " . $wishlist->getTable() . "<br>";
+// Test Drives
+Route::prefix('test-drives')->name('test_drives.')->group(function () {
+    Route::post('/book', [UserTestDriveController::class, 'store'])->name('book');
+    Route::get('/', [UserTestDriveController::class, 'index'])->name('index');
+    Route::get('/{testDrive}', [UserTestDriveController::class, 'show'])->name('show');
+})->middleware('auth');
 
-        $count = \App\Models\Wishlist::count();
-        echo "Wishlist count: " . $count . "<br>";
-
-        echo "Wishlist table exists and is working!";
-    } catch (\Exception $e) {
-        echo "Error: " . $e->getMessage();
-    }
+// Search
+Route::prefix('search')->name('search.')->group(function () {
+    Route::get('/', [SearchController::class, 'search'])->name('results');
+    Route::get('/advanced', [SearchController::class, 'advancedSearch'])->name('advanced');
 });
+
+// Blogs (User)
+Route::prefix('blogs')->name('blogs.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\User\BlogController::class, 'index'])->name('index');
+    Route::get('/{blog}', [\App\Http\Controllers\User\BlogController::class, 'show'])->name('show');
+});
+
+// Products listing (Unified cars/accessories)
+Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+
+// --- NEW ROUTES ---
+
+// Brands (User)
+Route::prefix('brands')->name('brands.')->group(function () {
+    Route::get('/', [BrandController::class, 'index'])->name('index');
+    Route::get('/{id}', [BrandController::class, 'show'])->name('show');
+});
+
+// Services (User) — removed per request
+
+// Finance (User)
+Route::prefix('finance')->name('finance.')->group(function () {
+    Route::get('/', [FinanceController::class, 'index'])->name('index');
+    Route::get('/calculator', [FinanceController::class, 'calculator'])->name('calculator');
+    Route::get('/requirements', [FinanceController::class, 'requirements'])->name('requirements');
+    Route::get('/faq', [FinanceController::class, 'faq'])->name('faq');
+    Route::post('/calculate-installment', [FinanceController::class, 'calculateInstallment'])->name('calculate-installment');
+    Route::post('/apply', [FinanceController::class, 'applyForFinancing'])->name('apply');
+    Route::get('/options', [FinanceController::class, 'getFinanceOptions'])->name('options');
+});
+
+// Inventory routes removed per request
+
+
+
+// About page
+Route::get('/about', function () {
+    return view('user.about');
+})->name('about');
+
+// Contact page
+Route::get('/contact', [\App\Http\Controllers\User\ContactController::class, 'index'])->name('contact');
+Route::post('/contact', [\App\Http\Controllers\User\ContactController::class, 'store'])->name('contact.store');
+
+// Fallback legacy inventory route to products
+Route::get('/inventory', function () {
+    return redirect()->route('products.index');
+})->name('inventory.index');
+
+
 
 // --- Profile cá nhân ---
 Route::middleware('auth')->group(function () {
@@ -86,7 +151,18 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-Route::post('/order', [UserOrderController::class, 'store'])->name('order.store');
+// Payment routes (return + webhook)
+Route::prefix('payment')->group(function(){
+    // VNPAY
+    Route::get('/vnpay/return', [\App\Http\Controllers\PaymentController::class, 'vnpayReturn'])->name('payment.vnpay.return');
+    Route::post('/vnpay/webhook', [\App\Http\Controllers\PaymentController::class, 'vnpayWebhook'])->name('payment.vnpay.webhook');
+    // MoMo
+    Route::get('/momo/process', [\App\Http\Controllers\PaymentController::class, 'momoProcess'])->name('payment.momo.process');
+    Route::get('/momo/return', [\App\Http\Controllers\PaymentController::class, 'momoReturn'])->name('payment.momo.return');
+    Route::post('/momo/webhook', [\App\Http\Controllers\PaymentController::class, 'momoWebhook'])->name('payment.momo.webhook');
+});
+
+Route::post('/order', [UserOrderController::class, 'store'])->middleware('auth')->name('order.store');
 
 // Cart
 Route::prefix('cart')->name('cart.')->group(function () {
@@ -99,8 +175,11 @@ Route::prefix('cart')->name('cart.')->group(function () {
 });
 
 // --- Cart routes ---
-Route::get('/cart/checkout', [CartController::class, 'showCheckoutForm'])->name('cart.checkout.form');
-Route::post('/cart/checkout', [CartController::class, 'processCheckout'])->name('cart.checkout');
+Route::middleware('auth')->group(function () {
+    Route::get('/cart/checkout', [CartController::class, 'showCheckoutForm'])->name('cart.checkout.form');
+    Route::post('/cart/checkout', [CartController::class, 'processCheckout'])->name('cart.checkout');
+    Route::get('/order/success/{order}', [CartController::class, 'orderSuccess'])->name('order.success');
+});
 
 // --- Admin routes ---
 Route::middleware(['auth', IsAdmin::class])->prefix('admin')->name('admin.')->group(function () {
@@ -136,16 +215,6 @@ Route::middleware(['auth', IsAdmin::class])->prefix('admin')->name('admin.')->gr
         Route::delete('/delete/{carvariant}', [CarVariantController::class, 'destroy'])->name('destroy');
     });
 
-    // Accessories
-    Route::prefix('admin/accessories')->name('admin.accessories.')->group(function () {
-        Route::get('/', [AccessoryController::class, 'index'])->name('index');
-        Route::get('/create', [AccessoryController::class, 'create'])->name('create');
-        Route::post('/', [AccessoryController::class, 'store'])->name('store');
-        Route::get('/{id}/edit', [AccessoryController::class, 'edit'])->name('edit');
-        Route::put('/{id}', [AccessoryController::class, 'update'])->name('update');
-        Route::delete('/{id}', [AccessoryController::class, 'destroy'])->name('destroy');
-    });
-
     // Orders
     Route::prefix('orders')->name('orders.')->group(function () {
         Route::get('/', [OrderController::class, 'index'])->name('index');
@@ -155,23 +224,13 @@ Route::middleware(['auth', IsAdmin::class])->prefix('admin')->name('admin.')->gr
         Route::put('/update/{order}', [OrderController::class, 'update'])->name('update');
         Route::delete('/delete/{order}', [OrderController::class, 'destroy'])->name('destroy');
         Route::get('/{order}', [OrderController::class, 'show'])->name('show');
-        Route::get('/{order}/logs', [\App\Http\Controllers\Admin\OrderLogController::class, 'logs'])->name('logs');
-
         // Chuyển trạng thái đơn
         Route::post('/{order}/next-status', [OrderController::class, 'nextStatus'])->name('nextStatus');
         Route::post('/{order}/cancel', [OrderController::class, 'cancel'])->name('cancel');
 
         // Logs
         Route::get('/{order}/logs', [OrderLogController::class, 'index'])->name('logs');
-    });
-    // Products
-    Route::prefix('products')->name('products.')->group(function () {
-        Route::get('/', [ProductController::class, 'index'])->name('index');
-        Route::get('/create', [ProductController::class, 'create'])->name('create');
-        Route::post('/store', [ProductController::class, 'store'])->name('store');
-        Route::get('/edit/{product}', [ProductController::class, 'edit'])->name('edit');
-        Route::put('/update/{product}', [ProductController::class, 'update'])->name('update');
-        Route::delete('/delete/{product}', [ProductController::class, 'destroy'])->name('destroy');
+        Route::get('/{order}/logs/export', [OrderLogController::class, 'export'])->name('logs.export');
     });
 
     // Accessories
@@ -184,11 +243,11 @@ Route::middleware(['auth', IsAdmin::class])->prefix('admin')->name('admin.')->gr
         Route::delete('/delete/{accessory}', [AccessoryController::class, 'destroy'])->name('destroy');
     });
 
-    // Cart Items
-    Route::prefix('cartitems')->name('cartitems.')->group(function () {
-        Route::get('/', [CartItemController::class, 'index'])->name('index');
-        Route::delete('/delete/{cartitem}', [CartItemController::class, 'destroy'])->name('destroy');
-    });
+    // Cart Items - TODO: Refactor to work with new polymorphic CartItem structure
+    // Route::prefix('cartitems')->name('cartitems.')->group(function () {
+    //     Route::get('/', [CartItemController::class, 'index'])->name('index');
+    //     Route::delete('/delete/{cartitem}', [CartItemController::class, 'destroy'])->name('destroy');
+    // });
 
     // Blogs
     Route::prefix('blogs')->name('blogs.')->group(function () {
@@ -207,10 +266,173 @@ Route::middleware(['auth', IsAdmin::class])->prefix('admin')->name('admin.')->gr
         Route::put('/update/{user}', [UserController::class, 'update'])->name('update');
         Route::delete('/delete/{user}', [UserController::class, 'destroy'])->name('destroy');
     });
+
+    // Reviews
+    Route::prefix('reviews')->name('reviews.')->group(function () {
+        Route::get('/', [ReviewController::class, 'index'])->name('index');
+        Route::post('/{review}/approve', [ReviewController::class, 'approve'])->name('approve');
+        Route::post('/{review}/reject', [ReviewController::class, 'reject'])->name('reject');
+        Route::delete('/{review}', [ReviewController::class, 'destroy'])->name('destroy');
+    });
+
+    // Test Drives
+    Route::prefix('test-drives')->name('test_drives.')->group(function () {
+        Route::get('/', [TestDriveController::class, 'index'])->name('index');
+        Route::get('/{testDrive}', [TestDriveController::class, 'show'])->name('show');
+        Route::put('/{testDrive}/status', [TestDriveController::class, 'updateStatus'])->name('update_status');
+        Route::delete('/{testDrive}', [TestDriveController::class, 'destroy'])->name('destroy');
+    });
+
+    // Payment Methods
+    Route::prefix('payment-methods')->name('payment-methods.')->group(function () {
+        Route::get('/', [PaymentMethodController::class, 'index'])->name('index');
+        Route::get('/create', [PaymentMethodController::class, 'create'])->name('create');
+        Route::post('/', [PaymentMethodController::class, 'store'])->name('store');
+        Route::get('/{paymentMethod}', [PaymentMethodController::class, 'show'])->name('show');
+        Route::get('/{paymentMethod}/edit', [PaymentMethodController::class, 'edit'])->name('edit');
+        Route::put('/{paymentMethod}', [PaymentMethodController::class, 'update'])->name('update');
+        Route::delete('/{paymentMethod}', [PaymentMethodController::class, 'destroy'])->name('destroy');
+        Route::post('/{paymentMethod}/toggle-status', [PaymentMethodController::class, 'toggleStatus'])->name('toggle-status');
+    });
+
+
+    // Inventory module removed
+
+    // Analytics (đã lược bỏ module metrics/commissions)
+
+    // Customer Profiles
+    Route::prefix('customer-profiles')->name('customer-profiles.')->group(function () {
+        Route::get('/', [CustomerProfileController::class, 'index'])->name('index');
+        Route::get('/{customerProfile}', [CustomerProfileController::class, 'show'])->name('show');
+        Route::get('/{customerProfile}/edit', [CustomerProfileController::class, 'edit'])->name('edit');
+        Route::put('/{customerProfile}', [CustomerProfileController::class, 'update'])->name('update');
+        Route::delete('/{customerProfile}', [CustomerProfileController::class, 'destroy'])->name('destroy');
+        Route::post('/{customerProfile}/toggle-vip', [CustomerProfileController::class, 'toggleVip'])->name('toggle-vip');
+        Route::get('/export', [CustomerProfileController::class, 'export'])->name('export');
+    });
+
+    // Service Appointments
+    Route::prefix('service-appointments')->name('service-appointments.')->group(function () {
+        Route::get('/', [ServiceAppointmentController::class, 'index'])->name('index');
+        Route::get('/dashboard', [ServiceAppointmentController::class, 'dashboard'])->name('dashboard');
+        Route::get('/calendar', [ServiceAppointmentController::class, 'calendar'])->name('calendar');
+        Route::get('/{appointment}', [ServiceAppointmentController::class, 'show'])->name('show');
+        Route::get('/{appointment}/edit', [ServiceAppointmentController::class, 'edit'])->name('edit');
+        Route::put('/{appointment}', [ServiceAppointmentController::class, 'update'])->name('update');
+        Route::delete('/{appointment}', [ServiceAppointmentController::class, 'destroy'])->name('destroy');
+        Route::put('/{appointment}/status', [ServiceAppointmentController::class, 'updateStatus'])->name('update-status');
+        Route::get('/export', [ServiceAppointmentController::class, 'export'])->name('export');
+    });
+
+    // Payments
+    Route::prefix('payments')->name('payments.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\PaymentController::class, 'index'])->name('index');
+        Route::get('/dashboard', [\App\Http\Controllers\Admin\PaymentController::class, 'dashboard'])->name('dashboard');
+        Route::get('/reports', [\App\Http\Controllers\Admin\PaymentController::class, 'reports'])->name('reports');
+        Route::get('/installments', [\App\Http\Controllers\Admin\PaymentController::class, 'installments'])->name('installments');
+        Route::get('/refunds', [\App\Http\Controllers\Admin\PaymentController::class, 'refunds'])->name('refunds');
+        Route::get('/{transaction}', [\App\Http\Controllers\Admin\PaymentController::class, 'show'])->name('show');
+        Route::get('/{transaction}/edit', [\App\Http\Controllers\Admin\PaymentController::class, 'edit'])->name('edit');
+        Route::put('/{transaction}', [\App\Http\Controllers\Admin\PaymentController::class, 'update'])->name('update');
+        Route::delete('/{transaction}', [\App\Http\Controllers\Admin\PaymentController::class, 'destroy'])->name('destroy');
+        Route::put('/{transaction}/status', [\App\Http\Controllers\Admin\PaymentController::class, 'updateStatus'])->name('update-status');
+        Route::put('/refunds/{refund}/status', [\App\Http\Controllers\Admin\PaymentController::class, 'updateRefundStatus'])->name('update-refund-status');
+        Route::get('/export', [\App\Http\Controllers\Admin\PaymentController::class, 'export'])->name('export');
+    });
 });
 
 // Trang chi tiết model xe
 Route::get('/car-models/{id}', [\App\Http\Controllers\User\CarModelController::class, 'show'])->name('car_models.show');
 
+// Notification routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
+    Route::get('/notifications/unread-count', [\App\Http\Controllers\NotificationController::class, 'unreadCount'])->name('notifications.unread-count');
+    Route::delete('/notifications/{id}', [\App\Http\Controllers\NotificationController::class, 'delete'])->name('notifications.delete');
+});
+
 // --- Auth routes ---
 require __DIR__ . '/auth.php';
+
+// Accessories (User)
+Route::get('/accessories', [\App\Http\Controllers\User\AccessoryController::class, 'index'])->name('accessories.index');
+
+// User Customer Profile Routes
+Route::prefix('customer-profiles')->name('user.customer-profiles.')->middleware(['auth'])->group(function () {
+    Route::get('/', [App\Http\Controllers\User\CustomerProfileController::class, 'index'])->name('index');
+    Route::get('/create', [App\Http\Controllers\User\CustomerProfileController::class, 'create'])->name('create');
+    Route::post('/', [App\Http\Controllers\User\CustomerProfileController::class, 'store'])->name('store');
+    Route::get('/edit', [App\Http\Controllers\User\CustomerProfileController::class, 'edit'])->name('edit');
+    Route::put('/', [App\Http\Controllers\User\CustomerProfileController::class, 'update'])->name('update');
+    Route::get('/orders', [App\Http\Controllers\User\CustomerProfileController::class, 'orders'])->name('orders');
+    Route::get('/test-drives', [App\Http\Controllers\User\CustomerProfileController::class, 'testDrives'])->name('test-drives');
+    // Route điểm tích lũy đã lược bỏ
+    Route::get('/preferences', [App\Http\Controllers\User\CustomerProfileController::class, 'preferences'])->name('preferences');
+    Route::put('/preferences', [App\Http\Controllers\User\CustomerProfileController::class, 'updatePreferences'])->name('update-preferences');
+});
+
+// User Service Appointment Routes
+Route::prefix('service-appointments')->name('user.service-appointments.')->middleware(['auth'])->group(function () {
+    Route::get('/', [App\Http\Controllers\User\ServiceAppointmentController::class, 'index'])->name('index');
+    Route::get('/create', [App\Http\Controllers\User\ServiceAppointmentController::class, 'create'])->name('create');
+    Route::post('/', [App\Http\Controllers\User\ServiceAppointmentController::class, 'store'])->name('store');
+
+    // Static routes MUST come before wildcard to avoid 404
+    Route::get('/history', [App\Http\Controllers\User\ServiceAppointmentController::class, 'getServiceHistory'])->name('history');
+    Route::get('/upcoming', [App\Http\Controllers\User\ServiceAppointmentController::class, 'getUpcomingAppointments'])->name('upcoming');
+    Route::post('/check-availability', [App\Http\Controllers\User\ServiceAppointmentController::class, 'checkAvailability'])->name('check-availability');
+
+    // Wildcard routes with numeric constraint
+    Route::get('/{appointment}', [App\Http\Controllers\User\ServiceAppointmentController::class, 'show'])->whereNumber('appointment')->name('show');
+    Route::get('/{appointment}/edit', [App\Http\Controllers\User\ServiceAppointmentController::class, 'edit'])->whereNumber('appointment')->name('edit');
+    Route::put('/{appointment}', [App\Http\Controllers\User\ServiceAppointmentController::class, 'update'])->whereNumber('appointment')->name('update');
+    Route::put('/{appointment}/cancel', [App\Http\Controllers\User\ServiceAppointmentController::class, 'cancel'])->whereNumber('appointment')->name('cancel');
+    Route::put('/{appointment}/reschedule', [App\Http\Controllers\User\ServiceAppointmentController::class, 'reschedule'])->whereNumber('appointment')->name('reschedule');
+});
+
+// User Payment Routes
+Route::prefix('payments')->name('user.payments.')->middleware(['auth'])->group(function () {
+    Route::get('/', [App\Http\Controllers\User\PaymentController::class, 'index'])->name('index');
+    Route::get('/create', [App\Http\Controllers\User\PaymentController::class, 'create'])->name('create');
+    Route::post('/', [App\Http\Controllers\User\PaymentController::class, 'store'])->name('store');
+    Route::get('/{transaction}', [App\Http\Controllers\User\PaymentController::class, 'show'])->name('show');
+    Route::post('/{transaction}/process', [App\Http\Controllers\User\PaymentController::class, 'processPayment'])->name('process');
+    Route::post('/calculate-installment', [App\Http\Controllers\User\PaymentController::class, 'calculateInstallment'])->name('calculate-installment');
+    Route::post('/{transaction}/refund', [App\Http\Controllers\User\PaymentController::class, 'refund'])->name('refund');
+    Route::get('/installment-history', [App\Http\Controllers\User\PaymentController::class, 'installmentHistory'])->name('installment-history');
+    Route::get('/payment-methods', [App\Http\Controllers\User\PaymentController::class, 'paymentMethods'])->name('payment-methods');
+    Route::get('/transaction-history', [App\Http\Controllers\User\PaymentController::class, 'transactionHistory'])->name('transaction-history');
+    Route::get('/{transaction}/receipt', [App\Http\Controllers\User\PaymentController::class, 'downloadReceipt'])->name('download-receipt');
+});
+
+// User Address Book
+Route::prefix('addresses')->name('user.addresses.')->middleware(['auth'])->group(function () {
+    Route::get('/', [UserAddressController::class, 'index'])->name('index');
+    Route::post('/', [UserAddressController::class, 'store'])->name('store');
+    Route::put('/{address}', [UserAddressController::class, 'update'])->name('update');
+    Route::delete('/{address}', [UserAddressController::class, 'destroy'])->name('destroy');
+    Route::post('/{address}/default', [UserAddressController::class, 'setDefault'])->name('set-default');
+});
+
+// Customer profile orders (fallback simple list)
+Route::middleware('auth')->group(function(){
+    Route::get('/my/orders', [\App\Http\Controllers\User\CustomerProfileController::class, 'orders'])->name('user.customer-profiles.orders');
+    Route::get('/my/orders/{order}', [\App\Http\Controllers\User\CustomerProfileController::class, 'showOrder'])->name('user.customer-profiles.show-order');
+});
+
+// Wishlist Routes
+Route::prefix('wishlist')->name('wishlist.')->group(function () {
+    Route::get('/', [WishlistController::class, 'index'])->name('index');
+    Route::post('/add', [WishlistController::class, 'add'])->name('add');
+    Route::post('/remove', [WishlistController::class, 'remove'])->name('remove');
+    Route::delete('/destroy', [WishlistController::class, 'remove'])->name('destroy'); // Alias for remove
+    Route::post('/clear', [WishlistController::class, 'clear'])->name('clear');
+    Route::get('/check', [WishlistController::class, 'check'])->name('check');
+    Route::post('/check-bulk', [WishlistController::class, 'checkBulk'])->name('check-bulk');
+    Route::get('/count', [WishlistController::class, 'getCount'])->name('count');
+    Route::post('/migrate-session', [WishlistController::class, 'migrateSessionWishlist'])->name('migrate-session');
+});
+
+

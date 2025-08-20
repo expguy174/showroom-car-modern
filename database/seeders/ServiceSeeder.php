@@ -1,0 +1,237 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\Service;
+use App\Models\CarBrand;
+use Illuminate\Database\Seeder;
+
+class ServiceSeeder extends Seeder
+{
+    /**
+     * Run the database seeds.
+     */
+    public function run(): void
+    {
+        $carBrands = CarBrand::all();
+
+        $services = [
+            // Dịch vụ bảo dưỡng
+            [
+                'name' => 'Bảo dưỡng định kỳ 10.000km',
+                'code' => 'MAINT_10K',
+                'description' => 'Bảo dưỡng định kỳ cho xe đã chạy 10.000km',
+                'category' => 'maintenance',
+                'duration_minutes' => 120,
+                'price' => 1500000,
+                'is_active' => true,
+                'is_featured' => true,
+                'sort_order' => 1,
+                'compatible_car_brands' => json_encode($carBrands->pluck('id')->toArray()),
+                'compatible_car_models' => null,
+                'compatible_car_years' => null,
+                'requirements' => 'Xe cần được đưa đến trước 8:00 sáng',
+                'warranty_months' => 12,
+                'service_center_required' => true,
+                'parts_included' => true,
+                'labor_included' => true,
+                'oil_change_included' => true,
+                'filter_change_included' => true,
+                'inspection_included' => true,
+                'notes' => 'Dịch vụ bảo dưỡng cơ bản cho xe mới'
+            ],
+            [
+                'name' => 'Bảo dưỡng định kỳ 20.000km',
+                'code' => 'MAINT_20K',
+                'description' => 'Bảo dưỡng định kỳ cho xe đã chạy 20.000km',
+                'category' => 'maintenance',
+                'duration_minutes' => 180,
+                'price' => 2500000,
+                'is_active' => true,
+                'is_featured' => true,
+                'sort_order' => 2,
+                'compatible_car_brands' => json_encode($carBrands->pluck('id')->toArray()),
+                'compatible_car_models' => null,
+                'compatible_car_years' => null,
+                'requirements' => 'Xe cần được đưa đến trước 8:00 sáng',
+                'warranty_months' => 12,
+                'service_center_required' => true,
+                'parts_included' => true,
+                'labor_included' => true,
+                'oil_change_included' => true,
+                'filter_change_included' => true,
+                'inspection_included' => true,
+                'notes' => 'Bảo dưỡng toàn diện cho xe đã sử dụng'
+            ],
+            [
+                'name' => 'Thay dầu động cơ',
+                'code' => 'OIL_CHANGE',
+                'description' => 'Thay dầu động cơ và lọc dầu',
+                'category' => 'maintenance',
+                'duration_minutes' => 60,
+                'price' => 800000,
+                'is_active' => true,
+                'is_featured' => false,
+                'sort_order' => 3,
+                'compatible_car_brands' => json_encode($carBrands->pluck('id')->toArray()),
+                'compatible_car_models' => null,
+                'compatible_car_years' => null,
+                'requirements' => 'Cần dầu nhớt phù hợp với xe',
+                'warranty_months' => 6,
+                'service_center_required' => false,
+                'parts_included' => true,
+                'labor_included' => true,
+                'oil_change_included' => true,
+                'filter_change_included' => true,
+                'inspection_included' => false,
+                'notes' => 'Dịch vụ thay dầu cơ bản'
+            ],
+            [
+                'name' => 'Thay lốp xe',
+                'code' => 'TIRE_CHANGE',
+                'description' => 'Thay lốp xe mới',
+                'category' => 'maintenance',
+                'duration_minutes' => 90,
+                'price' => 2000000,
+                'is_active' => true,
+                'is_featured' => false,
+                'sort_order' => 4,
+                'compatible_car_brands' => json_encode($carBrands->pluck('id')->toArray()),
+                'compatible_car_models' => null,
+                'compatible_car_years' => null,
+                'requirements' => 'Cần lốp xe phù hợp với kích thước',
+                'warranty_months' => 24,
+                'service_center_required' => false,
+                'parts_included' => true,
+                'labor_included' => true,
+                'oil_change_included' => false,
+                'filter_change_included' => false,
+                'inspection_included' => false,
+                'notes' => 'Thay lốp xe chất lượng cao'
+            ],
+
+            // Dịch vụ sửa chữa
+            [
+                'name' => 'Sửa chữa phanh',
+                'code' => 'BRAKE_REPAIR',
+                'description' => 'Kiểm tra và sửa chữa hệ thống phanh',
+                'category' => 'repair',
+                'duration_minutes' => 240,
+                'price' => 3000000,
+                'is_active' => true,
+                'is_featured' => false,
+                'sort_order' => 5,
+                'compatible_car_brands' => json_encode($carBrands->pluck('id')->toArray()),
+                'compatible_car_models' => null,
+                'compatible_car_years' => null,
+                'requirements' => 'Cần kiểm tra chi tiết hệ thống phanh',
+                'warranty_months' => 12,
+                'service_center_required' => true,
+                'parts_included' => false,
+                'labor_included' => true,
+                'oil_change_included' => false,
+                'filter_change_included' => false,
+                'inspection_included' => true,
+                'notes' => 'Sửa chữa phanh an toàn'
+            ],
+            [
+                'name' => 'Sửa chữa điều hòa',
+                'code' => 'AC_REPAIR',
+                'description' => 'Kiểm tra và sửa chữa hệ thống điều hòa',
+                'category' => 'repair',
+                'duration_minutes' => 180,
+                'price' => 2500000,
+                'is_active' => true,
+                'is_featured' => false,
+                'sort_order' => 6,
+                'compatible_car_brands' => json_encode($carBrands->pluck('id')->toArray()),
+                'compatible_car_models' => null,
+                'compatible_car_years' => null,
+                'requirements' => 'Cần kiểm tra gas và hệ thống làm lạnh',
+                'warranty_months' => 6,
+                'service_center_required' => true,
+                'parts_included' => false,
+                'labor_included' => true,
+                'oil_change_included' => false,
+                'filter_change_included' => false,
+                'inspection_included' => true,
+                'notes' => 'Sửa chữa điều hòa chuyên nghiệp'
+            ],
+            [
+                'name' => 'Sửa chữa điện',
+                'code' => 'ELECTRICAL_REPAIR',
+                'description' => 'Kiểm tra và sửa chữa hệ thống điện',
+                'category' => 'repair',
+                'duration_minutes' => 300,
+                'price' => 3500000,
+                'is_active' => true,
+                'is_featured' => false,
+                'sort_order' => 7,
+                'compatible_car_brands' => json_encode($carBrands->pluck('id')->toArray()),
+                'compatible_car_models' => null,
+                'compatible_car_years' => null,
+                'requirements' => 'Cần kiểm tra toàn bộ hệ thống điện',
+                'warranty_months' => 12,
+                'service_center_required' => true,
+                'parts_included' => false,
+                'labor_included' => true,
+                'oil_change_included' => false,
+                'filter_change_included' => false,
+                'inspection_included' => true,
+                'notes' => 'Sửa chữa điện chuyên nghiệp'
+            ],
+
+            // Dịch vụ chẩn đoán
+            [
+                'name' => 'Chẩn đoán lỗi động cơ',
+                'code' => 'ENGINE_DIAGNOSTIC',
+                'description' => 'Chẩn đoán lỗi động cơ bằng máy chuyên dụng',
+                'category' => 'diagnostic',
+                'duration_minutes' => 60,
+                'price' => 500000,
+                'is_active' => true,
+                'is_featured' => false,
+                'sort_order' => 8,
+                'compatible_car_brands' => json_encode($carBrands->pluck('id')->toArray()),
+                'compatible_car_models' => null,
+                'compatible_car_years' => null,
+                'requirements' => 'Cần máy chẩn đoán chuyên dụng',
+                'warranty_months' => 0,
+                'service_center_required' => true,
+                'parts_included' => false,
+                'labor_included' => true,
+                'oil_change_included' => false,
+                'filter_change_included' => false,
+                'inspection_included' => true,
+                'notes' => 'Chẩn đoán chính xác lỗi động cơ'
+            ],
+            [
+                'name' => 'Kiểm tra tổng thể xe',
+                'code' => 'FULL_INSPECTION',
+                'description' => 'Kiểm tra tổng thể tình trạng xe',
+                'category' => 'diagnostic',
+                'duration_minutes' => 120,
+                'price' => 800000,
+                'is_active' => true,
+                'is_featured' => false,
+                'sort_order' => 9,
+                'compatible_car_brands' => json_encode($carBrands->pluck('id')->toArray()),
+                'compatible_car_models' => null,
+                'compatible_car_years' => null,
+                'requirements' => 'Xe cần được đưa đến trước 9:00 sáng',
+                'warranty_months' => 0,
+                'service_center_required' => true,
+                'parts_included' => false,
+                'labor_included' => true,
+                'oil_change_included' => false,
+                'filter_change_included' => false,
+                'inspection_included' => true,
+                'notes' => 'Kiểm tra toàn diện tình trạng xe'
+            ]
+        ];
+
+        foreach ($services as $service) {
+            Service::create($service);
+        }
+    }
+}

@@ -1,0 +1,73 @@
+/* Critical CSS - Load ngay lập tức */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Essential animations only */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* Critical utility classes */
+.animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slide-up {
+    animation: slideUp 0.4s ease-out;
+}
+
+/* Essential card styles */
+.card-modern {
+    @apply bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden;
+}
+
+.card-hover {
+    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-xl;
+}
+
+/* Essential button styles */
+.btn-modern {
+    @apply px-6 py-3 rounded-xl font-semibold transition-all duration-300;
+}
+
+.btn-primary {
+    @apply bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800;
+}
+
+/* Essential form styles */
+.input-modern {
+    @apply w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-base focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300;
+}
+
+/* Loading skeleton */
+.skeleton {
+    @apply animate-pulse bg-gray-200 rounded;
+}
+
+.skeleton-text {
+    @apply skeleton h-4;
+}
+
+.skeleton-image {
+    @apply skeleton aspect-video;
+}
+
+/* Essential responsive utilities */
+@media (max-width: 640px) {
+    .container-responsive {
+        @apply px-4;
+    }
+}
+
+@media (min-width: 641px) {
+    .container-responsive {
+        @apply px-6;
+    }
+}

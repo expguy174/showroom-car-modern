@@ -5,13 +5,13 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\CarModel;
-use App\Models\Car;
+use App\Models\CarBrand;
 
 class CarModelController extends Controller
 {
     public function index(Request $request)
     {
-        $query = CarModel::with('car');
+        $query = CarModel::with('carBrand');
 
         if ($search = $request->input('search')) {
             $query->where('name', 'like', '%' . $search . '%');
@@ -24,20 +24,20 @@ class CarModelController extends Controller
 
     public function create()
     {
-        $cars = Car::all();
+        $cars = CarBrand::all();
         return view('admin.carmodels.create', compact('cars'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'car_id' => 'required|exists:cars,id',
+            'car_brand_id' => 'required|exists:car_brands,id',
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
         ]);
 
         CarModel::create([
-            'car_id' => $request->car_id,
+            'car_brand_id' => $request->car_brand_id,
             'name' => $request->name,
             'description' => $request->description,
             'is_active' => $request->boolean('is_active'),
@@ -48,7 +48,7 @@ class CarModelController extends Controller
 
     public function edit(CarModel $carmodel)
     {
-        $cars = Car::all();
+        $cars = CarBrand::all();
         return view('admin.carmodels.edit', [
             'carModel' => $carmodel,
             'cars' => $cars
@@ -58,13 +58,13 @@ class CarModelController extends Controller
     public function update(Request $request, CarModel $carmodel)
     {
         $request->validate([
-            'car_id' => 'required|exists:cars,id',
+            'car_brand_id' => 'required|exists:car_brands,id',
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
         ]);
 
         $carmodel->update([
-            'car_id' => $request->car_id,
+            'car_brand_id' => $request->car_brand_id,
             'name' => $request->name,
             'description' => $request->description,
             'is_active' => $request->boolean('is_active'),

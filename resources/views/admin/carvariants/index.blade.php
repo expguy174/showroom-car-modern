@@ -38,7 +38,7 @@
                                 <td>{{ $variant->id }}</td>
                                 <td>{{ $variant->name }}</td>
                                 <td>{{ $variant->carModel->name ?? 'N/A' }}</td>
-                                <td>{{ number_format($variant->product->price ?? 0, 0, ',', '.') }} đ</td>
+                                <td>{{ number_format($variant->price ?? 0, 0, ',', '.') }} đ</td>
                                 <td>
                                     @if ($variant->is_active)
                                         <span class="badge badge-success">Hiển thị</span>

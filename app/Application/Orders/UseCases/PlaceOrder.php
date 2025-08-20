@@ -1,0 +1,191 @@
+<?php
+
+namespace App\Application\Orders\UseCases;
+
+use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\CarVariant;
+use App\Models\Accessory;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Arr;
+use App\Events\OrderCreated;
+
+class PlaceOrder
+{
+    /**
+     * Create an order with items in a transaction and dispatch OrderCreated event.
+     *
+     * Expected $payload shape:
+     * - user_id?: int|null
+     * - name: string
+     * - phone: string
+     * - email?: string|null
+     * - address?: string|null
+     * - note?: string|null
+     * - payment_method_id?: int|null
+     * - items: array<array{
+     *     item_type: 'car_variant'|'accessory',
+     *     item_id: int,
+     *     quantity: int,
+     *     color_id?: int|null,
+     *     price?: float|null
+     * }>
+     */
+    public function handle(array $payload): Order
+    {
+        $items = $payload['items'] ?? [];
+        if (empty($items)) {
+            throw new \InvalidArgumentException('Order items must not be empty');
+        }
+
+        // Normalize contact fields
+        $name = (string) ($payload['name'] ?? '');
+        $phone = (string) ($payload['phone'] ?? '');
+        $email = $payload['email'] ?? null;
+        $address = $payload['address'] ?? '';
+
+        // Fetch models and compute totals
+        $resolvedItems = [];
+        $orderTotal = 0;
+
+        foreach ($items as $item) {
+            $type = Arr::get($item, 'item_type');
+            $itemId = Arr::get($item, 'item_id');
+            $quantity = max(1, (int) Arr::get($item, 'quantity', 1));
+            $colorId = Arr::get($item, 'color_id');
+
+            if (!in_array($type, ['car_variant', 'accessory'], true)) {
+                throw new \InvalidArgumentException('Unsupported item_type: ' . (string) $type);
+            }
+
+            $model = $type === 'car_variant'
+                ? CarVariant::with(['carModel.carBrand'])->findOrFail($itemId)
+                : Accessory::findOrFail($itemId);
+
+            if (property_exists($model, 'is_active') && !$model->is_active) {
+                throw new \RuntimeException('Item is not available');
+            }
+
+            $unitPrice = (float) (Arr::get($item, 'price', null));
+            if ($unitPrice === null) {
+                if ($type === 'car_variant' && method_exists($model, 'getPriceWithColorAdjustment')) {
+                    $unitPrice = (float) $model->getPriceWithColorAdjustment($colorId);
+                } else {
+                    $unitPrice = (float) ($model->price ?? 0);
+                }
+            }
+            $lineTotal = $unitPrice * $quantity;
+            $orderTotal += $lineTotal;
+
+            $resolvedItems[] = [
+                'item_type' => $type,
+                'item_id' => $model->id,
+                'color_id' => $colorId,
+                'item_name' => $model->name ?? 'Item',
+                'item_sku' => $model->sku ?? null,
+                'item_metadata' => $this->buildItemMetadata($type, $model),
+                'quantity' => $quantity,
+                'price' => $unitPrice,
+                'tax_amount' => 0,
+                'discount_amount' => 0,
+                'line_total' => $lineTotal,
+            ];
+        }
+
+        return DB::transaction(function () use ($payload, $name, $phone, $email, $address, $orderTotal, $resolvedItems) {
+            $order = Order::create([
+                'user_id' => $payload['user_id'] ?? null,
+                'phone' => $phone,
+                'name' => $name,
+                'email' => $email,
+                'address' => $address ?? '',
+                'total_price' => $orderTotal,
+                'subtotal' => $payload['subtotal'] ?? $orderTotal,
+                'discount_total' => $payload['discount_total'] ?? 0,
+                'tax_total' => $payload['tax_total'] ?? 0,
+                'shipping_fee' => $payload['shipping_fee'] ?? 0,
+                'grand_total' => $payload['grand_total'] ?? ($orderTotal + ($payload['tax_total'] ?? 0) + ($payload['shipping_fee'] ?? 0) - ($payload['discount_total'] ?? 0)),
+                'note' => $payload['note'] ?? null,
+                'payment_method_id' => $payload['payment_method_id'] ?? null,
+                'status' => 'pending',
+                'order_number' => 'ORD-' . date('Ymd') . '-' . strtoupper(uniqid()),
+                'billing_address_id' => $payload['billing_address_id'] ?? null,
+                'shipping_address_id' => $payload['shipping_address_id'] ?? null,
+            ]);
+
+            // Decrement stock for each item (color stock takes precedence)
+            foreach ($resolvedItems as $itemData) {
+                if ($itemData['item_type'] === 'car_variant') {
+                    /** @var CarVariant $variant */
+                    $variant = CarVariant::find($itemData['item_id']);
+                    if (!$variant) {
+                        throw new \RuntimeException('Variant not found for stock update');
+                    }
+                    $qty = (int) $itemData['quantity'];
+                    $colorId = $itemData['color_id'] ?? null;
+                    if ($colorId) {
+                        $color = $variant->colors()->lockForUpdate()->find($colorId);
+                        if (!$color || ($color->stock_quantity ?? 0) < $qty) {
+                            throw new \RuntimeException('Insufficient color stock');
+                        }
+                        $color->decrement('stock_quantity', $qty);
+                    } else {
+                        $variant->refresh();
+                        $current = (int) ($variant->stock_quantity ?? 0);
+                        if ($current < $qty) {
+                            throw new \RuntimeException('Insufficient variant stock');
+                        }
+                        $variant->decrement('stock_quantity', $qty);
+                    }
+                }
+            }
+
+            foreach ($resolvedItems as $itemData) {
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'item_type' => $itemData['item_type'],
+                    'item_id' => $itemData['item_id'],
+                    'color_id' => $itemData['color_id'] ?? null,
+                    'item_name' => $itemData['item_name'],
+                    'item_sku' => $itemData['item_sku'] ?? null,
+                    'item_metadata' => json_encode($itemData['item_metadata'] ?? []),
+                    'quantity' => $itemData['quantity'],
+                    'price' => $itemData['price'],
+                    'tax_amount' => $itemData['tax_amount'] ?? 0,
+                    'discount_amount' => $itemData['discount_amount'] ?? 0,
+                    'line_total' => $itemData['line_total'],
+                ]);
+            }
+
+            try {
+                // Dispatch domain event for side-effects (email/notifications)
+                event(new OrderCreated($order));
+            } catch (\Throwable $e) {
+                Log::warning('Failed to dispatch OrderCreated event', [
+                    'order_id' => $order->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
+            return $order;
+        });
+    }
+
+    private function buildItemMetadata(string $type, $model): array
+    {
+        if ($type === 'car_variant') {
+            return [
+                'brand' => optional($model->carModel->carBrand ?? null)->name,
+                'model' => optional($model->carModel ?? null)->name,
+            ];
+        }
+
+        return [
+            'category' => $model->category ?? null,
+            'brand' => $model->brand ?? null,
+        ];
+    }
+}
+
+
