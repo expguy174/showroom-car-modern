@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\CarVariantColor;
 use App\Models\CarVariant;
+use App\Models\CarVariantImage;
 use Illuminate\Database\Seeder;
  
 
@@ -336,14 +337,28 @@ class CarVariantColorSeeder extends Seeder
             ]
         ];
 
-        foreach ($colors as $color) {
-            $variant = $variants->firstWhere('id', $color['car_variant_id']);
+        foreach ($colors as $payload) {
+            $variant = $variants->firstWhere('id', $payload['car_variant_id']);
             $name = $variant?->name ?: 'Sản phẩm';
             $label = $name;
             $resolved = 'https://placehold.co/800x600/111827/ffffff?text=' . urlencode($label);
-            $color['image_path'] = $resolved;
-            $color['image_url'] = $resolved;
-            CarVariantColor::create($color);
+
+            // Tạo color trước
+            $color = CarVariantColor::create($payload);
+
+            // Tạo 1 ảnh gắn với màu vừa tạo
+            CarVariantImage::create([
+                'car_variant_id' => $payload['car_variant_id'],
+                'car_variant_color_id' => $color->id,
+                'image_url' => $resolved,
+                'image_path' => $resolved,
+                'image_type' => 'gallery',
+                'is_main' => false,
+                'is_active' => true,
+                'sort_order' => $payload['sort_order'] ?? 0,
+                'title' => $payload['color_name'] ?? null,
+                'alt_text' => $payload['color_name'] ?? null,
+            ]);
         }
     }
 }

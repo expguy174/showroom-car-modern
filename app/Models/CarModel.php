@@ -74,6 +74,36 @@ class CarModel extends Model
 
     protected static function booted(): void
     {
+        $recalc = function (?int $brandId): void {
+            if (!$brandId) return;
+            $brand = CarBrand::find($brandId);
+            if (!$brand) return;
+            $totalModels = CarModel::where('car_brand_id', $brandId)->whereNull('deleted_at')->count();
+            $totalVariants = CarVariant::whereIn('car_model_id', function ($q) use ($brandId) {
+                $q->select('id')->from('car_models')->where('car_brand_id', $brandId)->whereNull('deleted_at');
+            })->whereNull('deleted_at')->count();
+            $brand->forceFill([
+                'total_models' => $totalModels,
+                'total_variants' => $totalVariants,
+            ])->save();
+        };
+
+        static::created(function (CarModel $model) use ($recalc) {
+            $recalc($model->car_brand_id);
+        });
+        static::updated(function (CarModel $model) use ($recalc) {
+            if ($model->wasChanged('car_brand_id')) {
+                $recalc($model->getOriginal('car_brand_id'));
+            }
+            $recalc($model->car_brand_id);
+        });
+        static::deleted(function (CarModel $model) use ($recalc) {
+            $recalc($model->car_brand_id);
+        });
+        static::restored(function (CarModel $model) use ($recalc) {
+            $recalc($model->car_brand_id);
+        });
+
         static::creating(function (CarModel $model) {
             if (empty($model->slug) && !empty($model->name)) {
                 $model->slug = static::generateUniqueSlug($model->name);

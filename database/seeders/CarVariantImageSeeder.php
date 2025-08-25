@@ -15,7 +15,8 @@ class CarVariantImageSeeder extends Seeder
      */
     public function run(): void
     {
-        $variants = CarVariant::with('carModel.carBrand')->get();
+        // Rely on CarVariantColorSeeder for gallery images; only ensure minimal fallback for featured variants
+        $variants = CarVariant::with('carModel.carBrand', 'images')->get();
         // Standardize to Commons search + placeholder fallback
 
         $searchCommons = function (string $query) {
@@ -374,9 +375,7 @@ class CarVariantImageSeeder extends Seeder
         }
         unset($image);
 
-        foreach ($images as $image) {
-            CarVariantImage::create($image);
-        }
+        // Skip bulk image creation to avoid duplication with color images
 
         // Ensure every featured variant has at least one image (Commons first, then placeholder)
         foreach (CarVariant::where('is_featured', 1)->get() as $fv) {

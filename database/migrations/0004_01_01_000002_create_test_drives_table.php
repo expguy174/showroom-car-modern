@@ -31,6 +31,7 @@ return new class extends Migration {
             $table->decimal('satisfaction_rating', 3, 2)->nullable();
             
             $table->timestamps();
+            $table->softDeletes();
             
             // Indexes tối ưu hóa
             $table->index(['user_id', 'status']);
@@ -38,7 +39,6 @@ return new class extends Migration {
             $table->index(['car_variant_id', 'status']);
             $table->index(['status', 'preferred_date']);
             $table->index(['test_drive_type', 'status']);
-            $table->index('test_drive_number');
             $table->index('preferred_date');
         });
     }

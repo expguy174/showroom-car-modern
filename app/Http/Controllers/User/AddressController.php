@@ -30,7 +30,7 @@ class AddressController extends Controller
             'ward' => 'nullable|string|max:255',
             'district' => 'nullable|string|max:255',
             'province' => 'nullable|string|max:255',
-            'type' => 'nullable|in:billing,shipping',
+            'type' => 'nullable|in:' . implode(',', \App\Models\Address::TYPES),
             'is_default' => 'nullable|boolean',
         ], [
             'line1.required' => 'Địa chỉ không được để trống.',
@@ -79,7 +79,7 @@ class AddressController extends Controller
             'ward' => 'nullable|string|max:255',
             'district' => 'nullable|string|max:255',
             'province' => 'nullable|string|max:255',
-            'type' => 'nullable|in:billing,shipping',
+            'type' => 'nullable|in:' . implode(',', \App\Models\Address::TYPES),
             'is_default' => 'nullable|boolean',
         ], [
             'line1.required' => 'Địa chỉ không được để trống.',
@@ -133,7 +133,7 @@ class AddressController extends Controller
         // Sync user's primary address field for legacy displays
         try {
             $user = Auth::user();
-            if ($user) {
+            if ($user instanceof \App\Models\User) {
                 $user->address = $address->address;
                 $user->save();
             }

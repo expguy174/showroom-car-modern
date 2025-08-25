@@ -39,7 +39,7 @@ class TestDriveController extends Controller
     public function updateStatus(Request $request, TestDrive $testDrive)
     {
         $request->validate([
-            'status' => 'required|in:pending,confirmed,completed,cancelled'
+            'status' => 'required|in:' . implode(',', \App\Models\TestDrive::STATUSES)
         ]);
 
         $testDrive->update(['status' => $request->status]);

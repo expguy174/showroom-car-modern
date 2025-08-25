@@ -15,11 +15,8 @@ class CarVariantColor extends Model
         'color_code',
         'hex_code',
         'rgb_code',
-        'image_path',
-        'image_url',
-        'swatch_image',
-        'exterior_image',
-        'interior_image',
+        'color_type',
+        'availability',
         'price_adjustment',
         'stock_quantity',
         'is_free',
@@ -44,16 +41,16 @@ class CarVariantColor extends Model
         return $this->belongsTo(CarVariant::class, 'car_variant_id');
     }
 
+    public function images()
+    {
+        return $this->hasMany(CarVariantImage::class, 'car_variant_color_id');
+    }
+
     public function getImageUrlAttribute()
     {
-        $value = $this->attributes['image_url'] ?? null;
-        if ($value) {
-            // Check if it's already a full URL (starts with http or https)
-            if (filter_var($value, FILTER_VALIDATE_URL)) {
-                return $value;
-            }
-            // Otherwise, assume it's a local file path and prepend the storage path
-            return asset('storage/' . $value);
+        $image = $this->images()->where('is_active', true)->orderByDesc('is_main')->orderBy('sort_order')->first();
+        if ($image && $image->image_url) {
+            return $image->image_url;
         }
         return 'https://via.placeholder.com/100x100/cccccc/ffffff?text=Color';
     }

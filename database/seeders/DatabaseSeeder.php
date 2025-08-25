@@ -73,5 +73,7 @@ class DatabaseSeeder extends Seeder
             ContactMessageSeeder::class,
             NotificationSeeder::class,
         ]);
+
+        // 9. All seeders now populate nullable columns with defaults; no fill-null step needed
     }
 }

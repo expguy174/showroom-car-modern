@@ -8,7 +8,7 @@ use App\Mail\ServiceAppointmentConfirmation;
 use App\Mail\QuoteRequestConfirmation;
 use App\Models\Order;
 use App\Models\TestDrive;
-use App\Models\Lead;
+use App\Models\ContactMessage;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 
@@ -17,15 +17,15 @@ class EmailService
     public function sendOrderConfirmation(Order $order)
     {
         try {
-            if ($order->email) {
-                Mail::to($order->email)->send(new OrderConfirmation($order));
-                Log::info('Order confirmation email sent', ['order_id' => $order->id, 'email' => $order->email]);
+            if ($order->user && $order->user->email) {
+                Mail::to($order->user->email)->send(new OrderConfirmation($order));
+                Log::info('Order confirmation email sent', ['order_id' => $order->id, 'email' => $order->user->email]);
                 return true;
             }
         } catch (\Exception $e) {
             Log::error('Failed to send order confirmation email', [
                 'order_id' => $order->id,
-                'email' => $order->email,
+                'email' => optional($order->user)->email,
                 'error' => $e->getMessage()
             ]);
         }
@@ -50,7 +50,7 @@ class EmailService
         return false;
     }
 
-    public function sendQuoteRequestConfirmation(Lead $lead)
+    public function sendQuoteRequestConfirmation($lead)
     {
         try {
             if ($lead->email) {

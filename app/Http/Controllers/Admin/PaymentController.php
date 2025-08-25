@@ -27,10 +27,7 @@ class PaymentController extends Controller
             $query->where('payment_method_id', $request->payment_method_id);
         }
 
-        // Filter by payment type
-        if ($request->has('payment_type') && $request->payment_type) {
-            $query->where('payment_type', $request->payment_type);
-        }
+        // payment_type has been removed from schema; skip this filter
 
         // Filter by date range
         if ($request->has('date_from') && $request->date_from) {
@@ -46,16 +43,17 @@ class PaymentController extends Controller
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('transaction_number', 'like', '%' . $search . '%')
-                  ->orWhere('customer_name', 'like', '%' . $search . '%')
-                  ->orWhere('customer_phone', 'like', '%' . $search . '%')
-                  ->orWhere('customer_email', 'like', '%' . $search . '%');
+                  ->orWhereHas('user', function($uq) use ($search) {
+                      $uq->where('name', 'like', '%' . $search . '%')
+                         ->orWhere('email', 'like', '%' . $search . '%');
+                  });
             });
         }
 
         $transactions = $query->orderBy('created_at', 'desc')->paginate(15);
         $paymentMethods = PaymentMethod::all();
-        $statuses = ['pending', 'completed', 'failed', 'cancelled'];
-        $paymentTypes = ['full', 'partial', 'installment'];
+        $statuses = \App\Models\PaymentTransaction::STATUSES;
+        $paymentTypes = [];
 
         return view('admin.payments.index', compact('transactions', 'paymentMethods', 'statuses', 'paymentTypes'));
     }
@@ -71,7 +69,7 @@ class PaymentController extends Controller
     {
         $paymentMethods = PaymentMethod::all();
         $users = User::all();
-        $statuses = ['pending', 'completed', 'failed', 'cancelled'];
+        $statuses = \App\Models\PaymentTransaction::STATUSES;
         
         return view('admin.payments.edit', compact('transaction', 'paymentMethods', 'users', 'statuses'));
     }
@@ -79,18 +77,17 @@ class PaymentController extends Controller
     public function update(Request $request, PaymentTransaction $transaction)
     {
         $request->validate([
-            'status' => 'required|in:pending,completed,failed,cancelled',
+            'status' => 'required|in:' . implode(',', \App\Models\PaymentTransaction::STATUSES),
             'amount' => 'required|numeric|min:0',
             'payment_method_id' => 'required|exists:payment_methods,id',
-            'payment_type' => 'required|in:full,partial,installment',
             'notes' => 'nullable|string|max:500',
         ]);
 
         $data = $request->all();
         
-        // Update processed date if status is completed
+        // Update payment_date if status is completed
         if ($request->status === 'completed' && $transaction->status !== 'completed') {
-            $data['processed_at'] = now();
+            $data['payment_date'] = now();
         }
 
         $transaction->update($data);
@@ -110,15 +107,15 @@ class PaymentController extends Controller
     public function updateStatus(Request $request, PaymentTransaction $transaction)
     {
         $request->validate([
-            'status' => 'required|in:pending,completed,failed,cancelled',
+            'status' => 'required|in:' . implode(',', \App\Models\PaymentTransaction::STATUSES),
             'notes' => 'nullable|string|max:500',
         ]);
 
         $data = ['status' => $request->status];
 
-        // Add processed date if status is completed
+        // Add payment_date if status is completed
         if ($request->status === 'completed') {
-            $data['processed_at'] = now();
+            $data['payment_date'] = now();
         }
 
         // Add notes if provided
@@ -202,16 +199,17 @@ class PaymentController extends Controller
     public function updateRefundStatus(Request $request, Refund $refund)
     {
         $request->validate([
-            'refund_status' => 'required|in:pending,approved,rejected,completed',
+            // Chuẩn hoá theo enum của bảng refunds: pending, processing, refunded, failed
+            'refund_status' => 'required|in:pending,processing,refunded,failed',
             'admin_notes' => 'nullable|string|max:500',
         ]);
 
         $data = ['refund_status' => $request->refund_status];
 
-        if ($request->refund_status === 'approved') {
-            $data['approved_at'] = now();
-        } elseif ($request->refund_status === 'completed') {
-            $data['completed_at'] = now();
+        if ($request->refund_status === 'processing') {
+            $data['processed_at'] = now();
+        } elseif ($request->refund_status === 'refunded') {
+            $data['processed_at'] = now();
         }
 
         if ($request->admin_notes) {

@@ -66,9 +66,28 @@ class ServiceAppointmentHelper
         try { return $date ? date('d/m/Y', strtotime((string)$date)) : '-'; } catch (\Throwable) { return (string)$date; }
     }
 
-    public static function formatTime(?string $time): string
+    public static function formatTime($time): string
     {
-        return $time ?: '-';
+        if (!$time) return '-';
+        try {
+            // Hỗ trợ cả string HH:MM:SS và Carbon/DateTime
+            if ($time instanceof \DateTimeInterface) {
+                return $time->format('H:i');
+            }
+            $s = (string) $time;
+            // Nếu đã là HH:MM
+            if (preg_match('/^\d{2}:\d{2}$/', $s)) {
+                return $s;
+            }
+            // Nếu HH:MM:SS
+            if (preg_match('/^\d{2}:\d{2}:\d{2}$/', $s)) {
+                return substr($s, 0, 5);
+            }
+            // Fallback parse
+            return date('H:i', strtotime($s));
+        } catch (\Throwable) {
+            return (string) $time;
+        }
     }
 
     public static function formatDateTime($date, ?string $time): string

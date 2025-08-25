@@ -1501,7 +1501,7 @@
 
         // Refresh cart count from server
         function refreshCartCount() {
-            fetch('{{ route("cart.count") }}', { headers: { 'X-Requested-With': 'XMLHttpRequest' }})
+            fetch('{{ route("user.cart.count") }}', { headers: { 'X-Requested-With': 'XMLHttpRequest' }})
                 .then(function(r){ return r.json(); })
                 .then(function(response){ if (response && response.success) updateCartCount(response.cart_count); })
                 .catch(function(){ console.error('Failed to refresh cart count'); });

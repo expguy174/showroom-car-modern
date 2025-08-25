@@ -9,6 +9,8 @@ class Service extends Model
 {
     use HasFactory;
 
+    public const CATEGORIES = ['maintenance', 'repair', 'diagnostic', 'cosmetic', 'emergency'];
+
     protected $fillable = [
         'name',
         'code',

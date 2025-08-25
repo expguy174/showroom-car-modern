@@ -22,7 +22,7 @@ return new class extends Migration {
 
             $table->string('appointment_number')->unique();
             $table->date('appointment_date');
-            $table->string('appointment_time', 8);
+            $table->time('appointment_time');
             $table->unsignedSmallInteger('estimated_duration')->nullable();
 
             $table->enum('appointment_type', ['maintenance','repair','inspection','warranty_work','recall_service','emergency','other'])->default('maintenance');
@@ -40,20 +40,20 @@ return new class extends Migration {
             $table->date('warranty_expiry_date')->nullable();
 
             // Cost information
-            $table->decimal('estimated_cost', 12, 2)->nullable();
-            $table->decimal('actual_cost', 12, 2)->nullable();
-            $table->decimal('parts_cost', 12, 2)->nullable();
-            $table->decimal('labor_cost', 12, 2)->nullable();
-            $table->decimal('tax_amount', 12, 2)->nullable();
-            $table->decimal('discount_amount', 12, 2)->nullable();
-            $table->decimal('total_amount', 12, 2)->nullable();
+            $table->decimal('estimated_cost', 15, 2)->unsigned()->nullable();
+            $table->decimal('actual_cost', 15, 2)->unsigned()->nullable();
+            $table->decimal('parts_cost', 15, 2)->unsigned()->nullable();
+            $table->decimal('labor_cost', 15, 2)->unsigned()->nullable();
+            $table->decimal('tax_amount', 15, 2)->unsigned()->nullable();
+            $table->decimal('discount_amount', 15, 2)->unsigned()->nullable();
+            $table->decimal('total_amount', 15, 2)->unsigned()->nullable();
             $table->enum('payment_status', ['pending','paid','partial'])->default('pending');
             $table->enum('payment_method', ['cash','card','bank_transfer','installment'])->nullable();
             $table->date('payment_date')->nullable();
 
             // Service execution
-            $table->string('actual_start_time', 8)->nullable();
-            $table->string('actual_end_time', 8)->nullable();
+            $table->time('actual_start_time')->nullable();
+            $table->time('actual_end_time')->nullable();
             $table->mediumText('work_performed')->nullable();
             $table->mediumText('parts_used')->nullable();
             $table->mediumText('technician_notes')->nullable();
@@ -61,9 +61,9 @@ return new class extends Migration {
             $table->foreignId('quality_check_by')->nullable()->constrained('users')->onDelete('set null');
             $table->mediumText('quality_check_notes')->nullable();
             $table->boolean('vehicle_ready')->default(false);
-            $table->string('vehicle_ready_time', 8)->nullable();
+            $table->time('vehicle_ready_time')->nullable();
             $table->boolean('customer_notified')->default(false);
-            $table->string('customer_notified_time', 8)->nullable();
+            $table->time('customer_notified_time')->nullable();
             $table->decimal('customer_satisfaction', 3, 2)->nullable();
             $table->boolean('customer_recommend')->default(false);
             $table->mediumText('customer_feedback')->nullable();
@@ -79,7 +79,6 @@ return new class extends Migration {
             $table->index(['assigned_technician_id', 'status']);
             $table->index(['appointment_date', 'status']);
             $table->index(['status', 'priority']);
-            $table->index('appointment_number');
             $table->index(['is_warranty_work', 'status']);
         });
     }

@@ -29,6 +29,7 @@ return new class extends Migration
             $table->string('user_agent', 512)->nullable();
             $table->json('metadata')->nullable();
             $table->timestamps();
+            $table->softDeletes();
 
             $table->index(['status', 'topic']);
             $table->index(['showroom_id', 'status']);

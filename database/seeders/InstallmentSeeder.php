@@ -38,7 +38,8 @@ class InstallmentSeeder extends Seeder
                 ],
                 'status' => 'paid',
                 'paid_at' => now()->subDays(30),
-                'approved_at' => now()->subDays(45)
+                'approved_at' => now()->subDays(45),
+                'cancelled_at' => null
             ],
             [
                 'order_id' => $orders->where('order_number', 'ORD-2024-003')->first()->id,
@@ -59,7 +60,8 @@ class InstallmentSeeder extends Seeder
                 ],
                 'status' => 'paid',
                 'paid_at' => now()->subDays(0),
-                'approved_at' => now()->subDays(45)
+                'approved_at' => now()->subDays(45),
+                'cancelled_at' => null
             ],
             [
                 'order_id' => $orders->where('order_number', 'ORD-2024-003')->first()->id,
@@ -103,7 +105,8 @@ class InstallmentSeeder extends Seeder
                 ],
                 'status' => 'pending',
                 'paid_at' => null,
-                'approved_at' => null
+                'approved_at' => null,
+                'cancelled_at' => null
             ],
             [
                 'order_id' => $orders->where('order_number', 'ORD-2024-004')->first()->id,
@@ -124,7 +127,8 @@ class InstallmentSeeder extends Seeder
                 ],
                 'status' => 'pending',
                 'paid_at' => null,
-                'approved_at' => null
+                'approved_at' => null,
+                'cancelled_at' => null
             ]
         ];
 

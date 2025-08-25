@@ -52,6 +52,39 @@ class User extends Authenticatable
         'email_verification_sent_at' => 'datetime',
     ];
 
+    protected static function booted(): void
+    {
+        static::creating(function (User $user): void {
+            if (array_key_exists('is_admin', $user->attributes ?? [])) {
+                $val = (bool) ($user->attributes['is_admin'] ?? false);
+                if ($val) {
+                    $user->role = 'admin';
+                }
+                unset($user->attributes['is_admin']);
+            }
+        });
+        static::updating(function (User $user): void {
+            if (array_key_exists('is_admin', $user->attributes ?? [])) {
+                $val = (bool) ($user->attributes['is_admin'] ?? false);
+                if ($val) {
+                    $user->role = 'admin';
+                }
+                unset($user->attributes['is_admin']);
+            }
+        });
+    }
+
+    public function setIsAdminAttribute($value): void
+    {
+        if ((bool) $value) {
+            $this->attributes['role'] = 'admin';
+        }
+        // Do not persist non-existent column
+        if (isset($this->attributes['is_admin'])) {
+            unset($this->attributes['is_admin']);
+        }
+    }
+
     public function addresses()
     {
         return $this->hasMany(Address::class);

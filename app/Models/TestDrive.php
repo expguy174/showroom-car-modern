@@ -4,10 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class TestDrive extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
+
+    public const STATUSES = ['pending', 'confirmed', 'completed', 'cancelled'];
+    public const TYPES = ['individual', 'group', 'virtual'];
 
     protected $fillable = [
         'test_drive_number',

@@ -13,7 +13,7 @@ class ReviewController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'reviewable_type' => 'required|in:App\Models\CarVariant,App\Models\Accessory',
+            'reviewable_type' => 'required|in:App\\Models\\CarVariant,App\\Models\\Accessory',
             'reviewable_id' => 'required|integer',
             'rating' => 'required|integer|between:1,5',
             'title' => 'nullable|string|max:255',
@@ -39,7 +39,7 @@ class ReviewController extends Controller
     public function getReviews(Request $request)
     {
         $request->validate([
-            'reviewable_type' => 'required|in:App\Models\CarVariant,App\Models\Accessory',
+            'reviewable_type' => 'required|in:App\\Models\\CarVariant,App\\Models\\Accessory',
             'reviewable_id' => 'required|integer',
         ]);
 
@@ -56,7 +56,7 @@ class ReviewController extends Controller
     public function summary(Request $request)
     {
         $request->validate([
-            'reviewable_type' => 'required|in:App\Models\CarVariant,App\Models\Accessory',
+            'reviewable_type' => 'required|in:App\\Models\\CarVariant,App\\Models\\Accessory',
             'reviewable_id' => 'required|integer',
         ]);
 

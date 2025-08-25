@@ -10,6 +10,9 @@ class Order extends Model
 {
     use HasFactory, SoftDeletes;
 
+    public const STATUSES = ['pending', 'confirmed', 'shipping', 'delivered', 'cancelled'];
+    public const PAYMENT_STATUSES = ['pending', 'processing', 'completed', 'failed', 'cancelled', 'partial', 'refunded'];
+
     protected $fillable = [
         'user_id',
         'total_price',
@@ -161,11 +164,10 @@ class Order extends Model
     {
         $statuses = [
             'pending' => 'Chờ xử lý',
-            'processing' => 'Đang xử lý',
-            'shipped' => 'Đã gửi hàng',
-            'delivered' => 'Đã giao hàng',
-            'cancelled' => 'Đã hủy',
-            'refunded' => 'Đã hoàn tiền'
+            'confirmed' => 'Đã xác nhận',
+            'shipping' => 'Đang giao',
+            'delivered' => 'Đã giao',
+            'cancelled' => 'Đã hủy'
         ];
         return $statuses[$this->status] ?? $this->status;
     }
@@ -174,9 +176,12 @@ class Order extends Model
     {
         $statuses = [
             'pending' => 'Chờ thanh toán',
-            'paid' => 'Đã thanh toán',
+            'processing' => 'Đang xử lý',
+            'completed' => 'Đã thanh toán',
             'failed' => 'Thanh toán thất bại',
-            'refunded' => 'Đã hoàn tiền'
+            'cancelled' => 'Đã hủy',
+            'partial' => 'Thanh toán một phần',
+            'refunded' => 'Đã hoàn tiền',
         ];
         return $statuses[$this->payment_status] ?? $this->payment_status;
     }

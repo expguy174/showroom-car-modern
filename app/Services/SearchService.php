@@ -61,13 +61,23 @@ class SearchService
             });
         }
 
-        // Year range
+        // Year range (map sang năm sản xuất của model)
         if ($request->filled('min_year')) {
-            $query->where('year', '>=', $request->min_year);
+            $min = (int) $request->min_year;
+            $query->whereHas('carModel', function($q) use ($min) {
+                $q->where(function($qq) use ($min) {
+                    $qq->whereNull('production_start_year')->orWhere('production_start_year', '>=', $min);
+                });
+            });
         }
 
         if ($request->filled('max_year')) {
-            $query->where('year', '<=', $request->max_year);
+            $max = (int) $request->max_year;
+            $query->whereHas('carModel', function($q) use ($max) {
+                $q->where(function($qq) use ($max) {
+                    $qq->whereNull('production_end_year')->orWhere('production_end_year', '<=', $max);
+                });
+            });
         }
 
         // Color

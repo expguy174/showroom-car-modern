@@ -23,9 +23,13 @@ class OrderController extends Controller
         if ($request->has('search') && $request->search !== '') {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('phone', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
+                $q->where('order_number', 'like', "%{$search}%")
+                    ->orWhere('tracking_number', 'like', "%{$search}%")
+                    ->orWhere('referrer', 'like', "%{$search}%")
+                    ->orWhereHas('user', function ($uq) use ($search) {
+                        $uq->where('name', 'like', "%{$search}%")
+                           ->orWhere('email', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -48,7 +52,7 @@ class OrderController extends Controller
     {
         $order = Order::with(['items', 'paymentMethod'])->findOrFail($id);
         $users = User::all();
-        $statuses = ['pending', 'confirmed', 'shipping', 'delivered', 'cancelled'];
+        $statuses = \App\Models\Order::STATUSES;
         return view('admin.orders.edit', compact('order', 'users', 'statuses'));
     }
 
@@ -57,10 +61,10 @@ class OrderController extends Controller
         $order = Order::findOrFail($id);
 
         $request->merge([
-            'name' => $order->name,
-            'email' => $order->email,
-            'phone' => $order->phone,
-            'address' => $order->address,
+            'name' => optional($order->user)->name,
+            'email' => optional($order->user)->email,
+            'phone' => optional($order->user)->phone,
+            'address' => optional($order->shippingAddress)->address ?? optional($order->billingAddress)->address,
         ]);
 
         $validated = $request->validate([
@@ -70,7 +74,7 @@ class OrderController extends Controller
             'email' => 'required|email',
             'address' => 'required|string',
             'note' => 'nullable|string',
-            'status' => 'required|in:pending,confirmed,shipping,delivered,cancelled',
+            'status' => 'required|in:' . implode(',', \App\Models\Order::STATUSES),
             'payment_method_id' => 'nullable|exists:payment_methods,id',
         ]);
 

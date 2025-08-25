@@ -15,28 +15,33 @@ class TestDriveController extends Controller
     {
         $request->validate([
             'car_variant_id' => 'required|exists:car_variants,id',
-            'name' => 'required|string|max:255',
-            'phone' => 'required|string|max:20',
-            'email' => 'nullable|email',
             'preferred_date' => 'required|date|after:today',
             'preferred_time' => 'required|date_format:H:i',
+            'duration_minutes' => 'nullable|integer|min:5',
+            'location' => 'nullable|string|max:255',
             'notes' => 'nullable|string',
-            'driver_license' => 'nullable|string|max:20',
-            'id_card' => 'nullable|string|max:20',
+            'special_requirements' => 'nullable|string',
+            'has_experience' => 'nullable|boolean',
+            'experience_level' => 'nullable|string|max:100',
         ]);
+
+        // Normalize time to HH:MM:SS for TIME column
+        $normalizedTime = preg_match('/^\d{2}:\d{2}:\d{2}$/', (string) $request->preferred_time)
+            ? $request->preferred_time
+            : ($request->preferred_time . ':00');
 
         $useCase = app(BookTestDrive::class);
         $testDrive = $useCase->handle([
             'user_id' => Auth::id(),
             'car_variant_id' => $request->car_variant_id,
-            'name' => $request->name,
-            'phone' => $request->phone,
-            'email' => $request->email,
             'preferred_date' => $request->preferred_date,
-            'preferred_time' => $request->preferred_time,
+            'preferred_time' => $normalizedTime,
+            'duration_minutes' => $request->duration_minutes,
+            'location' => $request->location,
             'notes' => $request->notes,
-            'driver_license' => $request->driver_license,
-            'id_card' => $request->id_card,
+            'special_requirements' => $request->special_requirements,
+            'has_experience' => $request->boolean('has_experience'),
+            'experience_level' => $request->experience_level,
         ]);
 
         return response()->json([
@@ -69,5 +74,36 @@ class TestDriveController extends Controller
         }
 
         return view('user.test_drives.show', compact('testDrive'));
+    }
+
+    public function rate(Request $request, TestDrive $testDrive)
+    {
+        if ($testDrive->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        // Chỉ cho phép đánh giá khi đã hoàn thành
+        if ($testDrive->status !== 'completed') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bạn chỉ có thể đánh giá sau khi hoàn thành buổi lái thử.'
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'satisfaction_rating' => 'required|numeric|min:0|max:5',
+            'feedback' => 'nullable|string|max:1000',
+        ]);
+
+        $testDrive->update([
+            'satisfaction_rating' => $validated['satisfaction_rating'],
+            'feedback' => $validated['feedback'] ?? $testDrive->feedback,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cảm ơn bạn đã đánh giá buổi lái thử!',
+            'test_drive' => $testDrive->fresh(),
+        ]);
     }
 } 

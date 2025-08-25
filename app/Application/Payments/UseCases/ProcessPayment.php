@@ -17,8 +17,8 @@ class ProcessPayment
 
         $transaction->update([
             'status' => $status,
-            'processed_at' => now(),
-            'gateway_response' => json_encode($paymentData),
+            'payment_date' => now(),
+            'notes' => 'Gateway response: ' . substr(json_encode($paymentData), 0, 2000),
         ]);
 
         try {

@@ -27,15 +27,16 @@ class BookTestDrive
             'test_drive_number' => $testDriveNumber,
             'user_id' => $payload['user_id'] ?? null,
             'car_variant_id' => $payload['car_variant_id'],
-            'name' => $payload['name'],
-            'phone' => $payload['phone'],
-            'email' => $payload['email'] ?? null,
             'preferred_date' => $payload['preferred_date'],
             'preferred_time' => $payload['preferred_time'],
+            'duration_minutes' => $payload['duration_minutes'] ?? null,
+            'location' => $payload['location'] ?? null,
             'notes' => $payload['notes'] ?? null,
-            'driver_license' => $payload['driver_license'] ?? null,
-            'id_card' => $payload['id_card'] ?? null,
+            'special_requirements' => $payload['special_requirements'] ?? null,
+            'has_experience' => $payload['has_experience'] ?? false,
+            'experience_level' => $payload['experience_level'] ?? null,
             'status' => 'pending',
+            'test_drive_type' => $payload['test_drive_type'] ?? 'individual',
         ]);
 
         try {

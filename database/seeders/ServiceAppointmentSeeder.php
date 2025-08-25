@@ -38,18 +38,18 @@ class ServiceAppointmentSeeder extends Seeder
                 'requested_services' => 'Bảo dưỡng định kỳ 10.000km',
                 'service_description' => 'Bảo dưỡng định kỳ cho xe đã chạy 10.000km',
                 'customer_complaints' => 'Xe cần bảo dưỡng định kỳ lần đầu',
-                'special_instructions' => 'Khách hàng VIP, cần chăm sóc đặc biệt',
+                'special_instructions' => 'Khách hàng VIP, cần chăm sóc đặc biệt; rửa xe trước khi giao',
                 'status' => 'confirmed',
                 'priority' => 'medium',
                 'estimated_cost' => 1500000,
                 'actual_cost' => null,
                 'total_amount' => 1500000,
                 'payment_status' => 'pending',
-                'payment_method' => null,
-                'work_performed' => null,
-                'technician_notes' => null,
-                'customer_satisfaction' => null,
-                'customer_feedback' => null,
+                'payment_method' => 'cash',
+                'work_performed' => 'Tiếp nhận xe, kiểm tra tổng quát, chẩn đoán sơ bộ',
+                'technician_notes' => 'Kiểm tra bugi, dầu máy, lọc gió; đề xuất thay dầu',
+                'customer_satisfaction' => 0.0,
+                'customer_feedback' => 'Chưa đánh giá',
                 'notes' => 'Lịch hẹn bảo dưỡng định kỳ'
             ],
 
@@ -67,7 +67,7 @@ class ServiceAppointmentSeeder extends Seeder
                 'estimated_duration' => 60,
                 'appointment_type' => 'maintenance',
                 'requested_services' => 'Thay dầu động cơ',
-                'service_description' => 'Thay dầu động cơ và lọc dầu',
+                'service_description' => 'Thay dầu động cơ, lọc dầu; kiểm tra phanh và lốp',
                 'customer_complaints' => 'Cần thay dầu và lọc dầu',
                 'special_instructions' => 'Khách hàng thường xuyên',
                 'status' => 'completed',
@@ -79,7 +79,7 @@ class ServiceAppointmentSeeder extends Seeder
                 'payment_method' => 'cash',
                 'payment_date' => now()->subDays(2)->toDateString(),
                 'work_performed' => 'Đã thay dầu và lọc dầu, xe hoạt động tốt',
-                'technician_notes' => 'Dịch vụ hoàn thành tốt',
+                'technician_notes' => 'Dịch vụ hoàn thành tốt, đã reset đồng hồ nhắc bảo dưỡng',
                 'customer_satisfaction' => 5.0,
                 'customer_feedback' => 'Dịch vụ tốt, nhân viên chuyên nghiệp',
                 'notes' => 'Lịch hẹn thay dầu đã hoàn thành'
@@ -101,7 +101,7 @@ class ServiceAppointmentSeeder extends Seeder
                 'requested_services' => 'Sửa chữa phanh',
                 'service_description' => 'Kiểm tra và sửa chữa hệ thống phanh',
                 'customer_complaints' => 'Phanh có tiếng kêu lạ, cần kiểm tra',
-                'special_instructions' => 'Khách hàng VIP, xe cao cấp',
+                'special_instructions' => 'Khách hàng VIP, xe cao cấp; chuẩn bị đồ nghề chuyên dụng',
                 'status' => 'scheduled',
                 'priority' => 'high',
                 'estimated_cost' => 3000000,
@@ -113,7 +113,7 @@ class ServiceAppointmentSeeder extends Seeder
                 'technician_notes' => null,
                 'customer_satisfaction' => null,
                 'customer_feedback' => null,
-                'notes' => 'Lịch hẹn sửa chữa phanh'
+                'notes' => 'Lịch hẹn sửa chữa phanh; nghi ngờ má phanh mòn, kiểm tra đĩa phanh'
             ],
 
             // Lịch hẹn chẩn đoán
@@ -131,7 +131,7 @@ class ServiceAppointmentSeeder extends Seeder
                 'appointment_type' => 'inspection',
                 'requested_services' => 'Chẩn đoán lỗi động cơ',
                 'service_description' => 'Chẩn đoán lỗi động cơ bằng máy chuyên dụng',
-                'customer_complaints' => 'Động cơ có tiếng ồn lạ',
+                'customer_complaints' => 'Động cơ có tiếng ồn lạ khi tăng tốc',
                 'special_instructions' => 'Khách hàng thay đổi kế hoạch',
                 'status' => 'cancelled',
                 'priority' => 'medium',
@@ -171,10 +171,10 @@ class ServiceAppointmentSeeder extends Seeder
                 'total_amount' => 2000000,
                 'payment_status' => 'pending',
                 'payment_method' => null,
-                'work_performed' => null,
-                'technician_notes' => null,
-                'customer_satisfaction' => null,
-                'customer_feedback' => null,
+                'work_performed' => 'Đã xác nhận lịch hẹn, chờ xử lý',
+                'technician_notes' => 'Chuẩn bị vật tư thay lốp',
+                'customer_satisfaction' => 0.0,
+                'customer_feedback' => 'Chưa đánh giá',
                 'notes' => 'Lịch hẹn thay lốp xe'
             ]
         ];

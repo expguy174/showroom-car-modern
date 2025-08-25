@@ -48,7 +48,7 @@ class ServiceAppointmentController extends Controller
             $validated = $request->validate([
                 'showroom_id' => 'required|exists:showrooms,id',
                 'car_variant_id' => 'required|exists:car_variants,id',
-                'appointment_type' => 'required|in:maintenance,repair,inspection,warranty_work,recall_service,emergency,other',
+                'appointment_type' => 'required|in:' . implode(',', \App\Models\ServiceAppointment::APPOINTMENT_TYPES),
                 'appointment_date' => 'required|date|after:today',
                 // Chuẩn HH:MM 00-23:00-59
                 'appointment_time' => [
@@ -79,7 +79,7 @@ class ServiceAppointmentController extends Controller
                 'customer_complaints' => 'nullable|string|max:500',
                 'special_instructions' => 'nullable|string|max:500',
                 'is_warranty_work' => 'boolean',
-                'payment_status' => 'nullable|in:pending,paid,partial',
+                'payment_status' => 'nullable|in:' . implode(',', \App\Models\ServiceAppointment::PAYMENT_STATUSES),
                 'notes' => 'nullable|string|max:1000',
             ], [
                 'scheduled_time.regex' => 'Thời gian không hợp lệ (HH:MM)',
@@ -102,11 +102,16 @@ class ServiceAppointmentController extends Controller
                 return back()->withErrors(['showroom_id' => 'Showroom không khả dụng'])->withInput();
             }
 
+            // Chuẩn hoá giờ (HH:MM -> HH:MM:00) để khớp kiểu time trong DB
+            $normalizedTime = preg_match('/^\\d{2}:\\d{2}:\\d{2}$/', (string) $validated['appointment_time'])
+                ? $validated['appointment_time']
+                : ($validated['appointment_time'] . ':00');
+
             // Check if time slot is available
-            $scheduledDateTime = $validated['appointment_date'] . ' ' . $validated['appointment_time'];
+            $scheduledDateTime = $validated['appointment_date'] . ' ' . $normalizedTime;
             $existingAppointment = ServiceAppointment::where('showroom_id', $validated['showroom_id'])
                 ->where('appointment_date', $validated['appointment_date'])
-                ->where('appointment_time', $validated['appointment_time'])
+                ->where('appointment_time', $normalizedTime)
                 ->where('status', '!=', 'cancelled')
                 ->first();
 
@@ -128,6 +133,7 @@ class ServiceAppointmentController extends Controller
             $data['user_id'] = Auth::id();
             $data['appointment_number'] = $appointmentNumber;
             $data['status'] = 'scheduled';
+            $data['appointment_time'] = $normalizedTime;
 
             $appointment = ServiceAppointment::create($data);
 
@@ -213,7 +219,7 @@ class ServiceAppointmentController extends Controller
         $validated = $request->validate([
             'showroom_id' => 'required|exists:showrooms,id',
             'car_variant_id' => 'required|exists:car_variants,id',
-            'appointment_type' => 'required|in:maintenance,repair,inspection,warranty_work,recall_service,emergency,other',
+            'appointment_type' => 'required|in:' . implode(',', \App\Models\ServiceAppointment::APPOINTMENT_TYPES),
             'appointment_date' => 'required|date|after:today',
             'appointment_time' => 'required|string',
             'customer_name' => 'required|string|max:255',
@@ -222,13 +228,22 @@ class ServiceAppointmentController extends Controller
             'vehicle_registration' => 'nullable|string|max:20',
             'current_mileage' => 'nullable|numeric|min:0',
             'service_description' => 'required|string|max:1000',
-            'priority' => 'required|in:low,medium,high,urgent',
+            'priority' => 'required|in:' . implode(',', \App\Models\ServiceAppointment::PRIORITIES),
             'preferred_technician' => 'nullable|string|max:255',
             'special_instructions' => 'nullable|string|max:500',
             'estimated_cost' => 'nullable|numeric|min:0',
-            'payment_method' => 'nullable|in:cash,card,bank_transfer,installment',
-            'status' => 'required|in:scheduled,confirmed,in_progress,completed,cancelled',
+            'payment_method' => 'nullable|in:' . implode(',', \App\Models\ServiceAppointment::PAYMENT_METHODS),
+            'status' => 'required|in:' . implode(',', \App\Models\ServiceAppointment::STATUSES),
+            // Bổ sung validation cho rating ở tầng ứng dụng
+            'customer_satisfaction' => 'nullable|numeric|min:0|max:5',
         ]);
+
+        // Chuẩn hoá giờ lưu DB
+        if (isset($validated['appointment_time'])) {
+            $validated['appointment_time'] = preg_match('/^\\d{2}:\\d{2}:\\d{2}$/', (string) $validated['appointment_time'])
+                ? $validated['appointment_time']
+                : ($validated['appointment_time'] . ':00');
+        }
 
         $appointment->update($validated);
 
@@ -273,9 +288,13 @@ class ServiceAppointmentController extends Controller
             'appointment_time' => 'required|string',
         ]);
 
+        $normalizedTime = preg_match('/^\\d{2}:\\d{2}:\\d{2}$/', (string) $request->appointment_time)
+            ? $request->appointment_time
+            : ($request->appointment_time . ':00');
+
         $appointment->update([
             'appointment_date' => $request->appointment_date,
-            'appointment_time' => $request->appointment_time,
+            'appointment_time' => $normalizedTime,
             'status' => 'scheduled',
         ]);
 
@@ -305,8 +324,9 @@ class ServiceAppointmentController extends Controller
         $endTime = 17;
 
         for ($hour = $startTime; $hour < $endTime; $hour++) {
-            $timeSlot = sprintf('%02d:00', $hour);
-            $slotCount = $existingAppointments->where('appointment_time', $timeSlot)->count();
+            $timeSlot = sprintf('%02d:00', $hour);       // hiển thị cho UI
+            $dbTimeSlot = $timeSlot . ':00';             // so sánh trong DB (HH:MM:SS)
+            $slotCount = $existingAppointments->where('appointment_time', $dbTimeSlot)->count();
             
             // Assume max 3 appointments per time slot
             if ($slotCount < 3) {

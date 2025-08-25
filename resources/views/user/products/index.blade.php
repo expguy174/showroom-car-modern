@@ -219,7 +219,7 @@
                         <i class="fas fa-envelope mr-2"></i>
                         Liên hệ tư vấn
                     </a>
-                    <a href="{{ route('test_drives.book') }}" 
+                    <a href="{{ route('test-drives.book') }}" 
                        class="inline-flex items-center px-6 py-3 border-2 border-white text-white font-semibold rounded-lg hover:bg-white hover:text-indigo-700 transition-all duration-200">
                         <i class="fas fa-calendar-check mr-2"></i>
                         Đặt lịch lái thử

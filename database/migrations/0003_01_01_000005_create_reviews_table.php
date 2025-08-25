@@ -16,6 +16,7 @@ return new class extends Migration {
             $table->text('comment');
             $table->boolean('is_approved')->default(true);
             $table->timestamps();
+            $table->softDeletes();
             
             // Indexes
 			$table->index('rating');

@@ -11,6 +11,7 @@ class CarVariantImage extends Model
 
     protected $fillable = [
         'car_variant_id',
+        'car_variant_color_id',
         'image_path',
         'image_url',
         'title',
@@ -42,6 +43,11 @@ class CarVariantImage extends Model
     public function variant()
     {
         return $this->belongsTo(CarVariant::class, 'car_variant_id');
+    }
+
+    public function color()
+    {
+        return $this->belongsTo(CarVariantColor::class, 'car_variant_color_id');
     }
 
     public function getImageUrlAttribute()

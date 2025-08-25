@@ -10,7 +10,6 @@ use App\Http\Controllers\Admin\CarController;
 use App\Http\Controllers\Admin\CarModelController;
 use App\Http\Controllers\Admin\CarVariantController;
 use App\Http\Controllers\Admin\OrderController;
-
 use App\Http\Controllers\Admin\CartItemController;
 use App\Http\Controllers\Admin\BlogController;
 use App\Http\Controllers\Admin\UserController;
@@ -19,8 +18,6 @@ use App\Http\Controllers\Admin\OrderLogController;
 use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Controllers\Admin\TestDriveController;
 use App\Http\Controllers\Admin\PaymentMethodController;
-// use App\Http\Controllers\Admin\LoyaltyProgramController; // removed module
-// use App\Http\Controllers\Admin\InventoryController; // removed module
 use App\Http\Controllers\Admin\AnalyticsController;
 use App\Http\Controllers\Admin\CustomerProfileController;
 use App\Http\Controllers\Admin\ServiceAppointmentController;
@@ -29,23 +26,17 @@ use App\Http\Controllers\Admin\ServiceAppointmentController;
 use App\Http\Controllers\User\HomeController;
 use App\Http\Controllers\User\CartController;
 use App\Http\Controllers\User\UserOrderController;
-
 use App\Http\Controllers\User\UserCarVariantController;
 use App\Http\Controllers\User\AccessoryController as UserAccessoryController;
 use App\Http\Controllers\User\ReviewController as UserReviewController;
 use App\Http\Controllers\User\TestDriveController as UserTestDriveController;
-
 use App\Http\Controllers\User\SearchController;
-// use App\Http\Controllers\User\ProductListingController; // removed
 use App\Http\Controllers\User\ProductController;
 
 // New User Controllers
 use App\Http\Controllers\User\BrandController;
 use App\Http\Controllers\User\ServiceController;
 use App\Http\Controllers\User\FinanceController;
-// use App\Http\Controllers\User\InventoryController as UserInventoryController; // removed module
-
-// use App\Http\Controllers\User\DepositController; // removed module
 use App\Http\Controllers\User\PaymentController as UserPaymentController;
 use App\Http\Controllers\User\AddressController as UserAddressController;
 use App\Http\Controllers\User\WishlistController;
@@ -53,23 +44,13 @@ use App\Http\Controllers\User\WishlistController;
 // --- Trang chủ ---
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
-
-
-
-
-
-
-
-
 // --- Dashboard cho user ---
 Route::get('/dashboard', function () {
     return redirect()->route('home');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-
-
 // Carvariant detail (User) - support slug or id
-Route::get('/car-variants/{slugOrId}', [UserCarVariantController::class, 'show'])->name('car_variants.show');
+Route::get('/car-variants/{slugOrId}', [UserCarVariantController::class, 'show'])->name('car-variants.show');
 
 // Accessory detail (User)
 Route::get('/accessories/{id}', [UserAccessoryController::class, 'show'])->name('accessories.show');
@@ -82,7 +63,7 @@ Route::prefix('reviews')->name('reviews.')->group(function () {
 });
 
 // Test Drives
-Route::prefix('test-drives')->name('test_drives.')->group(function () {
+Route::prefix('test-drives')->name('test-drives.')->group(function () {
     Route::post('/book', [UserTestDriveController::class, 'store'])->name('book');
     Route::get('/', [UserTestDriveController::class, 'index'])->name('index');
     Route::get('/{testDrive}', [UserTestDriveController::class, 'show'])->name('show');
@@ -124,10 +105,6 @@ Route::prefix('finance')->name('finance.')->group(function () {
     Route::get('/options', [FinanceController::class, 'getFinanceOptions'])->name('options');
 });
 
-// Inventory routes removed per request
-
-
-
 // About page
 Route::get('/about', function () {
     return view('user.about');
@@ -137,15 +114,8 @@ Route::get('/about', function () {
 Route::get('/contact', [\App\Http\Controllers\User\ContactController::class, 'index'])->name('contact');
 Route::post('/contact', [\App\Http\Controllers\User\ContactController::class, 'store'])->name('contact.store');
 
-// Fallback legacy inventory route to products
-Route::get('/inventory', function () {
-    return redirect()->route('products.index');
-})->name('inventory.index');
-
-
-
-// --- Profile cá nhân ---
-Route::middleware('auth')->group(function () {
+// --- Profile cá nhân --- (moved under /user)
+Route::middleware('auth')->prefix('user')->name('user.')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -164,8 +134,8 @@ Route::prefix('payment')->group(function(){
 
 Route::post('/order', [UserOrderController::class, 'store'])->middleware('auth')->name('order.store');
 
-// Cart
-Route::prefix('cart')->name('cart.')->group(function () {
+// Cart (moved under /user)
+Route::prefix('user/cart')->name('user.cart.')->group(function () {
     Route::get('/', [CartController::class, 'index'])->name('index'); // Xem giỏ hàng
     Route::get('/count', [CartController::class, 'getCount'])->name('count'); // Lấy số lượng cart
     Route::post('/add', [CartController::class, 'add'])->name('add'); // Thêm vào giỏ
@@ -174,11 +144,11 @@ Route::prefix('cart')->name('cart.')->group(function () {
     Route::post('/clear', [CartController::class, 'clear'])->name('clear'); // Xóa toàn bộ giỏ
 });
 
-// --- Cart routes ---
+// --- Cart routes --- (moved under /user)
 Route::middleware('auth')->group(function () {
-    Route::get('/cart/checkout', [CartController::class, 'showCheckoutForm'])->name('cart.checkout.form');
-    Route::post('/cart/checkout', [CartController::class, 'processCheckout'])->name('cart.checkout');
-    Route::get('/order/success/{order}', [CartController::class, 'orderSuccess'])->name('order.success');
+    Route::get('/user/cart/checkout', [CartController::class, 'showCheckoutForm'])->name('user.cart.checkout.form');
+    Route::post('/user/cart/checkout', [CartController::class, 'processCheckout'])->name('user.cart.checkout');
+    Route::get('/user/order/success/{order}', [CartController::class, 'orderSuccess'])->name('user.order.success');
 });
 
 // --- Admin routes ---
@@ -243,12 +213,6 @@ Route::middleware(['auth', IsAdmin::class])->prefix('admin')->name('admin.')->gr
         Route::delete('/delete/{accessory}', [AccessoryController::class, 'destroy'])->name('destroy');
     });
 
-    // Cart Items - TODO: Refactor to work with new polymorphic CartItem structure
-    // Route::prefix('cartitems')->name('cartitems.')->group(function () {
-    //     Route::get('/', [CartItemController::class, 'index'])->name('index');
-    //     Route::delete('/delete/{cartitem}', [CartItemController::class, 'destroy'])->name('destroy');
-    // });
-
     // Blogs
     Route::prefix('blogs')->name('blogs.')->group(function () {
         Route::get('/', [BlogController::class, 'index'])->name('index');
@@ -276,7 +240,7 @@ Route::middleware(['auth', IsAdmin::class])->prefix('admin')->name('admin.')->gr
     });
 
     // Test Drives
-    Route::prefix('test-drives')->name('test_drives.')->group(function () {
+    Route::prefix('test-drives')->name('test-drives.')->group(function () {
         Route::get('/', [TestDriveController::class, 'index'])->name('index');
         Route::get('/{testDrive}', [TestDriveController::class, 'show'])->name('show');
         Route::put('/{testDrive}/status', [TestDriveController::class, 'updateStatus'])->name('update_status');
@@ -294,11 +258,6 @@ Route::middleware(['auth', IsAdmin::class])->prefix('admin')->name('admin.')->gr
         Route::delete('/{paymentMethod}', [PaymentMethodController::class, 'destroy'])->name('destroy');
         Route::post('/{paymentMethod}/toggle-status', [PaymentMethodController::class, 'toggleStatus'])->name('toggle-status');
     });
-
-
-    // Inventory module removed
-
-    // Analytics (đã lược bỏ module metrics/commissions)
 
     // Customer Profiles
     Route::prefix('customer-profiles')->name('customer-profiles.')->group(function () {
@@ -342,7 +301,7 @@ Route::middleware(['auth', IsAdmin::class])->prefix('admin')->name('admin.')->gr
 });
 
 // Trang chi tiết model xe
-Route::get('/car-models/{id}', [\App\Http\Controllers\User\CarModelController::class, 'show'])->name('car_models.show');
+Route::get('/car-models/{id}', [\App\Http\Controllers\User\CarModelController::class, 'show'])->name('car-models.show');
 
 // Notification routes
 Route::middleware(['auth'])->group(function () {

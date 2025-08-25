@@ -14,13 +14,13 @@ return new class extends Migration
             $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('set null');
             $table->foreignId('payment_transaction_id')->nullable()->constrained('payment_transactions')->onDelete('set null');
 			$table->unsignedSmallInteger('installment_number');
-            $table->decimal('amount', 15, 2)->nullable();
+            $table->decimal('amount', 15, 2)->unsigned()->nullable();
             $table->dateTime('due_date')->nullable();
             $table->string('bank_name')->nullable();
             $table->decimal('interest_rate', 5, 2); // %/năm
 			$table->unsignedSmallInteger('tenure_months');
-            $table->decimal('down_payment_amount', 15, 2)->default(0);
-            $table->decimal('monthly_payment_amount', 15, 2);
+            $table->decimal('down_payment_amount', 15, 2)->unsigned()->default(0);
+            $table->decimal('monthly_payment_amount', 15, 2)->unsigned();
             $table->json('schedule')->nullable(); // lịch thanh toán
             $table->enum('status', ['pending', 'paid', 'overdue', 'cancelled'])->default('pending');
             $table->dateTime('paid_at')->nullable();

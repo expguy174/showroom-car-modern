@@ -47,16 +47,9 @@ class WishlistHelper
         }
         $sessionId = session()->getId();
         $cacheKey = "wishlist_count_session_{$sessionId}";
-        return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($sessionId) {
-            if (Schema::hasTable('wishlist_items') && Schema::hasColumn('wishlist_items', 'session_id')) {
-                try {
-                    return WishlistItem::where('session_id', $sessionId)->count();
-                } catch (\Throwable $e) {
-                    // fallback to session storage
-                }
-            }
+        return Cache::remember($cacheKey, now()->addMinutes(5), function () {
             $wishlistData = session()->get('wishlist', []);
-            return count($wishlistData);
+            return is_array($wishlistData) ? count($wishlistData) : 0;
         });
     }
 
@@ -143,7 +136,7 @@ class WishlistHelper
                 }
             }
         }
-        return $items;
+        return $items->sortByDesc('created_at')->values();
     }
 
     /**
@@ -170,34 +163,17 @@ class WishlistHelper
             );
             self::clearWishlistCountCache();
             return [
-                'success' => true,
+                'success' => $wishlistItem->wasRecentlyCreated,
                 'message' => $wishlistItem->wasRecentlyCreated ? 'Đã thêm vào danh sách yêu thích!' : 'Sản phẩm đã có trong danh sách yêu thích!',
                 'wishlist_count' => self::getWishlistCount()
             ];
         }
-        $sessionId = session()->getId();
-        if (Schema::hasTable('wishlist_items') && Schema::hasColumn('wishlist_items', 'session_id')) {
-            try {
-                $wishlistItem = WishlistItem::firstOrCreate(
-                    ['session_id' => $sessionId, 'item_type' => $itemTypeClass, 'item_id' => $itemId],
-                    ['is_active' => true]
-                );
-                self::clearWishlistCountCache();
-                return [
-                    'success' => true,
-                    'message' => $wishlistItem->wasRecentlyCreated ? 'Đã thêm vào danh sách yêu thích!' : 'Sản phẩm đã có trong danh sách yêu thích!',
-                    'wishlist_count' => self::getWishlistCount()
-                ];
-            } catch (\Throwable $e) {
-                // fallback to session storage
-            }
-        }
-        // Fallback to session storage if DB path unavailable
+        // Guest: use session storage for deterministic behavior
         $wishlistData = session()->get('wishlist', []);
         $itemKey = $itemType . '_' . $itemId;
         if (isset($wishlistData[$itemKey])) {
             return [
-                'success' => true,
+                'success' => false,
                 'message' => 'Sản phẩm đã có trong danh sách yêu thích!',
                 'wishlist_count' => count($wishlistData)
             ];
@@ -235,24 +211,7 @@ class WishlistHelper
                 'wishlist_count' => self::getWishlistCount()
             ];
         }
-        $sessionId = session()->getId();
-        if (Schema::hasTable('wishlist_items') && Schema::hasColumn('wishlist_items', 'session_id')) {
-            try {
-                $deleted = WishlistItem::where('session_id', $sessionId)
-                    ->where('item_type', $itemTypeClass)
-                    ->where('item_id', $itemId)
-                    ->delete();
-                self::clearWishlistCountCache();
-                return [
-                    'success' => true,
-                    'message' => $deleted > 0 ? 'Đã xóa khỏi danh sách yêu thích!' : 'Sản phẩm không có trong danh sách yêu thích!',
-                    'wishlist_count' => self::getWishlistCount()
-                ];
-            } catch (\Throwable $e) {
-                // fallback to session storage
-            }
-        }
-        // Fallback to session storage
+        // Guest: session storage
         $wishlistData = session()->get('wishlist', []);
         $itemKey = $itemType . '_' . $itemId;
         if (isset($wishlistData[$itemKey])) {

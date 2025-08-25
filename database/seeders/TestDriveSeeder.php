@@ -30,15 +30,15 @@ class TestDriveSeeder extends Seeder
                        'preferred_time' => '14:00:00',
                        'duration_minutes' => 60,
                        'status' => 'confirmed',
-                       'notes' => 'Khách hàng VIP, cần xe cao cấp',
+                       'notes' => 'Khách hàng VIP, cần xe cao cấp; cung cấp lộ trình chạy thử nội đô',
                        'special_requirements' => 'Cần xe Mercedes-Benz C-Class',
                        'has_experience' => true,
                        'experience_level' => 'expert',
                        'test_drive_type' => 'individual',
                        'confirmed_at' => now(),
                        'completed_at' => null,
-                       'feedback' => null,
-                       'satisfaction_rating' => null
+                       'feedback' => 'Chưa có',
+                       'satisfaction_rating' => 0.0
                    ],
 
                    // Regular Customer 1 Test Drive
@@ -51,7 +51,7 @@ class TestDriveSeeder extends Seeder
                        'preferred_time' => '10:00:00',
                        'duration_minutes' => 45,
                        'status' => 'completed',
-                       'notes' => 'Cần xe gia đình, tiết kiệm nhiên liệu',
+                       'notes' => 'Cần xe gia đình, tiết kiệm nhiên liệu; chạy thử cung đường cầu Nhật Tân',
                        'special_requirements' => 'Xe gia đình tiết kiệm nhiên liệu',
                        'has_experience' => false,
                        'experience_level' => 'beginner',
@@ -72,15 +72,15 @@ class TestDriveSeeder extends Seeder
                        'preferred_time' => '16:00:00',
                        'duration_minutes' => 90,
                        'status' => 'pending',
-                       'notes' => 'Cần xe đa dụng cho công việc',
+                       'notes' => 'Cần xe đa dụng cho công việc; cần kiểm tra khả năng chở hàng nhẹ',
                        'special_requirements' => 'Xe đa dụng cho công việc',
                        'has_experience' => true,
                        'experience_level' => 'intermediate',
                        'test_drive_type' => 'individual',
                        'confirmed_at' => null,
                        'completed_at' => null,
-                       'feedback' => null,
-                       'satisfaction_rating' => null
+                       'feedback' => 'Chưa có',
+                       'satisfaction_rating' => 0.0
                    ],
 
                    // Cancelled Test Drive
@@ -93,15 +93,15 @@ class TestDriveSeeder extends Seeder
                        'preferred_time' => '15:00:00',
                        'duration_minutes' => 60,
                        'status' => 'cancelled',
-                       'notes' => 'Cần xe gia đình',
+                       'notes' => 'Cần xe gia đình; dời lịch do bận công tác',
                        'special_requirements' => 'Xe gia đình',
                        'has_experience' => false,
                        'experience_level' => 'beginner',
                        'test_drive_type' => 'individual',
                        'confirmed_at' => null,
                        'completed_at' => null,
-                       'feedback' => null,
-                       'satisfaction_rating' => null
+                       'feedback' => 'Chưa có',
+                       'satisfaction_rating' => 0.0
                    ]
         ];
 

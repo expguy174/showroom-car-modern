@@ -21,7 +21,7 @@
                     </div>
                 </div>
                 <div class="hidden md:flex items-center space-x-4">
-                    <a href="{{ route('profile.edit') }}" class="flex items-center text-blue-600 hover:text-blue-700 font-medium">
+                    <a href="{{ route('user.profile.edit') }}" class="flex items-center text-blue-600 hover:text-blue-700 font-medium">
                         <i class="fas fa-arrow-left mr-2"></i>
                         Quay về tài khoản
                     </a>

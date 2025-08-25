@@ -26,9 +26,9 @@ class ServiceAppointmentController extends Controller
             $query->where('status', $request->status);
         }
 
-        // Filter by service type
-        if ($request->has('service_type') && $request->service_type) {
-            $query->where('appointment_type', $request->service_type);
+        // Filter by appointment type
+        if ($request->has('appointment_type') && $request->appointment_type) {
+            $query->where('appointment_type', $request->appointment_type);
         }
 
         // Filter by date range
@@ -54,8 +54,8 @@ class ServiceAppointmentController extends Controller
 
         $appointments = $query->orderBy('appointment_date', 'asc')->paginate(15);
         $showrooms = Showroom::all();
-        $statuses = ['scheduled', 'confirmed', 'in_progress', 'completed', 'cancelled'];
-        $serviceTypes = ['maintenance', 'repair', 'inspection', 'warranty_work', 'recall_service', 'emergency', 'other'];
+        $statuses = \App\Models\ServiceAppointment::STATUSES;
+        $serviceTypes = \App\Models\ServiceAppointment::APPOINTMENT_TYPES;
 
         return view('admin.service-appointments.index', compact('appointments', 'showrooms', 'statuses', 'serviceTypes'));
     }
@@ -71,7 +71,7 @@ class ServiceAppointmentController extends Controller
     {
         $showrooms = Showroom::all();
         $users = User::all();
-        $statuses = ['pending', 'confirmed', 'in_progress', 'completed', 'cancelled'];
+        $statuses = \App\Models\ServiceAppointment::STATUSES;
         
         return view('admin.service-appointments.edit', compact('appointment', 'showrooms', 'users', 'statuses'));
     }
@@ -81,27 +81,49 @@ class ServiceAppointmentController extends Controller
         $request->validate([
             'showroom_id' => 'required|exists:showrooms,id',
             'car_variant_id' => 'required|exists:car_variants,id',
-            'service_type' => 'required|in:maintenance,repair,inspection,warranty,other',
-            'scheduled_date' => 'required|date',
-            'scheduled_time' => 'required|string',
+            'appointment_type' => 'required|in:' . implode(',', \App\Models\ServiceAppointment::APPOINTMENT_TYPES),
+            'appointment_date' => 'required|date',
+            'appointment_time' => 'required|string',
             'customer_name' => 'required|string|max:255',
             'customer_phone' => 'required|string|max:20',
             'customer_email' => 'required|email|max:255',
-            'vehicle_license_plate' => 'nullable|string|max:20',
-            'vehicle_mileage' => 'nullable|numeric|min:0',
-            'service_description' => 'required|string|max:1000',
-            'urgency_level' => 'required|in:low,medium,high,urgent',
-            'preferred_technician' => 'nullable|string|max:255',
-            'special_requirements' => 'nullable|string|max:500',
+            'current_mileage' => 'nullable|numeric|min:0',
+            'service_description' => 'nullable|string|max:1000',
+            'priority' => 'required|in:' . implode(',', \App\Models\ServiceAppointment::PRIORITIES),
+            'special_instructions' => 'nullable|string|max:500',
             'estimated_cost' => 'nullable|numeric|min:0',
             'actual_cost' => 'nullable|numeric|min:0',
-            'payment_method' => 'nullable|in:cash,card,bank_transfer,installment',
-            'status' => 'required|in:pending,confirmed,in_progress,completed,cancelled',
+            'payment_method' => 'nullable|in:' . implode(',', \App\Models\ServiceAppointment::PAYMENT_METHODS),
+            'status' => 'required|in:' . implode(',', \App\Models\ServiceAppointment::STATUSES),
             'technician_notes' => 'nullable|string|max:1000',
-            'completion_notes' => 'nullable|string|max:1000',
         ]);
 
-        $data = $request->all();
+        $data = $request->only([
+            'showroom_id',
+            'car_variant_id',
+            'appointment_type',
+            'appointment_date',
+            'appointment_time',
+            'customer_name',
+            'customer_phone',
+            'customer_email',
+            'current_mileage',
+            'service_description',
+            'priority',
+            'special_instructions',
+            'estimated_cost',
+            'actual_cost',
+            'payment_method',
+            'status',
+            'technician_notes',
+        ]);
+
+        // Chuẩn hoá giờ TIME HH:MM:SS
+        if (!empty($data['appointment_time'])) {
+            $data['appointment_time'] = preg_match('/^\d{2}:\d{2}:\d{2}$/', (string) $data['appointment_time'])
+                ? $data['appointment_time']
+                : ($data['appointment_time'] . ':00');
+        }
         
         // Update completion date if status is completed
         if ($request->status === 'completed' && $appointment->status !== 'completed') {
@@ -130,7 +152,7 @@ class ServiceAppointmentController extends Controller
     public function updateStatus(Request $request, ServiceAppointment $appointment)
     {
         $request->validate([
-            'status' => 'required|in:pending,confirmed,in_progress,completed,cancelled',
+            'status' => 'required|in:' . implode(',', \App\Models\ServiceAppointment::STATUSES),
             'notes' => 'nullable|string|max:500',
         ]);
 

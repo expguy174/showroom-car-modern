@@ -55,18 +55,25 @@ class PaymentController extends Controller
                 /** @var PaymentTransaction|null $pt */
                 $pt = $order->paymentTransactions()->latest('id')->first();
                 if (!$pt) {
-                    $pt = new PaymentTransaction([ 'order_id' => $order->id, 'user_id' => $order->user_id ]);
+                    $pt = new PaymentTransaction([
+                        'order_id' => $order->id,
+                        'user_id' => $order->user_id,
+                        'payment_method_id' => $order->payment_method_id,
+                    ]);
                 }
-                $pt->gateway_name = 'vnpay';
-                $pt->gateway_transaction_id = $txnId;
-                $pt->amount = $pt->amount ?: ($amount ?? 0);
-                $pt->status = ($code === '00') ? 'succeeded' : 'failed';
-                $pt->gateway_response = $payload;
+                $pt->transaction_number = $pt->transaction_number ?: ('VNPAY-' . ($txnId ?: uniqid()));
+                $pt->amount = $pt->amount ?: (float) ($amount ?? 0);
+                $pt->currency = $pt->currency ?: 'VND';
+                $pt->status = ($code === '00') ? 'completed' : 'failed';
+                $pt->payment_date = $pt->payment_date ?: now();
+                $pt->notes = $pt->notes ?: 'VNPAY IPN';
                 $pt->save();
 
-                if ($pt->status === 'succeeded') {
-                    $order->payment_status = 'paid';
-                    $order->status = $order->status === 'pending' ? 'processing' : $order->status;
+                if ($pt->status === 'completed') {
+                    $order->payment_status = 'completed';
+                    $order->paid_at = $order->paid_at ?: now();
+                    $order->transaction_id = $order->transaction_id ?: $pt->transaction_number;
+                    $order->status = $order->status === 'pending' ? 'confirmed' : $order->status;
                 } else {
                     $order->payment_status = 'failed';
                 }
@@ -109,17 +116,26 @@ class PaymentController extends Controller
 
             DB::transaction(function () use ($order, $txnId, $status, $amount, $payload) {
                 $pt = $order->paymentTransactions()->latest('id')->first();
-                if (!$pt) { $pt = new PaymentTransaction([ 'order_id' => $order->id, 'user_id' => $order->user_id ]); }
-                $pt->gateway_name = 'momo';
-                $pt->gateway_transaction_id = $txnId;
-                $pt->amount = $pt->amount ?: ($amount ?? 0);
-                $pt->status = ($status == 0) ? 'succeeded' : 'failed';
-                $pt->gateway_response = $payload;
+                if (!$pt) {
+                    $pt = new PaymentTransaction([
+                        'order_id' => $order->id,
+                        'user_id' => $order->user_id,
+                        'payment_method_id' => $order->payment_method_id,
+                    ]);
+                }
+                $pt->transaction_number = $pt->transaction_number ?: ('MOMO-' . ($txnId ?: uniqid()));
+                $pt->amount = $pt->amount ?: (float) ($amount ?? 0);
+                $pt->currency = $pt->currency ?: 'VND';
+                $pt->status = ((string) $status === '0') ? 'completed' : 'failed';
+                $pt->payment_date = $pt->payment_date ?: now();
+                $pt->notes = $pt->notes ?: 'MOMO IPN';
                 $pt->save();
 
-                if ($pt->status === 'succeeded') {
-                    $order->payment_status = 'paid';
-                    $order->status = $order->status === 'pending' ? 'processing' : $order->status;
+                if ($pt->status === 'completed') {
+                    $order->payment_status = 'completed';
+                    $order->paid_at = $order->paid_at ?: now();
+                    $order->transaction_id = $order->transaction_id ?: $pt->transaction_number;
+                    $order->status = $order->status === 'pending' ? 'confirmed' : $order->status;
                 } else {
                     $order->payment_status = 'failed';
                 }

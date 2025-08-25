@@ -14,6 +14,7 @@ class OrderLog extends Model
         'user_id',
         'action',
         'details',
+        'message',
         'ip_address',
         'user_agent'
     ];

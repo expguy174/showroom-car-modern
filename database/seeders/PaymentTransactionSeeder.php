@@ -43,7 +43,7 @@ class PaymentTransactionSeeder extends Seeder
                 'currency' => 'VND',
                 'status' => 'pending',
                 'payment_date' => null,
-                'notes' => 'Chờ chuyển khoản từ Vietcombank'
+                'notes' => 'Khách chuyển khoản qua Vietcombank, đính kèm UTR sau khi duyệt'
             ],
 
             // Regular Customer 1 Order Payment
@@ -69,7 +69,7 @@ class PaymentTransactionSeeder extends Seeder
                 'currency' => 'VND',
                 'status' => 'pending',
                 'payment_date' => null,
-                'notes' => 'Đang chờ phê duyệt khoản vay'
+                'notes' => 'Chờ duyệt hồ sơ vay VPBank, giải ngân trong 1-2 ngày làm việc'
             ],
 
             // Cancelled Order Payment

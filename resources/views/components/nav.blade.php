@@ -143,7 +143,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                 </a>
 
                 {{-- Cart --}}
-                <a href="{{ route('cart.index') }}" class="relative inline-flex items-center justify-center w-10 h-10 rounded-lg border border-gray-200 bg-white text-gray-600 hover:text-indigo-700 hover:border-indigo-300">
+                <a href="{{ route('user.cart.index') }}" class="relative inline-flex items-center justify-center w-10 h-10 rounded-lg border border-gray-200 bg-white text-gray-600 hover:text-indigo-700 hover:border-indigo-300">
                     <i class="fas fa-shopping-cart"></i>
                     <span id="cart-count-badge" class="cart-count absolute -top-1 -right-1 w-5 h-5 text-[10px] rounded-full bg-indigo-600 text-white flex items-center justify-center {{ $navCartCount > 0 ? 'flex' : 'hidden' }}">{{ $navCartCount > 99 ? '99+' : $navCartCount }}</span>
                     <span class="sr-only">Giỏ hàng</span>
@@ -201,11 +201,11 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                     <div class="dropdown-menu profile-dropdown-menu absolute right-0 mt-2 min-w-[240px] z-50">
                         <div class="p-2">
                             @auth
-                            <a href="{{ route('profile.edit') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white"><i class="fas fa-user-cog text-gray-400"></i><span>Tài khoản</span></a>
+                            <a href="{{ route('user.profile.edit') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white"><i class="fas fa-user-cog text-gray-400"></i><span>Tài khoản</span></a>
                             <a href="{{ route('user.customer-profiles.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white"><i class="fas fa-id-badge text-gray-400"></i><span>Hồ sơ</span></a>
                             <a href="{{ route('user.customer-profiles.orders') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white"><i class="fas fa-file-invoice-dollar text-gray-400"></i><span>Đơn hàng</span></a>
                             <a href="{{ route('user.service-appointments.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white"><i class="fas fa-calendar-check text-gray-400"></i><span>Bảo dưỡng</span></a>
-                            <a href="{{ route('test_drives.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white"><i class="fas fa-car text-gray-400"></i><span>Lái thử</span></a>
+                            <a href="{{ route('test-drives.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white"><i class="fas fa-car text-gray-400"></i><span>Lái thử</span></a>
                             @if(auth()->user()->role === 'admin')
                             <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white"><i class="fas fa-tachometer-alt text-gray-400"></i><span>Admin Dashboard</span></a>
                             @endif
@@ -293,7 +293,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                     </div>
                 </div>
 
-                <a href="{{ route('test_drives.index') }}" class="block px-4 py-3 rounded-lg hover:bg-gray-50 flex items-center gap-2"><i class="fas fa-road mr-3 text-gray-400"></i><span>Lái thử</span></a>
+                <a href="{{ route('test-drives.index') }}" class="block px-4 py-3 rounded-lg hover:bg-gray-50 flex items-center gap-2"><i class="fas fa-road mr-3 text-gray-400"></i><span>Lái thử</span></a>
 
                 <div>
                     <button type="button" class="mobile-dropdown-btn w-full text-left px-4 py-3 rounded-lg hover:bg-gray-50 flex items-center justify-between">
@@ -327,7 +327,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                 {{-- Quick Actions --}}
                 <div class="pt-4 mt-2 border-t">
                     <div class="px-4 pb-2 text-sm text-gray-600 font-medium">Truy cập nhanh</div>
-                    <a href="{{ route('cart.index') }}" class="block px-4 py-3 rounded-lg hover:bg-gray-50 relative">
+                    <a href="{{ route('user.cart.index') }}" class="block px-4 py-3 rounded-lg hover:bg-gray-50 relative">
                         <i class="fas fa-shopping-cart mr-3 text-gray-400"></i>Giỏ hàng
                         <span id="cart-count-badge-mobile" class="cart-count absolute top-2 right-2 w-5 h-5 text-[10px] rounded-full bg-indigo-600 text-white flex items-center justify-center {{ $navCartCount > 0 ? 'flex' : 'hidden' }}">{{ $navCartCount > 99 ? '99+' : $navCartCount }}</span>
                     </a>
@@ -347,7 +347,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                 <div class="pt-4 mt-2 border-t">
                     @auth
                     <div class="px-4 pb-2 text-sm text-gray-600">Xin chào, <span class="font-semibold text-gray-900">{{ auth()->user()->name }}</span></div>
-                    <a href="{{ route('profile.edit') }}" class="block px-4 py-3 rounded-lg hover:bg-gray-50"><i class="fas fa-user-cog mr-3 text-gray-400"></i>Tài khoản</a>
+                    <a href="{{ route('user.profile.edit') }}" class="block px-4 py-3 rounded-lg hover:bg-gray-50"><i class="fas fa-user-cog mr-3 text-gray-400"></i>Tài khoản</a>
                     <a href="{{ route('user.customer-profiles.index') }}" class="block px-4 py-3 rounded-lg hover:bg-gray-50"><i class="fas fa-id-badge mr-3 text-gray-400"></i>Hồ sơ khách hàng</a>
                     <a href="{{ route('user.customer-profiles.orders') }}" class="block px-4 py-3 rounded-lg hover:bg-gray-50"><i class="fas fa-file-invoice-dollar mr-3 text-gray-400"></i>Đơn hàng</a>
                     <a href="{{ route('user.service-appointments.index') }}" class="block px-4 py-3 rounded-lg hover:bg-gray-50"><i class="fas fa-calendar-check mr-3 text-gray-400"></i>Lịch hẹn</a>

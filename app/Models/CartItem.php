@@ -16,8 +16,6 @@ class CartItem extends Model
         'item_id',
         'color_id',
         'quantity',
-        'price',
-        'notes',
     ];
 
     public function user()
@@ -37,7 +35,6 @@ class CartItem extends Model
 
     protected $casts = [
         'quantity' => 'integer',
-        'price' => 'decimal:2',
     ];
 
     public function getItemNameAttribute()
@@ -50,9 +47,6 @@ class CartItem extends Model
 
     public function getItemPriceAttribute()
     {
-        if ($this->item) {
-            return $this->item->price ?? 0;
-        }
-        return 0;
+        return $this->item->price ?? 0;
     }
 }

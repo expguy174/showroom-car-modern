@@ -12,12 +12,12 @@ return new class extends Migration {
             $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('set null');
             
             // Thông tin đơn hàng - không trùng lặp với users table
-            $table->decimal('total_price', 15, 2)->default(0);
-            $table->decimal('subtotal', 15, 2)->default(0);
-            $table->decimal('discount_total', 15, 2)->default(0);
-            $table->decimal('tax_total', 15, 2)->default(0);
-            $table->decimal('shipping_fee', 15, 2)->default(0);
-            $table->decimal('grand_total', 15, 2)->default(0);
+            $table->decimal('total_price', 15, 2)->unsigned()->default(0);
+            $table->decimal('subtotal', 15, 2)->unsigned()->default(0);
+            $table->decimal('discount_total', 15, 2)->unsigned()->default(0);
+            $table->decimal('tax_total', 15, 2)->unsigned()->default(0);
+            $table->decimal('shipping_fee', 15, 2)->unsigned()->default(0);
+            $table->decimal('grand_total', 15, 2)->unsigned()->default(0);
             $table->text('note')->nullable();
             $table->foreignId('payment_method_id')->nullable()->constrained('payment_methods')->onDelete('set null');
             $table->string('payment_status')->default('pending');
@@ -34,7 +34,7 @@ return new class extends Migration {
             $table->enum('source', ['website', 'mobile_app', 'phone', 'walk_in', 'social_media'])->default('website');
             $table->string('ip_address', 45)->nullable();
             $table->string('user_agent', 512)->nullable();
-            $table->string('referrer')->nullable();
+            $table->string('referrer', 2048)->nullable();
             
             // Audit trail
             $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
@@ -59,13 +59,13 @@ return new class extends Migration {
             $table->string('trade_in_brand')->nullable();
             $table->string('trade_in_model')->nullable();
 			$table->unsignedSmallInteger('trade_in_year')->nullable();
-            $table->decimal('trade_in_value', 15, 2)->nullable();
+            $table->decimal('trade_in_value', 15, 2)->unsigned()->nullable();
             $table->text('trade_in_condition')->nullable();
             
             // Financing information
             $table->foreignId('finance_option_id')->nullable()->constrained('finance_options')->onDelete('set null');
-            $table->decimal('down_payment_amount', 15, 2)->nullable();
-            $table->decimal('monthly_payment_amount', 15, 2)->nullable();
+            $table->decimal('down_payment_amount', 15, 2)->unsigned()->nullable();
+            $table->decimal('monthly_payment_amount', 15, 2)->unsigned()->nullable();
             $table->integer('loan_term_months')->nullable();
             $table->decimal('interest_rate', 5, 2)->nullable();
             
@@ -77,7 +77,6 @@ return new class extends Migration {
             $table->index(['status', 'created_at']);
             $table->index(['payment_status', 'status']);
             $table->index('transaction_id');
-			$table->index('order_number');
             $table->index(['source', 'status']);
             $table->index('tracking_number');
             $table->index(['sales_person_id', 'status']);

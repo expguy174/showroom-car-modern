@@ -39,11 +39,7 @@ class PlaceOrder
             throw new \InvalidArgumentException('Order items must not be empty');
         }
 
-        // Normalize contact fields
-        $name = (string) ($payload['name'] ?? '');
-        $phone = (string) ($payload['phone'] ?? '');
-        $email = $payload['email'] ?? null;
-        $address = $payload['address'] ?? '';
+        // Contact fields are not stored in orders table per latest schema
 
         // Fetch models and compute totals
         $resolvedItems = [];
@@ -93,13 +89,9 @@ class PlaceOrder
             ];
         }
 
-        return DB::transaction(function () use ($payload, $name, $phone, $email, $address, $orderTotal, $resolvedItems) {
+        return DB::transaction(function () use ($payload, $orderTotal, $resolvedItems) {
             $order = Order::create([
                 'user_id' => $payload['user_id'] ?? null,
-                'phone' => $phone,
-                'name' => $name,
-                'email' => $email,
-                'address' => $address ?? '',
                 'total_price' => $orderTotal,
                 'subtotal' => $payload['subtotal'] ?? $orderTotal,
                 'discount_total' => $payload['discount_total'] ?? 0,

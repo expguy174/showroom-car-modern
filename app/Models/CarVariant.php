@@ -84,6 +84,21 @@ class CarVariant extends Model
         return $this->hasMany(CarVariantColor::class);
     }
 
+    /**
+     * Đồng bộ tồn kho biến thể = tổng tồn kho các màu đang active.
+     */
+    public function recalculateStockQuantity(): void
+    {
+        $sum = (int) $this->colors()
+            ->where('is_active', true)
+            ->sum('stock_quantity');
+
+        // Tránh ghi DB không cần thiết
+        if ((int) ($this->stock_quantity ?? 0) !== $sum) {
+            $this->forceFill(['stock_quantity' => $sum])->save();
+        }
+    }
+
     public function images()
     {
         return $this->hasMany(CarVariantImage::class);
@@ -222,6 +237,22 @@ class CarVariant extends Model
 
     protected static function booted(): void
     {
+        $recalc = function (?int $modelId): void {
+            if (!$modelId) return;
+            $model = CarModel::find($modelId);
+            if (!$model) return;
+            $brandId = $model->car_brand_id;
+            if (!$brandId) return;
+            $totalModels = CarModel::where('car_brand_id', $brandId)->whereNull('deleted_at')->count();
+            $totalVariants = CarVariant::whereIn('car_model_id', function ($q) use ($brandId) {
+                $q->select('id')->from('car_models')->where('car_brand_id', $brandId)->whereNull('deleted_at');
+            })->whereNull('deleted_at')->count();
+            CarBrand::where('id', $brandId)->update([
+                'total_models' => $totalModels,
+                'total_variants' => $totalVariants,
+            ]);
+        };
+
         static::creating(function (CarVariant $variant) {
             if (empty($variant->slug) && !empty($variant->name)) {
                 $variant->slug = static::generateUniqueSlug($variant->name);
@@ -231,6 +262,16 @@ class CarVariant extends Model
             if ($variant->isDirty('name') && empty($variant->slug)) {
                 $variant->slug = static::generateUniqueSlug($variant->name, $variant->id);
             }
+        });
+
+        static::created(function (CarVariant $variant) use ($recalc) {
+            $recalc($variant->car_model_id);
+        });
+        static::deleted(function (CarVariant $variant) use ($recalc) {
+            $recalc($variant->car_model_id);
+        });
+        static::restored(function (CarVariant $variant) use ($recalc) {
+            $recalc($variant->car_model_id);
         });
     }
 

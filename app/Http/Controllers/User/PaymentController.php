@@ -14,7 +14,6 @@ use App\Models\PaymentMethod;
 use App\Models\Order;
 use App\Models\Installment;
 use App\Models\Refund;
-use App\Models\Inventory;
 use App\Models\CarVariant;
 use Carbon\Carbon;
 
@@ -54,42 +53,30 @@ class PaymentController extends Controller
     public function create(Request $request)
     {
         $orderId = $request->get('order_id');
-        $inventoryId = $request->get('inventory_id');
-        
+
         $order = null;
-        $inventory = null;
-        
+
         if ($orderId) {
             $order = Order::where('id', $orderId)
                 ->where('user_id', Auth::id())
                 ->with(['items.item'])
                 ->firstOrFail();
         }
-        
-        if ($inventoryId) {
-            $inventory = Inventory::where('id', $inventoryId)
-                ->with(['carVariant.carModel.carBrand'])
-                ->firstOrFail();
-        }
 
         $paymentMethods = PaymentMethod::where('is_active', true)->get();
 
-        return view('user.payments.create', compact('order', 'inventory', 'paymentMethods'));
+        return view('user.payments.create', compact('order', 'paymentMethods'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
             'order_id' => 'nullable|exists:orders,id',
-            'inventory_id' => 'nullable|exists:inventories,id',
             'payment_method_id' => 'required|exists:payment_methods,id',
             'amount' => 'required|numeric|min:0',
-            'currency' => 'required|string|max:3',
-            'payment_type' => 'required|in:full,partial,installment',
+            'currency' => 'required|string|max:10',
             'installment_terms' => 'nullable|integer|min:1|max:60',
             'down_payment' => 'nullable|numeric|min:0',
-            'monthly_payment' => 'nullable|numeric|min:0',
-            'interest_rate' => 'nullable|numeric|min:0|max:100',
             'card_number' => 'prohibited',
             'card_holder' => 'nullable|string|max:255',
             'card_expiry' => 'nullable|string|max:5',
@@ -106,7 +93,6 @@ class PaymentController extends Controller
             'payment_method_id' => $request->payment_method_id,
             'amount' => $request->amount,
             'currency' => $request->currency,
-            'payment_type' => $request->payment_type,
             'installment_terms' => $request->installment_terms,
             'down_payment' => $request->down_payment,
             'reference_number' => $request->reference_number,

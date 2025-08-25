@@ -13,7 +13,7 @@ return new class extends Migration {
             $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('set null');
             $table->foreignId('payment_method_id')->nullable()->constrained('payment_methods')->onDelete('set null');
             $table->string('transaction_number')->unique();
-            $table->decimal('amount', 15, 2);
+            $table->decimal('amount', 15, 2)->unsigned();
             $table->string('currency', 10)->default('VND');
             $table->enum('status', ['pending', 'processing', 'completed', 'failed', 'cancelled'])->default('pending');
             $table->dateTime('payment_date')->nullable();
@@ -24,7 +24,7 @@ return new class extends Migration {
             // Indexes
             $table->index(['order_id', 'status']);
             $table->index(['user_id', 'status']);
-            $table->index(['transaction_number', 'status']);
+            // Không cần index ghép cho transaction_number vì đã unique
             $table->index('created_at');
         });
     }

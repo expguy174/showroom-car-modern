@@ -334,7 +334,7 @@ class SearchController extends Controller
                     'id' => $variant->id,
                     'text' => $variant->carModel->carBrand->name . ' ' . $variant->name,
                     'type' => 'variant',
-                    'url' => route('car_variants.show', $variant->id)
+                    'url' => route('car-variants.show', $variant->id)
                 ];
             });
         

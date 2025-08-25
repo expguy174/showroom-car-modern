@@ -20,30 +20,30 @@ class AnalyticsService
 
         return [
             'total_orders' => Order::count(),
-            'total_revenue' => Order::where('payment_status', 'paid')->sum('total_price'),
+            'total_revenue' => Order::where('payment_status', 'completed')->sum('total_price'),
             'total_customers' => User::where('role', 'user')->count(),
             'total_cars' => CarVariant::where('is_active', 1)->count(),
             
             'today_orders' => Order::whereDate('created_at', $today)->count(),
             'today_revenue' => Order::whereDate('created_at', $today)
-                ->where('payment_status', 'paid')
+                ->where('payment_status', 'completed')
                 ->sum('total_price'),
             
             'this_month_orders' => Order::where('created_at', '>=', $thisMonth)->count(),
             'this_month_revenue' => Order::where('created_at', '>=', $thisMonth)
-                ->where('payment_status', 'paid')
+                ->where('payment_status', 'completed')
                 ->sum('total_price'),
             
             'last_month_orders' => Order::whereBetween('created_at', [$lastMonth, $thisMonth])->count(),
             'last_month_revenue' => Order::whereBetween('created_at', [$lastMonth, $thisMonth])
-                ->where('payment_status', 'paid')
+                ->where('payment_status', 'completed')
                 ->sum('total_price'),
         ];
     }
 
     public static function getSalesChart($period = 'month')
     {
-        $query = Order::where('payment_status', 'paid');
+        $query = Order::where('payment_status', 'completed');
 
         switch ($period) {
             case 'week':
@@ -100,7 +100,7 @@ class AnalyticsService
                 })
                 ->count(),
             
-            'average_order_value' => Order::where('payment_status', 'paid')->avg('total_price'),
+            'average_order_value' => Order::where('payment_status', 'completed')->avg('total_price'),
         ];
     }
 
@@ -130,7 +130,7 @@ class AnalyticsService
     public static function getPaymentStats()
     {
         return [
-            'total_payments' => Order::where('payment_status', 'paid')->count(),
+            'total_payments' => Order::where('payment_status', 'completed')->count(),
             'pending_payments' => Order::where('payment_status', 'pending')->count(),
             'failed_payments' => Order::where('payment_status', 'failed')->count(),
             
@@ -166,10 +166,10 @@ class AnalyticsService
             ],
             'total_orders' => Order::whereBetween('created_at', [$startDate, $endDate])->count(),
             'total_revenue' => Order::whereBetween('created_at', [$startDate, $endDate])
-                ->where('payment_status', 'paid')
+                ->where('payment_status', 'completed')
                 ->sum('total_price'),
             'average_order_value' => Order::whereBetween('created_at', [$startDate, $endDate])
-                ->where('payment_status', 'paid')
+                ->where('payment_status', 'completed')
                 ->avg('total_price'),
             'top_products' => self::getTopSellingCars(5),
         ];

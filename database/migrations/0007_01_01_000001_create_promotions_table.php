@@ -27,7 +27,6 @@ return new class extends Migration {
             
             // Indexes
             $table->index(['is_active', 'start_date', 'end_date']);
-            $table->index(['code', 'is_active']);
         });
     }
 

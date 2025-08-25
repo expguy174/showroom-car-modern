@@ -331,7 +331,7 @@
                         @else
                         <span class="w-8 h-8 rounded bg-gray-100 flex items-center justify-center text-gray-400 border border-gray-200"><i class="fas fa-car text-[11px]"></i></span>
                         @endif
-                        <a href="{{ route('car_variants.show', $rv->id) }}" class="font-medium text-gray-800 hover:text-indigo-600 truncate">
+                        <a href="{{ route('car-variants.show', $rv->id) }}" class="font-medium text-gray-800 hover:text-indigo-600 truncate">
                             {{ trim(($brand ? $brand.' ' : '').($model ? $model.' • ' : '').($rv->name ?? '')) }}
                         </a>
                     </div>

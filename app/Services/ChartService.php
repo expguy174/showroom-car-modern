@@ -12,7 +12,7 @@ class ChartService
 {
     public static function getSalesChartData($period = 'month', $limit = 12)
     {
-        $query = Order::where('payment_status', 'paid');
+        $query = Order::where('payment_status', 'completed');
         
         switch ($period) {
             case 'week':
@@ -211,18 +211,18 @@ class ChartService
         $thisMonth = Carbon::now()->startOfMonth();
         
         return [
-            'total_revenue' => Order::where('payment_status', 'paid')->sum('total_price'),
+            'total_revenue' => Order::where('payment_status', 'completed')->sum('total_price'),
             'total_orders' => Order::count(),
             'total_customers' => User::where('role', 'user')->count(),
             'total_cars' => CarVariant::where('is_active', 1)->count(),
             
             'today_revenue' => Order::whereDate('created_at', $today)
-                ->where('payment_status', 'paid')
+                ->where('payment_status', 'completed')
                 ->sum('total_price'),
             'today_orders' => Order::whereDate('created_at', $today)->count(),
             
             'month_revenue' => Order::where('created_at', '>=', $thisMonth)
-                ->where('payment_status', 'paid')
+                ->where('payment_status', 'completed')
                 ->sum('total_price'),
             'month_orders' => Order::where('created_at', '>=', $thisMonth)->count(),
             
@@ -234,12 +234,12 @@ class ChartService
     private static function calculateGrowthRate()
     {
         $thisMonth = Order::where('created_at', '>=', Carbon::now()->startOfMonth())
-            ->where('payment_status', 'paid')
+            ->where('payment_status', 'completed')
             ->sum('total_price');
         
         $lastMonth = Order::where('created_at', '>=', Carbon::now()->subMonth()->startOfMonth())
             ->where('created_at', '<', Carbon::now()->startOfMonth())
-            ->where('payment_status', 'paid')
+            ->where('payment_status', 'completed')
             ->sum('total_price');
         
         if ($lastMonth == 0) return 0;

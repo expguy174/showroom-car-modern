@@ -13,6 +13,8 @@ use App\Models\CartItem;
 use App\Models\WishlistItem;
 use App\Models\Notification;
 use App\Observers\CarBrandObserver;
+use App\Models\CarVariantColor;
+use App\Observers\CarVariantColorObserver;
 use Illuminate\Support\Facades\Artisan;
 
 class AppServiceProvider extends ServiceProvider
@@ -32,6 +34,7 @@ class AppServiceProvider extends ServiceProvider
     {
         // Đăng ký observers
         CarBrand::observe(CarBrandObserver::class);
+        CarVariantColor::observe(CarVariantColorObserver::class);
 
         // Map polymorphic aliases to actual models. Include both FQCN and short aliases
         // so existing rows using either form continue to resolve correctly.
@@ -157,11 +160,15 @@ class AppServiceProvider extends ServiceProvider
             ]);
         });
 
-        // Register console commands
-        if ($this->app->runningInConsole()) {
-            $this->commands([
-                \App\Console\Commands\BrandStatsCommand::class,
-            ]);
-        }
+        // Register console commands (guard missing classes in some environments)
+        // if ($this->app->runningInConsole()) {
+        //     $commands = [];
+        //     if (class_exists(\App\Console\Commands\BrandStatsCommand::class)) {
+        //         $commands[] = \App\Console\Commands\BrandStatsCommand::class;
+        //     }
+        //     if (!empty($commands)) {
+        //         $this->commands($commands);
+        //     }
+        // }
     }
 }

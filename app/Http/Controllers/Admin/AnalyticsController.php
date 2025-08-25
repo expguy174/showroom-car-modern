@@ -8,7 +8,7 @@ use App\Models\CarVariant;
 use App\Models\User;
 use App\Models\TestDrive;
 use App\Models\ServiceAppointment;
-use App\Models\Inventory;
+// use App\Models\Inventory; // module inventory đã gỡ bỏ
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -29,8 +29,15 @@ class AnalyticsController extends Controller
         // Sales Analytics
         $salesData = $this->getSalesData($currentMonth, $currentYear, $lastMonth, $lastYear);
         
-        // Inventory Analytics
-        $inventoryData = $this->getInventoryData();
+        // Inventory Analytics removed
+        $inventoryData = [
+            'total_inventory' => 0,
+            'low_stock_items' => 0,
+            'out_of_stock_items' => 0,
+            'pre_order_items' => 0,
+            'inventory_value' => 0,
+            'brand_distribution' => collect(),
+        ];
         
         // Customer Analytics
         $customerData = $this->getCustomerData($currentMonth, $currentYear);
@@ -54,22 +61,22 @@ class AnalyticsController extends Controller
         // Current month sales
         $currentMonthSales = Order::whereMonth('created_at', $currentMonth)
             ->whereYear('created_at', $currentYear)
-            ->where('status', 'completed')
-            ->sum('total_amount');
+            ->where('status', 'delivered')
+            ->sum('grand_total');
 
         // Last month sales
         $lastMonthSales = Order::whereMonth('created_at', $lastMonth)
             ->whereYear('created_at', $lastYear)
-            ->where('status', 'completed')
-            ->sum('total_amount');
+            ->where('status', 'delivered')
+            ->sum('grand_total');
 
         // Sales growth percentage
         $salesGrowth = $lastMonthSales > 0 ? 
             (($currentMonthSales - $lastMonthSales) / $lastMonthSales) * 100 : 0;
 
         // Monthly sales trend (last 12 months)
-        $monthlySales = Order::selectRaw('MONTH(created_at) as month, YEAR(created_at) as year, SUM(total_amount) as total')
-            ->where('status', 'completed')
+        $monthlySales = Order::selectRaw('MONTH(created_at) as month, YEAR(created_at) as year, SUM(grand_total) as total')
+            ->where('status', 'delivered')
             ->where('created_at', '>=', Carbon::now()->subMonths(12))
             ->groupBy('month', 'year')
             ->orderBy('year')
@@ -100,48 +107,7 @@ class AnalyticsController extends Controller
     /**
      * Get inventory data for analytics
      */
-    private function getInventoryData()
-    {
-        // Total inventory count
-        $totalInventory = Inventory::sum('quantity');
-        
-        // Low stock items (quantity <= 2)
-        $lowStockItems = Inventory::where('quantity', '<=', 2)->count();
-        
-        // Out of stock items
-        $outOfStockItems = Inventory::where('quantity', 0)->count();
-        
-        // Pre-order items
-        $preOrderItems = Inventory::where('quantity', 0)
-            ->where('is_available_for_preorder', 1)
-            ->count();
-
-        // Inventory value
-        $inventoryValue = DB::table('inventories')
-            ->join('car_variants', 'inventories.car_variant_id', '=', 'car_variants.id')
-            ->selectRaw('SUM(inventories.quantity * car_variants.price) as total_value')
-            ->first()
-            ->total_value ?? 0;
-
-        // Brand distribution
-        $brandDistribution = DB::table('inventories')
-            ->join('car_variants', 'inventories.car_variant_id', '=', 'car_variants.id')
-            ->join('car_models', 'car_variants.car_model_id', '=', 'car_models.id')
-            ->join('car_brands', 'car_models.car_brand_id', '=', 'car_brands.id')
-            ->selectRaw('car_brands.name, SUM(inventories.quantity) as total_quantity')
-            ->groupBy('car_brands.id', 'car_brands.name')
-            ->orderBy('total_quantity', 'desc')
-            ->get();
-
-        return [
-            'total_inventory' => $totalInventory,
-            'low_stock_items' => $lowStockItems,
-            'out_of_stock_items' => $outOfStockItems,
-            'pre_order_items' => $preOrderItems,
-            'inventory_value' => $inventoryValue,
-            'brand_distribution' => $brandDistribution
-        ];
-    }
+    // getInventoryData removed with inventory module
 
     /**
      * Get customer data for analytics
@@ -300,46 +266,7 @@ class AnalyticsController extends Controller
     /**
      * Display inventory report
      */
-    public function inventoryReport()
-    {
-        // Inventory overview
-        $inventoryOverview = Inventory::with(['carVariant.carModel.carBrand'])
-            ->get()
-            ->groupBy('carVariant.carModel.carBrand.name');
-
-        // Low stock alerts
-        $lowStockAlerts = Inventory::with(['carVariant.carModel.carBrand'])
-            ->where('quantity', '<=', 2)
-            ->where('quantity', '>', 0)
-            ->get();
-
-        // Out of stock items
-        $outOfStockItems = Inventory::with(['carVariant.carModel.carBrand'])
-            ->where('quantity', 0)
-            ->get();
-
-        // Inventory value by brand
-        $inventoryValueByBrand = DB::table('inventories')
-            ->join('car_variants', 'inventories.car_variant_id', '=', 'car_variants.id')
-            ->join('car_models', 'car_variants.car_model_id', '=', 'car_models.id')
-            ->join('car_brands', 'car_models.car_brand_id', '=', 'car_brands.id')
-            ->selectRaw('
-                car_brands.name as brand,
-                COUNT(DISTINCT car_variants.id) as variants_count,
-                SUM(inventories.quantity) as total_quantity,
-                SUM(inventories.quantity * car_variants.price) as total_value
-            ')
-            ->groupBy('car_brands.id', 'car_brands.name')
-            ->orderBy('total_value', 'desc')
-            ->get();
-
-        return view('admin.analytics.inventory_report', compact(
-            'inventoryOverview',
-            'lowStockAlerts',
-            'outOfStockItems',
-            'inventoryValueByBrand'
-        ));
-    }
+    // inventoryReport removed with inventory module
 
     /**
      * Display customer analytics
@@ -446,7 +373,7 @@ class AnalyticsController extends Controller
             case 'sales':
                 return $this->exportSalesReport($startDate, $endDate);
             case 'inventory':
-                return $this->exportInventoryReport();
+                return back()->with('error', 'Inventory module has been removed');
             case 'customers':
                 return $this->exportCustomerReport();
             default:
@@ -497,40 +424,7 @@ class AnalyticsController extends Controller
     /**
      * Export inventory report
      */
-    private function exportInventoryReport()
-    {
-        $data = Inventory::with(['carVariant.carModel.carBrand'])->get();
-
-        $filename = "inventory_report_" . Carbon::now()->format('Y-m-d') . ".csv";
-        
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => "attachment; filename={$filename}",
-        ];
-
-        $callback = function() use ($data) {
-            $file = fopen('php://output', 'w');
-            
-            // CSV headers
-            fputcsv($file, ['Brand', 'Model', 'Variant', 'Quantity', 'Status']);
-            
-            // CSV data
-            foreach ($data as $inventory) {
-                $status = $inventory->quantity > 0 ? 'In Stock' : 'Out of Stock';
-                fputcsv($file, [
-                    $inventory->carVariant->carModel->carBrand->name,
-                    $inventory->carVariant->carModel->name,
-                    $inventory->carVariant->name,
-                    $inventory->quantity,
-                    $status
-                ]);
-            }
-            
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
-    }
+    // exportInventoryReport removed with inventory module
 
     /**
      * Export customer report

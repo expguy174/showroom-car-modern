@@ -23,7 +23,7 @@ class HandlePaymentProcessed implements ShouldQueue
             if ($order) {
                 if ($transaction->status === 'completed') {
                     $order->update([
-                        'payment_status' => 'paid',
+                        'payment_status' => 'completed',
                         'paid_at' => now(),
                         'transaction_id' => $transaction->transaction_number,
                     ]);

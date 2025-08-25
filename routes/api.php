@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CarController;
+use App\Http\Controllers\Api\OrderController;
 
 /*
 |--------------------------------------------------------------------------
@@ -35,22 +36,14 @@ Route::prefix('v1')->group(function () {
     Route::get('/accessories/{id}', [CarController::class, 'accessory']);
     Route::get('/search', [CarController::class, 'search']);
     
-    // Inventory public endpoints for stock info
-    \App\Http\Controllers\Api\InventoryController::class;
-    Route::get('/inventory/count', [\App\Http\Controllers\Api\InventoryController::class, 'count']);
-    Route::get('/inventory/by-variant', [\App\Http\Controllers\Api\InventoryController::class, 'byVariant']);
-    
     // Protected routes
     Route::middleware('auth:sanctum')->group(function () {
         // Auth
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/user', [AuthController::class, 'user']);
         
-        // Orders - TODO: Refactor to work with new CarVariant/Accessory structure
-        // Route::get('/orders', [OrderController::class, 'index']);
-        // Route::get('/orders/{id}', [OrderController::class, 'show']);
-        // Route::post('/orders', [OrderController::class, 'store']);
-        // Route::post('/orders/{id}/cancel', [OrderController::class, 'cancel']);
-        // Route::get('/orders/{id}/track', [OrderController::class, 'track']);
+        // Orders
+        Route::get('/orders', [OrderController::class, 'index']);
+        Route::get('/orders/{order}', [OrderController::class, 'show']);
     });
 }); 

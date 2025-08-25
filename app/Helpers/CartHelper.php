@@ -74,6 +74,9 @@ class CartHelper
         // Check if item already exists in cart
         $existingItem = CartItem::where('item_type', $itemType)
             ->where('item_id', $itemId)
+            ->when(!is_null($colorId), function($q) use ($colorId) {
+                $q->where('color_id', $colorId);
+            })
             ->where(function($query) use ($userId, $sessionId) {
                 if ($userId) {
                     $query->where('user_id', $userId);
@@ -100,10 +103,21 @@ class CartHelper
 
         self::clearCartCountCache();
         
+        // Compute item total for the updated/created item (best-effort)
+        $itemTotal = 0;
+        if ($existingItem && $existingItem->item) {
+            $unit = $existingItem->item->price ?? 0;
+            if ($existingItem->item_type === 'car_variant' && method_exists($existingItem->item, 'getPriceWithColorAdjustment')) {
+                $unit = $existingItem->item->getPriceWithColorAdjustment($existingItem->color_id);
+            }
+            $itemTotal = $unit * $existingItem->quantity;
+        }
+
         return [
             'success' => true,
             'message' => $existingItem ? 'Đã cập nhật số lượng trong giỏ hàng' : 'Đã thêm vào giỏ hàng thành công',
-            'cart_count' => self::getCartCount()
+            'cart_count' => self::getCartCount(),
+            'item_total' => $itemTotal
         ];
     }
 
@@ -187,11 +201,17 @@ class CartHelper
         $cartItem->update($updateData);
         self::clearCartCountCache();
         
+        // Recompute item total with possible color adjustment
+        $unit = $cartItem->item->price ?? 0;
+        if ($cartItem->item_type === 'car_variant' && method_exists($cartItem->item, 'getPriceWithColorAdjustment')) {
+            $unit = $cartItem->item->getPriceWithColorAdjustment($cartItem->color_id);
+        }
+
         return [
             'success' => true,
             'message' => 'Cập nhật thành công!',
             'cart_count' => self::getCartCount(),
-            'item_total' => $cartItem->item->price * $quantity,
+            'item_total' => $unit * $quantity,
             'quantity' => $quantity,
             'color_id' => $cartItem->color_id
         ];

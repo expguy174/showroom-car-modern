@@ -210,7 +210,7 @@ class CartController extends Controller
         // Bust nav counts cache to avoid stale header counts
         $this->invalidateNavCountsCache();
 
-        if (request()->ajax()) {
+        if (request()->expectsJson()) {
             return response()->json($result);
         }
 
@@ -275,7 +275,7 @@ class CartController extends Controller
         })->with(['item', 'color'])->get();
 
         if ($cartItems->isEmpty()) {
-            return redirect()->route('cart.index')->with('error', 'Giỏ hàng trống!');
+            return redirect()->route('user.cart.index')->with('error', 'Giỏ hàng trống!');
         }
 
         $total = $cartItems->sum(function($ci){
@@ -322,7 +322,7 @@ class CartController extends Controller
             \Log::info('Cart items found:', ['count' => $cartItems->count()]);
 
             if ($cartItems->isEmpty()) {
-                return redirect()->route('cart.index')->with('error', 'Giỏ hàng trống!');
+                return redirect()->route('user.cart.index')->with('error', 'Giỏ hàng trống!');
             }
 
             // Normalize possible array inputs from multi-field UIs
@@ -366,17 +366,17 @@ class CartController extends Controller
             
                 foreach ($cartItems as $item) {
                 if (!$item->item || !$item->item->is_active) {
-                    return redirect()->route('cart.index')->with('error', 'Một số sản phẩm không còn khả dụng');
+                    return redirect()->route('user.cart.index')->with('error', 'Một số sản phẩm không còn khả dụng');
                 }
                 // Guard stock again at checkout
                 if ($item->item_type === 'car_variant') {
                     if ($item->color_id) {
                         $color = $item->item->colors()->where('id', $item->color_id)->first();
                         if (!$color || ($color->stock_quantity ?? 0) <= 0) {
-                            return redirect()->route('cart.index')->with('error', 'Một số màu đã hết hàng');
+                            return redirect()->route('user.cart.index')->with('error', 'Một số màu đã hết hàng');
                         }
                     } else if (($item->item->stock_quantity ?? 0) <= 0) {
-                        return redirect()->route('cart.index')->with('error', 'Một số phiên bản đã hết hàng');
+                        return redirect()->route('user.cart.index')->with('error', 'Một số phiên bản đã hết hàng');
                     }
                 }
 
@@ -421,7 +421,7 @@ class CartController extends Controller
                     \Log::info('Billing address resolved:', ['id' => $billingAddressId, 'text' => $billingAddressText]);
                 } else {
                     \Log::error('Billing address not found:', ['id' => $validated['billing_address_id']]);
-                    return redirect()->route('cart.index')->with('error', 'Địa chỉ thanh toán không tồn tại');
+                    return redirect()->route('user.cart.index')->with('error', 'Địa chỉ thanh toán không tồn tại');
                 }
             } else {
                 \Log::error('Billing address resolution failed:', [
@@ -429,7 +429,7 @@ class CartController extends Controller
                     'user_exists' => $user ? 'yes' : 'no',
                     'user_id' => $userId
                 ]);
-                return redirect()->route('cart.index')->with('error', 'Vui lòng chọn địa chỉ thanh toán');
+                return redirect()->route('user.cart.index')->with('error', 'Vui lòng chọn địa chỉ thanh toán');
             }
 
             // Shipping: same as billing by default
@@ -566,7 +566,7 @@ class CartController extends Controller
 
     private function processBankTransfer($order)
     {
-        $order->update(['status' => 'waiting_payment']);
+        // Giữ trạng thái đơn theo luồng: chỉ cập nhật payment_status qua webhook/ngoại tuyến
         return view('payment.bank-transfer', compact('order'))->with('success', 'Đơn hàng đã được tạo. Vui lòng chuyển khoản theo hướng dẫn.');
     }
 

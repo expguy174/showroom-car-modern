@@ -178,7 +178,7 @@
                         <button type="button" class="action-btn action-ghost w-full js-wishlist-toggle" aria-label="Yêu thích" title="Yêu thích" data-item-type="accessory" data-item-id="{{ $accessory->id }}">
                             <i class="fas fa-heart"></i><span>Yêu thích</span>
                         </button>
-                        <form action="{{ route('cart.add') }}" method="POST" class="w-full add-to-cart-form" data-item-type="accessory" data-item-id="{{ $accessory->id }}">
+                        <form action="{{ route('user.cart.add') }}" method="POST" class="w-full add-to-cart-form" data-item-type="accessory" data-item-id="{{ $accessory->id }}">
                             @csrf
                             <input type="hidden" name="item_type" value="accessory">
                             <input type="hidden" name="item_id" value="{{ $accessory->id }}">

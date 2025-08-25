@@ -9,9 +9,15 @@ class Installment extends Model
 {
     use HasFactory;
 
+    public const STATUSES = ['pending', 'paid', 'overdue', 'cancelled'];
+
     protected $fillable = [
         'order_id',
         'user_id',
+        'payment_transaction_id',
+        'installment_number',
+        'amount',
+        'due_date',
         'bank_name',
         'interest_rate',
         'tenure_months',
@@ -19,16 +25,21 @@ class Installment extends Model
         'monthly_payment_amount',
         'schedule',
         'status',
+        'paid_at',
         'approved_at',
         'cancelled_at'
     ];
 
     protected $casts = [
+        'amount' => 'decimal:2',
+        'due_date' => 'datetime',
         'interest_rate' => 'decimal:2',
         'down_payment_amount' => 'decimal:2',
         'monthly_payment_amount' => 'decimal:2',
+        'installment_number' => 'integer',
         'tenure_months' => 'integer',
         'schedule' => 'json',
+        'paid_at' => 'datetime',
         'approved_at' => 'datetime',
         'cancelled_at' => 'datetime'
     ];
@@ -43,23 +54,31 @@ class Installment extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function paymentTransaction()
+    {
+        return $this->belongsTo(PaymentTransaction::class);
+    }
+
     public function getFormattedMonthlyPaymentAttribute()
     {
-        return number_format($this->monthly_payment_amount, 0, ',', '.') . ' VNĐ/tháng';
+        return $this->monthly_payment_amount !== null
+            ? number_format($this->monthly_payment_amount, 0, ',', '.') . ' VNĐ/tháng'
+            : null;
     }
 
     public function getFormattedDownPaymentAttribute()
     {
-        return number_format($this->down_payment_amount, 0, ',', '.') . ' VNĐ';
+        return $this->down_payment_amount !== null
+            ? number_format($this->down_payment_amount, 0, ',', '.') . ' VNĐ'
+            : null;
     }
 
     public function getStatusDisplayAttribute()
     {
         $statuses = [
-            'draft' => 'Nháp',
-            'active' => 'Hoạt động',
-            'completed' => 'Hoàn thành',
-            'defaulted' => 'Quá hạn',
+            'pending' => 'Chờ thanh toán',
+            'paid' => 'Đã thanh toán',
+            'overdue' => 'Quá hạn',
             'cancelled' => 'Đã hủy'
         ];
         return $statuses[$this->status] ?? $this->status;

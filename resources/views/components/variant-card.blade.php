@@ -62,7 +62,7 @@ $fuelDisplay = $fuelVi ?: ($engineType ?: ($fuelConsumption ? ($fuelConsumption 
 
 <div class="variant-card group bg-white rounded-2xl shadow-lg hover:shadow-2xl border border-gray-100 overflow-hidden h-full flex flex-col transition-all duration-500 hover:-translate-y-2 min-h-fit">
   <div class="relative">
-    <a href="{{ route('car_variants.show', $variant->id) }}" class="block">
+    <a href="{{ route('car-variants.show', $variant->id) }}" class="block">
       @if($img)
       <div class="relative w-full aspect-[4/3] overflow-hidden">
         <img src="{{ $img }}" data-src="{{ $img }}" alt="{{ $variant->name }}" class="absolute inset-0 w-full h-full object-cover sm:group-hover:scale-110 duration-500 lazy-image" loading="lazy" decoding="async" width="800" height="600" onerror="this.onerror=null;this.src='https://via.placeholder.com/800x600?text=No+Image';">
@@ -91,7 +91,7 @@ $fuelDisplay = $fuelVi ?: ($engineType ?: ($fuelConsumption ? ($fuelConsumption 
       @endif
 
       <!-- Share Button - Hidden by default, visible on hover -->
-      <button type="button" class="w-9 h-9 sm:w-10 sm:h-10 inline-flex items-center justify-center bg-white/90 hover:bg-white border-2 border-gray-200 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 js-share-variant opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto" aria-label="Chia sẻ mẫu xe" title="Chia sẻ" data-variant-id="{{ $variant->id }}" data-share-url="{{ route('car_variants.show', $variant->id) }}">
+      <button type="button" class="w-9 h-9 sm:w-10 sm:h-10 inline-flex items-center justify-center bg-white/90 hover:bg-white border-2 border-gray-200 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 js-share-variant opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto" aria-label="Chia sẻ mẫu xe" title="Chia sẻ" data-variant-id="{{ $variant->id }}" data-share-url="{{ route('car-variants.show', $variant->id) }}">
         <i class="fas fa-share-alt text-gray-700 text-sm sm:text-base"></i>
       </button>
     </div>
@@ -151,7 +151,7 @@ $fuelDisplay = $fuelVi ?: ($engineType ?: ($fuelConsumption ? ($fuelConsumption 
       @endif
       @if(!empty($model) && $modelId)
       <span class="text-gray-500 text-xs">•</span>
-      <a href="{{ route('car_models.show', $modelId) }}" class="text-xs sm:text-sm text-gray-600 hover:text-indigo-600 transition-colors duration-300 font-medium" aria-label="Xem dòng xe {{ $model }}">{{ $model }}</a>
+      <a href="{{ route('car-models.show', $modelId) }}" class="text-xs sm:text-sm text-gray-600 hover:text-indigo-600 transition-colors duration-300 font-medium" aria-label="Xem dòng xe {{ $model }}">{{ $model }}</a>
       @elseif(!empty($model))
       <span class="text-gray-500 text-xs">•</span>
       <span class="text-xs sm:text-sm text-gray-600 font-medium">{{ $model }}</span>
@@ -159,7 +159,7 @@ $fuelDisplay = $fuelVi ?: ($engineType ?: ($fuelConsumption ? ($fuelConsumption 
     </div>
 
     <!-- Variant Name (Main Title) -->
-    <a href="{{ route('car_variants.show', $variant->id) }}" class="text-base sm:text-lg font-bold text-gray-900 hover:text-indigo-600 transition-colors duration-300 block line-clamp-2" aria-label="Xem phiên bản {{ $variant->name }}">
+    <a href="{{ route('car-variants.show', $variant->id) }}" class="text-base sm:text-lg font-bold text-gray-900 hover:text-indigo-600 transition-colors duration-300 block line-clamp-2" aria-label="Xem phiên bản {{ $variant->name }}">
       {{ $variant->name ?? 'N/A' }}
     </a>
 

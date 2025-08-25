@@ -20,7 +20,7 @@ return new class extends Migration {
             $table->string('image_type')->default('gallery')->comment('gallery, thumbnail, hero, interior, exterior, detail');
 			$table->unsignedInteger('width')->nullable(); // Chiều rộng ảnh
 			$table->unsignedInteger('height')->nullable(); // Chiều cao ảnh
-            $table->string('file_size')->nullable(); // Kích thước file
+            $table->unsignedBigInteger('file_size')->nullable(); // Kích thước file (bytes)
             $table->string('file_format')->nullable(); // Định dạng file (jpg, png, webp)
             
             // Sắp xếp và hiển thị

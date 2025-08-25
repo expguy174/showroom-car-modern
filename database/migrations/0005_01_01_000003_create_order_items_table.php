@@ -25,16 +25,15 @@ return new class extends Migration {
             $table->json('item_metadata')->nullable();
 
 			$table->unsignedInteger('quantity');
-            $table->decimal('price', 15, 2); // unit price at time of order
-            $table->decimal('tax_amount', 15, 2)->default(0);
-            $table->decimal('discount_amount', 15, 2)->default(0);
-            $table->decimal('line_total', 15, 2)->default(0);
+            $table->decimal('price', 15, 2)->unsigned(); // unit price at time of order
+            $table->decimal('tax_amount', 15, 2)->unsigned()->default(0);
+            $table->decimal('discount_amount', 15, 2)->unsigned()->default(0);
+            $table->decimal('line_total', 15, 2)->unsigned()->default(0);
 
 			$table->timestamps();
 			
 			// Indexes
 			$table->index(['order_id']);
-			$table->index(['item_type', 'item_id']);
         });
     }
 
