@@ -92,6 +92,10 @@ Route::prefix('car-brands')->name('car-brands.')->group(function () {
     Route::get('/{id}', [BrandController::class, 'show'])->name('show');
 });
 
+// Legacy redirects from old path/names
+Route::permanentRedirect('/brands', '/car-brands');
+Route::permanentRedirect('/brands/{id}', '/car-brands/{id}');
+
 // Services (User) — removed per request
 
 // Finance (User)
