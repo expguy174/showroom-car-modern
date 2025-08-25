@@ -489,19 +489,25 @@
             // Update sidebar fields
             try {
               if (data.user){
-                const nameEl = document.querySelector('#profile-avatar')?.nextElementSibling?.querySelector('div');
+                var nameElTmp = document.querySelector('#profile-avatar');
+                var nameEl = nameElTmp ? nameElTmp.nextElementSibling && nameElTmp.nextElementSibling.querySelector ? nameElTmp.nextElementSibling.querySelector('div') : null : null;
                 if (nameEl && data.user.name) nameEl.textContent = data.user.name;
-                const emailRow = document.querySelector('aside .fa-envelope')?.parentElement?.querySelector('span.truncate');
+                var emailIcon = document.querySelector('aside .fa-envelope');
+                var emailRow = emailIcon && emailIcon.parentElement ? emailIcon.parentElement.querySelector('span.truncate') : null;
                 if (emailRow && data.user.email) emailRow.textContent = data.user.email;
-                const phoneRow = document.querySelector('aside .fa-phone-alt')?.parentElement?.querySelector('span');
+                var phoneIcon = document.querySelector('aside .fa-phone-alt');
+                var phoneRow = phoneIcon && phoneIcon.parentElement ? phoneIcon.parentElement.querySelector('span') : null;
                 if (phoneRow) phoneRow.textContent = data.user.phone || '—';
-                const dobRow = document.querySelector('aside .fa-birthday-cake')?.parentElement?.querySelector('span');
+                var dobIcon = document.querySelector('aside .fa-birthday-cake');
+                var dobRow = dobIcon && dobIcon.parentElement ? dobIcon.parentElement.querySelector('span') : null;
                 if (dobRow) dobRow.textContent = data.user.date_of_birth_display || '—';
-                const genderRow = document.querySelector('aside .fa-venus-mars')?.parentElement?.querySelector('span');
+                var genderIcon = document.querySelector('aside .fa-venus-mars');
+                var genderRow = genderIcon && genderIcon.parentElement ? genderIcon.parentElement.querySelector('span') : null;
                 if (genderRow){ const g = data.user.gender; genderRow.textContent = g==='male'?'Nam':(g==='female'?'Nữ':(g? 'Khác':'—')); }
-                const nationalityRow = document.querySelector('aside .fa-globe-asia')?.parentElement?.querySelector('span.truncate');
+                var nationIcon = document.querySelector('aside .fa-globe-asia');
+                var nationalityRow = nationIcon && nationIcon.parentElement ? nationIcon.parentElement.querySelector('span.truncate') : null;
                 if (nationalityRow) nationalityRow.textContent = data.user.nationality || '—';
-                if (data.user.avatar_url){ const avatar = document.getElementById('profile-avatar'); if (avatar) avatar.src = data.user.avatar_url; }
+                if (data.user.avatar_url){ var avatar = document.getElementById('profile-avatar'); if (avatar) avatar.src = data.user.avatar_url; }
               }
             } catch {}
             if (typeof window.showMessage === 'function') window.showMessage('Cập nhật hồ sơ thành công', 'success');
@@ -541,7 +547,10 @@
     })();
 
     // Toasts for update results (robust)
-    var __st = @json(session('status'));
+    var __st = (function(){
+      var m = document.querySelector('meta[name="profile-status"]');
+      return m ? m.getAttribute('content') : null;
+    })();
     if (__st && typeof window.showMessage === 'function'){
       var msg = (__st === 'profile-updated') ? 'Cập nhật hồ sơ thành công' : (__st === 'password-updated' ? 'Đổi mật khẩu thành công' : null);
       if (msg) window.showMessage(msg, 'success');

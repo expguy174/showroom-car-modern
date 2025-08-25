@@ -193,7 +193,7 @@
                                     @endif
                                 </div>
                                 <div class="min-w-0 flex-1">
-                                    <div class="text-sm font-medium text-gray-900" title="{{ $model?->name }}" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{{ $model?->name }}</div>
+                                    <div class="text-sm font-medium text-gray-900" title="{{ $model?->name }}" style="display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{{ $model?->name }}</div>
                                     <div class="text-[11px] text-gray-500 whitespace-normal break-words">SL: {{ $ci->quantity }}@if($ci->color) • Màu: {{ $ci->color->color_name }} @endif</div>
                                 </div>
                                 <div class="text-right sm:shrink-0 sm:min-w-[140px]">
