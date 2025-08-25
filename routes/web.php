@@ -319,6 +319,11 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/notifications/{id}', [\App\Http\Controllers\NotificationController::class, 'delete'])->name('notifications.delete');
 });
 
+// Legacy redirects for car variants and test drives (underscore to hyphen)
+Route::permanentRedirect('/car_variants/{slugOrId}', '/car-variants/{slugOrId}');
+Route::permanentRedirect('/test_drives', '/test-drives');
+Route::permanentRedirect('/test_drives/{testDrive}', '/test-drives/{testDrive}');
+
 // --- Auth routes ---
 require __DIR__ . '/auth.php';
 
