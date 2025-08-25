@@ -176,7 +176,7 @@ class CarModelController extends Controller
             ->limit(6)
             ->get();
 
-        return view('user.car_models.index', [
+        return view('user.car-models.index', [
             'carModel' => $carModel,
             'variants' => $activeVariants,
             'gallery' => $gallery,
