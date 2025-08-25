@@ -30,10 +30,10 @@ class BrandController extends Controller
                 return strtoupper(substr($brand->name, 0, 1));
             });
 
-            return view('user.brands.index', compact('brands', 'groupedBrands'));
+            return view('user.car-brands.index', compact('brands', 'groupedBrands'));
         } catch (\Exception $e) {
             Log::error('Error in BrandController@index: ' . $e->getMessage());
-            return view('user.brands.index', [
+            return view('user.car-brands.index', [
                 'brands' => collect(),
                 'groupedBrands' => collect()
             ])->with('error', 'Có lỗi xảy ra khi tải danh sách hãng xe.');
@@ -98,7 +98,7 @@ class BrandController extends Controller
                 ->orderBy('name')
                 ->paginate(12);
 
-            return view('user.brands.show', compact('brand', 'featuredVariants', 'models', 'stats', 'brandVariants', 'totalModelsCount'));
+            return view('user.car-brands.show', compact('brand', 'featuredVariants', 'models', 'stats', 'brandVariants', 'totalModelsCount'));
         } catch (\Exception $e) {
             Log::error('Error in BrandController@show: ' . $e->getMessage());
             abort(404, 'Không tìm thấy hãng xe này.');
