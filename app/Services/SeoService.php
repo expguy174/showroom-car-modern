@@ -49,7 +49,7 @@ class SeoService
                     'og_title' => 'Xe ' . $brand->name . ' - Showroom Car',
                     'og_description' => 'Khám phá các dòng xe ' . $brand->name . ' tại Showroom Car.',
                     'og_image' => asset('images/brands/' . Str::slug($brand->name) . '.png'),
-                    'canonical' => url('/brands/' . $brand->id),
+                    'canonical' => url('/car-brands/' . $brand->id),
                 ];
 
             case 'blog':
@@ -85,7 +85,7 @@ class SeoService
                 'changefreq' => 'weekly'
             ],
             'brands' => [
-                'url' => url('/brands'),
+                'url' => url('/car-brands'),
                 'priority' => '0.8',
                 'changefreq' => 'weekly'
             ],
@@ -227,7 +227,7 @@ class SeoService
                 if ($car) {
                     $breadcrumbs[] = [
                         'name' => 'Xe ' . $car->carModel->carBrand->name,
-                        'url' => url('/brands/' . $car->carModel->carBrand->id)
+                        'url' => url('/car-brands/' . $car->carModel->carBrand->id)
                     ];
                     $breadcrumbs[] = [
                         'name' => $car->carModel->name,
@@ -245,7 +245,7 @@ class SeoService
                 if ($brand) {
                     $breadcrumbs[] = [
                         'name' => 'Xe ' . $brand->name,
-                        'url' => url('/brands/' . $brand->id)
+                        'url' => url('/car-brands/' . $brand->id)
                     ];
                 }
                 break;
