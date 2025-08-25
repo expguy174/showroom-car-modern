@@ -839,7 +839,7 @@
                     <h3 class="text-3xl font-bold mb-3">Sẵn sàng trải nghiệm {{ $variant->name }}?</h3>
                     <p class="text-indigo-200 mb-6 max-w-2xl mx-auto">Liên hệ đội ngũ tư vấn hoặc đặt lịch lái thử để cảm nhận trực tiếp.</p>
                     <div class="flex flex-col sm:flex-row gap-3 justify-center">
-                        <a href="{{ route('test_drives.index') }}" class="inline-flex items-center px-6 py-3 rounded-xl bg-white text-slate-900 font-semibold hover:bg-indigo-50">
+                        <a href="{{ route('test-drives.index') }}" class="inline-flex items-center px-6 py-3 rounded-xl bg-white text-slate-900 font-semibold hover:bg-indigo-50">
                             <i class="fas fa-steering-wheel mr-2"></i> Đặt lịch lái thử
                         </a>
                         <a href="{{ route('contact') }}" class="inline-flex items-center px-6 py-3 rounded-xl border border-white/30 text-white hover:bg-white/10">
