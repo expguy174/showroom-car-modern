@@ -33,12 +33,12 @@
                 </li>
                 <li class="text-gray-400">/</li>
                 <li>
-                    <a href="{{ route('brands.index') }}" class="hover:text-white transition-colors duration-200">Hãng xe</a>
+                    <a href="{{ route('car-brands.index') }}" class="hover:text-white transition-colors duration-200">Hãng xe</a>
                 </li>
                 <li class="text-gray-400">/</li>
                 <li>
                     @if($brand)
-                        <a href="{{ route('brands.show', $brand->id) }}" class="hover:text-white transition-colors duration-200">{{ $brand->name }}</a>
+                        <a href="{{ route('car-brands.show', $brand->id) }}" class="hover:text-white transition-colors duration-200">{{ $brand->name }}</a>
                     @else
                         <span class="text-white/80">Hãng</span>
                     @endif

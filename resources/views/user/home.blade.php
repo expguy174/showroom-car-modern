@@ -134,7 +134,7 @@
 
         <!-- View All Brands Button -->
         <div class="text-center mt-12">
-            <a href="{{ route('brands.index') }}"
+            <a href="{{ route('car-brands.index') }}"
                 class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-full hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
                 <span>Xem tất cả hãng xe</span>
                 <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>

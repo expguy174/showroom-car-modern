@@ -37,7 +37,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                     <div class="dropdown-menu absolute left-0 mt-2 w-[720px] z-50 opacity-0 invisible scale-95 transition-all duration-200 transform origin-top-left" data-dropdown-menu>
                         <div class="p-3 grid grid-cols-3 gap-2">
                             @forelse($navBrands as $brand)
-                            <a href="{{ route('brands.show', $brand->id) }}" class="flex items-center gap-3 p-2 rounded-lg hover:bg-white transition-colors duration-150">
+                            <a href="{{ route('car-brands.show', $brand->id) }}" class="flex items-center gap-3 p-2 rounded-lg hover:bg-white transition-colors duration-150">
                                 <img src="{{ $brand->logo_path }}" alt="{{ $brand->name }}" class="w-8 h-8 object-contain rounded" loading="lazy" onerror="this.onerror=null;this.src='https://placehold.co/40x40?text=%2B';" />
                                 <div class="min-w-0">
                                     <div class="font-semibold text-sm truncate">{{ $brand->name }}</div>
@@ -50,7 +50,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                             @endforelse
                         </div>
                         <div class="px-3 pb-3 flex items-center justify-end">
-                            <a href="{{ route('brands.index') }}" class="text-sm text-indigo-700 hover:underline inline-flex items-center gap-1 transition-colors duration-150">
+                            <a href="{{ route('car-brands.index') }}" class="text-sm text-indigo-700 hover:underline inline-flex items-center gap-1 transition-colors duration-150">
                                 Xem tất cả hãng xe <i class="fas fa-arrow-right text-xs"></i>
                             </a>
                         </div>
@@ -267,14 +267,14 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                     <div class="mobile-dropdown-content pl-2">
                         <div class="grid grid-cols-1 gap-1 max-h-64 overflow-y-auto pr-2">
                             @foreach($navBrands as $brand)
-                            <a href="{{ route('brands.show', $brand->id) }}" class="flex items-center gap-3 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors duration-150">
+                            <a href="{{ route('car-brands.show', $brand->id) }}" class="flex items-center gap-3 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors duration-150">
                                 <img src="{{ $brand->logo_url }}" alt="{{ $brand->name }}" class="w-6 h-6 object-contain rounded" loading="lazy" onerror="this.onerror=null;this.src='https://placehold.co/32x32?text=%2B';" />
                                 <span class="text-sm flex-1 truncate">{{ $brand->name }}</span>
                                 @php $modelsCount = $brand->relationLoaded('carModels') ? $brand->carModels->count() : ($brand->carModels()->count()); @endphp
                                 <span class="text-[11px] text-gray-500 whitespace-nowrap"><i class="fas fa-layer-group mr-1 text-gray-400"></i>{{ number_format($modelsCount) }}</span>
                             </a>
                             @endforeach
-                            <a href="{{ route('brands.index') }}" class="px-4 py-2 text-sm text-indigo-700 hover:underline">Xem tất cả hãng</a>
+                            <a href="{{ route('car-brands.index') }}" class="px-4 py-2 text-sm text-indigo-700 hover:underline">Xem tất cả hãng</a>
                         </div>
                     </div>
                 </div>

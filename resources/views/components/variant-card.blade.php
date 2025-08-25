@@ -143,7 +143,7 @@ $fuelDisplay = $fuelVi ?: ($engineType ?: ($fuelConsumption ? ($fuelConsumption 
     <!-- Brand & Model Row -->
     <div class="flex items-center gap-2">
       @if($brandId && !empty($brand))
-      <a href="{{ route('brands.show', $brandId) }}" class="text-xs sm:text-sm text-gray-700 hover:text-indigo-600 transition-colors duration-300 font-medium" aria-label="Xem hãng {{ $brand }}">{{ $brand }}</a>
+      <a href="{{ route('car-brands.show', $brandId) }}" class="text-xs sm:text-sm text-gray-700 hover:text-indigo-600 transition-colors duration-300 font-medium" aria-label="Xem hãng {{ $brand }}">{{ $brand }}</a>
       @elseif(!empty($brand))
       <span class="text-xs sm:text-sm text-gray-700 font-medium">{{ $brand }}</span>
       @else

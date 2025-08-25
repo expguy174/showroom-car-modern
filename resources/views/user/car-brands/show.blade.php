@@ -38,7 +38,7 @@
                 </li>
                 <li class="text-gray-400">/</li>
                 <li>
-                    <a href="{{ route('brands.index') }}" class="hover:text-white transition-colors duration-200">Hãng xe</a>
+                    <a href="{{ route('car-brands.index') }}" class="hover:text-white transition-colors duration-200">Hãng xe</a>
                 </li>
                 <li class="text-gray-400">/</li>
                 <li class="text-white font-medium">{{ $brand->name }}</li>

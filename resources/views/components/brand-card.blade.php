@@ -1,6 +1,6 @@
 @props(['brand'])
 
-<a href="{{ route('brands.show', $brand->id) }}"
+<a href="{{ route('car-brands.show', $brand->id) }}"
    class="group relative bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100">
     
     <!-- Featured Badge - Top Right -->

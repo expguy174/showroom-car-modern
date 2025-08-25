@@ -86,8 +86,8 @@ Route::get('/products', [ProductController::class, 'index'])->name('products.ind
 
 // --- NEW ROUTES ---
 
-// Brands (User)
-Route::prefix('brands')->name('brands.')->group(function () {
+// Car Brands (User)
+Route::prefix('car-brands')->name('car-brands.')->group(function () {
     Route::get('/', [BrandController::class, 'index'])->name('index');
     Route::get('/{id}', [BrandController::class, 'show'])->name('show');
 });

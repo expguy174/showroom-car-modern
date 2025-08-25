@@ -158,7 +158,7 @@
                         
                         <!-- Action Button -->
                         <div class="flex items-center justify-center gap-2">
-                            <a href="{{ route('brands.show', $brand->id) }}" 
+                            <a href="{{ route('car-brands.show', $brand->id) }}" 
                                class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-medium rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105">
                                 <span>Khám phá</span>
                                 <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
