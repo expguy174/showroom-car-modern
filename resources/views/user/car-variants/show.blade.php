@@ -64,7 +64,7 @@
                     <li>
                         <div class="flex items-center">
                             <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-                            <a href="{{ route('car_models.show', $variant->carModel->id ?? 1) }}" class="text-gray-500 hover:text-blue-600 transition-colors">{{ $variant->carModel->name ?? 'Model' }}</a>
+                            <a href="{{ route('car-models.show', $variant->carModel->id ?? 1) }}" class="text-gray-500 hover:text-blue-600 transition-colors">{{ $variant->carModel->name ?? 'Model' }}</a>
                         </div>
                     </li>
                     <li>
@@ -154,7 +154,7 @@
                         </div>
                         <a href="{{ route('car-brands.show', $variant->carModel->carBrand->id) }}" class="text-sm text-blue-600 hover:text-blue-800 hover:underline">Xem hãng</a>
                         <span class="text-gray-300">|</span>
-                        <a href="{{ route('car_models.show', $variant->carModel->id) }}" class="text-sm text-gray-700 hover:text-gray-900 hover:underline">Xem dòng</a>
+                        <a href="{{ route('car-models.show', $variant->carModel->id) }}" class="text-sm text-gray-700 hover:text-gray-900 hover:underline">Xem dòng</a>
                     </div>
                     @endif
                     

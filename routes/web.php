@@ -307,6 +307,9 @@ Route::middleware(['auth', IsAdmin::class])->prefix('admin')->name('admin.')->gr
 // Trang chi tiết model xe
 Route::get('/car-models/{id}', [\App\Http\Controllers\User\CarModelController::class, 'show'])->name('car-models.show');
 
+// Legacy redirects for car models path/name
+Route::permanentRedirect('/car_models/{id}', '/car-models/{id}');
+
 // Notification routes
 Route::middleware(['auth'])->group(function () {
     Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
