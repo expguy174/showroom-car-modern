@@ -38,7 +38,9 @@ class TestDriveSeeder extends Seeder
                        'confirmed_at' => now(),
                        'completed_at' => null,
                        'feedback' => 'Chưa có',
-                       'satisfaction_rating' => 0.0
+                       'satisfaction_rating' => 0.0,
+                       'created_at' => now()->subDays(1),
+                       'updated_at' => now()->subDays(1)
                    ],
 
                    // Regular Customer 1 Test Drive
@@ -59,7 +61,9 @@ class TestDriveSeeder extends Seeder
                        'confirmed_at' => now()->subDays(5),
                        'completed_at' => now()->subDays(5),
                        'feedback' => 'Xe rất tốt, phù hợp với gia đình',
-                       'satisfaction_rating' => 4.5
+                       'satisfaction_rating' => 4.5,
+                       'created_at' => now()->subDays(6),
+                       'updated_at' => now()->subDays(5)
                    ],
 
                    // Regular Customer 2 Test Drive
@@ -80,7 +84,9 @@ class TestDriveSeeder extends Seeder
                        'confirmed_at' => null,
                        'completed_at' => null,
                        'feedback' => 'Chưa có',
-                       'satisfaction_rating' => 0.0
+                       'satisfaction_rating' => 0.0,
+                       'created_at' => now()->subDays(2),
+                       'updated_at' => now()->subDays(2)
                    ],
 
                    // Cancelled Test Drive
@@ -101,7 +107,9 @@ class TestDriveSeeder extends Seeder
                        'confirmed_at' => null,
                        'completed_at' => null,
                        'feedback' => 'Chưa có',
-                       'satisfaction_rating' => 0.0
+                       'satisfaction_rating' => 0.0,
+                       'created_at' => now()->subDays(11),
+                       'updated_at' => now()->subDays(10)
                    ]
         ];
 

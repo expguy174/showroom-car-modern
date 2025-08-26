@@ -172,10 +172,22 @@
                         @foreach($cartItems as $ci)
                             @php
                                 $model = $ci->item;
-                                $unit = ($ci->item_type === 'car_variant' && method_exists($model, 'getPriceWithColorAdjustment'))
+                                $baseUnit = ($ci->item_type === 'car_variant' && method_exists($model, 'getPriceWithColorAdjustment'))
                                     ? $model->getPriceWithColorAdjustment($ci->color_id)
                                     : ($model->price ?? 0);
-                                $line = $unit * $ci->quantity;
+                                // add-ons from session meta
+                                $meta = session('cart_item_meta.' . $ci->id, []);
+                                $featIds = collect($meta['feature_ids'] ?? [])->filter()->map(fn($v)=> (int)$v)->unique()->all();
+                                $optIds = collect($meta['option_ids'] ?? [])->filter()->map(fn($v)=> (int)$v)->unique()->all();
+                                $selFeats = !empty($featIds) ? \App\Models\CarVariantFeature::whereIn('id', $featIds)->get() : collect();
+                                $selOpts  = !empty($optIds) ? \App\Models\CarVariantOption::whereIn('id', $optIds)->get() : collect();
+                                $addonSum = 0;
+                                foreach($selFeats as $sf){ $addonSum += (float)($sf->package_price ?? $sf->price ?? 0); }
+                                foreach($selOpts as $so){ $addonSum += (float)($so->package_price ?? $so->price ?? 0); }
+                                $displayUnit = $baseUnit + $addonSum;
+                                $line = $displayUnit * $ci->quantity;
+                                $baseLine = $baseUnit * $ci->quantity;
+                                $addonLine = $addonSum * $ci->quantity;
                                 $img = null;
                                 if ($ci->item_type === 'car_variant' && $model?->images?->isNotEmpty()) {
                                     $f = $model->images->first();
@@ -195,12 +207,47 @@
                                 <div class="min-w-0 flex-1">
                                     <div class="text-sm font-medium text-gray-900" title="{{ $model?->name }}" style="display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{{ $model?->name }}</div>
                                     <div class="text-[11px] text-gray-500 whitespace-normal break-words">SL: {{ $ci->quantity }}@if($ci->color) • Màu: {{ $ci->color->color_name }} @endif</div>
+                                    @php 
+                                        $meta = session('cart_item_meta.' . $ci->id, []);
+                                        $featIds = collect($meta['feature_ids'] ?? [])->filter()->map(fn($v)=> (int)$v)->unique()->all();
+                                        $optIds = collect($meta['option_ids'] ?? [])->filter()->map(fn($v)=> (int)$v)->unique()->all();
+                                        $selFeats = !empty($featIds) ? \App\Models\CarVariantFeature::whereIn('id', $featIds)->get() : collect();
+                                        $selOpts  = !empty($optIds) ? \App\Models\CarVariantOption::whereIn('id', $optIds)->get() : collect();
+                                    @endphp
+                                    @if($selFeats->count() > 0 || $selOpts->count() > 0)
+                                        <div class="mt-1 space-y-1">
+                                            @if($selFeats->count() > 0)
+                                                <div class="text-[11px] text-gray-600">Tính năng: 
+                                                    @foreach($selFeats as $sf)
+                                                        @php $fee=(float)($sf->package_price ?? $sf->price ?? 0); @endphp
+                                                        <span class="inline-flex items-center gap-1 mr-2">{{ $sf->feature_name }}@if($fee>0)<span class="text-indigo-700">(+{{ number_format($fee,0,',','.') }}đ)</span>@endif</span>
+                                                    @endforeach
+                                                </div>
+                                            @endif
+                                            @if($selOpts->count() > 0)
+                                                <div class="text-[11px] text-gray-600">Tuỳ chọn: 
+                                                    @foreach($selOpts as $so)
+                                                        @php $fee=(float)($so->package_price ?? $so->price ?? 0); @endphp
+                                                        <span class="inline-flex items-center gap-1 mr-2">{{ $so->option_name }}@if($fee>0)<span class="text-indigo-700">(+{{ number_format($fee,0,',','.') }}đ)</span>@endif</span>
+                                                    @endforeach
+                                                </div>
+                                            @endif
+                                        </div>
+                                    @endif
                                 </div>
-                                <div class="text-right sm:shrink-0 sm:min-w-[140px]">
+                                <div class="text-right sm:shrink-0 sm:min-w-[160px]">
                                     <div class="text-xs text-gray-500 whitespace-nowrap leading-none">Đơn giá</div>
-                                    <div class="text-sm font-semibold text-gray-900 whitespace-nowrap tabular-nums leading-none">{{ number_format($unit) }} đ</div>
+                                    <div class="text-sm font-semibold text-gray-900 whitespace-nowrap tabular-nums leading-none">{{ number_format($displayUnit) }} đ</div>
+                                    <div class="text-[11px] text-gray-500">Gốc: {{ number_format($baseUnit) }} đ</div>
+                                    @if($addonSum > 0)
+                                    <div class="text-[11px] text-indigo-700">+ Add-on: {{ number_format($addonSum) }} đ</div>
+                                    @endif
                                     <div class="text-xs text-gray-500 whitespace-nowrap leading-none mt-2">Tổng</div>
                                     <div class="text-sm font-semibold text-gray-900 whitespace-nowrap tabular-nums leading-none">{{ number_format($line) }} đ</div>
+                                    <div class="text-[11px] text-gray-500">Gốc: {{ number_format($baseLine) }} đ</div>
+                                    @if($addonLine > 0)
+                                    <div class="text-[11px] text-indigo-700">+ Add-on: {{ number_format($addonLine) }} đ</div>
+                                    @endif
                                 </div>
                             </div>
                         @endforeach
@@ -208,6 +255,17 @@
                     @php 
                         $shippingSelected = request()->input('shipping_method', 'standard');
                         $shippingFee = $shippingSelected === 'express' ? 50000 : 30000;
+                        // Compute aggregated add-on surcharge across cart
+                        $addonCart = 0;
+                        foreach ($cartItems as $aci) {
+                            $meta = session('cart_item_meta.' . $aci->id, []);
+                            $featIds = collect($meta['feature_ids'] ?? [])->filter()->map(fn($v)=> (int)$v)->unique()->all();
+                            $optIds = collect($meta['option_ids'] ?? [])->filter()->map(fn($v)=> (int)$v)->unique()->all();
+                            $selFeats = !empty($featIds) ? \App\Models\CarVariantFeature::whereIn('id', $featIds)->get() : collect();
+                            $selOpts  = !empty($optIds) ? \App\Models\CarVariantOption::whereIn('id', $optIds)->get() : collect();
+                            $addonSumUnit = 0; foreach($selFeats as $sf){ $addonSumUnit += (float)($sf->package_price ?? $sf->price ?? 0); } foreach($selOpts as $so){ $addonSumUnit += (float)($so->package_price ?? $so->price ?? 0); }
+                            $addonCart += $addonSumUnit * (int) $aci->quantity;
+                        }
                         $tax = (int) round($total * 0.1);
                         $grand = $total + $tax + $shippingFee;
                     @endphp
@@ -235,6 +293,10 @@
                         <div class="flex items-center justify-between text-sm text-gray-700">
                             <span>Tạm tính</span>
                             <span id="subtotal-amount" class="whitespace-nowrap tabular-nums" data-subtotal="{{ (int) $total }}">{{ number_format($total) }} đ</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm text-gray-700">
+                            <span>Phụ phí add-on</span>
+                            <span class="whitespace-nowrap tabular-nums text-indigo-700">+{{ number_format((int) $addonCart) }} đ</span>
                         </div>
                         <div class="flex items-center justify-between text-sm text-gray-700">
                             <span>Thuế (10%)</span>

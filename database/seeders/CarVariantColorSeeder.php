@@ -4,9 +4,8 @@ namespace Database\Seeders;
 
 use App\Models\CarVariantColor;
 use App\Models\CarVariant;
-use App\Models\CarVariantImage;
 use Illuminate\Database\Seeder;
- 
+use Illuminate\Support\Facades\DB;
 
 class CarVariantColorSeeder extends Seeder
 {
@@ -15,11 +14,8 @@ class CarVariantColorSeeder extends Seeder
      */
     public function run(): void
     {
-        $variants = CarVariant::with('carModel.carBrand')->get();
-
-        $searchCommons = function (string $query) {
-            return null; // Always use placeholder
-        };
+        $variants = CarVariant::all();
+        $now = now();
 
         $colors = [
             // Toyota Vios G Colors
@@ -35,7 +31,11 @@ class CarVariantColorSeeder extends Seeder
                 'description' => 'Màu trắng ngọc trai sang trọng và hiện đại',
                 'is_popular' => true,
                 'is_active' => true,
-                'sort_order' => 1
+                'stock_quantity' => 5,
+                'material' => 'Pearl paint',
+                'sort_order' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
             [
                 'car_variant_id' => $variants->where('name', 'Vios G')->first()->id,
@@ -49,7 +49,11 @@ class CarVariantColorSeeder extends Seeder
                 'description' => 'Màu đen bóng thể thao và nam tính',
                 'is_popular' => true,
                 'is_active' => true,
-                'sort_order' => 2
+                'stock_quantity' => 8,
+                'material' => 'Solid paint',
+                'sort_order' => 2,
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
             [
                 'car_variant_id' => $variants->where('name', 'Vios G')->first()->id,
@@ -63,7 +67,11 @@ class CarVariantColorSeeder extends Seeder
                 'description' => 'Màu bạc kim loại hiện đại và dễ bảo dưỡng',
                 'is_popular' => false,
                 'is_active' => true,
-                'sort_order' => 3
+                'stock_quantity' => 3,
+                'material' => 'Metallic paint',
+                'sort_order' => 3,
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
 
             // Toyota Vios E Colors
@@ -79,7 +87,11 @@ class CarVariantColorSeeder extends Seeder
                 'description' => 'Màu trắng ngọc trai sang trọng',
                 'is_popular' => true,
                 'is_active' => true,
-                'sort_order' => 1
+                'stock_quantity' => 4,
+                'material' => 'Pearl paint',
+                'sort_order' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
             [
                 'car_variant_id' => $variants->where('name', 'Vios E')->first()->id,
@@ -93,7 +105,11 @@ class CarVariantColorSeeder extends Seeder
                 'description' => 'Màu xanh dương năng động',
                 'is_popular' => false,
                 'is_active' => true,
-                'sort_order' => 2
+                'stock_quantity' => 6,
+                'material' => 'Solid paint',
+                'sort_order' => 2,
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
 
             // Honda City G Colors
@@ -109,7 +125,11 @@ class CarVariantColorSeeder extends Seeder
                 'description' => 'Màu trắng ngọc trai thể thao',
                 'is_popular' => true,
                 'is_active' => true,
-                'sort_order' => 1
+                'stock_quantity' => 5,
+                'material' => 'Pearl paint',
+                'sort_order' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
             [
                 'car_variant_id' => $variants->where('name', 'City G')->first()->id,
@@ -123,12 +143,54 @@ class CarVariantColorSeeder extends Seeder
                 'description' => 'Màu đỏ thể thao năng động',
                 'is_popular' => true,
                 'is_active' => true,
-                'sort_order' => 2
+                'stock_quantity' => 4,
+                'material' => 'Solid paint',
+                'sort_order' => 2,
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
 
             // Honda City RS Colors
             [
                 'car_variant_id' => $variants->where('name', 'City RS')->first()->id,
+                'color_name' => 'Trắng ngọc trai',
+                'color_code' => 'PEARL_WHITE',
+                'hex_code' => '#FFFFFF',
+                'color_type' => 'pearlescent',
+                'availability' => 'standard',
+                'price_adjustment' => 0,
+                'is_free' => true,
+                'description' => 'Màu trắng ngọc trai thể thao',
+                'is_popular' => true,
+                'is_active' => true,
+                'stock_quantity' => 4,
+                'material' => 'Pearl paint',
+                'sort_order' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'car_variant_id' => $variants->where('name', 'City RS')->first()->id,
+                'color_name' => 'Đỏ thể thao',
+                'color_code' => 'SPORT_RED',
+                'hex_code' => '#FF0000',
+                'color_type' => 'solid',
+                'availability' => 'standard',
+                'price_adjustment' => 3000000,
+                'is_free' => false,
+                'description' => 'Màu đỏ thể thao năng động',
+                'is_popular' => true,
+                'is_active' => true,
+                'stock_quantity' => 3,
+                'material' => 'Solid paint',
+                'sort_order' => 2,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+
+            // Toyota Fortuner G Colors
+            [
+                'car_variant_id' => $variants->where('name', 'Fortuner G')->first()->id,
                 'color_name' => 'Đen bóng',
                 'color_code' => 'BLACK',
                 'hex_code' => '#000000',
@@ -139,10 +201,14 @@ class CarVariantColorSeeder extends Seeder
                 'description' => 'Màu đen bóng thể thao cao cấp',
                 'is_popular' => true,
                 'is_active' => true,
-                'sort_order' => 1
+                'stock_quantity' => 6,
+                'material' => 'Solid paint',
+                'sort_order' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
             [
-                'car_variant_id' => $variants->where('name', 'City RS')->first()->id,
+                'car_variant_id' => $variants->where('name', 'Fortuner G')->first()->id,
                 'color_name' => 'Xanh đen',
                 'color_code' => 'DARK_BLUE',
                 'hex_code' => '#003366',
@@ -153,7 +219,11 @@ class CarVariantColorSeeder extends Seeder
                 'description' => 'Màu xanh đen kim loại cao cấp',
                 'is_popular' => false,
                 'is_active' => true,
-                'sort_order' => 2
+                'stock_quantity' => 3,
+                'material' => 'Metallic paint',
+                'sort_order' => 2,
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
 
             // Toyota Innova G Colors
@@ -169,7 +239,11 @@ class CarVariantColorSeeder extends Seeder
                 'description' => 'Màu trắng ngọc trai đa dụng',
                 'is_popular' => true,
                 'is_active' => true,
-                'sort_order' => 1
+                'stock_quantity' => 7,
+                'material' => 'Pearl paint',
+                'sort_order' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
             [
                 'car_variant_id' => $variants->where('name', 'Innova G')->first()->id,
@@ -183,7 +257,11 @@ class CarVariantColorSeeder extends Seeder
                 'description' => 'Màu bạc kim loại thực dụng',
                 'is_popular' => true,
                 'is_active' => true,
-                'sort_order' => 2
+                'stock_quantity' => 4,
+                'material' => 'Metallic paint',
+                'sort_order' => 2,
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
 
             // Ford Ranger XLT Colors
@@ -199,7 +277,11 @@ class CarVariantColorSeeder extends Seeder
                 'description' => 'Màu trắng ngọc trai mạnh mẽ',
                 'is_popular' => true,
                 'is_active' => true,
-                'sort_order' => 1
+                'stock_quantity' => 5,
+                'material' => 'Pearl paint',
+                'sort_order' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
             [
                 'car_variant_id' => $variants->where('name', 'Ranger XLT')->first()->id,
@@ -213,7 +295,11 @@ class CarVariantColorSeeder extends Seeder
                 'description' => 'Màu xanh rừng phù hợp với địa hình',
                 'is_popular' => false,
                 'is_active' => true,
-                'sort_order' => 2
+                'stock_quantity' => 3,
+                'material' => 'Metallic paint',
+                'sort_order' => 2,
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
 
             // Hyundai Accent G Colors
@@ -229,7 +315,11 @@ class CarVariantColorSeeder extends Seeder
                 'description' => 'Màu trắng ngọc trai hiện đại',
                 'is_popular' => true,
                 'is_active' => true,
-                'sort_order' => 1
+                'stock_quantity' => 6,
+                'material' => 'Pearl paint',
+                'sort_order' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
             [
                 'car_variant_id' => $variants->where('name', 'Accent G')->first()->id,
@@ -243,7 +333,11 @@ class CarVariantColorSeeder extends Seeder
                 'description' => 'Màu xanh dương năng động',
                 'is_popular' => false,
                 'is_active' => true,
-                'sort_order' => 2
+                'stock_quantity' => 4,
+                'material' => 'Solid paint',
+                'sort_order' => 2,
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
 
             // Mercedes-Benz C-Class C200 Colors
@@ -259,7 +353,11 @@ class CarVariantColorSeeder extends Seeder
                 'description' => 'Màu trắng ngọc trai sang trọng',
                 'is_popular' => true,
                 'is_active' => true,
-                'sort_order' => 1
+                'stock_quantity' => 4,
+                'material' => 'Pearl paint',
+                'sort_order' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
             [
                 'car_variant_id' => $variants->where('name', 'C-Class C200')->first()->id,
@@ -273,7 +371,11 @@ class CarVariantColorSeeder extends Seeder
                 'description' => 'Màu đen bóng đẳng cấp',
                 'is_popular' => true,
                 'is_active' => true,
-                'sort_order' => 2
+                'stock_quantity' => 5,
+                'material' => 'Solid paint',
+                'sort_order' => 2,
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
 
             // BMW 3 Series 320i Colors
@@ -289,7 +391,11 @@ class CarVariantColorSeeder extends Seeder
                 'description' => 'Màu trắng ngọc trai thể thao',
                 'is_popular' => true,
                 'is_active' => true,
-                'sort_order' => 1
+                'stock_quantity' => 4,
+                'material' => 'Pearl paint',
+                'sort_order' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
             [
                 'car_variant_id' => $variants->where('name', '3 Series 320i')->first()->id,
@@ -303,7 +409,11 @@ class CarVariantColorSeeder extends Seeder
                 'description' => 'Màu xanh BMW truyền thống',
                 'is_popular' => true,
                 'is_active' => true,
-                'sort_order' => 2
+                'stock_quantity' => 3,
+                'material' => 'Metallic paint',
+                'sort_order' => 2,
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
 
             // VinFast VF 8 Plus Colors
@@ -319,7 +429,11 @@ class CarVariantColorSeeder extends Seeder
                 'description' => 'Màu trắng ngọc trai hiện đại',
                 'is_popular' => true,
                 'is_active' => true,
-                'sort_order' => 1
+                'stock_quantity' => 5,
+                'material' => 'Pearl paint',
+                'sort_order' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
             [
                 'car_variant_id' => $variants->where('name', 'VF 8 Plus')->first()->id,
@@ -333,32 +447,279 @@ class CarVariantColorSeeder extends Seeder
                 'description' => 'Màu xanh VinFast độc đáo',
                 'is_popular' => false,
                 'is_active' => true,
-                'sort_order' => 2
+                'stock_quantity' => 3,
+                'material' => 'Metallic paint',
+                'sort_order' => 2,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+
+            // Honda CR-V G Colors
+            [
+                'car_variant_id' => $variants->where('name', 'CR-V G')->first()->id,
+                'color_name' => 'Đen bóng',
+                'color_code' => 'BLACK',
+                'hex_code' => '#000000',
+                'color_type' => 'solid',
+                'availability' => 'standard',
+                'price_adjustment' => 0,
+                'is_free' => true,
+                'description' => 'Màu đen bóng hiện đại',
+                'is_popular' => true,
+                'is_active' => true,
+                'stock_quantity' => 7,
+                'material' => 'Solid paint',
+                'sort_order' => 3,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'car_variant_id' => $variants->where('name', 'CR-V G')->first()->id,
+                'color_name' => 'Xanh đậm',
+                'color_code' => 'DARK_BLUE',
+                'hex_code' => '#0B3D91',
+                'color_type' => 'metallic',
+                'availability' => 'optional',
+                'price_adjustment' => 6000000,
+                'is_free' => false,
+                'description' => 'Màu xanh đậm sang trọng',
+                'is_popular' => false,
+                'is_active' => true,
+                'stock_quantity' => 4,
+                'material' => 'Metallic paint',
+                'sort_order' => 4,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+
+            // Toyota Camry 2.5HV Colors
+            [
+                'car_variant_id' => $variants->where('name', 'Camry 2.5HV')->first()->id,
+                'color_name' => 'Trắng ngọc trai',
+                'color_code' => 'PEARL_WHITE',
+                'hex_code' => '#FFFFFF',
+                'color_type' => 'pearlescent',
+                'availability' => 'standard',
+                'price_adjustment' => 0,
+                'is_free' => true,
+                'description' => 'Màu trắng ngọc trai sang trọng',
+                'is_popular' => true,
+                'is_active' => true,
+                'stock_quantity' => 6,
+                'material' => 'Pearl paint',
+                'sort_order' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'car_variant_id' => $variants->where('name', 'Camry 2.5HV')->first()->id,
+                'color_name' => 'Bạc kim loại',
+                'color_code' => 'SILVER',
+                'hex_code' => '#C0C0C0',
+                'color_type' => 'metallic',
+                'availability' => 'standard',
+                'price_adjustment' => 5000000,
+                'is_free' => false,
+                'description' => 'Màu bạc kim loại tinh tế',
+                'is_popular' => true,
+                'is_active' => true,
+                'stock_quantity' => 5,
+                'material' => 'Metallic paint',
+                'sort_order' => 2,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'car_variant_id' => $variants->where('name', 'Camry 2.5HV')->first()->id,
+                'color_name' => 'Đen bóng',
+                'color_code' => 'BLACK',
+                'hex_code' => '#000000',
+                'color_type' => 'solid',
+                'availability' => 'standard',
+                'price_adjustment' => 0,
+                'is_free' => true,
+                'description' => 'Màu đen bóng lịch lãm',
+                'is_popular' => true,
+                'is_active' => true,
+                'stock_quantity' => 4,
+                'material' => 'Solid paint',
+                'sort_order' => 3,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+
+            // Mercedes-Benz GLC 200 Colors
+            [
+                'car_variant_id' => $variants->where('name', 'GLC 200')->first()->id,
+                'color_name' => 'Trắng Polar',
+                'color_code' => 'POLAR_WHITE',
+                'hex_code' => '#F8F8F8',
+                'color_type' => 'solid',
+                'availability' => 'standard',
+                'price_adjustment' => 0,
+                'is_free' => true,
+                'description' => 'Màu trắng tiêu chuẩn của Mercedes',
+                'is_popular' => true,
+                'is_active' => true,
+                'stock_quantity' => 3,
+                'material' => 'Solid paint',
+                'sort_order' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'car_variant_id' => $variants->where('name', 'GLC 200')->first()->id,
+                'color_name' => 'Đen Obsidian',
+                'color_code' => 'OBSIDIAN_BLACK',
+                'hex_code' => '#0A0A0A',
+                'color_type' => 'metallic',
+                'availability' => 'optional',
+                'price_adjustment' => 10000000,
+                'is_free' => false,
+                'description' => 'Đen Obsidian Metallic sang trọng',
+                'is_popular' => true,
+                'is_active' => true,
+                'stock_quantity' => 2,
+                'material' => 'Metallic paint',
+                'sort_order' => 2,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'car_variant_id' => $variants->where('name', 'GLC 200')->first()->id,
+                'color_name' => 'Xám Selenite',
+                'color_code' => 'SELENITE_GREY',
+                'hex_code' => '#6E6E73',
+                'color_type' => 'metallic',
+                'availability' => 'optional',
+                'price_adjustment' => 10000000,
+                'is_free' => false,
+                'description' => 'Xám Selenite Metallic tinh tế',
+                'is_popular' => true,
+                'is_active' => true,
+                'stock_quantity' => 2,
+                'material' => 'Metallic paint',
+                'sort_order' => 3,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+
+            // Toyota Corolla Altis 1.8HEV Colors
+            [
+                'car_variant_id' => $variants->where('name', 'Corolla Altis 1.8HEV')->first()->id,
+                'color_name' => 'Trắng ngọc trai',
+                'color_code' => 'PEARL_WHITE',
+                'hex_code' => '#FFFFFF',
+                'color_type' => 'pearlescent',
+                'availability' => 'standard',
+                'price_adjustment' => 0,
+                'is_free' => true,
+                'description' => 'Trắng ngọc trai tiết kiệm và an toàn',
+                'is_popular' => true,
+                'is_active' => true,
+                'stock_quantity' => 5,
+                'material' => 'Pearl paint',
+                'sort_order' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'car_variant_id' => $variants->where('name', 'Corolla Altis 1.8HEV')->first()->id,
+                'color_name' => 'Nâu đồng',
+                'color_code' => 'BRONZE',
+                'hex_code' => '#8C7853',
+                'color_type' => 'metallic',
+                'availability' => 'optional',
+                'price_adjustment' => 4000000,
+                'is_free' => false,
+                'description' => 'Nâu đồng metallic độc đáo',
+                'is_popular' => false,
+                'is_active' => true,
+                'stock_quantity' => 3,
+                'material' => 'Metallic paint',
+                'sort_order' => 2,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+
+            // BMW 3 Series 330i M Sport Colors
+            [
+                'car_variant_id' => $variants->where('name', '3 Series 330i M Sport')->first()->id,
+                'color_name' => 'Mineral White',
+                'color_code' => 'MINERAL_WHITE',
+                'hex_code' => '#F2F2F2',
+                'color_type' => 'metallic',
+                'availability' => 'standard',
+                'price_adjustment' => 8000000,
+                'is_free' => false,
+                'description' => 'Trắng Mineral metallic cho gói M Sport',
+                'is_popular' => true,
+                'is_active' => true,
+                'stock_quantity' => 2,
+                'material' => 'Metallic paint',
+                'sort_order' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'car_variant_id' => $variants->where('name', '3 Series 330i M Sport')->first()->id,
+                'color_name' => 'Portimao Blue',
+                'color_code' => 'PORTIMAO_BLUE',
+                'hex_code' => '#2357A5',
+                'color_type' => 'metallic',
+                'availability' => 'optional',
+                'price_adjustment' => 8000000,
+                'is_free' => false,
+                'description' => 'Xanh Portimao đặc trưng BMW M',
+                'is_popular' => true,
+                'is_active' => true,
+                'stock_quantity' => 2,
+                'material' => 'Metallic paint',
+                'sort_order' => 2,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+
+            // VinFast VF 9 Eco Colors
+            [
+                'car_variant_id' => $variants->where('name', 'VF 9 Eco')->first()->id,
+                'color_name' => 'Trắng',
+                'color_code' => 'WHITE',
+                'hex_code' => '#FFFFFF',
+                'color_type' => 'solid',
+                'availability' => 'standard',
+                'price_adjustment' => 0,
+                'is_free' => true,
+                'description' => 'Trắng tinh tế cho SUV điện 7 chỗ',
+                'is_popular' => true,
+                'is_active' => true,
+                'stock_quantity' => 4,
+                'material' => 'Solid paint',
+                'sort_order' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'car_variant_id' => $variants->where('name', 'VF 9 Eco')->first()->id,
+                'color_name' => 'Xám',
+                'color_code' => 'GREY',
+                'hex_code' => '#777777',
+                'color_type' => 'metallic',
+                'availability' => 'optional',
+                'price_adjustment' => 4000000,
+                'is_free' => false,
+                'description' => 'Xám metallic hiện đại',
+                'is_popular' => false,
+                'is_active' => true,
+                'stock_quantity' => 3,
+                'material' => 'Metallic paint',
+                'sort_order' => 2,
+                'created_at' => $now,
+                'updated_at' => $now,
             ]
         ];
 
-        foreach ($colors as $payload) {
-            $variant = $variants->firstWhere('id', $payload['car_variant_id']);
-            $name = $variant?->name ?: 'Sản phẩm';
-            $label = $name;
-            $resolved = 'https://placehold.co/800x600/111827/ffffff?text=' . urlencode($label);
-
-            // Tạo color trước
-            $color = CarVariantColor::create($payload);
-
-            // Tạo 1 ảnh gắn với màu vừa tạo
-            CarVariantImage::create([
-                'car_variant_id' => $payload['car_variant_id'],
-                'car_variant_color_id' => $color->id,
-                'image_url' => $resolved,
-                'image_path' => $resolved,
-                'image_type' => 'gallery',
-                'is_main' => false,
-                'is_active' => true,
-                'sort_order' => $payload['sort_order'] ?? 0,
-                'title' => $payload['color_name'] ?? null,
-                'alt_text' => $payload['color_name'] ?? null,
-            ]);
-        }
+        DB::table('car_variant_colors')->truncate();
+        CarVariantColor::insert($colors);
     }
 }

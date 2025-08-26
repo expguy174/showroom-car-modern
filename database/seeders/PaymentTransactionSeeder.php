@@ -30,7 +30,9 @@ class PaymentTransactionSeeder extends Seeder
                 'currency' => 'VND',
                 'status' => 'completed',
                 'payment_date' => now()->subDays(25),
-                'notes' => 'Thanh toán tiền mặt tại showroom'
+                'notes' => 'Thanh toán tiền mặt tại showroom',
+                'created_at' => now()->subDays(26),
+                'updated_at' => now()->subDays(25)
             ],
 
             // VIP Customer Order 2 Payment
@@ -43,7 +45,9 @@ class PaymentTransactionSeeder extends Seeder
                 'currency' => 'VND',
                 'status' => 'pending',
                 'payment_date' => null,
-                'notes' => 'Khách chuyển khoản qua Vietcombank, đính kèm UTR sau khi duyệt'
+                'notes' => 'Khách chuyển khoản qua Vietcombank, đính kèm UTR sau khi duyệt',
+                'created_at' => now()->subDays(4),
+                'updated_at' => now()->subDays(2)
             ],
 
             // Regular Customer 1 Order Payment
@@ -56,7 +60,9 @@ class PaymentTransactionSeeder extends Seeder
                 'currency' => 'VND',
                 'status' => 'completed',
                 'payment_date' => now()->subDays(40),
-                'notes' => 'Thanh toán trả góp 12 tháng'
+                'notes' => 'Thanh toán trả góp 12 tháng',
+                'created_at' => now()->subDays(41),
+                'updated_at' => now()->subDays(40)
             ],
 
             // Regular Customer 2 Order Payment
@@ -69,7 +75,9 @@ class PaymentTransactionSeeder extends Seeder
                 'currency' => 'VND',
                 'status' => 'pending',
                 'payment_date' => null,
-                'notes' => 'Chờ duyệt hồ sơ vay VPBank, giải ngân trong 1-2 ngày làm việc'
+                'notes' => 'Chờ duyệt hồ sơ vay VPBank, giải ngân trong 1-2 ngày làm việc',
+                'created_at' => now()->subDays(9),
+                'updated_at' => now()->subDays(8)
             ],
 
             // Cancelled Order Payment
@@ -82,7 +90,9 @@ class PaymentTransactionSeeder extends Seeder
                 'currency' => 'VND',
                 'status' => 'cancelled',
                 'payment_date' => now()->subDays(60),
-                'notes' => 'Hoàn tiền do hủy đơn hàng'
+                'notes' => 'Hoàn tiền do hủy đơn hàng',
+                'created_at' => now()->subDays(61),
+                'updated_at' => now()->subDays(55)
             ]
         ];
 

@@ -10,7 +10,14 @@ class UserCarVariantController extends Controller
 {
     public function show($slugOrId)
     {
-        $variant = CarVariant::with(['carModel.carBrand', 'images', 'reviews' => function ($q) { $q->where('is_approved', true); }])
+        $variant = CarVariant::with([
+                'carModel.carBrand',
+                'images',
+                'colors' => function($q){ $q->where('is_active', true)->orderBy('sort_order'); },
+                'featuresRelation' => function($q){ $q->orderBy('sort_order'); },
+                'options' => function($q){ $q->orderBy('sort_order'); },
+                'reviews' => function ($q) { $q->where('is_approved', true); }
+            ])
             ->when(is_numeric($slugOrId), function ($q) use ($slugOrId) {
                 $q->where('id', $slugOrId);
             }, function ($q) use ($slugOrId) {

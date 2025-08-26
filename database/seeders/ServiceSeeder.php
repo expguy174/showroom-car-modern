@@ -38,7 +38,9 @@ class ServiceSeeder extends Seeder
                 'oil_change_included' => true,
                 'filter_change_included' => true,
                 'inspection_included' => true,
-                'notes' => 'Dịch vụ bảo dưỡng cơ bản cho xe mới'
+                'notes' => 'Dịch vụ bảo dưỡng cơ bản cho xe mới',
+                'created_at' => now()->subMonths(6),
+                'updated_at' => now()->subMonths(1)
             ],
             [
                 'name' => 'Bảo dưỡng định kỳ 20.000km',
@@ -61,7 +63,9 @@ class ServiceSeeder extends Seeder
                 'oil_change_included' => true,
                 'filter_change_included' => true,
                 'inspection_included' => true,
-                'notes' => 'Bảo dưỡng toàn diện cho xe đã sử dụng'
+                'notes' => 'Bảo dưỡng toàn diện cho xe đã sử dụng',
+                'created_at' => now()->subMonths(6),
+                'updated_at' => now()->subWeeks(3)
             ],
             [
                 'name' => 'Thay dầu động cơ',
@@ -84,7 +88,9 @@ class ServiceSeeder extends Seeder
                 'oil_change_included' => true,
                 'filter_change_included' => true,
                 'inspection_included' => false,
-                'notes' => 'Dịch vụ thay dầu cơ bản'
+                'notes' => 'Dịch vụ thay dầu cơ bản',
+                'created_at' => now()->subMonths(5),
+                'updated_at' => now()->subWeeks(2)
             ],
             [
                 'name' => 'Thay lốp xe',
@@ -107,7 +113,9 @@ class ServiceSeeder extends Seeder
                 'oil_change_included' => false,
                 'filter_change_included' => false,
                 'inspection_included' => false,
-                'notes' => 'Thay lốp xe chất lượng cao'
+                'notes' => 'Thay lốp xe chất lượng cao',
+                'created_at' => now()->subMonths(5),
+                'updated_at' => now()->subWeeks(2)
             ],
 
             // Dịch vụ sửa chữa
@@ -132,7 +140,9 @@ class ServiceSeeder extends Seeder
                 'oil_change_included' => false,
                 'filter_change_included' => false,
                 'inspection_included' => true,
-                'notes' => 'Sửa chữa phanh an toàn'
+                'notes' => 'Sửa chữa phanh an toàn',
+                'created_at' => now()->subMonths(4),
+                'updated_at' => now()->subWeeks(2)
             ],
             [
                 'name' => 'Sửa chữa điều hòa',
@@ -155,7 +165,9 @@ class ServiceSeeder extends Seeder
                 'oil_change_included' => false,
                 'filter_change_included' => false,
                 'inspection_included' => true,
-                'notes' => 'Sửa chữa điều hòa chuyên nghiệp'
+                'notes' => 'Sửa chữa điều hòa chuyên nghiệp',
+                'created_at' => now()->subMonths(4),
+                'updated_at' => now()->subWeeks(2)
             ],
             [
                 'name' => 'Sửa chữa điện',
@@ -178,7 +190,9 @@ class ServiceSeeder extends Seeder
                 'oil_change_included' => false,
                 'filter_change_included' => false,
                 'inspection_included' => true,
-                'notes' => 'Sửa chữa điện chuyên nghiệp'
+                'notes' => 'Sửa chữa điện chuyên nghiệp',
+                'created_at' => now()->subMonths(4),
+                'updated_at' => now()->subWeeks(2)
             ],
 
             // Dịch vụ chẩn đoán
@@ -203,7 +217,9 @@ class ServiceSeeder extends Seeder
                 'oil_change_included' => false,
                 'filter_change_included' => false,
                 'inspection_included' => true,
-                'notes' => 'Chẩn đoán chính xác lỗi động cơ'
+                'notes' => 'Chẩn đoán chính xác lỗi động cơ',
+                'created_at' => now()->subMonths(3),
+                'updated_at' => now()->subWeeks(1)
             ],
             [
                 'name' => 'Kiểm tra tổng thể xe',
@@ -226,7 +242,9 @@ class ServiceSeeder extends Seeder
                 'oil_change_included' => false,
                 'filter_change_included' => false,
                 'inspection_included' => true,
-                'notes' => 'Kiểm tra toàn diện tình trạng xe'
+                'notes' => 'Kiểm tra toàn diện tình trạng xe',
+                'created_at' => now()->subMonths(3),
+                'updated_at' => now()->subWeeks(1)
             ]
         ];
 

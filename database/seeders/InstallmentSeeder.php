@@ -39,7 +39,9 @@ class InstallmentSeeder extends Seeder
                 'status' => 'paid',
                 'paid_at' => now()->subDays(30),
                 'approved_at' => now()->subDays(45),
-                'cancelled_at' => null
+                'cancelled_at' => null,
+                'created_at' => now()->subDays(50),
+                'updated_at' => now()->subDays(30)
             ],
             [
                 'order_id' => $orders->where('order_number', 'ORD-2024-003')->first()->id,
@@ -61,7 +63,9 @@ class InstallmentSeeder extends Seeder
                 'status' => 'paid',
                 'paid_at' => now()->subDays(0),
                 'approved_at' => now()->subDays(45),
-                'cancelled_at' => null
+                'cancelled_at' => null,
+                'created_at' => now()->subDays(20),
+                'updated_at' => now()->subDays(0)
             ],
             [
                 'order_id' => $orders->where('order_number', 'ORD-2024-003')->first()->id,
@@ -82,7 +86,9 @@ class InstallmentSeeder extends Seeder
                 ],
                 'status' => 'pending',
                 'paid_at' => null,
-                'approved_at' => now()->subDays(45)
+                'approved_at' => now()->subDays(45),
+                'created_at' => now()->subDays(10),
+                'updated_at' => now()->subDays(1)
             ],
 
             // Regular Customer 2 Order Installments (24 months, 8.5% interest) - Pending approval
@@ -106,7 +112,9 @@ class InstallmentSeeder extends Seeder
                 'status' => 'pending',
                 'paid_at' => null,
                 'approved_at' => null,
-                'cancelled_at' => null
+                'cancelled_at' => null,
+                'created_at' => now()->subDays(5),
+                'updated_at' => now()->subDays(1)
             ],
             [
                 'order_id' => $orders->where('order_number', 'ORD-2024-004')->first()->id,
@@ -128,7 +136,9 @@ class InstallmentSeeder extends Seeder
                 'status' => 'pending',
                 'paid_at' => null,
                 'approved_at' => null,
-                'cancelled_at' => null
+                'cancelled_at' => null,
+                'created_at' => now()->subDays(5),
+                'updated_at' => now()->subDays(1)
             ]
         ];
 

@@ -4,9 +4,21 @@
 
 @push('head')
 @php
-    $mainImage = $variant->image_url 
-        ?? optional(optional($variant->images)->first())->image_url 
-        ?? 'https://via.placeholder.com/1200x800/cccccc/ffffff?text=No+Image';
+    $resolveImage = function($value, $fallbackText = 'No Image'){
+        $val = trim((string) $value);
+        if ($val === '') {
+            return 'https://via.placeholder.com/1200x800/111827/ffffff?text=' . urlencode($fallbackText);
+        }
+        if (filter_var($val, FILTER_VALIDATE_URL)) {
+            return $val;
+        }
+        return 'https://placehold.co/1200x800/111827/ffffff?text=' . urlencode($val);
+    };
+    $mainImage = $resolveImage(
+        $variant->image_url 
+        ?? optional(optional($variant->images)->first())->image_url,
+        $variant->name ?? 'No Image'
+    );
     $brandName = optional(optional($variant->carModel)->carBrand)->name;
     $modelName = optional($variant->carModel)->name;
     $hasDiscount = ($variant->has_discount ?? false) && ($variant->discount_percentage ?? 0) > 0;
@@ -58,13 +70,13 @@
                     <li>
                         <div class="flex items-center">
                             <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-                            <a href="{{ route('car-brands.show', $variant->carModel->carBrand->id ?? 1) }}" class="text-gray-500 hover:text-blue-600 transition-colors">{{ $variant->carModel->carBrand->name ?? 'Xe hơi' }}</a>
+                            <a href="{{ route('car-brands.show', optional(optional($variant->carModel)->carBrand)->id ?? 1) }}" class="text-gray-500 hover:text-blue-600 transition-colors">{{ optional(optional($variant->carModel)->carBrand)->name ?? 'Xe hơi' }}</a>
                         </div>
                     </li>
                     <li>
                         <div class="flex items-center">
                             <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-                            <a href="{{ route('car-models.show', $variant->carModel->id ?? 1) }}" class="text-gray-500 hover:text-blue-600 transition-colors">{{ $variant->carModel->name ?? 'Model' }}</a>
+                            <a href="{{ route('car-models.show', optional($variant->carModel)->id ?? 1) }}" class="text-gray-500 hover:text-blue-600 transition-colors">{{ optional($variant->carModel)->name ?? 'Model' }}</a>
                         </div>
                     </li>
                     <li>
@@ -86,13 +98,14 @@
                 <div class="relative group">
                     <div class="aspect-[3/2] bg-white rounded-3xl shadow-2xl overflow-hidden">
                         @php 
-                            $fallback = 'https://via.placeholder.com/1200x800/cccccc/ffffff?text=Khong+anh';
-                            $main = $variant->image_url ?? (optional(optional($variant->images)->first())->image_url) ?? $fallback;
+                            $fallback = 'Không có ảnh';
+                            $main = $resolveImage($variant->image_url ?? (optional(optional($variant->images)->first())->image_url), $variant->name ?? $fallback);
                         @endphp
                         <img src="{{ $main }}"
                          id="main-image"
                              class="w-full h-full object-cover cursor-zoom-in group-hover:scale-105 transition-transform duration-700"
                              alt="{{ $variant->name }}"
+                             loading="lazy" decoding="async" width="1200" height="800"
                              data-lightbox-src="{{ $main }}">
                     </div>
                     
@@ -124,18 +137,20 @@
                 <div id="variant-thumbs" class="sm:grid sm:grid-cols-4 sm:gap-3 flex gap-3 overflow-x-auto pb-2 thumbnails-container scrollbar-hide">
                     @if($variant->colors->count() > 0)
                     @foreach($variant->colors as $color)
+                        @php $thumb = $resolveImage($color->image_url, $variant->name . ' ' . ($color->color_name ?? '')); @endphp
                         <div class="aspect-square min-w-[72px] sm:min-w-0 bg-white rounded-2xl shadow-lg overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 thumbnail-image" 
-                             data-image="{{ $color->image_url }}" data-lightbox-src="{{ $color->image_url }}">
-                            <img src="{{ $color->image_url }}" alt="{{ $color->color_name }}" class="w-full h-full object-cover hover:scale-110 transition-transform duration-300" loading="lazy">
+                             data-image="{{ $thumb }}" data-lightbox-src="{{ $thumb }}">
+                            <img src="{{ $thumb }}" alt="{{ $color->color_name }}" class="w-full h-full object-cover hover:scale-110 transition-transform duration-300" loading="lazy" decoding="async" width="300" height="300">
                         </div>
                     @endforeach
                     @endif
                     
                     @if($variant->images && $variant->images->where('is_main', false)->count() > 0)
                         @foreach($variant->images->where('is_main', false)->take(4 - $variant->colors->count()) as $image)
+                        @php $thumb = $resolveImage($image->image_url, $variant->name ?? ''); @endphp
                         <div class="aspect-square min-w-[72px] sm:min-w-0 bg-white rounded-2xl shadow-lg overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 thumbnail-image" 
-                             data-image="{{ $image->image_url }}" data-lightbox-src="{{ $image->image_url }}">
-                            <img src="{{ $image->image_url }}" alt="{{ $variant->name }}" class="w-full h-full object-cover hover:scale-110 transition-transform duration-300" loading="lazy">
+                             data-image="{{ $thumb }}" data-lightbox-src="{{ $thumb }}">
+                            <img src="{{ $thumb }}" alt="{{ $variant->name }}" class="w-full h-full object-cover hover:scale-110 transition-transform duration-300" loading="lazy" decoding="async" width="300" height="300">
                         </div>
                         @endforeach
                     @endif
@@ -146,22 +161,22 @@
             <div class="space-y-6 lg:col-span-7">
                 <!-- Header -->
                 <div class="space-y-4">
-                    @if($variant->carModel->carBrand)
+                    @if(optional($variant->carModel)->carBrand)
                     <div class="flex items-center gap-2">
                     <div class="inline-flex items-center bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-sm font-semibold">
                         <i class="fas fa-crown mr-2"></i>
-                        {{ $variant->carModel->carBrand->name }}
+                        {{ optional(optional($variant->carModel)->carBrand)->name }}
                         </div>
-                        <a href="{{ route('car-brands.show', $variant->carModel->carBrand->id) }}" class="text-sm text-blue-600 hover:text-blue-800 hover:underline">Xem hãng</a>
+                        <a href="{{ route('car-brands.show', optional(optional($variant->carModel)->carBrand)->id ?? 1) }}" class="text-sm text-blue-600 hover:text-blue-800 hover:underline">Xem hãng</a>
                         <span class="text-gray-300">|</span>
-                        <a href="{{ route('car-models.show', $variant->carModel->id) }}" class="text-sm text-gray-700 hover:text-gray-900 hover:underline">Xem dòng</a>
+                        <a href="{{ route('car-models.show', optional($variant->carModel)->id ?? 1) }}" class="text-sm text-gray-700 hover:text-gray-900 hover:underline">Xem dòng</a>
                     </div>
                     @endif
                     
                     <h1 class="text-4xl lg:text-5xl font-black text-gray-900 leading-tight">{{ $variant->name }}</h1>
                     
-                    @if($variant->carModel->name)
-                    <p class="text-xl text-gray-600 leading-relaxed">{{ $variant->carModel->name }}</p>
+                    @if(optional($variant->carModel)->name)
+                    <p class="text-xl text-gray-600 leading-relaxed">{{ optional($variant->carModel)->name }}</p>
                     @endif
                     @if(!empty($variant->short_description))
                     <p class="text-base text-gray-600 leading-relaxed">{{ $variant->short_description }}</p>
@@ -190,21 +205,7 @@
                             <i class="fas fa-globe-asia mr-1 text-gray-400"></i>{{ $countryVi }}
                         </span>
                         @endif
-                        @if(!empty($variant->fuel_type))
-                        <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs">
-                            <i class="fas fa-gas-pump mr-1"></i>{{ Str::of($variant->fuel_type)->lower()->replace('gasoline','xăng')->replace('petrol','xăng')->replace('diesel','dầu')->replace('electric','điện')->replace('hybrid','hybrid')->title() }}
-                        </span>
-                        @endif
-                        @if(!empty($variant->transmission))
-                        <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs">
-                            <i class="fas fa-cog mr-1"></i>{{ Str::of($variant->transmission)->lower()->replace('automatic','tự động')->replace('manual','số sàn')->replace('cvt','CVT')->upper() }}
-                        </span>
-                        @endif
-                        @if(!empty($variant->power))
-                        <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs">
-                            <i class="fas fa-tachometer-alt mr-1"></i>{{ $variant->power }}
-                        </span>
-                        @endif
+                        {{-- Hidden per request: fuel type, transmission, power chips --}}
                     </div>
                     
                     <!-- Rating -->
@@ -297,12 +298,113 @@
                             <input type="hidden" name="item_type" value="car_variant">
                             <input type="hidden" name="item_id" value="{{ $variant->id }}">
                             <input type="hidden" name="color_id" value="" id="selected-color-id">
+                            <input type="hidden" name="feature_ids[]" value="" id="selected-features-holder">
+                            <input type="hidden" name="option_ids[]" value="" id="selected-options-holder">
                             <input type="hidden" name="quantity" value="1">
                             
                         </form>
                         @endif
                     </div>
                 </div>
+
+                <!-- Features & Options selectors -->
+                @php
+                    $features = ($variant->featuresRelation ?? collect());
+                    $featureGroups = [];
+                    foreach ($features as $f) {
+                        $cat = $f->category ?? 'other';
+                        $featureGroups[$cat] = $featureGroups[$cat] ?? [];
+                        $featureGroups[$cat][] = $f;
+                    }
+                    $optsAll = ($variant->options ?? collect());
+                    $optsGroups = [];
+                    foreach ($optsAll as $o) {
+                        $cat = $o->category ?? 'other';
+                        $optsGroups[$cat] = $optsGroups[$cat] ?? [];
+                        $optsGroups[$cat][] = $o;
+                    }
+                @endphp
+
+                @if(!empty($featureGroups))
+                <div class="mt-6 space-y-4">
+                    <h3 class="text-base font-semibold text-gray-900">Chọn tính năng (tuỳ chọn/gói)</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        @foreach($featureGroups as $cat => $list)
+                        <div class="bg-white rounded-xl border p-3">
+                            <div class="text-sm font-semibold text-gray-800 mb-2">{{ Str::of($cat)->replace(['-','_'],' ')->title() }}</div>
+                            <div class="space-y-2">
+                                @foreach($list as $f)
+                                @php
+                                    $isIncluded = (bool)($f->is_included ?? false) || (($f->availability ?? 'standard') === 'standard');
+                                    $fee = (float)($f->package_price ?? $f->price ?? 0);
+                                @endphp
+                                <label class="flex items-start gap-3">
+                                    <input type="checkbox" class="accent-indigo-600 js-feature" value="{{ $f->id }}" data-fee="{{ (int)$fee }}" {{ $isIncluded ? 'checked disabled' : '' }}>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-medium text-gray-900">{{ $f->feature_name }}</span>
+                                            @if($isIncluded)
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs">Bao gồm</span>
+                                            @elseif($fee>0)
+                                                <span class="text-xs text-indigo-700 font-semibold">+{{ number_format($fee,0,',','.') }}₫</span>
+                                            @endif
+                                        </div>
+                                        @if(!empty($f->description))
+                                            <div class="text-xs text-gray-600">{{ $f->description }}</div>
+                                        @endif
+                                    </div>
+                                </label>
+                                @endforeach
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+
+                @if(!empty($optsGroups))
+                <div class="mt-4 space-y-4">
+                    <h3 class="text-base font-semibold text-gray-900">Chọn tuỳ chọn nâng cấp</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        @foreach($optsGroups as $cat => $list)
+                        <div class="bg-white rounded-xl border p-3">
+                            <div class="text-sm font-semibold text-gray-800 mb-2">{{ Str::of($cat)->replace(['-','_'],' ')->title() }}</div>
+                            <div class="space-y-2">
+                                @foreach($list as $o)
+                                @php $fee = (float)($o->package_price ?? $o->price ?? 0); @endphp
+                                <label class="flex items-start gap-3">
+                                    <input type="checkbox" class="accent-indigo-600 js-option" value="{{ $o->id }}" data-fee="{{ (int)$fee }}" {{ ($o->is_included ?? false) ? 'checked disabled' : '' }}>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-medium text-gray-900">{{ $o->option_name }}</span>
+                                            @if(($o->is_included ?? false))
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs">Bao gồm</span>
+                                            @elseif($fee>0)
+                                                <span class="text-xs text-indigo-700 font-semibold">+{{ number_format($fee,0,',','.') }}₫</span>
+                                            @endif
+                                        </div>
+                                        @if(!empty($o->description))
+                                            <div class="text-xs text-gray-600">{{ $o->description }}</div>
+                                        @endif
+                                    </div>
+                                </label>
+                                @endforeach
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+
+                @php
+                    $hasFeatures = collect($variant->featuresRelation ?? [])->count() > 0;
+                    $hasOptions = collect($variant->options ?? [])->count() > 0;
+                @endphp
+                @if(!$hasFeatures && !$hasOptions)
+                <div class="mt-4 p-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-600">
+                    Phiên bản này hiện chưa có tính năng hay tuỳ chọn để chọn thêm.
+                </div>
+                @endif
 
                     @if($variant->is_available)
                 <!-- CTA row: full-width equal buttons -->
@@ -315,6 +417,8 @@
                         <input type="hidden" name="item_type" value="car_variant">
                         <input type="hidden" name="item_id" value="{{ $variant->id }}">
                         <input type="hidden" name="color_id" value="" id="selected-color-id">
+                        <input type="hidden" name="feature_ids[]" value="" id="selected-features-holder-2">
+                        <input type="hidden" name="option_ids[]" value="" id="selected-options-holder-2">
                         <input type="hidden" name="quantity" value="1">
                         <button type="submit" class="action-btn action-primary w-full">
                             <i class="fas fa-cart-plus"></i><span>Thêm vào giỏ</span>
@@ -449,12 +553,7 @@
                                         <span class="font-semibold text-gray-900">{{ $variant->warranty_years }} năm</span>
                                     </div>
                                     @endif
-                                    @if(!empty($variant->fuel_consumption) && (float)$variant->fuel_consumption > 0)
-                                    <div class="flex justify-between items-center py-3 border-b border-gray-100">
-                                        <span class="text-gray-600 font-medium">Tiêu thụ nhiên liệu (kết hợp):</span>
-                                        <span class="font-semibold text-gray-900">{{ is_numeric($variant->fuel_consumption) ? number_format((float)$variant->fuel_consumption, 1, ',', '.') . ' L/100km' : $variant->fuel_consumption }}</span>
-                                    </div>
-                                    @endif
+                                    {{-- Hidden per request: fuel consumption row --}}
                                     <div class="flex justify-between items-center py-3 border-b border-gray-100">
                                         <span class="text-gray-600 font-medium">Lượt xem:</span>
                                         <span class="font-semibold text-gray-900">{{ number_format((int)($variant->view_count ?? 0), 0, ',', '.') }}</span>
@@ -491,16 +590,8 @@
                                     // Ensure curated essentials if missing, including more fields
                                     $ensure = [
                                         'performance' => [
-                                            ['engine_type', $variant->getSpecValue('engine_type','engine') ?? $variant->getSpecValue('engine_type')],
-                                            ['engine_size', $variant->getSpecValue('engine_size','engine') ?? $variant->engine_size],
-                                            ['engine_displacement', $variant->getSpecValue('engine_displacement','engine') ?? $variant->getSpecValue('engine_displacement')],
-                                            ['cylinders', $variant->getSpecValue('cylinders','engine') ?? $variant->getSpecValue('cylinders')],
-                                            ['power_output', $variant->power_output ?? $variant->getSpecValue('power')],
-                                            ['torque', $variant->getSpecValue('torque','performance') ?? $variant->torque],
-                                            ['transmission', $variant->transmission],
+                                            // Hidden specs per request: engine, power, fuel, transmission
                                             ['drivetrain', $variant->drivetrain],
-                                            ['fuel_type', $variant->fuel_type],
-                                            ['consumption_combined', $variant->getSpecValue('consumption_combined','fuel') ?? $variant->getSpecValue('fuel_consumption','fuel') ?? $variant->fuel_consumption],
                                             ['top_speed', $variant->getSpecValue('top_speed','performance') ?? $variant->getSpecValue('max_speed','performance')],
                                         ],
                                         'battery' => [
@@ -599,14 +690,19 @@
                                         @endif
                                     @endforeach
                                 </div>
+                                @php
+                                    $blockedSpecNames = [
+                                        'engine_type','engine_size','engine_displacement','cylinders','power_output','transmission','fuel_type','consumption_combined','fuel_consumption','engine','công_suất','động_cơ','hộp_số','tiêu_thụ_nhiên_liệu'
+                                    ];
+                                @endphp
                                 @foreach($groupedSpecs as $groupKey => $rows)
                                     @php $visibleCount = 0; foreach($rows as $r){ if(!empty($r['value'])) $visibleCount++; } @endphp
                                     <div id="spec-{{ $groupKey }}" class="spec-group {{ $groupKey !== $activeGroup ? 'hidden' : '' }}">
                                         <div class="grid grid-cols-1 gap-3 spec-rows">
                                             @php $rowIndex=0; @endphp
                                             @foreach($rows as $row)
-                                                @php $value = $row['value'] ?? null; @endphp
-                                                @if(!empty($value))
+                                                @php $value = $row['value'] ?? null; $labelKey = Str::of($row['label'] ?? '')->lower()->replace([' ','-'],'_'); @endphp
+                                                @if(!empty($value) && !in_array((string)$labelKey, $blockedSpecNames, true))
                                                 <div class="flex justify-between items-center py-3 border-b border-gray-100 spec-row {{ $rowIndex >= 4 ? 'hidden' : '' }}" data-row-index="{{ $rowIndex }}">
                                                     <span class="text-gray-600 font-medium">{{ $row['label'] }}:</span>
                                                     <span class="font-semibold text-gray-900">{{ $value }}</span>
@@ -997,6 +1093,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const colorInput = document.getElementById('selected-color-id');
     const selectedColorText = document.getElementById('selected-color-display');
     const priceEl = document.getElementById('dynamic-price');
+    const featureCbs = document.querySelectorAll('.js-feature');
+    const optionCbs = document.querySelectorAll('.js-option');
+    const featHolder = document.getElementById('selected-features-holder');
+    const featHolder2 = document.getElementById('selected-features-holder-2');
+    const optHolder = document.getElementById('selected-options-holder');
+    const optHolder2 = document.getElementById('selected-options-holder-2');
     
     colorOptions.forEach(option => {
         option.addEventListener('click', () => {
@@ -1038,14 +1140,56 @@ document.addEventListener('DOMContentLoaded', function() {
                 const baseOriginal = parseInt(priceEl.getAttribute('data-base-original') || String(baseCurrent), 10);
                 const origEl = document.getElementById('original-price');
                 const discountPct = parseFloat(priceEl.getAttribute('data-discount') || '0');
-                // New current price includes color adjustment
-                const newCurrent = baseCurrent + priceAdj;
+                // New current base used for calc, includes color adjustment + selected addons
+                const addons = computeSelectedAddonsTotal();
+                const newCurrent = baseCurrent + priceAdj + addons;
                 priceEl.textContent = newCurrent.toLocaleString('vi-VN');
                 // Keep original price from baseOriginal (not adjusted by color)
                 if (origEl && discountPct > 0) {
                     origEl.textContent = baseOriginal.toLocaleString('vi-VN');
                 }
             }
+        });
+    });
+
+    function computeSelectedAddonsTotal(){
+        let total = 0;
+        featureCbs.forEach(cb=>{ if (!cb.disabled && cb.checked){ const fee = parseInt(cb.getAttribute('data-fee')||'0',10); total += isNaN(fee)?0:fee; } });
+        optionCbs.forEach(cb=>{ if (!cb.disabled && cb.checked){ const fee = parseInt(cb.getAttribute('data-fee')||'0',10); total += isNaN(fee)?0:fee; } });
+        return total;
+    }
+
+    function refreshDynamicPrice(){
+        if (!priceEl) return;
+        const baseCurrent = parseInt(priceEl.getAttribute('data-base-price') || '0', 10);
+        const colorActive = document.querySelector('.js-color-option.border-blue-500');
+        const priceAdj = colorActive ? parseInt(colorActive.getAttribute('data-price-adjustment')||'0',10) : 0;
+        const addons = computeSelectedAddonsTotal();
+        const newCurrent = baseCurrent + priceAdj + addons;
+        priceEl.textContent = newCurrent.toLocaleString('vi-VN');
+    }
+
+    featureCbs.forEach(cb=> cb.addEventListener('change', refreshDynamicPrice));
+    optionCbs.forEach(cb=> cb.addEventListener('change', refreshDynamicPrice));
+
+    // Sync hidden inputs before submit
+    function collectSelectedIds(nodes){
+        const ids = [];
+        nodes.forEach(cb=>{ if (!cb.disabled && cb.checked){ const id = parseInt(cb.value,10); if(!isNaN(id)) ids.push(id); } });
+        return ids;
+    }
+    document.querySelectorAll('form.add-to-cart-form').forEach(function(f){
+        f.addEventListener('submit', function(){
+            const feats = collectSelectedIds(featureCbs);
+            const opts = collectSelectedIds(optionCbs);
+            if (featHolder) featHolder.value = '';
+            if (featHolder2) featHolder2.value = '';
+            if (optHolder) optHolder.value = '';
+            if (optHolder2) optHolder2.value = '';
+            // Remove existing dynamic clones
+            f.querySelectorAll('input[name="feature_ids[]"], input[name="option_ids[]"]').forEach(function(n){ if(n.id && (n.id==='selected-features-holder'||n.id==='selected-features-holder-2'||n.id==='selected-options-holder'||n.id==='selected-options-holder-2')) return; n.remove(); });
+            feats.forEach(function(id){ const i=document.createElement('input'); i.type='hidden'; i.name='feature_ids[]'; i.value=String(id); f.appendChild(i); });
+            opts.forEach(function(id){ const i=document.createElement('input'); i.type='hidden'; i.name='option_ids[]'; i.value=String(id); f.appendChild(i); });
         });
     });
 

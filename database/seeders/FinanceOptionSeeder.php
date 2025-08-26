@@ -32,7 +32,9 @@ class FinanceOptionSeeder extends Seeder
                     'Hồ sơ cần thiết: CMND/CCCD, sổ hộ khẩu, hợp đồng lao động, sao kê lương 3 tháng gần nhất'
                 ],
                 'is_active' => true,
-                'sort_order' => 1
+                'sort_order' => 1,
+                'created_at' => now()->subYears(3),
+                'updated_at' => now()->subMonths(5)
             ],
             [
                 'name' => 'Gói Vay BIDV',
@@ -53,7 +55,9 @@ class FinanceOptionSeeder extends Seeder
                     'Hồ sơ cần thiết: CMND/CCCD, sổ hộ khẩu, hợp đồng lao động, sao kê lương 6 tháng gần nhất'
                 ],
                 'is_active' => true,
-                'sort_order' => 2
+                'sort_order' => 2,
+                'created_at' => now()->subYears(3),
+                'updated_at' => now()->subMonths(5)
             ],
             [
                 'name' => 'Gói Vay Techcombank',
@@ -74,7 +78,9 @@ class FinanceOptionSeeder extends Seeder
                     'Hồ sơ cần thiết: CMND/CCCD, sổ hộ khẩu, hợp đồng lao động, sao kê lương 3 tháng gần nhất'
                 ],
                 'is_active' => true,
-                'sort_order' => 3
+                'sort_order' => 3,
+                'created_at' => now()->subYears(2),
+                'updated_at' => now()->subMonths(4)
             ],
             [
                 'name' => 'Gói Vay MB Bank',
@@ -95,7 +101,9 @@ class FinanceOptionSeeder extends Seeder
                     'Hồ sơ cần thiết: CMND/CCCD, sổ hộ khẩu, hợp đồng lao động, sao kê lương 3 tháng gần nhất'
                 ],
                 'is_active' => true,
-                'sort_order' => 4
+                'sort_order' => 4,
+                'created_at' => now()->subYears(2),
+                'updated_at' => now()->subMonths(4)
             ],
             [
                 'name' => 'Gói Vay 0% Lãi Suất',
@@ -116,7 +124,9 @@ class FinanceOptionSeeder extends Seeder
                     'Hồ sơ cần thiết: CMND/CCCD, sổ hộ khẩu, hợp đồng lao động, sao kê lương 6 tháng gần nhất'
                 ],
                 'is_active' => true,
-                'sort_order' => 5
+                'sort_order' => 5,
+                'created_at' => now()->subYears(2),
+                'updated_at' => now()->subMonths(3)
             ],
             [
                 'name' => 'Gói Vay Doanh Nghiệp',
@@ -137,7 +147,9 @@ class FinanceOptionSeeder extends Seeder
                     'Hồ sơ cần thiết: Giấy phép kinh doanh, báo cáo tài chính, hợp đồng mua bán xe'
                 ],
                 'is_active' => true,
-                'sort_order' => 6
+                'sort_order' => 6,
+                'created_at' => now()->subYears(2),
+                'updated_at' => now()->subMonths(2)
             ]
         ];
 

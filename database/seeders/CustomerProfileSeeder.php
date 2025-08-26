@@ -72,7 +72,9 @@ class CustomerProfileSeeder extends Seeder
                 'is_vip' => true,
                 'status' => 'active',
                 'satisfaction_score' => 5.0,
-                'feedback' => 'Dịch vụ xuất sắc, nhân viên chuyên nghiệp'
+                'feedback' => 'Dịch vụ xuất sắc, nhân viên chuyên nghiệp',
+                'created_at' => now()->subYears(2),
+                'updated_at' => now()->subDays(7)
             ],
 
             // Regular Customer 1 Profile
@@ -132,7 +134,9 @@ class CustomerProfileSeeder extends Seeder
                 'is_vip' => false,
                 'status' => 'active',
                 'satisfaction_score' => 4.5,
-                'feedback' => 'Dịch vụ tốt, giá cả hợp lý'
+                'feedback' => 'Dịch vụ tốt, giá cả hợp lý',
+                'created_at' => now()->subYears(2),
+                'updated_at' => now()->subDays(10)
             ],
 
             // Regular Customer 2 Profile
@@ -191,7 +195,9 @@ class CustomerProfileSeeder extends Seeder
                 'is_vip' => false,
                 'status' => 'active',
                 'satisfaction_score' => 4.0,
-                'feedback' => 'Dịch vụ ổn, cần cải thiện thời gian giao xe'
+                'feedback' => 'Dịch vụ ổn, cần cải thiện thời gian giao xe',
+                'created_at' => now()->subYears(1),
+                'updated_at' => now()->subDays(12)
             ]
         ];
 

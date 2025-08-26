@@ -324,6 +324,10 @@ Route::permanentRedirect('/car_variants/{slugOrId}', '/car-variants/{slugOrId}')
 Route::permanentRedirect('/test_drives', '/test-drives');
 Route::permanentRedirect('/test_drives/{testDrive}', '/test-drives/{testDrive}');
 
+// Legacy route name aliases (underscore → hyphen) to avoid RouteNotFoundException in old blades
+Route::get('/_alias/test_drives', function(){ return redirect()->route('test-drives.index'); })->name('test_drives.index');
+Route::get('/_alias/test_drives/{testDrive}', function($testDrive){ return redirect()->route('test-drives.show', ['testDrive' => $testDrive]); })->name('test_drives.show');
+
 // --- Auth routes ---
 require __DIR__ . '/auth.php';
 

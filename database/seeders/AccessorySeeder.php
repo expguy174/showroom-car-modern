@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Accessory;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class AccessorySeeder extends Seeder
 {
@@ -12,10 +13,7 @@ class AccessorySeeder extends Seeder
      */
     public function run(): void
     {
-        $searchCommons = function (string $query) {
-            return null; // Always use placeholder
-        };
-
+        DB::table('accessories')->truncate();
         $accessories = [
             [
                 'name' => 'Bọc ghế da cao cấp',
@@ -26,25 +24,67 @@ class AccessorySeeder extends Seeder
                 'short_description' => 'Bọc ghế da cao cấp, chất liệu da thật',
                 'category' => 'Nội thất',
                 'brand' => 'Premium Leather',
+                'model' => '',
+                'subcategory' => '',
+                'compatible_car_brands' => [],
+                'compatible_car_models' => [],
+                'compatible_car_years' => [],
                 'price' => 5000000,
                 'original_price' => 6000000,
+                'cost_price' => 3500000,
+                'wholesale_price' => 4500000,
                 'is_on_sale' => true,
                 'sale_price' => 5000000,
+                'sale_start_date' => now()->subDays(15)->toDateString(),
+                'sale_end_date' => now()->addDays(15)->toDateString(),
                 'stock_quantity' => 20,
+                'min_stock_level' => 5,
+                'max_stock_level' => 100,
+                'stock_status' => 'in_stock',
+                'track_quantity' => true,
+                'allow_backorder' => false,
+                'backorder_quantity' => 0,
                 'is_active' => true,
                 'is_featured' => true,
+                'is_visible' => true,
                 'is_available' => true,
+                'is_new_arrival' => false,
                 'is_popular' => true,
                 'is_bestseller' => true,
-                // Leather seats query ensures relevant image
-                'main_image_path' => $searchCommons('car leather seat interior') ?: 'https://placehold.co/1200x800/111827/ffffff?text=' . urlencode('Bọc ghế da'),
+                'is_new' => false,
+                'main_image_path' => 'https://placehold.co/1200x800/111827/ffffff?text=' . urlencode('Bọc ghế da'),
+                'gallery' => [],
+                'video_url' => '',
+                'manual_pdf_path' => '',
+                'specifications' => ['Chất liệu' => 'Da thật', 'Màu' => 'Đen'],
+                'features' => ['Thoáng khí', 'Dễ vệ sinh'],
+                'installation_instructions' => 'Lắp đặt tại showroom trong 60 phút.',
+                'warranty_info' => 'Bảo hành 12 tháng.',
+                'warranty_months' => 12,
+                'warranty_terms' => 'Bảo hành do lỗi nhà sản xuất.',
+                'warranty_contact' => '1900-0000',
+                'return_policy' => 'Đổi trả trong 7 ngày.',
+                'support_contact' => 'support@showroom.com',
+                'return_policy_days' => 7,
+                'weight' => 8.5,
+                'dimensions' => '120x60x40 cm',
+                'material' => 'Da thật',
+                'color_options' => ['Đen','Nâu'],
                 'sort_order' => 1,
                 'view_count' => 150,
+                'purchase_count' => 0,
                 'average_rating' => 4.5,
                 'rating_count' => 89,
                 'meta_title' => 'Bọc ghế da cao cấp - Giá từ 5 triệu',
                 'meta_description' => 'Bọc ghế da cao cấp với chất liệu da thật, tăng tính thẩm mỹ và sự thoải mái',
-                'meta_keywords' => 'bọc ghế da, ghế da cao cấp, nội thất xe'
+                'meta_keywords' => 'bọc ghế da, ghế da cao cấp, nội thất xe',
+                'status' => 'active',
+                'installation_service_available' => true,
+                'installation_fee' => 300000,
+                'installation_requirements' => 'Xe sạch sẽ trước khi lắp đặt',
+                'installation_time_minutes' => 60,
+                'created_at' => now()->subMonths(6),
+                'updated_at' => now()->subMonths(1)
             ],
             [
                 'name' => 'Điều hòa không khí',
@@ -55,24 +95,66 @@ class AccessorySeeder extends Seeder
                 'short_description' => 'Điều hòa không khí hiện đại',
                 'category' => 'Hệ thống',
                 'brand' => 'CoolTech',
+                'model' => '',
+                'subcategory' => '',
+                'compatible_car_brands' => [],
+                'compatible_car_models' => [],
+                'compatible_car_years' => [],
                 'price' => 8000000,
                 'original_price' => 9000000,
+                'cost_price' => 6000000,
+                'wholesale_price' => 7000000,
                 'is_on_sale' => true,
                 'sale_price' => 8000000,
+                'sale_start_date' => now()->subDays(10)->toDateString(),
+                'sale_end_date' => now()->addDays(20)->toDateString(),
                 'stock_quantity' => 15,
+                'min_stock_level' => 3,
+                'max_stock_level' => 60,
+                'stock_status' => 'in_stock',
+                'track_quantity' => true,
+                'allow_backorder' => false,
+                'backorder_quantity' => 0,
                 'is_active' => true,
                 'is_featured' => true,
+                'is_visible' => true,
                 'is_available' => true,
+                'is_new_arrival' => false,
                 'is_popular' => true,
                 'is_bestseller' => false,
-                'main_image_path' => $searchCommons('car air conditioner vent') ?: 'https://placehold.co/1200x800/111827/ffffff?text=' . urlencode('Điều hòa không khí'),
+                'main_image_path' => 'https://placehold.co/1200x800/111827/ffffff?text=' . urlencode('Điều hòa không khí'),
+                'gallery' => [],
+                'video_url' => '',
+                'manual_pdf_path' => '',
+                'specifications' => ['Công suất' => '1.2kW'],
+                'features' => ['Tiết kiệm điện', 'Làm mát nhanh'],
+                'installation_instructions' => 'Lắp đặt tại xưởng, 120 phút.',
+                'warranty_info' => 'Bảo hành 24 tháng.',
+                'warranty_months' => 24,
+                'warranty_terms' => 'Theo điều kiện hãng.',
+                'warranty_contact' => '1900-1111',
+                'return_policy' => 'Đổi trả trong 7 ngày.',
+                'support_contact' => 'support@showroom.com',
+                'return_policy_days' => 7,
+                'weight' => 12.3,
+                'dimensions' => '80x50x30 cm',
+                'material' => 'Nhựa/kim loại',
+                'color_options' => ['Đen'],
                 'sort_order' => 2,
                 'view_count' => 120,
+                'purchase_count' => 0,
                 'average_rating' => 4.3,
                 'rating_count' => 67,
                 'meta_title' => 'Điều hòa không khí - Giá từ 8 triệu',
                 'meta_description' => 'Hệ thống điều hòa không khí hiện đại, tiết kiệm nhiên liệu',
-                'meta_keywords' => 'điều hòa xe, hệ thống làm mát, tiện nghi xe'
+                'meta_keywords' => 'điều hòa xe, hệ thống làm mát, tiện nghi xe',
+                'status' => 'active',
+                'installation_service_available' => true,
+                'installation_fee' => 800000,
+                'installation_requirements' => 'Kiểm tra hệ thống điện trước',
+                'installation_time_minutes' => 120,
+                'created_at' => now()->subMonths(5),
+                'updated_at' => now()->subWeeks(3)
             ],
             [
                 'name' => 'Hệ thống âm thanh cao cấp',
@@ -83,24 +165,66 @@ class AccessorySeeder extends Seeder
                 'short_description' => 'Hệ thống âm thanh cao cấp',
                 'category' => 'Giải trí',
                 'brand' => 'SoundMaster',
+                'model' => '',
+                'subcategory' => '',
+                'compatible_car_brands' => [],
+                'compatible_car_models' => [],
+                'compatible_car_years' => [],
                 'price' => 12000000,
                 'original_price' => 15000000,
+                'cost_price' => 9000000,
+                'wholesale_price' => 10500000,
                 'is_on_sale' => true,
                 'sale_price' => 12000000,
+                'sale_start_date' => now()->subDays(20)->toDateString(),
+                'sale_end_date' => now()->addDays(10)->toDateString(),
                 'stock_quantity' => 10,
+                'min_stock_level' => 2,
+                'max_stock_level' => 40,
+                'stock_status' => 'low_stock',
+                'track_quantity' => true,
+                'allow_backorder' => true,
+                'backorder_quantity' => 5,
                 'is_active' => true,
                 'is_featured' => true,
+                'is_visible' => true,
                 'is_available' => true,
+                'is_new_arrival' => false,
                 'is_popular' => false,
                 'is_bestseller' => false,
-                'main_image_path' => $searchCommons('car audio speaker subwoofer interior') ?: 'https://placehold.co/1200x800/111827/ffffff?text=' . urlencode('Âm thanh cao cấp'),
+                'main_image_path' => 'https://placehold.co/1200x800/111827/ffffff?text=' . urlencode('Âm thanh cao cấp'),
+                'gallery' => [],
+                'video_url' => '',
+                'manual_pdf_path' => '',
+                'specifications' => ['Công suất' => '500W'],
+                'features' => ['Âm trầm mạnh', 'Âm thanh vòm'],
+                'installation_instructions' => 'Lắp đặt trong 90 phút.',
+                'warranty_info' => 'Bảo hành 18 tháng.',
+                'warranty_months' => 18,
+                'warranty_terms' => 'Theo điều kiện hãng.',
+                'warranty_contact' => '1900-2222',
+                'return_policy' => 'Đổi trả trong 7 ngày.',
+                'support_contact' => 'support@showroom.com',
+                'return_policy_days' => 7,
+                'weight' => 9.8,
+                'dimensions' => '60x40x30 cm',
+                'material' => 'Nhựa/kim loại',
+                'color_options' => ['Đen'],
                 'sort_order' => 3,
                 'view_count' => 80,
+                'purchase_count' => 0,
                 'average_rating' => 4.7,
                 'rating_count' => 45,
                 'meta_title' => 'Hệ thống âm thanh cao cấp - Giá từ 12 triệu',
                 'meta_description' => 'Hệ thống âm thanh cao cấp với loa subwoofer và amplifier',
-                'meta_keywords' => 'âm thanh xe, loa xe, giải trí xe'
+                'meta_keywords' => 'âm thanh xe, loa xe, giải trí xe',
+                'status' => 'active',
+                'installation_service_available' => true,
+                'installation_fee' => 600000,
+                'installation_requirements' => 'Kiểm tra hệ thống điện',
+                'installation_time_minutes' => 90,
+                'created_at' => now()->subMonths(5),
+                'updated_at' => now()->subWeeks(2)
             ],
             [
                 'name' => 'Camera hành trình',
@@ -111,24 +235,66 @@ class AccessorySeeder extends Seeder
                 'short_description' => 'Camera hành trình HD',
                 'category' => 'Công nghệ',
                 'brand' => 'TechVision',
+                'model' => '',
+                'subcategory' => '',
+                'compatible_car_brands' => [],
+                'compatible_car_models' => [],
+                'compatible_car_years' => [],
                 'price' => 3000000,
                 'original_price' => 3500000,
+                'cost_price' => 2000000,
+                'wholesale_price' => 2500000,
                 'is_on_sale' => true,
                 'sale_price' => 3000000,
+                'sale_start_date' => now()->subDays(12)->toDateString(),
+                'sale_end_date' => now()->addDays(18)->toDateString(),
                 'stock_quantity' => 50,
+                'min_stock_level' => 10,
+                'max_stock_level' => 200,
+                'stock_status' => 'in_stock',
+                'track_quantity' => true,
+                'allow_backorder' => false,
+                'backorder_quantity' => 0,
                 'is_active' => true,
-                'is_featured' => false,
+                'is_featured' => true,
+                'is_visible' => true,
                 'is_available' => true,
+                'is_new_arrival' => false,
                 'is_popular' => true,
                 'is_bestseller' => true,
-                'main_image_path' => $searchCommons('dashcam car camera interior') ?: 'https://placehold.co/1200x800/111827/ffffff?text=' . urlencode('Camera hành trình'),
+                'main_image_path' => 'https://placehold.co/1200x800/111827/ffffff?text=' . urlencode('Camera hành trình'),
+                'gallery' => [],
+                'video_url' => '',
+                'manual_pdf_path' => '',
+                'specifications' => ['Độ phân giải' => '1080p', 'GPS' => 'Có'],
+                'features' => ['Ghi vòng lặp', 'Cảm biến va chạm'],
+                'installation_instructions' => 'Lắp đặt trong 45 phút.',
+                'warranty_info' => 'Bảo hành 12 tháng.',
+                'warranty_months' => 12,
+                'warranty_terms' => 'Theo điều kiện hãng.',
+                'warranty_contact' => '1900-3333',
+                'return_policy' => 'Đổi trả trong 7 ngày.',
+                'support_contact' => 'support@showroom.com',
+                'return_policy_days' => 7,
+                'weight' => 0.5,
+                'dimensions' => '10x6x4 cm',
+                'material' => 'Nhựa',
+                'color_options' => ['Đen'],
                 'sort_order' => 4,
                 'view_count' => 200,
+                'purchase_count' => 0,
                 'average_rating' => 4.4,
                 'rating_count' => 156,
                 'meta_title' => 'Camera hành trình - Giá từ 3 triệu',
                 'meta_description' => 'Camera hành trình HD với GPS và cảm biến va chạm',
-                'meta_keywords' => 'camera hành trình, dash cam, an toàn xe'
+                'meta_keywords' => 'camera hành trình, dash cam, an toàn xe',
+                'status' => 'active',
+                'installation_service_available' => true,
+                'installation_fee' => 200000,
+                'installation_requirements' => 'Nguồn 12V ổn định',
+                'installation_time_minutes' => 45,
+                'created_at' => now()->subMonths(4),
+                'updated_at' => now()->subWeeks(1)
             ],
             [
                 'name' => 'Lốp xe cao cấp',
@@ -139,45 +305,117 @@ class AccessorySeeder extends Seeder
                 'short_description' => 'Lốp xe cao cấp',
                 'category' => 'Ngoại thất',
                 'brand' => 'TireMax',
+                'model' => '',
+                'subcategory' => '',
+                'compatible_car_brands' => [],
+                'compatible_car_models' => [],
+                'compatible_car_years' => [],
                 'price' => 4000000,
                 'original_price' => 4500000,
+                'cost_price' => 3000000,
+                'wholesale_price' => 3500000,
                 'is_on_sale' => true,
                 'sale_price' => 4000000,
+                'sale_start_date' => now()->subDays(8)->toDateString(),
+                'sale_end_date' => now()->addDays(22)->toDateString(),
                 'stock_quantity' => 100,
+                'min_stock_level' => 20,
+                'max_stock_level' => 400,
+                'stock_status' => 'in_stock',
+                'track_quantity' => true,
+                'allow_backorder' => true,
+                'backorder_quantity' => 10,
                 'is_active' => true,
                 'is_featured' => false,
+                'is_visible' => true,
                 'is_available' => true,
+                'is_new_arrival' => false,
                 'is_popular' => true,
                 'is_bestseller' => false,
-                'main_image_path' => $searchCommons('car tire wheel close-up') ?: 'https://placehold.co/1200x800/111827/ffffff?text=' . urlencode('Lốp xe cao cấp'),
+                'main_image_path' => 'https://placehold.co/1200x800/111827/ffffff?text=' . urlencode('Lốp xe cao cấp'),
+                'gallery' => [],
+                'video_url' => '',
+                'manual_pdf_path' => '',
+                'specifications' => ['Kích cỡ' => '225/50R17'],
+                'features' => ['Bám đường tốt', 'Độ ồn thấp'],
+                'installation_instructions' => 'Thay lốp trong 30 phút.',
+                'warranty_info' => 'Bảo hành 24 tháng.',
+                'warranty_months' => 24,
+                'warranty_terms' => 'Theo điều kiện hãng.',
+                'warranty_contact' => '1900-4444',
+                'return_policy' => 'Đổi trả trong 7 ngày.',
+                'support_contact' => 'support@showroom.com',
+                'return_policy_days' => 7,
+                'weight' => 9.2,
+                'dimensions' => '70x70x22 cm',
+                'material' => 'Cao su tổng hợp',
+                'color_options' => ['Đen'],
                 'sort_order' => 5,
                 'view_count' => 180,
+                'purchase_count' => 0,
                 'average_rating' => 4.6,
                 'rating_count' => 234,
                 'meta_title' => 'Lốp xe cao cấp - Giá từ 4 triệu',
                 'meta_description' => 'Lốp xe cao cấp với độ bám đường tốt và tuổi thọ cao',
-                'meta_keywords' => 'lốp xe, lốp cao cấp, an toàn xe'
+                'meta_keywords' => 'lốp xe, lốp cao cấp, an toàn xe',
+                'status' => 'active',
+                'installation_service_available' => true,
+                'installation_fee' => 150000,
+                'installation_requirements' => 'Cân bằng động bánh xe',
+                'installation_time_minutes' => 30,
+                'created_at' => now()->subMonths(3),
+                'updated_at' => now()->subDays(10)
             ]
         ];
 
-        // Force placeholder image with background color and the product name only
-        foreach ($accessories as &$acc) {
-            $acc['main_image_path'] = 'https://placehold.co/1200x800/111827/ffffff?text=' . urlencode($acc['name']);
-        }
-        unset($acc);
-
-        foreach ($accessories as $accessory) {
-            Accessory::create($accessory);
+        // Normalize: ensure every row has the same set of columns to avoid
+        // "all VALUES must have the same number of terms" on SQLite
+        $allKeys = [];
+        foreach ($accessories as $item) {
+            $allKeys = array_unique(array_merge($allKeys, array_keys($item)));
         }
 
-        // Guarantee images for featured accessories using stable placeholders
-        $featured = Accessory::where('is_active', 1)->where('is_featured', 1)->get();
-        foreach ($featured as $acc) {
-            if (empty($acc->main_image_path)) {
-                $term = $acc->name ?: ($acc->category ?: 'Phụ kiện xe');
-                $acc->main_image_path = 'https://placehold.co/1200x800/111827/ffffff?text=' . urlencode($term);
-                $acc->save();
+        $normalized = [];
+        $jsonKeys = [
+            'compatible_car_brands',
+            'compatible_car_models',
+            'compatible_car_years',
+            'gallery',
+            'specifications',
+            'features',
+            'color_options',
+        ];
+        foreach ($accessories as $item) {
+            $row = [];
+            foreach ($allKeys as $key) {
+                $value = array_key_exists($key, $item) ? $item[$key] : null;
+                if (in_array($key, $jsonKeys, true)) {
+                    $row[$key] = is_null($value) ? null : json_encode($value, JSON_UNESCAPED_UNICODE);
+                } else {
+                    $row[$key] = $value;
+                }
             }
+            // Apply defaults for NOT NULL boolean/integer fields if missing
+            $row['is_new'] = $row['is_new'] ?? false;
+            $row['is_new_arrival'] = $row['is_new_arrival'] ?? false;
+            $row['is_featured'] = $row['is_featured'] ?? false;
+            $row['is_bestseller'] = $row['is_bestseller'] ?? false;
+            $row['is_popular'] = $row['is_popular'] ?? false;
+            $row['is_active'] = $row['is_active'] ?? true;
+            $row['is_visible'] = $row['is_visible'] ?? true;
+            $row['is_on_sale'] = $row['is_on_sale'] ?? false;
+            $row['installation_service_available'] = $row['installation_service_available'] ?? false;
+            $row['track_quantity'] = $row['track_quantity'] ?? true;
+            $row['stock_quantity'] = $row['stock_quantity'] ?? 0;
+            $row['min_stock_level'] = $row['min_stock_level'] ?? 0;
+            $row['average_rating'] = $row['average_rating'] ?? 0;
+            $row['rating_count'] = $row['rating_count'] ?? 0;
+            $row['purchase_count'] = $row['purchase_count'] ?? 0;
+            $row['view_count'] = $row['view_count'] ?? 0;
+            $row['sort_order'] = $row['sort_order'] ?? 0;
+            $normalized[] = $row;
         }
+
+        Accessory::insert($normalized);
     }
 }

@@ -16,6 +16,9 @@ use App\Models\Accessory;
 use App\Services\NotificationService;
 use App\Models\Order;
 use App\Models\PaymentMethod;
+use App\Models\CarVariantFeature;
+use App\Models\CarVariantOption;
+use Illuminate\Support\Facades\DB;
 
 class CartController extends Controller
 {
@@ -31,7 +34,7 @@ class CartController extends Controller
 
         foreach ($cartItems as $item) {
             if ($item->item_type === 'car_variant') {
-                $item->item->load('colors', 'images');
+                $item->item->load('colors', 'images', 'featuresRelation', 'options');
             }
         }
 
@@ -45,7 +48,11 @@ class CartController extends Controller
                 'item_type' => 'required|in:car_variant,accessory',
                 'item_id' => 'required|integer|min:1',
                 'quantity' => 'integer|min:1|max:10',
-                'color_id' => 'nullable|integer|exists:car_variant_colors,id'
+                'color_id' => 'nullable|integer|exists:car_variant_colors,id',
+                'feature_ids' => 'nullable|array',
+                'feature_ids.*' => 'integer|exists:car_variant_features,id',
+                'option_ids' => 'nullable|array',
+                'option_ids.*' => 'integer|exists:car_variant_options,id'
             ]);
 
             $quantity = $validated['quantity'] ?? 1;
@@ -104,6 +111,15 @@ class CartController extends Controller
                 $colorId
             );
 
+            // Persist selected features/options in session keyed by cart_item_id (lightweight without schema changes)
+            if (!empty($result['cart_item_id'])) {
+                $meta = [
+                    'feature_ids' => array_values(array_unique(array_map('intval', $validated['feature_ids'] ?? []))),
+                    'option_ids' => array_values(array_unique(array_map('intval', $validated['option_ids'] ?? []))),
+                ];
+                session()->put('cart_item_meta.' . $result['cart_item_id'], $meta);
+            }
+
             return response()->json($result);
 
         } catch (ValidationException $e) {
@@ -134,7 +150,11 @@ class CartController extends Controller
         try {
             $request->validate([
                 'quantity' => 'nullable|integer|min:1',
-                'color_id' => 'nullable|exists:car_variant_colors,id'
+                'color_id' => 'nullable|exists:car_variant_colors,id',
+                'feature_ids' => 'nullable|array',
+                'feature_ids.*' => 'integer|exists:car_variant_features,id',
+                'option_ids' => 'nullable|array',
+                'option_ids.*' => 'integer|exists:car_variant_options,id'
             ]);
 
             $updateData = [];
@@ -154,6 +174,16 @@ class CartController extends Controller
             if ($request->has('color_id')) {
                 $updateData['color_id'] = $request->color_id;
             }
+            // Persist selected features/options into session meta for this cart item
+            $featureIds = $request->input('feature_ids', null);
+            $optionIds = $request->input('option_ids', null);
+            if (is_array($featureIds) || is_array($optionIds)) {
+                $meta = [
+                    'feature_ids' => array_values(array_unique(array_map('intval', $featureIds ?? []))),
+                    'option_ids' => array_values(array_unique(array_map('intval', $optionIds ?? []))),
+                ];
+                session()->put('cart_item_meta.' . $cartItem->id, $meta);
+            }
 
             $cartItem->update($updateData);
             $cartItem->load(['item', 'color']);
@@ -170,6 +200,13 @@ class CartController extends Controller
                     } else {
                         $unitPrice = $cartItem->item->price ?? 0;
                     }
+                    // Include selected add-ons from session meta
+                    $meta = session('cart_item_meta.' . $cartItem->id, []);
+                    $featIds = collect($meta['feature_ids'] ?? [])->filter()->map(fn($v)=> (int)$v)->unique()->all();
+                    $optIds = collect($meta['option_ids'] ?? [])->filter()->map(fn($v)=> (int)$v)->unique()->all();
+                    $featSum = !empty($featIds) ? (float) CarVariantFeature::whereIn('id', $featIds)->sum(DB::raw('COALESCE(package_price, price, 0)')) : 0;
+                    $optSum  = !empty($optIds) ? (float) CarVariantOption::whereIn('id', $optIds)->sum(DB::raw('COALESCE(package_price, price, 0)')) : 0;
+                    $unitPrice += ($featSum + $optSum);
                 }
                 $itemTotal = $unitPrice * $cartItem->quantity;
                 $colorName = $cartItem->color ? $cartItem->color->color_name : null;
@@ -182,7 +219,9 @@ class CartController extends Controller
                     'quantity' => $cartItem->quantity,
                     'color_id' => $cartItem->color_id,
                     'color_name' => $colorName,
-                    'message' => $request->has('color_id') ? 'Cập nhật màu sắc thành công!' : 'Cập nhật số lượng thành công!'
+                    'message' => $request->has('color_id') ? 'Cập nhật màu sắc thành công!' : 'Cập nhật thành công!',
+                    'feature_ids' => $featureIds ?? ($meta['feature_ids'] ?? []),
+                    'option_ids' => $optionIds ?? ($meta['option_ids'] ?? []),
                 ]);
             }
             return back()->with('success', 'Cập nhật thành công!');
@@ -206,6 +245,8 @@ class CartController extends Controller
     {
         // Use CartHelper to remove item
         $result = \App\Helpers\CartHelper::removeFromCart($cartItem->id);
+        // Clear any stored meta for this item
+        session()->forget('cart_item_meta.' . $cartItem->id);
 
         // Bust nav counts cache to avoid stale header counts
         $this->invalidateNavCountsCache();
@@ -221,6 +262,8 @@ class CartController extends Controller
     {
         // Use CartHelper to clear cart
         $result = \App\Helpers\CartHelper::clearCart();
+        // Clear meta for all items
+        session()->forget('cart_item_meta');
 
         // Bust nav counts cache to avoid stale header counts
         $this->invalidateNavCountsCache();
@@ -285,12 +328,30 @@ class CartController extends Controller
                 } else {
                     $unit = $model->price ?? 0;
                 }
+                // Add selected feature/option surcharges from session meta
+                $meta = session('cart_item_meta.' . $ci->id, []);
+                $featIds = collect($meta['feature_ids'] ?? [])->filter()->map(fn($v)=> (int)$v)->unique()->all();
+                $optIds = collect($meta['option_ids'] ?? [])->filter()->map(fn($v)=> (int)$v)->unique()->all();
+                $featSum = !empty($featIds) ? (float) CarVariantFeature::whereIn('id', $featIds)->sum(DB::raw('COALESCE(package_price, price, 0)')) : 0;
+                $optSum  = !empty($optIds) ? (float) CarVariantOption::whereIn('id', $optIds)->sum(DB::raw('COALESCE(package_price, price, 0)')) : 0;
+                $unit += ($featSum + $optSum);
                 return $unit * $ci->quantity;
             });
 
         $addresses = collect();
         if ($user) {
             $addresses = $user->addresses()->orderByDesc('is_default')->get();
+        }
+
+        // Require default address before checkout
+        if ($user) {
+            $defaultAddress = $addresses->firstWhere('is_default', true);
+            if (!$defaultAddress) {
+                return redirect()->route('user.addresses.index')
+                    ->with('warning', 'Vui lòng thêm và đặt một địa chỉ mặc định trước khi thanh toán.');
+            }
+        } else {
+            return redirect()->route('login')->with('warning', 'Vui lòng đăng nhập để thanh toán.');
         }
 
         $paymentMethods = PaymentMethod::where('is_active', true)->orderBy('id')->get();
@@ -383,6 +444,13 @@ class CartController extends Controller
                 $unitPrice = ($item->item_type === 'car_variant' && method_exists($item->item, 'getPriceWithColorAdjustment'))
                     ? $item->item->getPriceWithColorAdjustment($item->color_id)
                     : ($item->item->price ?? 0);
+                // Include selected add-ons
+                $meta = session('cart_item_meta.' . $item->id, []);
+                $featIds = collect($meta['feature_ids'] ?? [])->filter()->map(fn($v)=> (int)$v)->unique()->all();
+                $optIds = collect($meta['option_ids'] ?? [])->filter()->map(fn($v)=> (int)$v)->unique()->all();
+                $featSum = !empty($featIds) ? (float) CarVariantFeature::whereIn('id', $featIds)->sum(DB::raw('COALESCE(package_price, price, 0)')) : 0;
+                $optSum  = !empty($optIds) ? (float) CarVariantOption::whereIn('id', $optIds)->sum(DB::raw('COALESCE(package_price, price, 0)')) : 0;
+                $unitPrice += ($featSum + $optSum);
                 $itemTotal = $unitPrice * $item->quantity;
                 $total += $itemTotal;
                 

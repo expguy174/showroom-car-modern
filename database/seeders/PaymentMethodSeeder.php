@@ -25,7 +25,9 @@ class PaymentMethodSeeder extends Seeder
                     'description' => 'Thanh toán bằng tiền mặt tại showroom',
                     'instructions' => 'Vui lòng mang đầy đủ giấy tờ và tiền mặt đến showroom'
                 ],
-                'notes' => 'Phương thức thanh toán truyền thống'
+                'notes' => 'Phương thức thanh toán truyền thống',
+                'created_at' => now()->subYears(3),
+                'updated_at' => now()->subMonths(3)
             ],
             [
                 'name' => 'Chuyển khoản ngân hàng',
@@ -53,7 +55,9 @@ class PaymentMethodSeeder extends Seeder
                     'description' => 'Chuyển khoản trực tiếp vào tài khoản ngân hàng',
                     'instructions' => 'Vui lòng ghi rõ mã đơn hàng trong nội dung chuyển khoản'
                 ],
-                'notes' => 'Phương thức thanh toán an toàn và phổ biến'
+                'notes' => 'Phương thức thanh toán an toàn và phổ biến',
+                'created_at' => now()->subYears(3),
+                'updated_at' => now()->subMonths(3)
             ],
             [
                 'name' => 'Thẻ tín dụng/ghi nợ',
@@ -68,7 +72,9 @@ class PaymentMethodSeeder extends Seeder
                     'description' => 'Thanh toán bằng thẻ tín dụng hoặc thẻ ghi nợ',
                     'instructions' => 'Thẻ phải được phát hành tại Việt Nam'
                 ],
-                'notes' => 'Phí giao dịch 1.5% giá trị đơn hàng'
+                'notes' => 'Phí giao dịch 1.5% giá trị đơn hàng',
+                'created_at' => now()->subYears(2),
+                'updated_at' => now()->subMonths(6)
             ],
             [
                 'name' => 'Ví điện tử',
@@ -83,7 +89,9 @@ class PaymentMethodSeeder extends Seeder
                     'description' => 'Thanh toán qua ví điện tử',
                     'instructions' => 'Đảm bảo tài khoản ví có đủ số dư'
                 ],
-                'notes' => 'Phí giao dịch 1% giá trị đơn hàng'
+                'notes' => 'Phí giao dịch 1% giá trị đơn hàng',
+                'created_at' => now()->subYears(2),
+                'updated_at' => now()->subMonths(6)
             ],
             [
                 'name' => 'Trả góp 0%',
@@ -100,7 +108,9 @@ class PaymentMethodSeeder extends Seeder
                     'description' => 'Trả góp 0% lãi suất trong thời gian khuyến mãi',
                     'instructions' => 'Áp dụng cho khách hàng có thu nhập ổn định'
                 ],
-                'notes' => 'Chương trình khuyến mãi có thời hạn'
+                'notes' => 'Chương trình khuyến mãi có thời hạn',
+                'created_at' => now()->subYears(2),
+                'updated_at' => now()->subMonths(4)
             ],
             [
                 'name' => 'Trả góp thường',
@@ -118,7 +128,9 @@ class PaymentMethodSeeder extends Seeder
                     'description' => 'Trả góp với lãi suất cạnh tranh',
                     'instructions' => 'Hồ sơ vay sẽ được thẩm định bởi ngân hàng'
                 ],
-                'notes' => 'Lãi suất từ 8.5% - 12% tùy theo hồ sơ'
+                'notes' => 'Lãi suất từ 8.5% - 12% tùy theo hồ sơ',
+                'created_at' => now()->subYears(2),
+                'updated_at' => now()->subMonths(4)
             ]
         ];
 

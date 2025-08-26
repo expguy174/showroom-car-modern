@@ -20,7 +20,7 @@
 @endif
 
 <!-- Hero Section -->
-<section class="relative overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+<section class="relative overflow-hidden bg-gradient-to-br from-neutral-950 via-slate-900 to-black">
     <!-- Background Pattern -->
     <div class="absolute inset-0 opacity-10" aria-hidden="true">
         <div class="absolute inset-0" style="background-image: radial-gradient(circle at 25% 25%, white 2px, transparent 2px), radial-gradient(circle at 75% 75%, white 2px, transparent 2px); background-size: 48px 48px;"></div>
@@ -63,7 +63,7 @@
                 
                 <!-- Brand Basic Info -->
                 <div class="flex-1">
-                    <h1 class="text-4xl sm:text-5xl xl:text-6xl font-extrabold text-white tracking-tight mb-4">
+                    <h1 class="text-3xl sm:text-4xl xl:text-5xl font-extrabold text-white tracking-tight mb-4">
                         {{ $brand->name }}
                     </h1>
                     
@@ -87,11 +87,11 @@
                     
                     <!-- Description -->
                     @if(!empty($brand->description))
-                        <p class="text-lg text-gray-300 leading-relaxed max-w-2xl">
+                        <p class="text-lg text-gray-300 leading-relaxed md:leading-loose max-w-2xl">
                             {{ $brand->description }}
                         </p>
                     @else
-                        <p class="text-lg text-gray-300 leading-relaxed max-w-2xl">
+                        <p class="text-lg text-gray-300 leading-relaxed md:leading-loose max-w-2xl">
                             {{ $brand->name }} là một trong những thương hiệu xe hơi uy tín với nhiều dòng xe đa dạng, đáp ứng nhu cầu từ gia đình đến cao cấp.
                         </p>
                     @endif
@@ -215,8 +215,13 @@
         </div>
 
         @php
-            $modelsWithVariants = $models->filter(function($m){ return $m->carVariants && $m->carVariants->count() > 0; })->values();
-            $activeModelId = optional($modelsWithVariants->first())->id;
+            // Hiển thị tất cả dòng xe; chọn mặc định là dòng đầu tiên có phiên bản active, nếu không có thì chọn dòng đầu tiên
+            $modelsWithVariants = $models->values();
+            $firstActiveModel = $modelsWithVariants->first(function($m){
+                try { return $m->carVariants()->where('is_active', true)->count() > 0; }
+                catch (\Throwable $e) { return ($m->carVariants && $m->carVariants->count() > 0); }
+            });
+            $activeModelId = optional($firstActiveModel ?: $modelsWithVariants->first())->id;
         @endphp
 
         @if($modelsWithVariants->count() === 0)
@@ -247,7 +252,11 @@
                                 <div class="text-sm text-gray-600 mb-3 line-clamp-2">{{ $m->description ?? ($brand->name . ' ' . $m->name) }}</div>
                                 <div class="flex flex-wrap gap-2">
                                     <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[12px] bg-indigo-50 text-indigo-700 border border-indigo-100"><i class="fas fa-tag mr-1"></i>{{ !empty($m->starting_price) ? (number_format($m->starting_price, 0, ',', '.') . '₫') : 'Liên hệ' }}</span>
-                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[12px] bg-emerald-50 text-emerald-700 border border-emerald-100"><i class="fas fa-layer-group mr-1"></i>{{ $m->carVariants?->count() ?? 0 }} phiên bản</span>
+                                    @php $activeCount = $m->carVariants()->where('is_active', true)->count(); @endphp
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[12px] bg-emerald-50 text-emerald-700 border border-emerald-100"><i class="fas fa-layer-group mr-1"></i>{{ $activeCount }} phiên bản</span>
+                                    @if($activeCount === 0)
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[12px] bg-gray-100 text-gray-700 border border-gray-200"><i class="fas fa-clock mr-1"></i>Chưa có phiên bản</span>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -257,7 +266,7 @@
 
             <!-- Variants Row (horizontal per selected model) -->
             @foreach($modelsWithVariants as $m)
-                @php $variants = $m->carVariants; @endphp
+                @php $variants = $m->carVariants()->where('is_active', true)->get(); @endphp
                 <div class="js-variants-row {{ $m->id === $activeModelId ? '' : 'hidden' }}" data-model-id="{{ $m->id }}">
                     <div class="flex items-stretch gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent snap-x">
                         @foreach($variants as $variant)
@@ -303,15 +312,10 @@
 @endif
 
 <!-- Contact & CTA Section -->
-<section id="contact" class="py-20 sm:py-28 bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900 relative overflow-hidden">
-    <!-- Background Pattern -->
-    <div class="absolute inset-0 opacity-10" aria-hidden="true">
-        <div class="absolute inset-0" style="background-image: radial-gradient(circle at 25% 25%, white 2px, transparent 2px), radial-gradient(circle at 75% 75%, white 2px, transparent 2px); background-size: 48px 48px;"></div>
-    </div>
-    
+<section id="contact" class="py-16 sm:py-20 bg-gradient-to-br from-neutral-950 via-slate-900 to-black relative overflow-hidden">
     <div class="relative container mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center">
-            <h2 class="text-3xl sm:text-4xl xl:text-5xl font-bold text-white mb-6">
+            <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-6">
                 Quan tâm đến {{ $brand->name }}?
             </h2>
             <p class="text-lg sm:text-xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed">
@@ -322,13 +326,13 @@
             <!-- CTA Buttons -->
             <div class="flex flex-col sm:flex-row gap-6 justify-center items-center">
                 <a href="{{ route('products.index', ['brand' => $brand->id, 'type' => 'car']) }}"
-                   class="group bg-white text-slate-900 px-10 py-5 rounded-2xl font-bold text-lg transition-all duration-300 hover:bg-purple-100 hover:scale-105 shadow-2xl shadow-black/20">
+                   class="group bg-white text-slate-900 px-10 py-5 min-h-[48px] rounded-2xl font-bold text-lg transition-all duration-300 hover:bg-purple-100 hover:scale-105 shadow-2xl shadow-black/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-600 focus-visible:ring-offset-2">
                     <i class="fas fa-car mr-3 group-hover:rotate-12 transition-transform duration-300"></i>
                     Xem tất cả xe {{ $brand->name }}
                 </a>
                 
                 <a href="{{ route('contact') }}"
-                   class="border-2 border-white/30 text-white px-10 py-5 rounded-2xl font-bold text-lg hover:bg-white/10 transition-all duration-300 backdrop-blur-sm hover:border-white/50">
+                   class="border-2 border-white/30 text-white px-10 py-5 min-h-[48px] rounded-2xl font-bold text-lg hover:bg-white/10 transition-all duration-300 backdrop-blur-sm hover:border-white/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900/40">
                     <i class="fas fa-phone mr-3"></i>
                     Liên hệ tư vấn miễn phí
                 </a>

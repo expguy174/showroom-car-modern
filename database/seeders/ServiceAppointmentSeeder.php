@@ -50,7 +50,9 @@ class ServiceAppointmentSeeder extends Seeder
                 'technician_notes' => 'Kiểm tra bugi, dầu máy, lọc gió; đề xuất thay dầu',
                 'customer_satisfaction' => 0.0,
                 'customer_feedback' => 'Chưa đánh giá',
-                'notes' => 'Lịch hẹn bảo dưỡng định kỳ'
+                'notes' => 'Lịch hẹn bảo dưỡng định kỳ',
+                'created_at' => now()->subDays(7),
+                'updated_at' => now()->subDays(3)
             ],
 
             // Lịch hẹn thay dầu
@@ -82,7 +84,9 @@ class ServiceAppointmentSeeder extends Seeder
                 'technician_notes' => 'Dịch vụ hoàn thành tốt, đã reset đồng hồ nhắc bảo dưỡng',
                 'customer_satisfaction' => 5.0,
                 'customer_feedback' => 'Dịch vụ tốt, nhân viên chuyên nghiệp',
-                'notes' => 'Lịch hẹn thay dầu đã hoàn thành'
+                'notes' => 'Lịch hẹn thay dầu đã hoàn thành',
+                'created_at' => now()->subDays(3),
+                'updated_at' => now()->subDays(2)
             ],
 
             // Lịch hẹn sửa chữa phanh
@@ -113,7 +117,9 @@ class ServiceAppointmentSeeder extends Seeder
                 'technician_notes' => null,
                 'customer_satisfaction' => null,
                 'customer_feedback' => null,
-                'notes' => 'Lịch hẹn sửa chữa phanh; nghi ngờ má phanh mòn, kiểm tra đĩa phanh'
+                'notes' => 'Lịch hẹn sửa chữa phanh; nghi ngờ má phanh mòn, kiểm tra đĩa phanh',
+                'created_at' => now()->subDays(1),
+                'updated_at' => now()->subDays(1)
             ],
 
             // Lịch hẹn chẩn đoán
@@ -144,7 +150,9 @@ class ServiceAppointmentSeeder extends Seeder
                 'technician_notes' => null,
                 'customer_satisfaction' => null,
                 'customer_feedback' => null,
-                'notes' => 'Lịch hẹn bị hủy do khách hàng thay đổi kế hoạch'
+                'notes' => 'Lịch hẹn bị hủy do khách hàng thay đổi kế hoạch',
+                'created_at' => now()->subDays(12),
+                'updated_at' => now()->subDays(10)
             ],
 
             // Lịch hẹn thay lốp
@@ -175,7 +183,9 @@ class ServiceAppointmentSeeder extends Seeder
                 'technician_notes' => 'Chuẩn bị vật tư thay lốp',
                 'customer_satisfaction' => 0.0,
                 'customer_feedback' => 'Chưa đánh giá',
-                'notes' => 'Lịch hẹn thay lốp xe'
+                'notes' => 'Lịch hẹn thay lốp xe',
+                'created_at' => now()->subDays(2),
+                'updated_at' => now()->subDays(1)
             ]
         ];
 

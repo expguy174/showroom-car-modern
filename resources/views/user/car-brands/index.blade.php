@@ -9,7 +9,7 @@
     $featuredCount = $brands->where('is_featured', 1)->count();
     $countryCount = $brands->pluck('country')->filter()->unique()->count();
 @endphp
-<section class="relative overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+<section class="relative overflow-hidden bg-gradient-to-br from-neutral-950 via-slate-900 to-black">
     <div class="absolute inset-0 opacity-10" aria-hidden="true" style="background-image: radial-gradient(circle at 25% 25%, white 2px, transparent 2px), radial-gradient(circle at 75% 75%, white 2px, transparent 2px); background-size: 48px 48px;"></div>
     <div class="relative container mx-auto px-4 sm:px-6 lg:px-8 pt-14 sm:pt-16 pb-14 sm:pb-20">
         <!-- Breadcrumb -->
@@ -24,8 +24,8 @@
         </nav>
 
         <div class="max-w-4xl">
-            <h1 class="text-4xl sm:text-5xl font-extrabold text-white tracking-tight mb-3 sm:mb-4">Hãng xe</h1>
-            <p class="text-base sm:text-lg text-gray-300/90 leading-relaxed max-w-2xl">
+            <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-tight mb-3 sm:mb-4">Hãng xe</h1>
+            <p class="text-base sm:text-lg text-gray-300/90 leading-relaxed md:leading-loose max-w-2xl">
                 Khám phá các thương hiệu xe hơi uy tín, xem logo nhận diện, số dòng xe, và bắt đầu hành trình chọn chiếc xe phù hợp.
             </p>
         </div>
@@ -190,24 +190,23 @@
 </section>
 
 <!-- CTA Section (consistent with hero) -->
-<section class="relative overflow-hidden py-20 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-    <div class="absolute inset-0 opacity-10" aria-hidden="true" style="background-image: radial-gradient(circle at 25% 25%, white 2px, transparent 2px), radial-gradient(circle at 75% 75%, white 2px, transparent 2px); background-size: 48px 48px;"></div>
+<section class="relative overflow-hidden py-16 sm:py-20 bg-gradient-to-br from-neutral-950 via-slate-900 to-black">
     <div class="relative container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h2 class="text-4xl font-bold text-white mb-4">
+        <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
             Chưa tìm thấy hãng phù hợp?
         </h2>
-        <p class="text-lg sm:text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
+        <p class="text-lg sm:text-xl text-gray-300 mb-8 max-w-2xl mx-auto leading-relaxed">
             Chúng tôi sẵn sàng tư vấn và đề xuất các lựa chọn phù hợp nhu cầu của bạn.
         </p>
 
         <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <a href="{{ route('products.index', ['type' => 'car']) }}"
-               class="group bg-white text-slate-900 px-8 py-4 rounded-full font-bold text-lg transition-all duration-300 hover:bg-purple-100 hover:scale-105 shadow-lg hover:shadow-2xl">
+               class="group bg-white text-slate-900 px-8 py-4 min-h-[48px] rounded-full font-bold text-lg transition-all duration-300 hover:bg-purple-100 hover:scale-105 shadow-lg hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-600 focus-visible:ring-offset-2">
                 <i class="fas fa-car mr-2 group-hover:rotate-12 transition-transform"></i>
                 Khám phá tất cả xe
             </a>
             <a href="{{ route('contact') }}" 
-               class="border-2 border-white/30 text-white px-8 py-4 rounded-full font-bold text-lg transition-all duration-300 hover:bg-white/10 hover:border-white/50 backdrop-blur-sm">
+               class="border-2 border-white/30 text-white px-8 py-4 min-h-[48px] rounded-full font-bold text-lg transition-all duration-300 hover:bg-white/10 hover:border-white/50 backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900/40">
                 <i class="fas fa-phone mr-2"></i>
                 Liên hệ tư vấn
             </a>

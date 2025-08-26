@@ -27,7 +27,9 @@ class RefundSeeder extends Seeder
                     'refund_method' => 'cash',
                     'processed_by' => 'admin@showroom.com',
                     'notes' => 'Hoàn tiền do hủy đơn hàng'
-                ]
+                ],
+                'created_at' => now()->subDays(56),
+                'updated_at' => now()->subDays(55)
             ]
         ];
 

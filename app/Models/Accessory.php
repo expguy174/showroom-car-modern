@@ -91,6 +91,11 @@ class Accessory extends Model
         'has_discount' => 'boolean',
         'is_bestseller' => 'boolean',
         'is_available' => 'boolean',
+        // JSON columns
+        'gallery' => 'array',
+        'specifications' => 'array',
+        'features' => 'array',
+        'color_options' => 'array',
     ];
 
     public function reviews()

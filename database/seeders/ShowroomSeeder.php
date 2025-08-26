@@ -25,7 +25,9 @@ class ShowroomSeeder extends Seeder
                 'email' => 'hanoi@vnauto.vn',
                 'address' => '123 Đường Lê Lợi, Quận Hoàn Kiếm',
                 'city' => 'Hà Nội',
-                'is_active' => true
+                'is_active' => true,
+                'created_at' => now()->subYears(3),
+                'updated_at' => now()->subMonths(3)
             ],
             [
                 'dealership_id' => $dealerships->where('code', 'VNAUTO')->first()->id,
@@ -36,7 +38,9 @@ class ShowroomSeeder extends Seeder
                 'email' => 'tayho@vnauto.vn',
                 'address' => '456 Đường Lạc Long Quân, Quận Tây Hồ',
                 'city' => 'Hà Nội',
-                'is_active' => true
+                'is_active' => true,
+                'created_at' => now()->subYears(3),
+                'updated_at' => now()->subMonths(3)
             ],
             [
                 'dealership_id' => $dealerships->where('code', 'MNAUTO')->first()->id,
@@ -47,7 +51,9 @@ class ShowroomSeeder extends Seeder
                 'email' => 'q1@mnauto.vn',
                 'address' => '456 Đường Nguyễn Huệ, Quận 1',
                 'city' => 'TP. Hồ Chí Minh',
-                'is_active' => true
+                'is_active' => true,
+                'created_at' => now()->subYears(3),
+                'updated_at' => now()->subMonths(3)
             ],
             [
                 'dealership_id' => $dealerships->where('code', 'MNAUTO')->first()->id,
@@ -58,7 +64,9 @@ class ShowroomSeeder extends Seeder
                 'email' => 'q7@mnauto.vn',
                 'address' => '789 Đường Nguyễn Thị Thập, Quận 7',
                 'city' => 'TP. Hồ Chí Minh',
-                'is_active' => true
+                'is_active' => true,
+                'created_at' => now()->subYears(3),
+                'updated_at' => now()->subMonths(3)
             ],
             [
                 'dealership_id' => $dealerships->where('code', 'MTAUTO')->first()->id,
@@ -69,7 +77,9 @@ class ShowroomSeeder extends Seeder
                 'email' => 'danang@mtauto.vn',
                 'address' => '321 Đường Trần Phú, Quận Hải Châu',
                 'city' => 'Đà Nẵng',
-                'is_active' => true
+                'is_active' => true,
+                'created_at' => now()->subYears(2),
+                'updated_at' => now()->subMonths(2)
             ],
             [
                 'dealership_id' => $dealerships->where('code', 'DNAUTO')->first()->id,
@@ -80,7 +90,9 @@ class ShowroomSeeder extends Seeder
                 'email' => 'bienhoa@dnauto.vn',
                 'address' => '321 Đường Võ Văn Tần, TP. Biên Hòa',
                 'city' => 'Biên Hòa',
-                'is_active' => true
+                'is_active' => true,
+                'created_at' => now()->subYears(2),
+                'updated_at' => now()->subMonths(2)
             ],
             [
                 'dealership_id' => $dealerships->where('code', 'TNAUTO')->first()->id,
@@ -91,7 +103,9 @@ class ShowroomSeeder extends Seeder
                 'email' => 'cantho@tnauto.vn',
                 'address' => '654 Đường Nguyễn Trãi, Quận Ninh Kiều',
                 'city' => 'Cần Thơ',
-                'is_active' => true
+                'is_active' => true,
+                'created_at' => now()->subYears(2),
+                'updated_at' => now()->subMonths(2)
             ]
         ];
 

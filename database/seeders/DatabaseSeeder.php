@@ -29,11 +29,11 @@ class DatabaseSeeder extends Seeder
             CarModelSeeder::class,
             CarVariantSeeder::class,
             CarSpecificationSeeder::class,
-            CarModelImageSeeder::class,
-            CarVariantImageSeeder::class,
             CarVariantColorSeeder::class,
             CarVariantFeatureSeeder::class,
             CarVariantOptionSeeder::class,
+            CarModelImageSeeder::class,
+            CarVariantImageSeeder::class,
         ]);
 
         // 4. Accessories

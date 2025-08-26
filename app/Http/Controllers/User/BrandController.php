@@ -59,14 +59,15 @@ class BrandController extends Controller
             // Đếm tổng số dòng xe của hãng (bao gồm cả model chưa có phiên bản)
             $totalModelsCount = $brand->carModels()->count();
 
-            // Lấy danh sách models đang hoạt động và có ít nhất 1 variant đang hoạt động (kèm eager load variants active)
+            // Lấy TẤT CẢ models đang hoạt động của hãng (kể cả model chưa có phiên bản hoạt động)
+            // Eager load các phiên bản đang hoạt động để hiển thị danh sách khi có
             $models = $brand->carModels()
                 ->where('is_active', 1)
-                ->whereHas('carVariants', function($q){ $q->where('is_active', 1); })
                 ->with(['carVariants' => function ($q) {
                     $q->where('is_active', 1)
                       ->with(['images', 'reviews', 'carModel.carBrand']);
                 }])
+                ->orderBy('name')
                 ->get();
 
             // Get brand statistics (dựa trên danh sách models đã lọc)

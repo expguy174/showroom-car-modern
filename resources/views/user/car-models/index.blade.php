@@ -16,10 +16,7 @@
 @endphp
 
 <!-- Hero / Intro -->
-<section class="relative overflow-hidden bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-900">
-    <div class="absolute inset-0 opacity-10" aria-hidden="true">
-        <div class="absolute inset-0" style="background-image: radial-gradient(circle at 25% 25%, white 2px, transparent 2px), radial-gradient(circle at 75% 75%, white 2px, transparent 2px); background-size: 48px 48px;"></div>
-    </div>
+<section class="relative overflow-hidden bg-gradient-to-br from-neutral-950 via-slate-900 to-black">
 
     <div class="relative container mx-auto px-4 sm:px-6 lg:px-8 pt-14 sm:pt-20 pb-12 sm:pb-16">
         <!-- Breadcrumb -->
@@ -85,7 +82,7 @@
                         </div>
                     @endif
                     <div class="min-w-0">
-                        <h1 class="text-3xl sm:text-4xl xl:text-5xl font-extrabold text-white tracking-tight">{{ $brand->name ?? '' }} {{ $carModel->name }}</h1>
+                        <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold text-indigo-100 tracking-tight">{{ $brand->name ?? '' }} {{ $carModel->name }}</h1>
                         <div class="mt-3 flex flex-wrap items-center gap-2">
                             @if($minPrice)
                                 <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-400/20 text-green-100 text-sm font-semibold border border-green-400/30"><i class="fas fa-tag"></i>Từ {{ number_format($minPrice, 0, ',', '.') }}₫</span>
@@ -108,49 +105,198 @@
                 @endif
 
                 <!-- Quick specs -->
+                @php
+                    // Fallbacks: ưu tiên giá trị trên model; sau đó thống kê; rồi compareMatrix; cuối cùng đọc trực tiếp từ variants
+                    $__fuelListModel = [];
+                    if (!empty($carModel->fuel_type)) { $__fuelListModel = [ (string) $carModel->fuel_type ]; }
+                    $__fuelList = !empty($__fuelListModel) ? $__fuelListModel : (($fuelTypes && $fuelTypes->count()) ? $fuelTypes->toArray() : array_values(array_unique(array_filter(($compareMatrix['Nhiên liệu'] ?? [])))));
+                    if (empty($__fuelList) && isset($variants)) { $__fuelList = array_values(array_unique(array_filter(($variants ?? collect())->pluck('fuel_type')->toArray()))); }
+                    $__transList = ($transmissions && $transmissions->count()) ? $transmissions->toArray() : array_values(array_unique(array_filter(($compareMatrix['Hộp số'] ?? []))));
+                    if (empty($__transList) && isset($variants)) { $__transList = array_values(array_unique(array_filter(($variants ?? collect())->pluck('transmission')->toArray()))); }
+                    $__seatList = ($seats && $seats->count()) ? $seats->toArray() : array_values(array_unique(array_filter(($compareMatrix['Số chỗ'] ?? []))));
+                    if (empty($__seatList) && isset($variants)) { $__seatList = array_values(array_unique(array_filter(($variants ?? collect())->pluck('seating_capacity')->toArray()))); }
+                @endphp
                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
-                    @if(!empty($carModel->body_type))
-                    <div class="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 text-white">
+                    @php $hasBody = !empty($carModel->body_type); @endphp
+                    @if($hasBody)
+                    <div class="flex items-center gap-3 p-3 rounded-xl bg-white/10 border border-white/20 text-white">
                         <i class="fas fa-car text-white/80"></i>
                         <div>
                             <div class="text-xs text-white/70">Kiểu dáng</div>
                             <div class="text-sm font-semibold">{{ $carModel->body_type }}</div>
                         </div>
                     </div>
+                    @else
+                    <div class="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 text-white/80">
+                        <i class="fas fa-car text-white/60"></i>
+                        <div>
+                            <div class="text-xs text-white/60">Kiểu dáng</div>
+                            <div class="text-sm font-medium">Đang cập nhật</div>
+                        </div>
+                    </div>
                     @endif
-                    @if($fuelTypes && $fuelTypes->count())
-                    <div class="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 text-white">
+                    @if(!empty($carModel->segment))
+                    @php
+                        $segRaw = trim((string) $carModel->segment);
+                        $segUpper = strtoupper($segRaw);
+                        $segMap = [
+                            'A' => 'Hạng A (city cỡ nhỏ)',
+                            'B' => 'Hạng B (hatchback/sedan cỡ nhỏ)',
+                            'C' => 'Hạng C (cỡ trung)',
+                            'D' => 'Hạng D (cỡ lớn)',
+                            'E' => 'Hạng E (cao cấp)',
+                            'F' => 'Hạng F (sang trọng)',
+                            'SUV-A' => 'SUV cỡ A',
+                            'SUV-B' => 'SUV cỡ B',
+                            'SUV-C' => 'SUV cỡ C',
+                            'SUV-D' => 'SUV cỡ D',
+                            'SUV-E' => 'SUV cỡ E',
+                            'SUV' => 'SUV',
+                            'CROSSOVER' => 'Crossover',
+                            'CUV' => 'Crossover',
+                            'MPV' => 'MPV/Minivan',
+                            'MVP' => 'MPV/Minivan',
+                            'PICKUP' => 'Bán tải',
+                            'PICK-UP' => 'Bán tải',
+                            'TRUCK' => 'Bán tải',
+                            'SPORT' => 'Thể thao',
+                            'COUPE' => 'Coupe',
+                            'HATCHBACK' => 'Hatchback',
+                            'SEDAN' => 'Sedan',
+                            'WAGON' => 'Wagon',
+                        ];
+                        $segLabel = $segMap[$segUpper] ?? $segRaw;
+                    @endphp
+                    <div class="flex items-center gap-3 p-3 rounded-xl bg-white/10 border border-white/20 text-white">
+                        <i class="fas fa-layer-group text-white/80"></i>
+                        <div>
+                            <div class="text-xs text-white/70">Phân khúc</div>
+                            <div class="text-sm font-semibold">{{ $segLabel }}</div>
+                        </div>
+                    </div>
+                    @endif
+                    <div class="flex items-center gap-3 p-3 rounded-xl {{ !empty($__fuelList) ? 'bg-white/10 border-white/20 text-white' : 'bg-white/5 border-white/10 text-white/80' }} border">
                         <i class="fas fa-gas-pump text-white/80"></i>
                         <div>
                             <div class="text-xs text-white/70">Nhiên liệu</div>
-                            <div class="text-sm font-semibold uppercase">{{ strtoupper(implode(', ', $fuelTypes->toArray())) }}</div>
+                            @if(!empty($__fuelList))
+                                <div class="text-sm font-semibold space-y-0.5">
+                                    @foreach($__fuelList as $__f)
+                                        <div class="uppercase">{{ strtoupper($__f) }}</div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div class="text-sm font-medium">Đang cập nhật</div>
+                            @endif
                         </div>
                     </div>
-                    @endif
-                    @if($transmissions && $transmissions->count())
-                    <div class="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 text-white">
+                    <div class="flex items-center gap-3 p-3 rounded-xl {{ !empty($__transList) ? 'bg-white/10 border-white/20 text-white' : 'bg-white/5 border-white/10 text-white/80' }} border">
                         <i class="fas fa-cogs text-white/80"></i>
                         <div>
                             <div class="text-xs text-white/70">Hộp số</div>
-                            <div class="text-sm font-semibold uppercase">{{ strtoupper(implode(', ', $transmissions->toArray())) }}</div>
+                            @if(!empty($__transList))
+                                <div class="text-sm font-semibold space-y-0.5">
+                                    @foreach($__transList as $__t)
+                                        <div class="uppercase">{{ strtoupper($__t) }}</div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div class="text-sm font-medium">Đang cập nhật</div>
+                            @endif
                         </div>
                     </div>
-                    @endif
-                    @if($seats && $seats->count())
-                    <div class="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 text-white">
+                    <div class="flex items-center gap-3 p-3 rounded-xl {{ !empty($__seatList) ? 'bg-white/10 border-white/20 text-white' : 'bg-white/5 border-white/10 text-white/80' }} border">
                         <i class="fas fa-users text-white/80"></i>
                         <div>
                             <div class="text-xs text-white/70">Số chỗ</div>
-                            <div class="text-sm font-semibold">{{ implode(', ', $seats->toArray()) }}</div>
+                            @if(!empty($__seatList))
+                                <div class="text-sm font-semibold space-y-0.5">
+                                    @foreach($__seatList as $__s)
+                                        <div>{{ $__s }}</div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div class="text-sm font-medium">Đang cập nhật</div>
+                            @endif
                         </div>
                     </div>
-                    @endif
-                    @if(!empty($carModel->production_start_year))
-                    <div class="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 text-white">
+                    <div class="flex items-center gap-3 p-3 rounded-xl {{ (!empty($carModel->production_start_year) || !empty($carModel->production_end_year)) ? 'bg-white/10 border-white/20 text-white' : 'bg-white/5 border-white/10 text-white/80' }} border">
                         <i class="fas fa-calendar-alt text-white/80"></i>
                         <div>
                             <div class="text-xs text-white/70">Năm ra mắt</div>
-                            <div class="text-sm font-semibold">{{ $carModel->production_start_year }}@if(!empty($carModel->production_end_year)) – {{ $carModel->production_end_year }} @endif</div>
+                            @if(!empty($carModel->production_start_year) || !empty($carModel->production_end_year))
+                                <div class="text-sm font-semibold">{{ $carModel->production_start_year }}@if(!empty($carModel->production_end_year)) – {{ $carModel->production_end_year }} @endif</div>
+                            @else
+                                <div class="text-sm font-medium">Đang cập nhật</div>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 p-3 rounded-xl {{ !empty($carModel->generation) ? 'bg-white/10 border-white/20 text-white' : 'bg-white/5 border-white/10 text-white/80' }} border">
+                        <i class="fas fa-history text-white/80"></i>
+                        <div>
+                            <div class="text-xs text-white/70">Thế hệ</div>
+                            @if(!empty($carModel->generation))
+                                <div class="text-sm font-semibold">{{ $carModel->generation }}</div>
+                            @else
+                                <div class="text-sm font-medium">Đang cập nhật</div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thông số chính (tổng hợp từ các phiên bản) -->
+                @php
+                    $__specRows = ['Động cơ','Công suất','Mô-men xoắn','Dẫn động','Tiêu thụ nhiên liệu'];
+                    $__dimRows = ['Dài (mm)','Rộng (mm)','Cao (mm)'];
+                @endphp
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    @foreach($__specRows as $lbl)
+                        @php
+                            $vals = ($compareMatrix[$lbl] ?? null);
+                            $lines = null;
+                            if ($vals) {
+                                $u = array_values(array_unique(array_map(function($v){ return $v ?: '-'; }, $vals)));
+                                $lines = $u;
+                            }
+                        @endphp
+                        @if(!empty($lines))
+                        <div class="flex items-center gap-3 p-3 rounded-xl bg-white/10 border border-white/20 text-white">
+                            <div class="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center">
+                                <i class="fas fa-info text-white/80"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <div class="text-xs text-white/70">{{ $lbl }}</div>
+                                <div class="text-sm font-semibold space-y-0.5">
+                                    @foreach($lines as $__opt)
+                                        <div>{{ $__opt }}</div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+                    @endforeach
+                    @php
+                        $d = [];
+                        foreach($__dimRows as $__d){ if(!empty($compareMatrix[$__d])){ $u = array_values(array_unique($compareMatrix[$__d])); $d[$__d] = $u; } }
+                        $dimHas = count($d)===3;
+                    @endphp
+                    @if($dimHas)
+                    <div class="flex items-center gap-3 p-3 rounded-xl bg-white/10 border border-white/20 text-white sm:col-span-2">
+                        <div class="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center">
+                            <i class="fas fa-ruler-combined text-white/80"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <div class="text-xs text-white/70">Kích thước (DxRxC)</div>
+                            <div class="text-sm font-semibold space-y-0.5">
+                                @for($i=0; $i < max(count($d['Dài (mm)']), count($d['Rộng (mm)']), count($d['Cao (mm)'])); $i++)
+                                    @php
+                                        $x = $d['Dài (mm)'][$i] ?? end($d['Dài (mm)']);
+                                        $y = $d['Rộng (mm)'][$i] ?? end($d['Rộng (mm)']);
+                                        $z = $d['Cao (mm)'][$i] ?? end($d['Cao (mm)']);
+                                    @endphp
+                                    <div>{{ $x }} × {{ $y }} × {{ $z }}</div>
+                                @endfor
+                            </div>
                         </div>
                     </div>
                     @endif
@@ -215,20 +361,7 @@
                 @endif
 
                 <!-- CTAs -->
-                <div class="mt-5 flex flex-col sm:flex-row gap-3 sm:gap-4">
-                    <a href="#variants" class="action-btn action-primary">
-                        <i class="fas fa-layer-group"></i>
-                        <span>Xem các phiên bản</span>
-                    </a>
-                    <a href="{{ route('test-drives.index') }}" class="action-btn action-ghost">
-                        <i class="fas fa-steering-wheel"></i>
-                        <span>Đặt lái thử</span>
-                    </a>
-                    <a href="{{ route('contact') }}" class="action-btn action-ghost">
-                        <i class="fas fa-phone"></i>
-                        <span>Nhận tư vấn/Báo giá</span>
-                    </a>
-                </div>
+                
             </div>
         </div>
     </div>
@@ -340,6 +473,7 @@
 </section>
 @endif
 
+<!-- CTA Section (moved to end of page) -->
 @if(($relatedModels ?? collect())->count() > 0)
 <section id="related" class="py-16 sm:py-20 bg-gradient-to-b from-gray-50 to-white">
     <div class="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -375,6 +509,24 @@
     </div>
 </section>
 @endif
+
+<!-- CTA Section (moved to end of page) -->
+<section class="py-16 sm:py-20 bg-gradient-to-br from-neutral-950 via-slate-900 to-black">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">Sẵn sàng trải nghiệm {{ $carModel->name }}?</h2>
+        <p class="text-lg text-gray-300 mb-8 max-w-2xl mx-auto">Liên hệ tư vấn hoặc đặt lịch lái thử để cảm nhận thực tế.</p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <a href="{{ route('contact') }}" class="group bg-white text-slate-900 px-8 py-4 min-h-[48px] rounded-full font-bold text-lg transition-all duration-300 hover:bg-purple-100 hover:scale-[1.02] shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-600 focus-visible:ring-offset-2">
+                <i class="fas fa-phone mr-2"></i>
+                Nhận tư vấn/Báo giá
+            </a>
+            <a href="{{ route('test-drives.index') }}" class="border-2 border-white/30 text-white px-8 py-4 min-h-[48px] rounded-full font-bold text-lg hover:bg-white/10 transition-all duration-300 backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900/40">
+                <i class="fas fa-steering-wheel mr-2"></i>
+                Đặt lái thử
+            </a>
+        </div>
+    </div>
+</section>
 @endsection
 
 @push('styles')

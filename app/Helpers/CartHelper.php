@@ -86,12 +86,13 @@ class CartHelper
             })
             ->first();
 
+        $cartItem = $existingItem;
         if ($existingItem) {
             $existingItem->update([
                 'quantity' => $existingItem->quantity + $quantity
             ]);
         } else {
-            CartItem::create([
+            $cartItem = CartItem::create([
                 'user_id' => $userId,
                 'session_id' => $sessionId,
                 'item_type' => $itemType,
@@ -105,19 +106,20 @@ class CartHelper
         
         // Compute item total for the updated/created item (best-effort)
         $itemTotal = 0;
-        if ($existingItem && $existingItem->item) {
-            $unit = $existingItem->item->price ?? 0;
-            if ($existingItem->item_type === 'car_variant' && method_exists($existingItem->item, 'getPriceWithColorAdjustment')) {
-                $unit = $existingItem->item->getPriceWithColorAdjustment($existingItem->color_id);
+        if ($cartItem && $cartItem->item) {
+            $unit = $cartItem->item->price ?? 0;
+            if ($cartItem->item_type === 'car_variant' && method_exists($cartItem->item, 'getPriceWithColorAdjustment')) {
+                $unit = $cartItem->item->getPriceWithColorAdjustment($cartItem->color_id);
             }
-            $itemTotal = $unit * $existingItem->quantity;
+            $itemTotal = $unit * $cartItem->quantity;
         }
 
         return [
             'success' => true,
             'message' => $existingItem ? 'Đã cập nhật số lượng trong giỏ hàng' : 'Đã thêm vào giỏ hàng thành công',
             'cart_count' => self::getCartCount(),
-            'item_total' => $itemTotal
+            'item_total' => $itemTotal,
+            'cart_item_id' => $cartItem ? $cartItem->id : null,
         ];
     }
 

@@ -22,7 +22,9 @@ class DealershipSeeder extends Seeder
                 'address' => '123 Đường Lê Lợi',
                 'city' => 'Hà Nội',
                 'country' => 'Việt Nam',
-                'is_active' => true
+                'is_active' => true,
+                'created_at' => now()->subYears(4),
+                'updated_at' => now()->subMonths(3)
             ],
             [
                 'name' => 'Công ty TNHH Ô tô Miền Nam',
@@ -33,7 +35,9 @@ class DealershipSeeder extends Seeder
                 'address' => '456 Đường Nguyễn Huệ',
                 'city' => 'TP. Hồ Chí Minh',
                 'country' => 'Việt Nam',
-                'is_active' => true
+                'is_active' => true,
+                'created_at' => now()->subYears(4),
+                'updated_at' => now()->subMonths(3)
             ],
             [
                 'name' => 'Công ty TNHH Ô tô Miền Trung',
@@ -44,7 +48,9 @@ class DealershipSeeder extends Seeder
                 'address' => '789 Đường Trần Phú',
                 'city' => 'Đà Nẵng',
                 'country' => 'Việt Nam',
-                'is_active' => true
+                'is_active' => true,
+                'created_at' => now()->subYears(4),
+                'updated_at' => now()->subMonths(3)
             ],
             [
                 'name' => 'Công ty TNHH Ô tô Đông Nam Bộ',
@@ -55,7 +61,9 @@ class DealershipSeeder extends Seeder
                 'address' => '321 Đường Võ Văn Tần',
                 'city' => 'Biên Hòa',
                 'country' => 'Việt Nam',
-                'is_active' => true
+                'is_active' => true,
+                'created_at' => now()->subYears(3),
+                'updated_at' => now()->subMonths(3)
             ],
             [
                 'name' => 'Công ty TNHH Ô tô Tây Nam Bộ',
@@ -66,7 +74,9 @@ class DealershipSeeder extends Seeder
                 'address' => '654 Đường Nguyễn Trãi',
                 'city' => 'Cần Thơ',
                 'country' => 'Việt Nam',
-                'is_active' => true
+                'is_active' => true,
+                'created_at' => now()->subYears(3),
+                'updated_at' => now()->subMonths(2)
             ]
         ];
 

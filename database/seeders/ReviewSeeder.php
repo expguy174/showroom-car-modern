@@ -16,8 +16,8 @@ class ReviewSeeder extends Seeder
      */
     public function run(): void
     {
-        // Reset reviews to avoid duplicates on re-seeding
-        DB::table('reviews')->truncate();
+        // Reset reviews to avoid duplicates on re-seeding (keep schema integrity)
+        DB::table('reviews')->delete();
 
         $users = User::all();
         $carVariants = CarVariant::where('is_active', 1)->get();
@@ -33,7 +33,8 @@ class ReviewSeeder extends Seeder
                 'title' => 'Xe gia đình hoàn hảo',
                 'comment' => 'Toyota Vios G là lựa chọn tuyệt vời cho gia đình. Xe tiết kiệm nhiên liệu, dễ lái và có không gian rộng rãi. Nội thất chất lượng tốt và có nhiều tính năng an toàn.',
                 'is_approved' => true,
-                'created_at' => now()->subDays(30)
+                'created_at' => now()->subDays(30),
+                'updated_at' => now()->subDays(28)
             ],
             [
                 'user_id' => $users->where('email', 'customer2@example.com')->first()->id,
@@ -43,7 +44,8 @@ class ReviewSeeder extends Seeder
                 'title' => 'Xe tốt, giá hợp lý',
                 'comment' => 'Xe chạy ổn định, tiết kiệm nhiên liệu. Tuy nhiên công suất hơi yếu khi leo dốc. Nhìn chung là xe gia đình tốt.',
                 'is_approved' => true,
-                'created_at' => now()->subDays(25)
+                'created_at' => now()->subDays(25),
+                'updated_at' => now()->subDays(24)
             ],
             // Honda City G Reviews
             [
@@ -54,7 +56,8 @@ class ReviewSeeder extends Seeder
                 'title' => 'Xe đẹp, hiện đại',
                 'comment' => 'Honda City G có thiết kế đẹp và hiện đại. Nội thất sang trọng, nhiều tính năng công nghệ. Động cơ mạnh mẽ và tiết kiệm nhiên liệu.',
                 'is_approved' => true,
-                'created_at' => now()->subDays(20)
+                'created_at' => now()->subDays(20),
+                'updated_at' => now()->subDays(19)
             ],
             [
                 'user_id' => $users->where('email', 'customer3@example.com')->first()->id,
@@ -64,7 +67,8 @@ class ReviewSeeder extends Seeder
                 'title' => 'Xe tốt cho người mới lái',
                 'comment' => 'Xe dễ lái, phù hợp cho người mới học lái. Khoang lái thoải mái, tầm nhìn tốt. Giá hơi cao so với đối thủ.',
                 'is_approved' => true,
-                'created_at' => now()->subDays(15)
+                'created_at' => now()->subDays(15),
+                'updated_at' => now()->subDays(14)
             ],
             // Ford Ranger XLT Reviews
             [
@@ -75,7 +79,8 @@ class ReviewSeeder extends Seeder
                 'title' => 'Xe bán tải mạnh mẽ',
                 'comment' => 'Ford Ranger XLT có động cơ mạnh mẽ, phù hợp cho việc chở hàng và đi phượt. Thiết kế nam tính, cabin rộng rãi.',
                 'is_approved' => true,
-                'created_at' => now()->subDays(10)
+                'created_at' => now()->subDays(10),
+                'updated_at' => now()->subDays(9)
             ],
             [
                 'user_id' => $users->where('email', 'vip@example.com')->first()->id,
@@ -85,7 +90,8 @@ class ReviewSeeder extends Seeder
                 'title' => 'Xe tốt cho công việc',
                 'comment' => 'Sử dụng xe cho công việc kinh doanh. Xe chở được nhiều hàng, tiết kiệm nhiên liệu. Tuy nhiên giá hơi cao.',
                 'is_approved' => true,
-                'created_at' => now()->subDays(5)
+                'created_at' => now()->subDays(5),
+                'updated_at' => now()->subDays(4)
             ]
         ];
 
@@ -119,6 +125,7 @@ class ReviewSeeder extends Seeder
                         'comment' => $sampleComments[array_rand($sampleComments)],
                         'is_approved' => true,
                         'created_at' => now()->subDays(rand(3, 60)),
+                        'updated_at' => now(),
                     ]);
                 }
 
@@ -147,6 +154,7 @@ class ReviewSeeder extends Seeder
                         'comment' => 'Hài lòng với chất lượng và độ hoàn thiện. Đáng tiền!',
                         'is_approved' => true,
                         'created_at' => now()->subDays(rand(2, 40)),
+                        'updated_at' => now(),
                     ]);
                 }
 

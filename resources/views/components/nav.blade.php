@@ -128,7 +128,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                 </form>
 
                 {{-- Mobile: Search button --}}
-                <button id="toggle-mobile-search" type="button" class="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border border-gray-200 text-gray-600 hover:text-gray-900 hover:border-gray-300">
+                <button id="toggle-mobile-search" type="button" class="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-full text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
                     <i class="fas fa-search"></i>
                     <span class="sr-only">Mở tìm kiếm</span>
                 </button>
@@ -136,14 +136,14 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
 
 
                 {{-- Wishlist --}}
-                <a href="{{ route('wishlist.index') }}" class="relative inline-flex items-center justify-center w-10 h-10 rounded-lg border border-gray-200 bg-white text-gray-600 hover:text-red-600 hover:border-red-300">
+                <a href="{{ route('wishlist.index') }}" class="relative inline-flex items-center justify-center w-10 h-10 rounded-full text-gray-600 hover:text-red-600 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500">
                     <i class="fas fa-heart"></i>
                     <span id="wishlist-count-badge" class="wishlist-count absolute -top-1 -right-1 w-5 h-5 text-[10px] rounded-full bg-red-500 text-white flex items-center justify-center {{ $navWishlistCount > 0 ? 'flex' : 'hidden' }}">{{ $navWishlistCount > 99 ? '99+' : $navWishlistCount }}</span>
                     <span class="sr-only">Danh sách yêu thích</span>
                 </a>
 
                 {{-- Cart --}}
-                <a href="{{ route('user.cart.index') }}" class="relative inline-flex items-center justify-center w-10 h-10 rounded-lg border border-gray-200 bg-white text-gray-600 hover:text-indigo-700 hover:border-indigo-300">
+                <a href="{{ route('user.cart.index') }}" class="relative inline-flex items-center justify-center w-10 h-10 rounded-full text-gray-600 hover:text-indigo-700 hover:bg-indigo-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
                     <i class="fas fa-shopping-cart"></i>
                     <span id="cart-count-badge" class="cart-count absolute -top-1 -right-1 w-5 h-5 text-[10px] rounded-full bg-indigo-600 text-white flex items-center justify-center {{ $navCartCount > 0 ? 'flex' : 'hidden' }}">{{ $navCartCount > 99 ? '99+' : $navCartCount }}</span>
                     <span class="sr-only">Giỏ hàng</span>
@@ -151,7 +151,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
 
                 {{-- Notifications (mobile simple link) --}}
                 @auth
-                <a href="{{ route('notifications.index') }}" class="lg:hidden relative inline-flex items-center justify-center w-10 h-10 rounded-lg border border-gray-200 bg-white text-gray-600 hover:text-amber-600 hover:border-amber-300">
+                <a href="{{ route('notifications.index') }}" class="lg:hidden relative inline-flex items-center justify-center w-10 h-10 rounded-full text-gray-600 hover:text-amber-600 hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500">
                     <i class="fas fa-bell"></i>
                     <span id="notif-count-badge-mobile" class="absolute -top-1 -right-1 w-5 h-5 text-[10px] rounded-full bg-amber-500 text-white items-center justify-center {{ $navUnreadNotifCount ? 'flex' : 'hidden' }}">{{ $navUnreadNotifCount > 99 ? '99+' : $navUnreadNotifCount }}</span>
                     <span class="sr-only">Thông báo</span>
@@ -159,7 +159,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                 @endauth
 
                 {{-- Mobile: Open Drawer button (to the right of cart) --}}
-                <button id="open-drawer" type="button" class="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border border-gray-200 text-gray-600 hover:text-gray-900 hover:border-gray-300">
+                <button id="open-drawer" type="button" class="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-full text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
                     <i class="fas fa-bars"></i>
                     <span class="sr-only">Mở menu</span>
                 </button>
@@ -167,7 +167,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                 {{-- Notifications (auth only) --}}
                 @auth
                 <div class="dropdown-group hidden lg:block" data-dropdown="notifications">
-                    <button class="relative inline-flex items-center justify-center w-10 h-10 rounded-lg border bg-white text-gray-600 hover:text-amber-600 hover:border-amber-300" style="border-color:#e5e7eb" data-dropdown-trigger>
+                    <button class="relative inline-flex items-center justify-center w-10 h-10 rounded-full text-gray-600 hover:text-amber-600 hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500" data-dropdown-trigger>
                         <i class="fas fa-bell"></i>
                         <span id="notif-count-badge" class="absolute -top-1 -right-1 w-5 h-5 text-[10px] rounded-full bg-amber-500 text-white items-center justify-center {{ $navUnreadNotifCount ? 'flex' : 'hidden' }}">{{ $navUnreadNotifCount > 99 ? '99+' : $navUnreadNotifCount }}</span>
                         <span class="sr-only">Thông báo</span>

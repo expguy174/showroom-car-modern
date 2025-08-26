@@ -28,7 +28,9 @@ class AddressSeeder extends Seeder
                 'state' => 'Hà Nội',
                 'postal_code' => '100000',
                 'country' => 'Việt Nam',
-                'notes' => 'Địa chỉ văn phòng chính'
+                'notes' => 'Địa chỉ văn phòng chính',
+                'created_at' => now()->subYears(3),
+                'updated_at' => now()->subMonths(2)
             ],
             [
                 'user_id' => $users->where('email', 'admin@showroom.com')->first()->id,
@@ -41,7 +43,9 @@ class AddressSeeder extends Seeder
                 'state' => 'Hà Nội',
                 'postal_code' => '100000',
                 'country' => 'Việt Nam',
-                'notes' => 'Địa chỉ chi nhánh'
+                'notes' => 'Địa chỉ chi nhánh',
+                'created_at' => now()->subYears(2),
+                'updated_at' => now()->subMonths(2)
             ],
 
             // Sales person addresses
@@ -56,7 +60,9 @@ class AddressSeeder extends Seeder
                 'state' => 'Hà Nội',
                 'postal_code' => '100000',
                 'country' => 'Việt Nam',
-                'notes' => 'Địa chỉ nhà riêng'
+                'notes' => 'Địa chỉ nhà riêng',
+                'created_at' => now()->subYears(2),
+                'updated_at' => now()->subMonths(3)
             ],
 
             // Customer addresses
@@ -71,7 +77,9 @@ class AddressSeeder extends Seeder
                 'state' => 'Hà Nội',
                 'postal_code' => '100000',
                 'country' => 'Việt Nam',
-                'notes' => 'Địa chỉ giao hàng chính'
+                'notes' => 'Địa chỉ giao hàng chính',
+                'created_at' => now()->subYears(2),
+                'updated_at' => now()->subMonths(2)
             ],
             [
                 'user_id' => $users->where('email', 'customer1@example.com')->first()->id,
@@ -84,7 +92,9 @@ class AddressSeeder extends Seeder
                 'state' => 'Hà Nội',
                 'postal_code' => '100000',
                 'country' => 'Việt Nam',
-                'notes' => 'Địa chỉ văn phòng'
+                'notes' => 'Địa chỉ văn phòng',
+                'created_at' => now()->subYears(2),
+                'updated_at' => now()->subMonths(2)
             ],
             [
                 'user_id' => $users->where('email', 'customer2@example.com')->first()->id,
@@ -97,7 +107,9 @@ class AddressSeeder extends Seeder
                 'state' => 'Hà Nội',
                 'postal_code' => '100000',
                 'country' => 'Việt Nam',
-                'notes' => 'Địa chỉ nhà riêng'
+                'notes' => 'Địa chỉ nhà riêng',
+                'created_at' => now()->subYears(2),
+                'updated_at' => now()->subMonths(1)
             ]
         ];
 

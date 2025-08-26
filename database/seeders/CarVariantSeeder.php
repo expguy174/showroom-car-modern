@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\CarVariant;
 use App\Models\CarModel;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class CarVariantSeeder extends Seeder
 {
@@ -14,6 +15,7 @@ class CarVariantSeeder extends Seeder
     public function run(): void
     {
         $models = CarModel::all();
+        $now = now();
 
         $carVariants = [
             // Toyota Vios Variants
@@ -46,7 +48,9 @@ class CarVariantSeeder extends Seeder
                 'rating_count' => 89,
                 'meta_title' => 'Toyota Vios G 2024 - Giá từ 520 triệu',
                 'meta_description' => 'Toyota Vios G 2024 - Sedan hạng B cơ bản với giá từ 520 triệu VNĐ',
-                'keywords' => 'toyota vios g, giá vios g, vios 2024'
+                'keywords' => 'toyota vios g, giá vios g, vios 2024',
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
             [
                 'car_model_id' => $models->where('name', 'Vios')->first()->id,
@@ -77,7 +81,9 @@ class CarVariantSeeder extends Seeder
                 'rating_count' => 112,
                 'meta_title' => 'Toyota Vios E 2024 - Giá từ 580 triệu',
                 'meta_description' => 'Toyota Vios E 2024 - Sedan hạng B nâng cao với giá từ 580 triệu VNĐ',
-                'keywords' => 'toyota vios e, giá vios e, vios 2024'
+                'keywords' => 'toyota vios e, giá vios e, vios 2024',
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
             [
                 'car_model_id' => $models->where('name', 'Vios')->first()->id,
@@ -108,7 +114,9 @@ class CarVariantSeeder extends Seeder
                 'rating_count' => 45,
                 'meta_title' => 'Toyota Vios G CVT 2024 - Giá từ 620 triệu',
                 'meta_description' => 'Toyota Vios G CVT 2024 - Sedan hạng B cao cấp với hộp số CVT',
-                'keywords' => 'toyota vios g cvt, giá vios g cvt, vios cvt 2024'
+                'keywords' => 'toyota vios g cvt, giá vios g cvt, vios cvt 2024',
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
 
             // Honda City Variants
@@ -141,7 +149,9 @@ class CarVariantSeeder extends Seeder
                 'rating_count' => 78,
                 'meta_title' => 'Honda City G 2024 - Giá từ 540 triệu',
                 'meta_description' => 'Honda City G 2024 - Sedan hạng B cơ bản với giá từ 540 triệu VNĐ',
-                'keywords' => 'honda city g, giá city g, city 2024'
+                'keywords' => 'honda city g, giá city g, city 2024',
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
             [
                 'car_model_id' => $models->where('name', 'City')->first()->id,
@@ -172,7 +182,9 @@ class CarVariantSeeder extends Seeder
                 'rating_count' => 56,
                 'meta_title' => 'Honda City RS 2024 - Giá từ 620 triệu',
                 'meta_description' => 'Honda City RS 2024 - Sedan hạng B thể thao với thiết kế RS',
-                'keywords' => 'honda city rs, giá city rs, city rs 2024'
+                'keywords' => 'honda city rs, giá city rs, city rs 2024',
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
 
             // Toyota Innova Variants
@@ -205,7 +217,9 @@ class CarVariantSeeder extends Seeder
                 'rating_count' => 67,
                 'meta_title' => 'Toyota Innova G 2024 - Giá từ 950 triệu',
                 'meta_description' => 'Toyota Innova G 2024 - MPV đa dụng với giá từ 950 triệu VNĐ',
-                'keywords' => 'toyota innova g, giá innova g, innova 2024'
+                'keywords' => 'toyota innova g, giá innova g, innova 2024',
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
 
             // Toyota Fortuner Variants
@@ -238,7 +252,9 @@ class CarVariantSeeder extends Seeder
                 'rating_count' => 89,
                 'meta_title' => 'Toyota Fortuner G 2024 - Giá từ 1.45 tỷ',
                 'meta_description' => 'Toyota Fortuner G 2024 - SUV 7 chỗ cao cấp với giá từ 1.45 tỷ VNĐ',
-                'keywords' => 'toyota fortuner g, giá fortuner g, fortuner 2024'
+                'keywords' => 'toyota fortuner g, giá fortuner g, fortuner 2024',
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
 
             // Honda CR-V Variants
@@ -271,7 +287,9 @@ class CarVariantSeeder extends Seeder
                 'rating_count' => 72,
                 'meta_title' => 'Honda CR-V G 2024 - Giá từ 1.25 tỷ',
                 'meta_description' => 'Honda CR-V G 2024 - SUV 5 chỗ hiện đại với giá từ 1.25 tỷ VNĐ',
-                'keywords' => 'honda cr-v g, giá cr-v g, cr-v 2024'
+                'keywords' => 'honda cr-v g, giá cr-v g, cr-v 2024',
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
 
             // Ford Ranger Variants
@@ -304,7 +322,9 @@ class CarVariantSeeder extends Seeder
                 'rating_count' => 45,
                 'meta_title' => 'Ford Ranger XLT 2024 - Giá từ 980 triệu',
                 'meta_description' => 'Ford Ranger XLT 2024 - Pickup truck mạnh mẽ với giá từ 980 triệu VNĐ',
-                'keywords' => 'ford ranger xlt, giá ranger xlt, ranger 2024'
+                'keywords' => 'ford ranger xlt, giá ranger xlt, ranger 2024',
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
 
             // Hyundai Accent Variants
@@ -337,7 +357,9 @@ class CarVariantSeeder extends Seeder
                 'rating_count' => 58,
                 'meta_title' => 'Hyundai Accent G 2024 - Giá từ 480 triệu',
                 'meta_description' => 'Hyundai Accent G 2024 - Sedan hạng B hiện đại với giá từ 480 triệu VNĐ',
-                'keywords' => 'hyundai accent g, giá accent g, accent 2024'
+                'keywords' => 'hyundai accent g, giá accent g, accent 2024',
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
 
             // Mercedes-Benz C-Class Variants
@@ -370,7 +392,43 @@ class CarVariantSeeder extends Seeder
                 'rating_count' => 23,
                 'meta_title' => 'Mercedes-Benz C-Class C200 2024 - Giá từ 2.2 tỷ',
                 'meta_description' => 'Mercedes-Benz C-Class C200 2024 - Sedan hạng D cao cấp với giá từ 2.2 tỷ VNĐ',
-                'keywords' => 'mercedes-benz c-class c200, giá c-class c200, c-class 2024'
+                'keywords' => 'mercedes-benz c-class c200, giá c-class c200, c-class 2024',
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            // Mercedes-Benz GLC Variants
+            [
+                'car_model_id' => $models->where('name', 'GLC')->first()->id,
+                'name' => 'GLC 200',
+                'slug' => 'mercedes-benz-glc-200',
+                'sku' => 'GLC-200-2024',
+                'description' => 'SUV hạng sang 5 chỗ, thiết kế sang trọng',
+                'short_description' => 'GLC 200 RWD, tiện nghi đầy đủ',
+                'fuel_type' => 'Xăng',
+                'transmission' => 'Số tự động',
+                'engine_size' => '2.0L',
+                'power' => 197,
+                'torque' => 320,
+                'fuel_consumption' => 7.9,
+                'warranty_years' => 3,
+                'price' => 2199000000,
+                'original_price' => 2199000000,
+                'has_discount' => false,
+                'discount_percentage' => 0,
+                'stock_quantity' => 3,
+                'is_active' => true,
+                'is_featured' => true,
+                'is_available' => true,
+                'is_new_arrival' => false,
+                'is_bestseller' => true,
+                'view_count' => 520,
+                'average_rating' => 4.7,
+                'rating_count' => 38,
+                'meta_title' => 'Mercedes-Benz GLC 200 2024',
+                'meta_description' => 'SUV hạng sang 5 chỗ, tiện nghi sang trọng',
+                'keywords' => 'glc 200',
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
 
             // BMW 3 Series Variants
@@ -403,7 +461,42 @@ class CarVariantSeeder extends Seeder
                 'rating_count' => 18,
                 'meta_title' => 'BMW 3 Series 320i 2024 - Giá từ 2.1 tỷ',
                 'meta_description' => 'BMW 3 Series 320i 2024 - Sedan hạng D thể thao với giá từ 2.1 tỷ VNĐ',
-                'keywords' => 'bmw 3 series 320i, giá 3 series 320i, 3 series 2024'
+                'keywords' => 'bmw 3 series 320i, giá 3 series 320i, 3 series 2024',
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'car_model_id' => $models->where('name', '3 Series')->first()->id,
+                'name' => '3 Series 330i M Sport',
+                'slug' => 'bmw-3-series-330i-m-sport',
+                'sku' => '3-SERIES-330I-MSPORT-2024',
+                'description' => 'Sedan hạng D hiệu suất cao gói M Sport',
+                'short_description' => '330i, treo M Sport, hiệu suất mạnh mẽ',
+                'fuel_type' => 'Xăng',
+                'transmission' => 'Số tự động',
+                'engine_size' => '2.0L',
+                'power' => 258,
+                'torque' => 400,
+                'fuel_consumption' => 6.5,
+                'warranty_years' => 3,
+                'price' => 2299000000,
+                'original_price' => 2399000000,
+                'has_discount' => true,
+                'discount_percentage' => 4.17,
+                'stock_quantity' => 2,
+                'is_active' => true,
+                'is_featured' => true,
+                'is_available' => true,
+                'is_new_arrival' => false,
+                'is_bestseller' => false,
+                'view_count' => 410,
+                'average_rating' => 4.8,
+                'rating_count' => 21,
+                'meta_title' => 'BMW 3 Series 330i M Sport 2024',
+                'meta_description' => 'Sedan hạng D, gói M Sport hiệu suất cao',
+                'keywords' => '330i m sport',
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
 
             // VinFast VF 8 Variants
@@ -436,7 +529,9 @@ class CarVariantSeeder extends Seeder
                 'rating_count' => 95,
                 'meta_title' => 'VinFast VF 8 Plus 2024 - Giá từ 1.2 tỷ',
                 'meta_description' => 'VinFast VF 8 Plus 2024 - SUV điện 5 chỗ với giá từ 1.2 tỷ VNĐ',
-                'keywords' => 'vinfast vf 8 plus, giá vf 8 plus, vf 8 2024'
+                'keywords' => 'vinfast vf 8 plus, giá vf 8 plus, vf 8 2024',
+                'created_at' => $now,
+                'updated_at' => $now,
             ]
             ,
             // Add variants for newly added models
@@ -470,7 +565,111 @@ class CarVariantSeeder extends Seeder
                 'rating_count' => 66,
                 'meta_title' => 'Toyota Corolla Cross G 2024',
                 'meta_description' => 'Crossover đô thị an toàn, tiết kiệm',
-                'keywords' => 'corolla cross g'
+                'keywords' => 'corolla cross g',
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            // VinFast VF 9 Variants
+            [
+                'car_model_id' => $models->where('name', 'VF 9')->first()->id,
+                'name' => 'VF 9 Eco',
+                'slug' => 'vinfast-vf-9-eco',
+                'sku' => 'VF9-ECO-2024',
+                'description' => 'SUV điện 7 chỗ cao cấp, quãng đường xa',
+                'short_description' => 'VF 9 Eco pin lớn, công nghệ an toàn',
+                'fuel_type' => 'Điện',
+                'transmission' => 'Đơn tốc độ',
+                'engine_size' => 'Động cơ điện',
+                'power' => 402,
+                'torque' => 620,
+                'fuel_consumption' => 0,
+                'warranty_years' => 10,
+                'price' => 1490000000,
+                'original_price' => 1550000000,
+                'has_discount' => true,
+                'discount_percentage' => 3.87,
+                'stock_quantity' => 5,
+                'is_active' => true,
+                'is_featured' => true,
+                'is_available' => true,
+                'is_new_arrival' => true,
+                'is_bestseller' => true,
+                'view_count' => 630,
+                'average_rating' => 4.2,
+                'rating_count' => 33,
+                'meta_title' => 'VinFast VF 9 Eco 2024',
+                'meta_description' => 'SUV điện 7 chỗ, pin lớn, an toàn',
+                'keywords' => 'vf 9 eco',
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            // Toyota Corolla Altis
+            [
+                'car_model_id' => $models->where('name', 'Corolla Altis')->first()->id,
+                'name' => 'Corolla Altis 1.8HEV',
+                'slug' => 'toyota-corolla-altis-18hev',
+                'sku' => 'COROLLA-ALTIS-18HEV-2024',
+                'description' => 'Sedan hạng C hybrid tiết kiệm nhiên liệu',
+                'short_description' => 'Hybrid 1.8L e-CVT, an toàn Toyota Safety Sense',
+                'fuel_type' => 'Hybrid',
+                'transmission' => 'e-CVT',
+                'engine_size' => '1.8L',
+                'power' => 122,
+                'torque' => 142,
+                'fuel_consumption' => 4.5,
+                'warranty_years' => 3,
+                'price' => 860000000,
+                'original_price' => 895000000,
+                'has_discount' => true,
+                'discount_percentage' => 3.91,
+                'stock_quantity' => 7,
+                'is_active' => true,
+                'is_featured' => true,
+                'is_available' => true,
+                'is_new_arrival' => false,
+                'is_bestseller' => true,
+                'view_count' => 740,
+                'average_rating' => 4.5,
+                'rating_count' => 64,
+                'meta_title' => 'Toyota Corolla Altis 1.8HEV 2024',
+                'meta_description' => 'Sedan hạng C Hybrid tiết kiệm, an toàn TSS',
+                'keywords' => 'corolla altis hybrid 1.8',
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            // Toyota Camry
+            [
+                'car_model_id' => $models->where('name', 'Camry')->first()->id,
+                'name' => 'Camry 2.5HV',
+                'slug' => 'toyota-camry-25hv',
+                'sku' => 'CAMRY-25HV-2024',
+                'description' => 'Sedan hạng D hybrid cao cấp, êm ái',
+                'short_description' => '2.5L Hybrid e-CVT, nhiều công nghệ an toàn',
+                'fuel_type' => 'Hybrid',
+                'transmission' => 'e-CVT',
+                'engine_size' => '2.5L',
+                'power' => 211,
+                'torque' => 221,
+                'fuel_consumption' => 5.0,
+                'warranty_years' => 3,
+                'price' => 1450000000,
+                'original_price' => 1490000000,
+                'has_discount' => true,
+                'discount_percentage' => 2.68,
+                'stock_quantity' => 4,
+                'is_active' => true,
+                'is_featured' => true,
+                'is_available' => true,
+                'is_new_arrival' => false,
+                'is_bestseller' => false,
+                'view_count' => 680,
+                'average_rating' => 4.7,
+                'rating_count' => 52,
+                'meta_title' => 'Toyota Camry 2.5HV 2024',
+                'meta_description' => 'Sedan hạng D Hybrid sang trọng, êm ái',
+                'keywords' => 'camry 2.5hv hybrid',
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
             // Hyundai Creta
             [
@@ -502,7 +701,9 @@ class CarVariantSeeder extends Seeder
                 'rating_count' => 54,
                 'meta_title' => 'Hyundai Creta Premium 2024',
                 'meta_description' => 'SUV đô thị, công nghệ an toàn',
-                'keywords' => 'creta premium'
+                'keywords' => 'creta premium',
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
             // Kia Carnival
             [
@@ -534,7 +735,9 @@ class CarVariantSeeder extends Seeder
                 'rating_count' => 31,
                 'meta_title' => 'Kia Carnival Signature 7 2024',
                 'meta_description' => 'MPV 7 chỗ tiện nghi cao cấp',
-                'keywords' => 'carnival signature 7'
+                'keywords' => 'carnival signature 7',
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
             // Mazda CX-5
             [
@@ -566,7 +769,9 @@ class CarVariantSeeder extends Seeder
                 'rating_count' => 40,
                 'meta_title' => 'Mazda CX-5 2.0 Premium 2024',
                 'meta_description' => 'SUV 5 chỗ an toàn i-Activsense',
-                'keywords' => 'cx-5 premium'
+                'keywords' => 'cx-5 premium',
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
             // BMW X5
             [
@@ -598,7 +803,9 @@ class CarVariantSeeder extends Seeder
                 'rating_count' => 12,
                 'meta_title' => 'BMW X5 xDrive40i 2024',
                 'meta_description' => 'SUV hạng sang hiệu suất cao',
-                'keywords' => 'bmw x5 xdrive40i'
+                'keywords' => 'bmw x5 xdrive40i',
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
             // Audi Q5
             [
@@ -630,12 +837,12 @@ class CarVariantSeeder extends Seeder
                 'rating_count' => 18,
                 'meta_title' => 'Audi Q5 45 TFSI quattro 2024',
                 'meta_description' => 'SUV hạng sang dẫn động Quattro',
-                'keywords' => 'audi q5 45 tfsi'
+                'keywords' => 'audi q5 45 tfsi',
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
         ];
-
-        foreach ($carVariants as $variant) {
-            CarVariant::create($variant);
-        }
+        DB::table('car_variants')->truncate();
+        CarVariant::insert($carVariants);
     }
 }

@@ -38,7 +38,63 @@ class CartManager {
         this.bindRemoveButtons();
         this.bindClearCart();
         this.bindQuantityInputs();
+        this.bindFeatureOptionToggles();
         this.initializeQuantityButtonsState();
+    }
+
+    /**
+     * Bind feature/option toggles inside cart
+     */
+    bindFeatureOptionToggles() {
+        const submitUpdate = async (itemId) => {
+            if (this.isUpdating) return;
+            const container = document.querySelector(`tr.cart-item-row[data-id='${itemId}']`) || document.querySelector(`.cart-item-card[data-id='${itemId}']`);
+            if (!container) return;
+            const qtyInput = container.querySelector('.cart-qty-input');
+            const url = qtyInput?.dataset.updateUrl;
+            const csrf = qtyInput?.dataset.csrf;
+            if (!url || !csrf) return;
+            const feats = Array.from(container.querySelectorAll('.cart-feature')).filter(cb => cb.checked && !cb.disabled).map(cb => parseInt(cb.value,10)).filter(n=>!isNaN(n));
+            const opts  = Array.from(container.querySelectorAll('.cart-option')).filter(cb => cb.checked && !cb.disabled).map(cb => parseInt(cb.value,10)).filter(n=>!isNaN(n));
+            this.isUpdating = true;
+            container.classList.add('opacity-50');
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrf,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ feature_ids: feats, option_ids: opts })
+                });
+                const data = await response.json();
+                if (data && data.success) {
+                    if (typeof data.unit_price !== 'undefined') {
+                        const priceEl = container.querySelector('.item-price');
+                        if (priceEl) { priceEl.dataset.price = String(parseInt(data.unit_price)); priceEl.textContent = this.formatNumber(parseInt(data.unit_price)); }
+                    }
+                    this.updateItemTotal(itemId);
+                    this.updateCartTotals();
+                    this.showMessage('Cập nhật tuỳ chọn thành công', 'success');
+                } else {
+                    this.showMessage((data && data.message) || 'Cập nhật tuỳ chọn thất bại', 'error');
+                }
+            } catch (e) {
+                this.showMessage('Cập nhật tuỳ chọn thất bại', 'error');
+            } finally {
+                this.isUpdating = false;
+                container.classList.remove('opacity-50');
+            }
+        };
+
+        document.addEventListener('change', (e) => {
+            const feat = e.target.closest('.cart-feature');
+            if (feat) { const itemId = feat.dataset.id; submitUpdate(itemId); return; }
+            const opt = e.target.closest('.cart-option');
+            if (opt) { const itemId = opt.dataset.id; submitUpdate(itemId); return; }
+        });
     }
 
     /**

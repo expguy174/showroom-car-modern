@@ -47,6 +47,8 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
-        return redirect('/dashboard');
+        // Redirect to profile completion page to encourage adding profile and address
+        return redirect()->route('user.profile.edit')
+            ->with('status', 'Vui lòng bổ sung hồ sơ và địa chỉ để mua hàng nhanh hơn.');
     }
 }

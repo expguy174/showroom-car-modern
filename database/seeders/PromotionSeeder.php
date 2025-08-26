@@ -24,7 +24,9 @@ class PromotionSeeder extends Seeder
                 'usage_count' => 25,
                 'start_date' => now()->subDays(30),
                 'end_date' => now()->addDays(30),
-                'is_active' => true
+                'is_active' => true,
+                'created_at' => now()->subDays(35),
+                'updated_at' => now()->subDays(5)
             ],
             [
                 'name' => 'Giảm giá 50 triệu cho xe cao cấp',
@@ -37,7 +39,9 @@ class PromotionSeeder extends Seeder
                 'usage_count' => 10,
                 'start_date' => now()->subDays(15),
                 'end_date' => now()->addDays(45),
-                'is_active' => true
+                'is_active' => true,
+                'created_at' => now()->subDays(20),
+                'updated_at' => now()->subDays(2)
             ],
             [
                 'name' => 'Miễn phí vận chuyển toàn quốc',
@@ -50,7 +54,9 @@ class PromotionSeeder extends Seeder
                 'usage_count' => 45,
                 'start_date' => now()->subDays(10),
                 'end_date' => now()->addDays(20),
-                'is_active' => true
+                'is_active' => true,
+                'created_at' => now()->subDays(15),
+                'updated_at' => now()->subDays(3)
             ],
             [
                 'name' => 'Khuyến mãi xe gia đình - Giảm 15%',
@@ -63,7 +69,9 @@ class PromotionSeeder extends Seeder
                 'usage_count' => 30,
                 'start_date' => now()->subDays(5),
                 'end_date' => now()->addDays(25),
-                'is_active' => true
+                'is_active' => true,
+                'created_at' => now()->subDays(8),
+                'updated_at' => now()->subDays(1)
             ],
             [
                 'name' => 'Giảm giá 30 triệu cho xe điện',
@@ -76,7 +84,9 @@ class PromotionSeeder extends Seeder
                 'usage_count' => 15,
                 'start_date' => now()->subDays(20),
                 'end_date' => now()->addDays(40),
-                'is_active' => true
+                'is_active' => true,
+                'created_at' => now()->subDays(25),
+                'updated_at' => now()->subDays(4)
             ]
         ];
 

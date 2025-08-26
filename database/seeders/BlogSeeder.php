@@ -29,7 +29,9 @@ class BlogSeeder extends Seeder
                 'is_published' => true,
                 'published_at' => now()->subDays(10),
                 'is_active' => true,
-                'status' => 'published'
+                'status' => 'published',
+                'created_at' => now()->subDays(12),
+                'updated_at' => now()->subDays(10)
             ],
             [
                 'admin_id' => $admin ? $admin->id : null,
@@ -39,7 +41,9 @@ class BlogSeeder extends Seeder
                 'is_published' => true,
                 'published_at' => now()->subDays(5),
                 'is_active' => true,
-                'status' => 'published'
+                'status' => 'published',
+                'created_at' => now()->subDays(7),
+                'updated_at' => now()->subDays(5)
             ],
             [
                 'admin_id' => $admin ? $admin->id : null,
@@ -49,7 +53,9 @@ class BlogSeeder extends Seeder
                 'is_published' => true,
                 'published_at' => now()->subDays(3),
                 'is_active' => true,
-                'status' => 'published'
+                'status' => 'published',
+                'created_at' => now()->subDays(4),
+                'updated_at' => now()->subDays(3)
             ],
             [
                 'admin_id' => $admin ? $admin->id : null,
@@ -59,7 +65,9 @@ class BlogSeeder extends Seeder
                 'is_published' => true,
                 'published_at' => now()->subDays(1),
                 'is_active' => true,
-                'status' => 'published'
+                'status' => 'published',
+                'created_at' => now()->subDays(2),
+                'updated_at' => now()->subDays(1)
             ],
             [
                 'admin_id' => $admin ? $admin->id : null,
@@ -69,7 +77,9 @@ class BlogSeeder extends Seeder
                 'is_published' => true,
                 'published_at' => now()->subDays(15),
                 'is_active' => true,
-                'status' => 'published'
+                'status' => 'published',
+                'created_at' => now()->subDays(16),
+                'updated_at' => now()->subDays(15)
             ]
         ];
 

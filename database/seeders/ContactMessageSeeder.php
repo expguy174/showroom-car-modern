@@ -35,7 +35,8 @@ class ContactMessageSeeder extends Seeder
                 'ip_address' => '192.168.1.100',
                 'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                 'metadata' => json_encode(['referrer' => 'google.com']),
-                'created_at' => now()->subDays(5)
+                'created_at' => now()->subDays(5),
+                'updated_at' => now()->subDays(4)
             ],
             [
                 'user_id' => $users->where('email', 'customer1@example.com')->first()->id,
@@ -54,7 +55,8 @@ class ContactMessageSeeder extends Seeder
                 'ip_address' => '192.168.1.101',
                 'user_agent' => 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X)',
                 'metadata' => json_encode(['device' => 'mobile']),
-                'created_at' => now()->subDays(7)
+                'created_at' => now()->subDays(7),
+                'updated_at' => now()->subDays(2)
             ],
             [
                 'user_id' => null,
@@ -73,7 +75,8 @@ class ContactMessageSeeder extends Seeder
                 'ip_address' => null,
                 'user_agent' => null,
                 'metadata' => json_encode(['call_duration' => '5 minutes']),
-                'created_at' => now()->subDays(3)
+                'created_at' => now()->subDays(3),
+                'updated_at' => now()->subDays(3)
             ],
             [
                 'user_id' => $users->where('email', 'vip@example.com')->first()->id,
@@ -92,7 +95,8 @@ class ContactMessageSeeder extends Seeder
                 'ip_address' => '192.168.1.102',
                 'user_agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
                 'metadata' => json_encode(['vip_customer' => true]),
-                'created_at' => now()->subDays(10)
+                'created_at' => now()->subDays(10),
+                'updated_at' => now()->subDays(1)
             ],
             [
                 'user_id' => null,
@@ -111,7 +115,8 @@ class ContactMessageSeeder extends Seeder
                 'ip_address' => '192.168.1.103',
                 'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                 'metadata' => json_encode(['chat_session_id' => 'chat_12345']),
-                'created_at' => now()->subDays(1)
+                'created_at' => now()->subDays(1),
+                'updated_at' => now()
             ]
         ];
 

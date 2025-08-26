@@ -101,7 +101,7 @@
 
                 <!-- Scroll Indicator -->
                 <div class="absolute bottom-8 sm:bottom-12 left-1/2 transform -translate-x-1/2 z-0">
-                    <div class="flex flex-col items-center text-white/70 animate-bounce">
+                    <div class="hidden sm:flex flex-col items-center text-white/70 animate-bounce">
                         <span class="text-xs sm:text-sm mb-1 sm:mb-2">Scroll</span>
                         <i class="fas fa-chevron-down text-lg sm:text-xl"></i>
                     </div>
@@ -112,15 +112,15 @@
 {{-- Promotions moved below accessories --}}
 
 {{-- ===== Car Brands Section ===== --}}
-<section id="brands" class="py-20 sm:py-28 bg-gradient-to-b from-white to-slate-50">
+<section id="brands" class="py-16 sm:py-20 bg-slate-50">
     <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16 sm:mb-20">
             <div class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full text-sm font-semibold mb-6 shadow-lg">
                 <i class="fas fa-handshake mr-3"></i>
                 Đối tác chính thức
             </div>
-            <h2 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">Hãng xe đối tác</h2>
-            <p class="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+            <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4">Hãng xe đối tác</h2>
+            <p class="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed md:leading-loose">
                 Chúng tôi tự hào là đại lý chính thức của các thương hiệu xe hơi hàng đầu thế giới
             </p>
         </div>
@@ -135,7 +135,7 @@
         <!-- View All Brands Button -->
         <div class="text-center mt-12">
             <a href="{{ route('car-brands.index') }}"
-                class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-full hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
+                class="inline-flex items-center px-8 py-4 min-h-[48px] bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-full hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2">
                 <span>Xem tất cả hãng xe</span>
                 <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
             </a>
@@ -144,44 +144,32 @@
 </section>
 
 {{-- ===== Featured Cars Section ===== --}}
-<section id="featured" class="py-20 sm:py-28 bg-gradient-to-b from-slate-50 to-white">
+<section id="featured" class="py-16 sm:py-20 bg-indigo-50">
     <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16 sm:mb-20">
             <div class="inline-flex items-center px-4 py-2 bg-emerald-100 text-emerald-800 rounded-full text-sm font-medium mb-4">
                 <i class="fas fa-star mr-2"></i>
                 Xe nổi bật
             </div>
-            <h2 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">Xe hơi nổi bật</h2>
-            <p class="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+            <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4">Xe hơi nổi bật</h2>
+            <p class="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed md:leading-loose">
                 Những mẫu xe mới nhất và được yêu thích nhất từ các hãng xe hàng đầu
             </p>
         </div>
 
-        <!-- Featured Cars Carousel/Grid -->
-        <div class="relative">
-            <div class="md:hidden absolute -left-3 top-1/2 -translate-y-1/2 z-10">
-                <button type="button" class="carousel-prev inline-flex items-center justify-center w-9 h-9 rounded-full bg-white shadow border border-gray-200" data-target="#featured-cars">
-                    <i class="fas fa-chevron-left"></i>
-                </button>
+        <!-- Featured Cars Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+            @foreach($featuredVariants->take(4) as $variant)
+            <div>
+                @include('components.variant-card', ['variant' => $variant, 'showCompare' => true])
             </div>
-            <div class="md:hidden absolute -right-3 top-1/2 -translate-y-1/2 z-10">
-                <button type="button" class="carousel-next inline-flex items-center justify-center w-9 h-9 rounded-full bg-white shadow border border-gray-200" data-target="#featured-cars">
-                    <i class="fas fa-chevron-right"></i>
-                </button>
-            </div>
-            <div id="featured-cars" class="flex md:grid overflow-x-auto md:overflow-visible snap-x snap-mandatory md:snap-none gap-4 sm:gap-6 lg:gap-8 md:grid-cols-3 xl:grid-cols-4 no-scrollbar">
-                @foreach($featuredVariants as $variant)
-                <div class="snap-start shrink-0 w-[78%] xs:w-[70%] sm:w-[60%] md:w-auto">
-                    @include('components.variant-card', ['variant' => $variant, 'showCompare' => true])
-                </div>
-                @endforeach
-            </div>
+            @endforeach
         </div>
 
         <!-- View All Cars Button -->
         <div class="text-center mt-12">
             <a href="{{ route('products.index') }}"
-                class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-full hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
+                class="inline-flex items-center px-8 py-4 min-h-[48px] bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-full hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2">
                 <span>Xem tất cả xe</span>
                 <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
             </a>
@@ -193,40 +181,28 @@
 
 {{-- ===== Featured Accessories Section ===== --}}
 @if(isset($featuredAccessories) && $featuredAccessories->count())
-<section id="featured-accessories" class="py-20 sm:py-28 bg-gradient-to-b from-white to-slate-50">
+<section id="featured-accessories" class="py-16 sm:py-20 bg-white">
     <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16 sm:mb-20">
             <div class="inline-flex items-center px-4 py-2 bg-amber-100 text-amber-800 rounded-full text-sm font-medium mb-4">
                 <i class="fas fa-puzzle-piece mr-2"></i>
                 Phụ kiện nổi bật
             </div>
-            <h2 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">Phụ kiện nổi bật</h2>
-            <p class="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+            <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4">Phụ kiện nổi bật</h2>
+            <p class="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed md:leading-loose">
                 Sản phẩm chính hãng, tương thích đa dạng mẫu xe, sẵn sàng giao nhanh
             </p>
         </div>
-        <div class="relative">
-            <div class="md:hidden absolute -left-3 top-1/2 -translate-y-1/2 z-10">
-                <button type="button" class="carousel-prev inline-flex items-center justify-center w-9 h-9 rounded-full bg-white shadow border border-gray-200" data-target="#featured-accs">
-                    <i class="fas fa-chevron-left"></i>
-                </button>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+            @foreach($featuredAccessories->take(4) as $acc)
+            <div>
+                @include('components.accessory-card', ['accessory' => $acc])
             </div>
-            <div class="md:hidden absolute -right-3 top-1/2 -translate-y-1/2 z-10">
-                <button type="button" class="carousel-next inline-flex items-center justify-center w-9 h-9 rounded-full bg-white shadow border border-gray-200" data-target="#featured-accs">
-                    <i class="fas fa-chevron-right"></i>
-                </button>
-            </div>
-            <div id="featured-accs" class="flex md:grid overflow-x-auto md:overflow-visible snap-x snap-mandatory md:snap-none gap-4 sm:gap-6 lg:gap-8 md:grid-cols-3 xl:grid-cols-4 no-scrollbar">
-                @foreach($featuredAccessories as $acc)
-                <div class="snap-start shrink-0 w-[78%] xs:w-[70%] sm:w-[60%] md:w-auto">
-                    @include('components.accessory-card', ['accessory' => $acc])
-                </div>
-                @endforeach
-            </div>
+            @endforeach
         </div>
         <div class="text-center mt-12">
             <a href="{{ route('products.index', ['type' => 'accessory']) }}"
-                class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-amber-500 to-rose-500 text-white font-semibold rounded-full hover:from-amber-600 hover:to-rose-600 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
+                class="inline-flex items-center px-8 py-4 min-h-[48px] bg-gradient-to-r from-amber-500 to-rose-500 text-white font-semibold rounded-full hover:from-amber-600 hover:to-rose-600 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2">
                 <span>Xem tất cả phụ kiện</span>
                 <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
             </a>
@@ -237,46 +213,57 @@
 
 {{-- ===== Promotions Section (after accessories) ===== --}}
 @if(isset($promotions) && $promotions->count())
-<section id="promotions" class="py-16 sm:py-20 bg-gradient-to-b from-slate-50 to-white">
+<section id="promotions" class="py-16 sm:py-20 bg-amber-50">
     <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8 sm:mb-12">
+        <div class="flex flex-col items-center text-center gap-4 mb-8 sm:mb-12">
             <div>
                 <div class="inline-flex items-center px-4 py-2 bg-amber-100 text-amber-800 rounded-full text-sm font-medium mb-3">
                     <i class="fas fa-tags mr-2"></i>
                     Ưu đãi hiện hành
                 </div>
-                <h2 class="text-3xl sm:text-4xl font-bold text-gray-900">Khuyến mãi hấp dẫn</h2>
+                <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900">Khuyến mãi hấp dẫn</h2>
+                <p class="mt-2 text-gray-600 max-w-2xl leading-relaxed md:leading-loose">Tiết kiệm chi phí với các chương trình ưu đãi đang diễn ra. Áp dụng cho một số mẫu xe và phụ kiện.</p>
             </div>
-            <a href="{{ route('products.index') }}" class="inline-flex items-center gap-2 text-amber-700 font-semibold hover:text-amber-800">
-                Xem xe áp dụng <i class="fas fa-arrow-right"></i>
-            </a>
         </div>
+
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             @foreach($promotions as $promo)
-            <div class="bg-white rounded-2xl border border-amber-100 shadow p-5">
-                <div class="flex items-start justify-between gap-3">
-                    <div>
-                        <h3 class="text-lg font-bold text-gray-900">{{ $promo->name }}</h3>
-                        @if($promo->code)
-                        <div class="mt-1 inline-flex items-center gap-2 text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full">
-                            Mã: {{ $promo->code }}
-                        </div>
-                        @endif
-                    </div>
-                    <div class="text-right">
-                        <div class="text-2xl font-extrabold text-amber-600">
-                            @if($promo->type === 'percentage')
-                                -{{ (int) $promo->discount_value }}%
-                            @else
-                                -{{ number_format((int) $promo->discount_value, 0, ',', '.') }}₫
+            <div class="group relative overflow-hidden rounded-2xl border border-amber-100 bg-white shadow transition-transform duration-300 hover:-translate-y-1 hover:shadow-lg">
+                <div class="absolute inset-0 pointer-events-none bg-gradient-to-br from-amber-50/60 via-transparent to-transparent"></div>
+                <div class="p-5">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <h3 class="text-lg font-extrabold text-gray-900 truncate">{{ $promo->name }}</h3>
+                            @if($promo->code)
+                            <div class="mt-1 inline-flex items-center gap-2 text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
+                                <i class="fas fa-ticket-alt"></i>
+                                <span class="truncate max-w-[140px]">{{ $promo->code }}</span>
+                            </div>
                             @endif
                         </div>
-                        <div class="text-xs text-gray-500">{{ optional($promo->start_date)->format('d/m') }} - {{ optional($promo->end_date)->format('d/m') }}</div>
+                        <div class="text-right shrink-0">
+                            <div class="inline-flex items-baseline gap-1 px-2.5 py-1.5 rounded-xl bg-amber-100 text-amber-700 font-extrabold">
+                                @if($promo->type === 'percentage')
+                                    <span class="text-xl">-{{ (int) $promo->discount_value }}</span><span class="text-xs">%</span>
+                                @else
+                                    <span class="text-xl">-{{ number_format((int) $promo->discount_value, 0, ',', '.') }}</span><span class="text-xs">₫</span>
+                                @endif
+                            </div>
+                            <div class="mt-1 text-[11px] text-gray-500">{{ optional($promo->start_date)->format('d/m') }} - {{ optional($promo->end_date)->format('d/m') }}</div>
+                        </div>
+                    </div>
+
+                    @if($promo->description)
+                    <p class="mt-3 text-sm text-gray-700 line-clamp-2">{{ $promo->description }}</p>
+                    @endif
+
+                    <div class="mt-4 flex items-center justify-between">
+                        <a href="{{ route('products.index') }}" class="inline-flex items-center gap-2 text-sm font-semibold text-amber-700 hover:text-amber-800">
+                            Xem áp dụng <i class="fas fa-arrow-right text-xs"></i>
+                        </a>
+                        <span class="inline-flex items-center gap-1 text-[11px] text-gray-500"><i class="fas fa-info-circle"></i> Điều kiện kèm theo</span>
                     </div>
                 </div>
-                @if($promo->description)
-                <p class="mt-3 text-sm text-gray-700 line-clamp-2">{{ $promo->description }}</p>
-                @endif
             </div>
             @endforeach
         </div>
@@ -286,14 +273,14 @@
 
 {{-- ===== Reviews Section (moved) ===== --}}
 @if(isset($recentReviews) && $recentReviews->count())
-<section id="reviews" class="py-20 sm:py-28 bg-gradient-to-b from-white to-slate-50">
+<section id="reviews" class="py-16 sm:py-20 bg-slate-100">
     <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-12 sm:mb-16">
             <div class="inline-flex items-center px-4 py-2 bg-amber-100 text-amber-800 rounded-full text-sm font-medium mb-4">
                 <i class="fas fa-star mr-2"></i>
                 Đánh giá mới nhất
             </div>
-            <h2 class="text-4xl sm:text-5xl font-bold text-gray-900">Khách hàng nói gì</h2>
+            <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900">Khách hàng nói gì</h2>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -327,7 +314,7 @@
                     <div class="flex items-center gap-2">
                         <span class="text-gray-500">Về:</span>
                         @if($thumb)
-                        <img src="{{ $thumb }}" alt="Ảnh xe" class="w-8 h-8 rounded object-cover border border-gray-200" loading="lazy">
+                        <img src="{{ $thumb }}" alt="Ảnh xe" class="w-8 h-8 rounded object-cover border border-gray-200" loading="lazy" decoding="async" width="32" height="32">
                         @else
                         <span class="w-8 h-8 rounded bg-gray-100 flex items-center justify-center text-gray-400 border border-gray-200"><i class="fas fa-car text-[11px]"></i></span>
                         @endif
@@ -342,7 +329,7 @@
                     <div class="flex items-center gap-2">
                         <span class="text-gray-500">Về:</span>
                         @if($accThumb)
-                        <img src="{{ $accThumb }}" alt="Ảnh phụ kiện" class="w-8 h-8 rounded object-cover border border-gray-200" loading="lazy">
+                        <img src="{{ $accThumb }}" alt="Ảnh phụ kiện" class="w-8 h-8 rounded object-cover border border-gray-200" loading="lazy" decoding="async" width="32" height="32">
                         @else
                         <span class="w-8 h-8 rounded bg-gray-100 flex items-center justify-center text-gray-400 border border-gray-200"><i class="fas fa-puzzle-piece text-[11px]"></i></span>
                         @endif
@@ -362,10 +349,10 @@
 
 {{-- ===== Our Showrooms Section (moved before Services) ===== --}}
 @if(isset($showrooms) && $showrooms->count())
-<section id="showrooms" class="py-20 sm:py-28 bg-gradient-to-b from-slate-50 to-white">
+<section id="showrooms" class="py-16 sm:py-20 bg-white">
     <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-12">
-            <h2 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">Hệ thống Showroom</h2>
+            <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4">Hệ thống Showroom</h2>
             <p class="text-lg text-gray-600">Liên hệ tư vấn – lái thử – bảo dưỡng</p>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -392,15 +379,15 @@
 @endif
 
 {{-- ===== Latest News Section ===== --}}
-<section class="py-20 sm:py-28 bg-gradient-to-b from-white to-slate-50">
+<section class="py-16 sm:py-20 bg-indigo-50/60">
     <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16 sm:mb-20">
             <div class="inline-flex items-center px-4 py-2 bg-purple-100 text-purple-800 rounded-full text-sm font-medium mb-4">
                 <i class="fas fa-newspaper mr-2"></i>
                 Tin tức mới nhất
             </div>
-            <h2 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">Tin tức & Sự kiện</h2>
-            <p class="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+            <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4">Tin tức & Sự kiện</h2>
+            <p class="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed md:leading-loose">
                 Cập nhật những tin tức mới nhất về ngành ô tô, đánh giá xe mới và các sự kiện đặc biệt
             </p>
         </div>
@@ -415,7 +402,7 @@
         <!-- View All News Button -->
         <div class="text-center mt-12">
             <a href="{{ route('blogs.index') }}"
-                class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-full hover:from-purple-700 hover:to-pink-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
+                class="inline-flex items-center px-8 py-4 min-h-[48px] bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-full hover:from-purple-700 hover:to-pink-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-600 focus-visible:ring-offset-2">
                 <span>Xem tất cả tin tức</span>
                 <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
             </a>
@@ -426,9 +413,9 @@
 {{-- Promotions moved above; old block removed --}}
 
 {{-- ===== CTA Section ===== --}}
-<section class="py-20 sm:py-28 bg-gradient-to-br from-slate-900 via-neutral-900 to-black">
+<section class="py-16 sm:py-20 bg-gradient-to-br from-slate-900 via-neutral-900 to-black">
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h2 class="text-4xl sm:text-5xl font-bold text-white mb-6">
+        <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-6">
             Sẵn sàng sở hữu xe mơ ước?
         </h2>
         <p class="text-xl text-gray-300 mb-8 max-w-2xl mx-auto leading-relaxed">
@@ -437,12 +424,12 @@
 
         <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <a href="{{ route('products.index') }}"
-                class="group bg-white text-slate-900 px-8 py-4 rounded-full font-bold text-lg transition-all duration-300 hover:bg-purple-100 hover:scale-[1.02] shadow-xl">
+                class="group bg-white text-slate-900 px-8 py-4 min-h-[48px] rounded-full font-bold text-lg transition-all duration-300 hover:bg-purple-100 hover:scale-[1.02] shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-600 focus-visible:ring-offset-2">
                 <i class="fas fa-car mr-2 group-hover:rotate-12 transition-transform"></i>
                 Khám phá xe ngay
             </a>
             <a href="{{ route('contact') }}"
-                class="border-2 border-white/30 text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-white/10 transition-all duration-300 backdrop-blur-sm">
+                class="border-2 border-white/30 text-white px-8 py-4 min-h-[48px] rounded-full font-bold text-lg hover:bg-white/10 transition-all duration-300 backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900/40">
                 <i class="fas fa-phone mr-2"></i>
                 Liên hệ tư vấn
             </a>
