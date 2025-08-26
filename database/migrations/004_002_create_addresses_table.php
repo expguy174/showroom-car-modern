@@ -11,8 +11,8 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->enum('type', ['home', 'work', 'billing', 'shipping', 'other'])->default('home');
-            $table->string('full_name');
-            $table->string('phone', 20);
+            $table->string('contact_name'); // Tên người liên hệ tại địa chỉ này
+            $table->string('phone', 20)->nullable(); // Số điện thoại tại địa chỉ này
             $table->text('address');
             $table->string('city');
             $table->string('state')->nullable();
@@ -27,6 +27,7 @@ return new class extends Migration {
             $table->index(['user_id', 'type']);
             $table->index(['user_id', 'is_default']);
             $table->index(['city', 'state']);
+            $table->index('phone');
         });
     }
 

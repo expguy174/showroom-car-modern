@@ -31,9 +31,7 @@ return new class extends Migration {
             $table->boolean('is_featured')->default(false);
 			$table->unsignedInteger('sort_order')->default(0);
             
-            // Thống kê
-			$table->unsignedInteger('total_models')->default(0);
-			$table->unsignedInteger('total_variants')->default(0);
+
             
             $table->timestamps();
             $table->softDeletes();

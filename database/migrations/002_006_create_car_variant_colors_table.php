@@ -21,14 +21,12 @@ return new class extends Migration {
             $table->enum('color_type', ['solid', 'metallic', 'pearlescent', 'matte', 'special'])->default('solid');
             $table->enum('availability', ['standard', 'optional', 'limited', 'discontinued'])->default('standard');
             
-            // Giá cả & tồn kho
-            $table->decimal('price_adjustment', 10, 2)->default(0)->comment('Phụ phí màu (có thể âm nếu giảm giá)');
-			$table->unsignedInteger('stock_quantity')->default(0);
+            // Giá cả
+            $table->decimal('price_adjustment', 15, 2)->default(0)->comment('Phụ phí màu (có thể âm nếu giảm giá)');
             $table->boolean('is_free')->default(true)->comment('Màu có miễn phí không');
             
             // Thông tin bổ sung
             $table->text('description')->nullable(); // Mô tả màu
-            $table->string('material')->nullable(); // Chất liệu sơn
             $table->boolean('is_popular')->default(false); // Màu phổ biến
             $table->boolean('is_active')->default(true); // Màu có hiển thị không
 			$table->unsignedInteger('sort_order')->default(0); // Thứ tự sắp xếp

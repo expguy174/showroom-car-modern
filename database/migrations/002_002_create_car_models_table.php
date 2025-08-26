@@ -36,11 +36,7 @@ return new class extends Migration {
             $table->boolean('is_discontinued')->default(false);
 			$table->unsignedInteger('sort_order')->default(0);
             
-            // Thống kê
-			$table->unsignedInteger('total_variants')->default(0);
-            $table->decimal('starting_price', 15, 2)->nullable();
-            $table->decimal('average_rating', 3, 2)->default(0);
-			$table->unsignedInteger('rating_count')->default(0);
+
             
             $table->timestamps();
             $table->softDeletes();
@@ -53,7 +49,6 @@ return new class extends Migration {
             $table->index('sort_order');
             $table->index('production_start_year');
 			$table->index('production_end_year');
-			$table->index('starting_price');
 			$table->index('created_at');
         });
     }

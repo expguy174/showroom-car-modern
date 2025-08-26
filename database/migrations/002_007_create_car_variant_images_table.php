@@ -12,42 +12,31 @@ return new class extends Migration {
             $table->foreignId('car_variant_id')->constrained('car_variants')->onDelete('cascade');
             // Optional color-level association when an image is specific to a variant color
             $table->foreignId('car_variant_color_id')->nullable()->constrained('car_variant_colors')->nullOnDelete();
-			$table->string('image_path', 2048)->nullable(); // Đường dẫn ảnh (nullable để hỗ trợ ảnh online)
-			$table->string('image_url', 2048)->nullable(); // URL ảnh (nếu cần)
+            $table->string('image_url', 2048); // URL ảnh
             $table->string('alt_text')->nullable(); // Alt text cho SEO
-            $table->string('caption')->nullable(); // Chú thích ảnh
-            $table->string('title')->nullable(); // Tiêu đề ảnh
-            
-            // Metadata ảnh
-            $table->string('image_type')->default('gallery')->comment('gallery, thumbnail, hero, interior, exterior, detail, color_swatch');
-			$table->unsignedInteger('width')->nullable(); // Chiều rộng ảnh
-			$table->unsignedInteger('height')->nullable(); // Chiều cao ảnh
-            $table->unsignedBigInteger('file_size')->nullable(); // Kích thước file (bytes)
-            $table->string('file_format')->nullable(); // Định dạng file (jpg, png, webp)
-            
+            $table->string('title')->nullable(); // Tiêu đề/chú thích ảnh
+
+            // Loại ảnh
+            $table->string('image_type')->default('gallery')->comment('gallery, interior, exterior, color_swatch');
+
             // Sắp xếp và hiển thị
             $table->boolean('is_main')->default(false); // Ảnh chính
             $table->boolean('is_active')->default(true); // Ảnh có hiển thị không
-			$table->unsignedInteger('sort_order')->default(0); // Thứ tự sắp xếp
-            $table->boolean('is_featured')->default(false); // Ảnh nổi bật
-            
+            $table->unsignedInteger('sort_order')->default(0); // Thứ tự sắp xếp
+
             // Thông tin bổ sung
-            $table->string('color_variant')->nullable(); // Màu sắc của xe trong ảnh
             $table->string('angle')->nullable(); // Góc chụp (front, side, rear, interior)
             $table->text('description')->nullable(); // Mô tả chi tiết ảnh
-            
+
             $table->timestamps();
-            
-			// Indexes
+
+            // Indexes
             $table->index(['car_variant_id', 'is_active']);
             $table->index(['car_variant_id', 'car_variant_color_id']);
             $table->index(['image_type', 'is_active']);
             $table->index(['is_main', 'is_active']);
             $table->index('sort_order');
-            $table->index('color_variant');
-			$table->index('created_at');
-            
-            // Note: Business logic should ensure only one main image per variant
+            $table->index('created_at');
         });
     }
 
@@ -56,5 +45,3 @@ return new class extends Migration {
         Schema::dropIfExists('car_variant_images');
     }
 };
-
-
