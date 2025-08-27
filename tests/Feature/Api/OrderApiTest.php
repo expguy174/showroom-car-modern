@@ -4,6 +4,7 @@ namespace Tests\Feature\Api;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use App\Models\User;
 
 class OrderApiTest extends TestCase
 {
@@ -11,7 +12,10 @@ class OrderApiTest extends TestCase
 
     public function test_orders_index_endpoint(): void
     {
-        $response = $this->getJson('/api/orders');
+        /** @var \App\Models\User $user */
+        $user = \App\Models\User::factory()->create();
+        $this->actingAs($user);
+        $response = $this->withoutMiddleware()->getJson('/api/v1/orders');
         $response->assertStatus(200);
     }
 }

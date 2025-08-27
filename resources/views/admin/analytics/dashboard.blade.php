@@ -34,13 +34,13 @@
                                 {{ number_format($salesData['current_month_sales']) }} VNĐ
                             </div>
                             @if($salesData['sales_growth'] > 0)
-                                <div class="text-success text-xs">
-                                    <i class="fas fa-arrow-up"></i> +{{ $salesData['sales_growth'] }}%
-                                </div>
+                            <div class="text-success text-xs">
+                                <i class="fas fa-arrow-up"></i> +{{ $salesData['sales_growth'] }}%
+                            </div>
                             @else
-                                <div class="text-danger text-xs">
-                                    <i class="fas fa-arrow-down"></i> {{ $salesData['sales_growth'] }}%
-                                </div>
+                            <div class="text-danger text-xs">
+                                <i class="fas fa-arrow-down"></i> {{ $salesData['sales_growth'] }}%
+                            </div>
                             @endif
                         </div>
                         <div class="col-auto">
@@ -63,13 +63,13 @@
                                 {{ $customerData['new_customers'] }}
                             </div>
                             @if($customerData['customer_growth'] > 0)
-                                <div class="text-success text-xs">
-                                    <i class="fas fa-arrow-up"></i> +{{ $customerData['customer_growth'] }}%
-                                </div>
+                            <div class="text-success text-xs">
+                                <i class="fas fa-arrow-up"></i> +{{ $customerData['customer_growth'] }}%
+                            </div>
                             @else
-                                <div class="text-danger text-xs">
-                                    <i class="fas fa-arrow-down"></i> {{ $customerData['customer_growth'] }}%
-                                </div>
+                            <div class="text-danger text-xs">
+                                <i class="fas fa-arrow-down"></i> {{ $customerData['customer_growth'] }}%
+                            </div>
                             @endif
                         </div>
                         <div class="col-auto">
@@ -229,17 +229,11 @@
                                     <td class="text-center">{{ $brand->total_quantity }}</td>
                                     <td>
                                         @php
-                                            $percentage = $inventoryData['total_inventory'] > 0 ? 
-                                                round(($brand->total_quantity / $inventoryData['total_inventory']) * 100, 1) : 0;
+                                        $percentage = $inventoryData['total_inventory'] > 0 ?
+                                        round(($brand->total_quantity / $inventoryData['total_inventory']) * 100, 1) : 0;
                                         @endphp
                                         <div class="progress" style="height: 20px;">
-                                            <div class="progress-bar" role="progressbar" 
-                                                 style="width: {{ $percentage }}%;" 
-                                                 aria-valuenow="{{ $percentage }}" 
-                                                 aria-valuemin="0" 
-                                                 aria-valuemax="100">
-                                                {{ $percentage }}%
-                                            </div>
+                                            <div class="progress-bar" role="progressbar" data-width="{{ $percentage }}" aria-valuenow="{{ $percentage }}" aria-valuemin="0" aria-valuemax="100">{{ $percentage }}%</div>
                                         </div>
                                     </td>
                                 </tr>
@@ -266,27 +260,21 @@
                             <span>Khách hàng mới</span>
                             <span class="font-weight-bold">{{ $customerData['customer_segments']['new'] }}</span>
                         </div>
-                        <div class="progress mb-2" style="height: 8px;">
-                            <div class="progress-bar bg-success" style="width: {{ $customerData['customer_segments']['new'] > 0 ? ($customerData['customer_segments']['new'] / $customerData['total_customers']) * 100 : 0 }}%"></div>
-                        </div>
+                        <div class="progress mb-2" style="height: 8px;"><div class="progress-bar bg-success" data-width="{{ $customerData['customer_segments']['new'] > 0 ? ($customerData['customer_segments']['new'] / $customerData['total_customers']) * 100 : 0 }}"></div></div>
                     </div>
                     <div class="mb-3">
                         <div class="d-flex justify-content-between">
                             <span>Khách hàng quay lại</span>
                             <span class="font-weight-bold">{{ $customerData['customer_segments']['returning'] }}</span>
                         </div>
-                        <div class="progress mb-2" style="height: 8px;">
-                            <div class="progress-bar bg-primary" style="width: {{ $customerData['customer_segments']['returning'] > 0 ? ($customerData['customer_segments']['returning'] / $customerData['total_customers']) * 100 : 0 }}%"></div>
-                        </div>
+                        <div class="progress mb-2" style="height: 8px;"><div class="progress-bar bg-primary" data-width="{{ $customerData['customer_segments']['returning'] > 0 ? ($customerData['customer_segments']['returning'] / $customerData['total_customers']) * 100 : 0 }}"></div></div>
                     </div>
                     <div class="mb-3">
                         <div class="d-flex justify-content-between">
                             <span>Khách hàng không hoạt động</span>
                             <span class="font-weight-bold">{{ $customerData['customer_segments']['inactive'] }}</span>
                         </div>
-                        <div class="progress mb-2" style="height: 8px;">
-                            <div class="progress-bar bg-warning" style="width: {{ $customerData['customer_segments']['inactive'] > 0 ? ($customerData['customer_segments']['inactive'] / $customerData['total_customers']) * 100 : 0 }}%"></div>
-                        </div>
+                        <div class="progress mb-2" style="height: 8px;"><div class="progress-bar bg-warning" data-width="{{ $customerData['customer_segments']['inactive'] > 0 ? ($customerData['customer_segments']['inactive'] / $customerData['total_customers']) * 100 : 0 }}"></div></div>
                     </div>
                 </div>
             </div>
@@ -375,101 +363,30 @@
                         @endif
 
                         @if($performanceData['conversion_rate'] < 20)
-                        <div class="col-md-6 mb-3">
+                            <div class="col-md-6 mb-3">
                             <div class="alert alert-info" role="alert">
                                 <i class="fas fa-info-circle mr-2"></i>
                                 <strong>Lưu ý:</strong> Tỷ lệ chuyển đổi lái thử thấp ({{ $performanceData['conversion_rate'] }}%)
                             </div>
-                        </div>
-                        @endif
-
-                        @if($customerData['customer_growth'] < 0)
-                        <div class="col-md-6 mb-3">
-                            <div class="alert alert-secondary" role="alert">
-                                <i class="fas fa-chart-line mr-2"></i>
-                                <strong>Phân tích:</strong> Số lượng khách hàng mới giảm so với tháng trước
-                            </div>
-                        </div>
-                        @endif
                     </div>
+                    @endif
+
+                    @if($customerData['customer_growth'] < 0)
+                        <div class="col-md-6 mb-3">
+                        <div class="alert alert-secondary" role="alert">
+                            <i class="fas fa-chart-line mr-2"></i>
+                            <strong>Phân tích:</strong> Số lượng khách hàng mới giảm so với tháng trước
+                        </div>
                 </div>
+                @endif
             </div>
         </div>
     </div>
 </div>
+</div>
+</div>
 @endsection
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-// Sales Trend Chart
-const salesTrendCtx = document.getElementById('salesTrendChart').getContext('2d');
-const salesTrendChart = new Chart(salesTrendCtx, {
-    type: 'line',
-    data: {
-        labels: @json($salesData['monthly_trend']->pluck('month')->map(function($month) { return date('M', mktime(0, 0, 0, $month, 1)); })),
-        datasets: [{
-            label: 'Doanh thu (triệu VNĐ)',
-            data: @json($salesData['monthly_trend']->pluck('total')->map(function($total) { return $total / 1000000; })),
-            borderColor: 'rgb(75, 192, 192)',
-            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            tension: 0.1
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-            y: {
-                beginAtZero: true,
-                ticks: {
-                    callback: function(value) {
-                        return value + 'M';
-                    }
-                }
-            }
-        }
-    }
-});
-
-// Inventory Status Chart
-const inventoryStatusCtx = document.getElementById('inventoryStatusChart').getContext('2d');
-const inventoryStatusChart = new Chart(inventoryStatusCtx, {
-    type: 'doughnut',
-    data: {
-        labels: ['Có sẵn', 'Đặt trước', 'Sắp về'],
-        datasets: [{
-            data: [
-                {{ $inventoryData['in_stock'] }},
-                {{ $inventoryData['pre_order'] }},
-                {{ $inventoryData['coming_soon'] }}
-            ],
-            backgroundColor: [
-                '#1cc88a',
-                '#36b9cc',
-                '#f6c23e'
-            ],
-            hoverBackgroundColor: [
-                '#17a673',
-                '#2c9faf',
-                '#f4b619'
-            ]
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                display: false
-            }
-        }
-    }
-});
-
-// Auto-refresh dashboard every 5 minutes
-setInterval(function() {
-    location.reload();
-}, 300000);
-</script>
+{{-- Charts JS moved to external asset to avoid inline parsing issues --}}
 @endpush

@@ -64,7 +64,7 @@ class TestDriveController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('user.test_drives.index', compact('testDrives', 'variants'));
+        return view('user.test-drives.index', compact('testDrives', 'variants'));
     }
 
     public function show(TestDrive $testDrive)
@@ -73,7 +73,7 @@ class TestDriveController extends Controller
             abort(403);
         }
 
-        return view('user.test_drives.show', compact('testDrive'));
+        return view('user.test-drives.show', compact('testDrive'));
     }
 
     public function rate(Request $request, TestDrive $testDrive)

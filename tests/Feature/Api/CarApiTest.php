@@ -4,6 +4,7 @@ namespace Tests\Feature\Api;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use App\Models\CarBrand;
 
 class CarApiTest extends TestCase
 {
@@ -11,7 +12,9 @@ class CarApiTest extends TestCase
 
     public function test_list_car_brands_endpoint(): void
     {
-        $response = $this->getJson('/api/brands');
+        // API v1 prefix
+        CarBrand::factory()->create(['name' => 'TestBrand']);
+        $response = $this->getJson('/api/v1/cars');
         $response->assertStatus(200);
     }
 }
