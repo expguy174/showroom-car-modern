@@ -23,26 +23,16 @@ class CarVariant extends Model
         'sku',
         'description',
         'short_description',
-        'fuel_type',
-        'transmission',
-        'engine_size',
-        'power',
-        'torque',
-        'fuel_consumption',
-        'warranty_years',
         'price',
         'original_price',
         'has_discount',
         'discount_percentage',
-        'stock_quantity',
+        'color_inventory',
         'is_active',
         'is_featured',
         'is_available',
         'is_new_arrival',
         'is_bestseller',
-        'average_rating',
-        'rating_count',
-        'view_count',
         'meta_title',
         'meta_description',
         'keywords',
@@ -52,17 +42,13 @@ class CarVariant extends Model
         'price' => 'decimal:2',
         'original_price' => 'decimal:2',
         'discount_percentage' => 'decimal:2',
-        'warranty_years' => 'integer',
-        'stock_quantity' => 'integer',
+        'color_inventory' => 'array',
         'is_active' => 'boolean',
         'is_featured' => 'boolean',
         'has_discount' => 'boolean',
         'is_available' => 'boolean',
         'is_new_arrival' => 'boolean',
         'is_bestseller' => 'boolean',
-        'average_rating' => 'decimal:2',
-        'rating_count' => 'integer',
-        'view_count' => 'integer',
     ];
 
     public function carModel()
@@ -87,17 +73,7 @@ class CarVariant extends Model
     /**
      * Đồng bộ tồn kho biến thể = tổng tồn kho các màu đang active.
      */
-    public function recalculateStockQuantity(): void
-    {
-        $sum = (int) $this->colors()
-            ->where('is_active', true)
-            ->sum('stock_quantity');
-
-        // Tránh ghi DB không cần thiết
-        if ((int) ($this->stock_quantity ?? 0) !== $sum) {
-            $this->forceFill(['stock_quantity' => $sum])->save();
-        }
-    }
+    // Removed stock_quantity recalculation since column no longer exists
 
     public function images()
     {
@@ -115,12 +91,6 @@ class CarVariant extends Model
     {
         return $this->hasMany(CarVariantFeature::class, 'car_variant_id');
     }
-
-    public function options()
-    {
-        return $this->hasMany(CarVariantOption::class);
-    }
-
     public function reviews()
     {
         return $this->morphMany(Review::class, 'reviewable');
@@ -131,7 +101,7 @@ class CarVariant extends Model
         return $this->morphMany(Review::class, 'reviewable')->where('is_approved', true);
     }
 
-            // Polymorphic relationships for cart and orders
+    // Polymorphic relationships for cart and orders
     public function orderItems()
     {
         return $this->morphMany(OrderItem::class, 'item', 'item_type', 'item_id');
@@ -145,13 +115,18 @@ class CarVariant extends Model
 
 
     // Accessors
-    public function getEffectiveStockQuantityAttribute(): int
+    // Effective availability derived from color_inventory if present
+    public function getEffectiveAvailableQuantityAttribute(): int
     {
-        $colors = $this->relationLoaded('colors') ? $this->colors : $this->colors()->get();
-        if ($colors && $colors->count() > 0) {
-            return (int) $colors->where('is_active', true)->sum('stock_quantity');
+        $inventory = $this->color_inventory ?? [];
+        if (is_array($inventory)) {
+            $sum = 0;
+            foreach ($inventory as $colorId => $data) {
+                $sum += (int) ($data['available'] ?? $data['quantity'] ?? 0);
+            }
+            return $sum;
         }
-        return (int) ($this->stock_quantity ?? 0);
+        return 0;
     }
 
     public function getSpecValue(string $name, ?string $category = null): ?string
@@ -166,13 +141,35 @@ class CarVariant extends Model
         return $record->spec_value ?? null;
     }
 
-    public function getFuelTypeAttribute(): ?string { return $this->getSpecValue('fuel_type', 'engine') ?? $this->getSpecValue('fuel_type'); }
-    public function getTransmissionAttribute(): ?string { return $this->getSpecValue('transmission', 'transmission') ?? $this->getSpecValue('transmission'); }
-    public function getSeatingCapacityAttribute(): ?int { $v = $this->getSpecValue('seating_capacity'); return $v !== null ? (int) $v : null; }
-    public function getPowerOutputAttribute(): ?string { return $this->getSpecValue('power_output', 'performance') ?? $this->getSpecValue('power_output'); }
-    public function getDrivetrainAttribute(): ?string { return $this->getSpecValue('drivetrain'); }
-    public function getEmissionStandardAttribute(): ?string { return $this->getSpecValue('emission_standard', 'emissions') ?? $this->getSpecValue('emission_standard'); }
-    public function getCo2EmissionAttribute(): ?string { return $this->getSpecValue('co2_emission', 'emissions') ?? $this->getSpecValue('co2_emission'); }
+    public function getFuelTypeAttribute(): ?string
+    {
+        return $this->getSpecValue('fuel_type', 'engine') ?? $this->getSpecValue('fuel_type');
+    }
+    public function getTransmissionAttribute(): ?string
+    {
+        return $this->getSpecValue('transmission', 'transmission') ?? $this->getSpecValue('transmission');
+    }
+    public function getSeatingCapacityAttribute(): ?int
+    {
+        $v = $this->getSpecValue('seating_capacity');
+        return $v !== null ? (int) $v : null;
+    }
+    public function getPowerOutputAttribute(): ?string
+    {
+        return $this->getSpecValue('power_output', 'performance') ?? $this->getSpecValue('power_output');
+    }
+    public function getDrivetrainAttribute(): ?string
+    {
+        return $this->getSpecValue('drivetrain');
+    }
+    public function getEmissionStandardAttribute(): ?string
+    {
+        return $this->getSpecValue('emission_standard', 'emissions') ?? $this->getSpecValue('emission_standard');
+    }
+    public function getCo2EmissionAttribute(): ?string
+    {
+        return $this->getSpecValue('co2_emission', 'emissions') ?? $this->getSpecValue('co2_emission');
+    }
     public function getFormattedPriceAttribute()
     {
         if ($this->has_discount && $this->discount_percentage > 0) {
@@ -189,10 +186,10 @@ class CarVariant extends Model
 
     public function getMonthlyPaymentAttribute()
     {
-        $price = $this->has_discount && $this->discount_percentage > 0 
-            ? $this->price * (1 - $this->discount_percentage / 100) 
+        $price = $this->has_discount && $this->discount_percentage > 0
+            ? $this->price * (1 - $this->discount_percentage / 100)
             : $this->price;
-        
+
         $monthlyPayment = $price / 60; // 60 tháng
         return 'Trả góp từ ' . number_format($monthlyPayment, 0, ',', '.') . ' VNĐ/tháng';
     }
@@ -237,22 +234,6 @@ class CarVariant extends Model
 
     protected static function booted(): void
     {
-        $recalc = function (?int $modelId): void {
-            if (!$modelId) return;
-            $model = CarModel::find($modelId);
-            if (!$model) return;
-            $brandId = $model->car_brand_id;
-            if (!$brandId) return;
-            $totalModels = CarModel::where('car_brand_id', $brandId)->whereNull('deleted_at')->count();
-            $totalVariants = CarVariant::whereIn('car_model_id', function ($q) use ($brandId) {
-                $q->select('id')->from('car_models')->where('car_brand_id', $brandId)->whereNull('deleted_at');
-            })->whereNull('deleted_at')->count();
-            CarBrand::where('id', $brandId)->update([
-                'total_models' => $totalModels,
-                'total_variants' => $totalVariants,
-            ]);
-        };
-
         static::creating(function (CarVariant $variant) {
             if (empty($variant->slug) && !empty($variant->name)) {
                 $variant->slug = static::generateUniqueSlug($variant->name);
@@ -262,16 +243,6 @@ class CarVariant extends Model
             if ($variant->isDirty('name') && empty($variant->slug)) {
                 $variant->slug = static::generateUniqueSlug($variant->name, $variant->id);
             }
-        });
-
-        static::created(function (CarVariant $variant) use ($recalc) {
-            $recalc($variant->car_model_id);
-        });
-        static::deleted(function (CarVariant $variant) use ($recalc) {
-            $recalc($variant->car_model_id);
-        });
-        static::restored(function (CarVariant $variant) use ($recalc) {
-            $recalc($variant->car_model_id);
         });
     }
 
@@ -283,7 +254,8 @@ class CarVariant extends Model
         while (static::query()
             ->when($ignoreId, fn($q) => $q->where('id', '!=', $ignoreId))
             ->where('slug', $slug)
-            ->exists()) {
+            ->exists()
+        ) {
             $slug = $base . '-' . $i;
             $i++;
         }
@@ -296,8 +268,12 @@ class CarVariant extends Model
         $years = $this->getSpecValue('warranty_years', 'warranty');
         $km = $this->getSpecValue('warranty_km', 'warranty');
         $info = [];
-        if ($years) { $info[] = $years . ' năm'; }
-        if ($km) { $info[] = number_format((int) $km, 0, ',', '.') . ' km'; }
+        if ($years) {
+            $info[] = $years . ' năm';
+        }
+        if ($km) {
+            $info[] = number_format((int) $km, 0, ',', '.') . ' km';
+        }
         return implode(' / ', $info) ?: '3 năm / 100.000 km';
     }
 
@@ -317,12 +293,16 @@ class CarVariant extends Model
         if (!$capacity) {
             return null;
         }
-        
+
         $range = $this->getSpecValue('battery_range', 'battery') ?? $this->getSpecValue('battery_range');
         $time = $this->getSpecValue('charging_time', 'battery') ?? $this->getSpecValue('charging_time');
         $info = $capacity . ' kWh';
-        if ($range) { $info .= ' - ' . $range . ' km'; }
-        if ($time) { $info .= ' (Sạc: ' . $time . 'h)'; }
+        if ($range) {
+            $info .= ' - ' . $range . ' km';
+        }
+        if ($time) {
+            $info .= ' (Sạc: ' . $time . 'h)';
+        }
         return $info;
     }
 
@@ -330,7 +310,7 @@ class CarVariant extends Model
     public function getSafetyFeaturesListAttribute()
     {
         $features = [];
-        
+
         if ($this->has_abs) $features[] = 'ABS';
         if ($this->has_esp) $features[] = 'ESP';
         if ($this->has_traction_control) $features[] = 'Kiểm soát lực kéo';
@@ -340,7 +320,7 @@ class CarVariant extends Model
         if ($this->has_rear_camera) $features[] = 'Camera lùi';
         if ($this->has_360_camera) $features[] = 'Camera 360°';
         if ($this->airbag_count) $features[] = $this->airbag_count . ' túi khí';
-        
+
         return implode(', ', $features) ?: 'ABS, EBD, ESP, 6 túi khí';
     }
 
@@ -348,7 +328,7 @@ class CarVariant extends Model
     public function getComfortFeaturesListAttribute()
     {
         $features = [];
-        
+
         if ($this->has_auto_climate) $features[] = 'Điều hòa tự động';
         if ($this->has_heated_seats) $features[] = 'Ghế sưởi';
         if ($this->has_ventilated_seats) $features[] = 'Ghế thông gió';
@@ -360,7 +340,7 @@ class CarVariant extends Model
         if ($this->has_auto_headlights) $features[] = 'Đèn tự động';
         if ($this->has_rain_sensor) $features[] = 'Cảm biến mưa';
         if ($this->has_light_sensor) $features[] = 'Cảm biến ánh sáng';
-        
+
         return implode(', ', $features) ?: 'Điều hòa tự động, GPS, Camera lùi';
     }
 
@@ -368,7 +348,7 @@ class CarVariant extends Model
     public function getTechnologyFeaturesListAttribute()
     {
         $features = [];
-        
+
         if ($this->has_navigation) $features[] = 'GPS';
         if ($this->has_bluetooth) $features[] = 'Bluetooth';
         if ($this->has_apple_carplay) $features[] = 'Apple CarPlay';
@@ -378,7 +358,7 @@ class CarVariant extends Model
         if ($this->has_keyless_entry) $features[] = 'Khóa thông minh';
         if ($this->has_push_start) $features[] = 'Nút khởi động';
         if ($this->has_remote_start) $features[] = 'Khởi động từ xa';
-        
+
         return implode(', ', $features) ?: 'GPS, Bluetooth, USB';
     }
 
@@ -398,8 +378,12 @@ class CarVariant extends Model
         $info = [];
         $std = $this->emission_standard;
         $co2 = $this->co2_emission;
-        if ($std) { $info[] = $std; }
-        if ($co2) { $info[] = $co2 . ' g/km'; }
+        if ($std) {
+            $info[] = $std;
+        }
+        if ($co2) {
+            $info[] = $co2 . ' g/km';
+        }
         return implode(' - ', $info) ?: 'Euro 6';
     }
 }

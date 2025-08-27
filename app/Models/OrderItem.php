@@ -22,7 +22,6 @@ class OrderItem extends Model
         'tax_amount',
         'discount_amount',
         'line_total',
-        'notes',
     ];
 
     public function order()

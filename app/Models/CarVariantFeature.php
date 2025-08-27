@@ -18,11 +18,13 @@ class CarVariantFeature extends Model
         'availability',
         'importance',
         'price',
-        'package_price',
         'is_included',
         'icon_path',
+        'image_path',
         'is_active',
         'is_featured',
+        'is_popular',
+        'is_recommended',
         'sort_order',
     ];
 
@@ -31,7 +33,6 @@ class CarVariantFeature extends Model
         'is_active' => 'boolean',
         'is_featured' => 'boolean',
         'price' => 'decimal:2',
-        'package_price' => 'decimal:2',
         'sort_order' => 'integer',
     ];
 
@@ -52,8 +53,8 @@ class CarVariantFeature extends Model
 
     public function getFormattedPriceAttribute()
     {
-        if ($this->package_price > 0) {
-            return number_format($this->package_price, 0, ',', '.') . ' VNĐ';
+        if ($this->price > 0) {
+            return number_format($this->price, 0, ',', '.') . ' VNĐ';
         }
         return 'Miễn phí';
     }

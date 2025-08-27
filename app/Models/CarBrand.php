@@ -27,16 +27,12 @@ class CarBrand extends Model
         'is_active',
         'is_featured',
         'sort_order',
-        'total_models',
-        'total_variants',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'is_featured' => 'boolean',
         'founded_year' => 'integer',
-        'total_models' => 'integer',
-        'total_variants' => 'integer',
         'sort_order' => 'integer',
     ];
 

@@ -11,69 +11,36 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Core data - phải chạy trước
-        $this->call([
-            PaymentMethodSeeder::class,
-            FinanceOptionSeeder::class,
-        ]);
-
-        // 2. Business entities
         $this->call([
             DealershipSeeder::class,
             ShowroomSeeder::class,
-        ]);
-
-        // 3. Car data
-        $this->call([
             CarBrandSeeder::class,
             CarModelSeeder::class,
             CarVariantSeeder::class,
-            CarSpecificationSeeder::class,
             CarVariantColorSeeder::class,
             CarVariantFeatureSeeder::class,
-            CarVariantOptionSeeder::class,
+            CarVariantSpecificationSeeder::class,
             CarModelImageSeeder::class,
             CarVariantImageSeeder::class,
-        ]);
-
-        // 4. Accessories
-        $this->call([
-            AccessorySeeder::class,
-        ]);
-
-        // 5. Users and profiles
-        $this->call([
-            UserSeeder::class,
-            AddressSeeder::class,
-            CustomerProfileSeeder::class,
-        ]);
-
-        // 6. Business transactions
-        $this->call([
-            OrderSeeder::class,
-            OrderItemSeeder::class,
-            OrderLogSeeder::class,
-            PaymentTransactionSeeder::class,
-            InstallmentSeeder::class,
-            RefundSeeder::class,
-        ]);
-
-        // 7. Services
-        $this->call([
+            PaymentMethodSeeder::class,
             ServiceSeeder::class,
+            AccessorySeeder::class,
+            UserSeeder::class,
+            ReviewSeeder::class,
             TestDriveSeeder::class,
             ServiceAppointmentSeeder::class,
-        ]);
-
-        // 8. Content and communication
-        $this->call([
-            BlogSeeder::class,
+            FinanceOptionSeeder::class,
             PromotionSeeder::class,
-            ReviewSeeder::class,
-            ContactMessageSeeder::class,
+            OrderSeeder::class,
+            PaymentTransactionSeeder::class,
+            RefundSeeder::class,
             NotificationSeeder::class,
+            BlogSeeder::class,
+            ContactMessageSeeder::class,
+            OrderLogSeeder::class,
+            InstallmentSeeder::class,
         ]);
-
-        // 9. All seeders now populate nullable columns with defaults; no fill-null step needed
     }
 }
+
+

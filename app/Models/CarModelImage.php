@@ -11,31 +11,20 @@ class CarModelImage extends Model
 
     protected $fillable = [
         'car_model_id',
-        'image_path',
         'image_url',
+        'alt_text',
         'title',
-        'caption',
         'description',
         'image_type',
         'is_main',
         'is_active',
-        'is_featured',
-        'alt_text',
         'sort_order',
-        'width',
-        'height',
-        'file_size',
-        'file_format',
-        'color_variant',
     ];
 
     protected $casts = [
         'is_main' => 'boolean',
         'is_active' => 'boolean',
-        'is_featured' => 'boolean',
         'sort_order' => 'integer',
-        'width' => 'integer',
-        'height' => 'integer',
     ];
 
     public function carModel()
@@ -45,7 +34,7 @@ class CarModelImage extends Model
 
     public function getImageUrlAttribute()
     {
-        if ($this->attributes['image_url']) {
+        if ($this->attributes['image_url'] ?? null) {
             // Check if it's an external URL (starts with http)
             if (filter_var($this->attributes['image_url'], FILTER_VALIDATE_URL)) {
                 return $this->attributes['image_url'];

@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\CarVariant;
 use Illuminate\Http\Request;
 
-class UserCarVariantController extends Controller
+class CarVariantController extends Controller
 {
     public function show($slugOrId)
     {
@@ -37,3 +37,5 @@ class UserCarVariantController extends Controller
         return view('user.car-variants.show', compact('variant', 'relatedVariants', 'approvedCount', 'approvedAvg'));
     }
 }
+
+

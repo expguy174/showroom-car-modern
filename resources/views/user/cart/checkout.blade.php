@@ -100,7 +100,7 @@
                                 <option value="">— Chọn địa chỉ đã lưu —</option>
                                 @foreach($addresses as $addr)
                                     <option value="{{ $addr->id }}" @selected(old('billing_address_id') == $addr->id)>
-                                        {{ $addr->full_name }} - {{ $addr->address }} @if($addr->is_default) (Mặc định) @endif
+                                        {{ $addr->contact_name }} - {{ $addr->address }} @if($addr->is_default) (Mặc định) @endif
                                     </option>
                                 @endforeach
                             </select>

@@ -2,140 +2,68 @@
 
 namespace Database\Seeders;
 
-use App\Models\PaymentMethod;
 use Illuminate\Database\Seeder;
+use App\Models\PaymentMethod;
 
 class PaymentMethodSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        $paymentMethods = [
+        $methods = [
             [
                 'name' => 'Tiền mặt',
-                'code' => 'CASH',
-                'provider' => 'Nội bộ',
+                'code' => 'cash',
+                'provider' => null,
                 'type' => 'offline',
                 'is_active' => true,
                 'fee_flat' => 0,
                 'fee_percent' => 0,
-                'config' => [
-                    'description' => 'Thanh toán bằng tiền mặt tại showroom',
-                    'instructions' => 'Vui lòng mang đầy đủ giấy tờ và tiền mặt đến showroom'
-                ],
-                'notes' => 'Phương thức thanh toán truyền thống',
-                'created_at' => now()->subYears(3),
-                'updated_at' => now()->subMonths(3)
+                'config' => null,
+                'sort_order' => 1,
+                'notes' => 'Thanh toán trực tiếp tại showroom',
             ],
             [
-                'name' => 'Chuyển khoản ngân hàng',
-                'code' => 'BANK_TRANSFER',
-                'provider' => 'Ngân hàng',
+                'name' => 'Chuyển khoản',
+                'code' => 'bank_transfer',
+                'provider' => 'BANK',
                 'type' => 'offline',
                 'is_active' => true,
                 'fee_flat' => 0,
                 'fee_percent' => 0,
-                'config' => [
-                    'bank_accounts' => [
-                        [
-                            'bank_name' => 'Vietcombank',
-                            'account_number' => '1234567890',
-                            'account_name' => 'CÔNG TY TNHH SHOWROOM Ô TÔ',
-                            'branch' => 'Chi nhánh Hà Nội'
-                        ],
-                        [
-                            'bank_name' => 'BIDV',
-                            'account_number' => '0987654321',
-                            'account_name' => 'CÔNG TY TNHH SHOWROOM Ô TÔ',
-                            'branch' => 'Chi nhánh TP.HCM'
-                        ]
-                    ],
-                    'description' => 'Chuyển khoản trực tiếp vào tài khoản ngân hàng',
-                    'instructions' => 'Vui lòng ghi rõ mã đơn hàng trong nội dung chuyển khoản'
-                ],
-                'notes' => 'Phương thức thanh toán an toàn và phổ biến',
-                'created_at' => now()->subYears(3),
-                'updated_at' => now()->subMonths(3)
+                'config' => json_encode(['account_name' => 'CONG TY TNHH SHOWROOM', 'account_number' => '0123456789', 'bank' => 'Vietcombank - CN TP.HCM']),
+                'sort_order' => 2,
+                'notes' => 'Chuyển khoản ngân hàng',
             ],
             [
-                'name' => 'Thẻ tín dụng/ghi nợ',
-                'code' => 'CREDIT_CARD',
-                'provider' => 'VNPay',
+                'name' => 'VNPay',
+                'code' => 'vnpay',
+                'provider' => 'VNPAY',
                 'type' => 'online',
                 'is_active' => true,
                 'fee_flat' => 0,
-                'fee_percent' => 1.5,
-                'config' => [
-                    'supported_cards' => ['Visa', 'Mastercard', 'JCB', 'American Express'],
-                    'description' => 'Thanh toán bằng thẻ tín dụng hoặc thẻ ghi nợ',
-                    'instructions' => 'Thẻ phải được phát hành tại Việt Nam'
-                ],
-                'notes' => 'Phí giao dịch 1.5% giá trị đơn hàng',
-                'created_at' => now()->subYears(2),
-                'updated_at' => now()->subMonths(6)
+                'fee_percent' => 2.2,
+                'config' => json_encode(['tmn_code' => env('VNPAY_TMN_CODE'), 'hash_secret' => env('VNPAY_HASH_SECRET')]),
+                'sort_order' => 3,
+                'notes' => 'Thanh toán trực tuyến qua VNPay',
             ],
             [
-                'name' => 'Ví điện tử',
-                'code' => 'E_WALLET',
-                'provider' => 'VNPay',
+                'name' => 'MoMo',
+                'code' => 'momo',
+                'provider' => 'MOMO',
                 'type' => 'online',
                 'is_active' => true,
                 'fee_flat' => 0,
-                'fee_percent' => 1.0,
-                'config' => [
-                    'supported_wallets' => ['VNPay', 'Momo', 'ZaloPay', 'ShopeePay'],
-                    'description' => 'Thanh toán qua ví điện tử',
-                    'instructions' => 'Đảm bảo tài khoản ví có đủ số dư'
-                ],
-                'notes' => 'Phí giao dịch 1% giá trị đơn hàng',
-                'created_at' => now()->subYears(2),
-                'updated_at' => now()->subMonths(6)
+                'fee_percent' => 2.2,
+                'config' => json_encode(['partner_code' => env('MOMO_PARTNER_CODE'), 'access_key' => env('MOMO_ACCESS_KEY')]),
+                'sort_order' => 4,
+                'notes' => 'Thanh toán qua ví MoMo',
             ],
-            [
-                'name' => 'Trả góp 0%',
-                'code' => 'INSTALLMENT_0',
-                'provider' => 'Ngân hàng đối tác',
-                'type' => 'offline',
-                'is_active' => true,
-                'fee_flat' => 0,
-                'fee_percent' => 0,
-                'config' => [
-                    'tenure_options' => [6, 12, 24, 36],
-                    'min_amount' => 50000000,
-                    'max_amount' => 2000000000,
-                    'description' => 'Trả góp 0% lãi suất trong thời gian khuyến mãi',
-                    'instructions' => 'Áp dụng cho khách hàng có thu nhập ổn định'
-                ],
-                'notes' => 'Chương trình khuyến mãi có thời hạn',
-                'created_at' => now()->subYears(2),
-                'updated_at' => now()->subMonths(4)
-            ],
-            [
-                'name' => 'Trả góp thường',
-                'code' => 'INSTALLMENT_NORMAL',
-                'provider' => 'Ngân hàng đối tác',
-                'type' => 'offline',
-                'is_active' => true,
-                'fee_flat' => 0,
-                'fee_percent' => 0,
-                'config' => [
-                    'tenure_options' => [12, 24, 36, 48, 60, 72],
-                    'min_amount' => 30000000,
-                    'max_amount' => 2000000000,
-                    'interest_rate' => 8.5,
-                    'description' => 'Trả góp với lãi suất cạnh tranh',
-                    'instructions' => 'Hồ sơ vay sẽ được thẩm định bởi ngân hàng'
-                ],
-                'notes' => 'Lãi suất từ 8.5% - 12% tùy theo hồ sơ',
-                'created_at' => now()->subYears(2),
-                'updated_at' => now()->subMonths(4)
-            ]
         ];
 
-        foreach ($paymentMethods as $method) {
-            PaymentMethod::create($method);
+        foreach ($methods as $m) {
+            PaymentMethod::updateOrCreate(['code' => $m['code']], $m);
         }
     }
 }
+
+

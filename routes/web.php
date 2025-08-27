@@ -19,14 +19,14 @@ use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Controllers\Admin\TestDriveController;
 use App\Http\Controllers\Admin\PaymentMethodController;
 use App\Http\Controllers\Admin\AnalyticsController;
-use App\Http\Controllers\Admin\CustomerProfileController;
+use App\Http\Controllers\Admin\UserProfileController;
 use App\Http\Controllers\Admin\ServiceAppointmentController;
 
 // Public Controllers
 use App\Http\Controllers\User\HomeController;
 use App\Http\Controllers\User\CartController;
-use App\Http\Controllers\User\UserOrderController;
-use App\Http\Controllers\User\UserCarVariantController;
+use App\Http\Controllers\User\OrderController as UserOrderController;
+use App\Http\Controllers\User\CarVariantController as UserCarVariantController;
 use App\Http\Controllers\User\AccessoryController as UserAccessoryController;
 use App\Http\Controllers\User\ReviewController as UserReviewController;
 use App\Http\Controllers\User\TestDriveController as UserTestDriveController;
@@ -34,7 +34,7 @@ use App\Http\Controllers\User\SearchController;
 use App\Http\Controllers\User\ProductController;
 
 // New User Controllers
-use App\Http\Controllers\User\BrandController;
+use App\Http\Controllers\User\CarBrandController as BrandController;
 use App\Http\Controllers\User\ServiceController;
 use App\Http\Controllers\User\FinanceController;
 use App\Http\Controllers\User\PaymentController as UserPaymentController;
@@ -263,15 +263,15 @@ Route::middleware(['auth', IsAdmin::class])->prefix('admin')->name('admin.')->gr
         Route::post('/{paymentMethod}/toggle-status', [PaymentMethodController::class, 'toggleStatus'])->name('toggle-status');
     });
 
-    // Customer Profiles
+    // User Profiles
     Route::prefix('customer-profiles')->name('customer-profiles.')->group(function () {
-        Route::get('/', [CustomerProfileController::class, 'index'])->name('index');
-        Route::get('/{customerProfile}', [CustomerProfileController::class, 'show'])->name('show');
-        Route::get('/{customerProfile}/edit', [CustomerProfileController::class, 'edit'])->name('edit');
-        Route::put('/{customerProfile}', [CustomerProfileController::class, 'update'])->name('update');
-        Route::delete('/{customerProfile}', [CustomerProfileController::class, 'destroy'])->name('destroy');
-        Route::post('/{customerProfile}/toggle-vip', [CustomerProfileController::class, 'toggleVip'])->name('toggle-vip');
-        Route::get('/export', [CustomerProfileController::class, 'export'])->name('export');
+        Route::get('/', [UserProfileController::class, 'index'])->name('index');
+        Route::get('/{customerProfile}', [UserProfileController::class, 'show'])->name('show');
+        Route::get('/{customerProfile}/edit', [UserProfileController::class, 'edit'])->name('edit');
+        Route::put('/{customerProfile}', [UserProfileController::class, 'update'])->name('update');
+        Route::delete('/{customerProfile}', [UserProfileController::class, 'destroy'])->name('destroy');
+        Route::post('/{customerProfile}/toggle-vip', [UserProfileController::class, 'toggleVip'])->name('toggle-vip');
+        Route::get('/export', [UserProfileController::class, 'export'])->name('export');
     });
 
     // Service Appointments
@@ -336,16 +336,16 @@ Route::get('/accessories', [\App\Http\Controllers\User\AccessoryController::clas
 
 // User Customer Profile Routes
 Route::prefix('customer-profiles')->name('user.customer-profiles.')->middleware(['auth'])->group(function () {
-    Route::get('/', [App\Http\Controllers\User\CustomerProfileController::class, 'index'])->name('index');
-    Route::get('/create', [App\Http\Controllers\User\CustomerProfileController::class, 'create'])->name('create');
-    Route::post('/', [App\Http\Controllers\User\CustomerProfileController::class, 'store'])->name('store');
-    Route::get('/edit', [App\Http\Controllers\User\CustomerProfileController::class, 'edit'])->name('edit');
-    Route::put('/', [App\Http\Controllers\User\CustomerProfileController::class, 'update'])->name('update');
-    Route::get('/orders', [App\Http\Controllers\User\CustomerProfileController::class, 'orders'])->name('orders');
-    Route::get('/test-drives', [App\Http\Controllers\User\CustomerProfileController::class, 'testDrives'])->name('test-drives');
+    Route::get('/', [App\Http\Controllers\User\UserProfileController::class, 'index'])->name('index');
+    Route::get('/create', [App\Http\Controllers\User\UserProfileController::class, 'create'])->name('create');
+    Route::post('/', [App\Http\Controllers\User\UserProfileController::class, 'store'])->name('store');
+    Route::get('/edit', [App\Http\Controllers\User\UserProfileController::class, 'edit'])->name('edit');
+    Route::put('/', [App\Http\Controllers\User\UserProfileController::class, 'update'])->name('update');
+    Route::get('/orders', [App\Http\Controllers\User\UserProfileController::class, 'orders'])->name('orders');
+    Route::get('/test-drives', [App\Http\Controllers\User\UserProfileController::class, 'testDrives'])->name('test-drives');
     // Route điểm tích lũy đã lược bỏ
-    Route::get('/preferences', [App\Http\Controllers\User\CustomerProfileController::class, 'preferences'])->name('preferences');
-    Route::put('/preferences', [App\Http\Controllers\User\CustomerProfileController::class, 'updatePreferences'])->name('update-preferences');
+    Route::get('/preferences', [App\Http\Controllers\User\UserProfileController::class, 'preferences'])->name('preferences');
+    Route::put('/preferences', [App\Http\Controllers\User\UserProfileController::class, 'updatePreferences'])->name('update-preferences');
 });
 
 // User Service Appointment Routes
@@ -393,8 +393,8 @@ Route::prefix('addresses')->name('user.addresses.')->middleware(['auth'])->group
 
 // Customer profile orders (fallback simple list)
 Route::middleware('auth')->group(function(){
-    Route::get('/my/orders', [\App\Http\Controllers\User\CustomerProfileController::class, 'orders'])->name('user.customer-profiles.orders');
-    Route::get('/my/orders/{order}', [\App\Http\Controllers\User\CustomerProfileController::class, 'showOrder'])->name('user.customer-profiles.show-order');
+    Route::get('/my/orders', [\App\Http\Controllers\User\UserProfileController::class, 'orders'])->name('user.customer-profiles.orders');
+    Route::get('/my/orders/{order}', [\App\Http\Controllers\User\UserProfileController::class, 'showOrder'])->name('user.customer-profiles.show-order');
 });
 
 // Wishlist Routes

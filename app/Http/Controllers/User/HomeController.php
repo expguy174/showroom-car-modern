@@ -105,7 +105,7 @@ class HomeController extends Controller
         $testDriveVariants = CarVariant::where('is_active', 1)
             ->with(['carModel.carBrand:id,name'])
             ->select('id', 'name', 'car_model_id')
-            ->orderByDesc('view_count')
+            ->orderByDesc('created_at')
             ->take(15)
             ->get();
 

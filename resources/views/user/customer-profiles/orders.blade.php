@@ -197,7 +197,7 @@
                                 <div class="text-sm text-gray-600">
                                     @php
                                         $ship = $order->shippingAddress; $bill = $order->billingAddress;
-                                        $shipText = $ship ? $ship->line1 : ($order->address ?: '');
+                                        $shipText = $ship ? $ship->line1 : ($bill->line1 ?? '');
                                     @endphp
                                     <div class="flex items-center gap-2">
                                         <i class="fas fa-map-marker-alt text-gray-400"></i>

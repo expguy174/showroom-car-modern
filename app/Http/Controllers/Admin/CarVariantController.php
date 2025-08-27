@@ -37,7 +37,6 @@ class CarVariantController extends Controller
             'car_model_id' => 'required|exists:car_models,id',
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'features' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'is_active' => 'sometimes|boolean',
         ]);
@@ -49,7 +48,6 @@ class CarVariantController extends Controller
             'car_model_id' => $validated['car_model_id'],
             'name' => $validated['name'],
             'description' => $validated['description'],
-            'features' => $validated['features'],
             'price' => $validated['price'],
             'is_active' => $validated['is_active'],
         ]);
@@ -69,7 +67,6 @@ class CarVariantController extends Controller
             'car_model_id' => 'required|exists:car_models,id',
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'features' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'is_active' => 'sometimes|boolean',
         ]);
@@ -81,7 +78,6 @@ class CarVariantController extends Controller
             'car_model_id' => $validated['car_model_id'],
             'name' => $validated['name'],
             'description' => $validated['description'],
-            'features' => $validated['features'],
             'price' => $validated['price'],
             'is_active' => $validated['is_active'],
         ]);

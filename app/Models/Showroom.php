@@ -82,7 +82,7 @@ class Showroom extends Model
 
     public function customerProfiles()
     {
-        return $this->hasMany(CustomerProfile::class, 'preferred_showroom_id');
+        return $this->hasMany(UserProfile::class, 'preferred_showroom_id');
     }
 
     public function serviceAppointments()

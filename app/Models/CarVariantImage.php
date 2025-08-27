@@ -12,32 +12,21 @@ class CarVariantImage extends Model
     protected $fillable = [
         'car_variant_id',
         'car_variant_color_id',
-        'image_path',
         'image_url',
+        'alt_text',
         'title',
-        'caption',
         'description',
         'image_type',
         'angle',
         'is_main',
         'is_active',
-        'is_featured',
-        'alt_text',
         'sort_order',
-        'width',
-        'height',
-        'file_size',
-        'file_format',
-        'color_variant',
     ];
 
     protected $casts = [
         'is_main' => 'boolean',
         'is_active' => 'boolean',
-        'is_featured' => 'boolean',
         'sort_order' => 'integer',
-        'width' => 'integer',
-        'height' => 'integer',
     ];
 
     public function variant()

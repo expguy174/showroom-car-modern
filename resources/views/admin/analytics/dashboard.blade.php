@@ -308,7 +308,7 @@
                     <div class="mb-3">
                         <div class="d-flex justify-content-between">
                             <span>Đánh giá TB</span>
-                            <span class="font-weight-bold">{{ $performanceData['average_rating'] }}/5</span>
+                            <span class="font-weight-bold">{{ isset($performanceData['average_rating']) ? $performanceData['average_rating'] : 'N/A' }}/5</span>
                         </div>
                     </div>
                     <div class="mb-3">

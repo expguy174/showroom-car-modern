@@ -78,20 +78,13 @@ class SearchController extends Controller
                 $searchQuery->orderBy('created_at', 'desc');
                 break;
             case 'popular':
-                $searchQuery->orderBy('view_count', 'desc');
+                $searchQuery->orderBy('created_at', 'desc');
                 break;
             case 'rating':
-                $searchQuery->orderBy('average_rating', 'desc');
+                $searchQuery->orderBy('created_at', 'desc');
                 break;
             default: // relevance
-                $searchQuery->orderByRaw("
-                    CASE 
-                        WHEN name LIKE '{$query}' THEN 1
-                        WHEN name LIKE '{$query}%' THEN 2
-                        WHEN name LIKE '%{$query}%' THEN 3
-                        ELSE 4
-                    END
-                ")->orderBy('average_rating', 'desc');
+                $searchQuery->orderByRaw("\n                    CASE \n                        WHEN name LIKE '{$query}' THEN 1\n                        WHEN name LIKE '{$query}%' THEN 2\n                        WHEN name LIKE '%{$query}%' THEN 3\n                        ELSE 4\n                    END\n                ")->orderBy('created_at', 'desc');
         }
         
         return $searchQuery->paginate($perPage);
@@ -103,8 +96,8 @@ class SearchController extends Controller
             ->where(function($q) use ($query) {
                 $q->where('name', 'like', "%{$query}%")
                   ->orWhere('description', 'like', "%{$query}%")
-                  ->orWhere('brand', 'like', "%{$query}%")
-                  ->orWhere('compatibility', 'like', "%{$query}%");
+                  ->orWhere('category', 'like', "%{$query}%")
+                  ->orWhere('subcategory', 'like', "%{$query}%");
             });
         
         // Apply sorting
@@ -119,17 +112,13 @@ class SearchController extends Controller
                 $searchQuery->orderBy('created_at', 'desc');
                 break;
             case 'popular':
-                $searchQuery->orderBy('average_rating', 'desc');
+                $searchQuery->orderBy('created_at', 'desc');
+                break;
+            case 'rating':
+                $searchQuery->orderBy('created_at', 'desc');
                 break;
             default: // relevance
-                $searchQuery->orderByRaw("
-                    CASE 
-                        WHEN name LIKE '{$query}' THEN 1
-                        WHEN name LIKE '{$query}%' THEN 2
-                        WHEN name LIKE '%{$query}%' THEN 3
-                        ELSE 4
-                    END
-                ")->orderBy('average_rating', 'desc');
+                $searchQuery->orderByRaw("\n                    CASE \n                        WHEN name LIKE '{$query}' THEN 1\n                        WHEN name LIKE '{$query}%' THEN 2\n                        WHEN name LIKE '%{$query}%' THEN 3\n                        ELSE 4\n                    END\n                ")->orderBy('created_at', 'desc');
         }
         
         return $searchQuery->paginate($perPage);
@@ -265,13 +254,13 @@ class SearchController extends Controller
                 $query->orderBy('created_at', 'desc');
                 break;
             case 'popular':
-                $query->orderBy('view_count', 'desc');
+                $query->orderBy('created_at', 'desc');
                 break;
             case 'rating':
-                $query->orderBy('average_rating', 'desc');
+                $query->orderBy('created_at', 'desc');
                 break;
             default:
-                $query->orderBy('average_rating', 'desc');
+                $query->orderBy('created_at', 'desc');
         }
         
         $carVariants = $query->paginate($perPage);

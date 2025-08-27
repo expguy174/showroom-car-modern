@@ -16,22 +16,22 @@
 
             <div class="form-group">
                 <label>Họ tên</label>
-                <input type="text" name="name" value="{{ $order->name }}" class="form-control bg-light" disabled>
+                <input type="text" name="name" value="{{ optional($order->user)->name }}" class="form-control bg-light" disabled>
             </div>
 
             <div class="form-group">
                 <label>Email</label>
-                <input type="email" name="email" value="{{ $order->email }}" class="form-control bg-light" disabled>
+                <input type="email" name="email" value="{{ optional($order->user)->email }}" class="form-control bg-light" disabled>
             </div>
 
             <div class="form-group">
                 <label>Số điện thoại</label>
-                <input type="text" name="phone" value="{{ $order->phone }}" class="form-control bg-light" disabled>
+                <input type="text" name="phone" value="{{ optional($order->user)->phone }}" class="form-control bg-light" disabled>
             </div>
 
             <div class="form-group">
                 <label>Địa chỉ</label>
-                <input type="text" name="address" value="{{ $order->address }}" class="form-control bg-light" disabled>
+                <input type="text" name="address" value="{{ $order->shippingAddress->line1 ?? $order->billingAddress->line1 }}" class="form-control bg-light" disabled>
             </div>
 
             <div class="form-group">

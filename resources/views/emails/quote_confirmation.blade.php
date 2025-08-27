@@ -13,7 +13,7 @@
     </head>
 <body>
     <div class="container">
-        <h2>Xin chào {{ $lead->full_name }},</h2>
+        <h2>Xin chào {{ $lead->name ?? 'bạn' }},</h2>
         <p>Chúng tôi đã nhận được yêu cầu báo giá của bạn với mã <strong>#{{ $lead->lead_number }}</strong>.</p>
         <p>Thông tin liên hệ:</p>
         <ul>

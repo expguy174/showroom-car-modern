@@ -2,167 +2,83 @@
 
 namespace Database\Seeders;
 
-use App\Models\Review;
+use Illuminate\Database\Seeder;
 use App\Models\User;
 use App\Models\CarVariant;
 use App\Models\Accessory;
-use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
+use App\Models\Review;
 
 class ReviewSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        // Reset reviews to avoid duplicates on re-seeding (keep schema integrity)
-        DB::table('reviews')->delete();
+        $users = User::where('role', 'user')->get();
+        if ($users->isEmpty()) return;
 
-        $users = User::all();
-        $carVariants = CarVariant::where('is_active', 1)->get();
-        $accessories = Accessory::where('is_active', 1)->get();
+        $variantIds = CarVariant::pluck('id');
+        $accessoryIds = Accessory::pluck('id');
+        if ($variantIds->isEmpty() && $accessoryIds->isEmpty()) return;
 
-        $reviews = [
-            // Toyota Vios G Reviews
-            [
-                'user_id' => $users->where('email', 'customer1@example.com')->first()->id,
-                'reviewable_type' => CarVariant::class,
-                'reviewable_id' => $carVariants->where('name', 'Vios G')->first()->id,
-                'rating' => 5,
-                'title' => 'Xe gia đình hoàn hảo',
-                'comment' => 'Toyota Vios G là lựa chọn tuyệt vời cho gia đình. Xe tiết kiệm nhiên liệu, dễ lái và có không gian rộng rãi. Nội thất chất lượng tốt và có nhiều tính năng an toàn.',
-                'is_approved' => true,
-                'created_at' => now()->subDays(30),
-                'updated_at' => now()->subDays(28)
-            ],
-            [
-                'user_id' => $users->where('email', 'customer2@example.com')->first()->id,
-                'reviewable_type' => CarVariant::class,
-                'reviewable_id' => $carVariants->where('name', 'Vios G')->first()->id,
-                'rating' => 4,
-                'title' => 'Xe tốt, giá hợp lý',
-                'comment' => 'Xe chạy ổn định, tiết kiệm nhiên liệu. Tuy nhiên công suất hơi yếu khi leo dốc. Nhìn chung là xe gia đình tốt.',
-                'is_approved' => true,
-                'created_at' => now()->subDays(25),
-                'updated_at' => now()->subDays(24)
-            ],
-            // Honda City G Reviews
-            [
-                'user_id' => $users->where('email', 'vip@example.com')->first()->id,
-                'reviewable_type' => CarVariant::class,
-                'reviewable_id' => $carVariants->where('name', 'City G')->first()->id,
-                'rating' => 5,
-                'title' => 'Xe đẹp, hiện đại',
-                'comment' => 'Honda City G có thiết kế đẹp và hiện đại. Nội thất sang trọng, nhiều tính năng công nghệ. Động cơ mạnh mẽ và tiết kiệm nhiên liệu.',
-                'is_approved' => true,
-                'created_at' => now()->subDays(20),
-                'updated_at' => now()->subDays(19)
-            ],
-            [
-                'user_id' => $users->where('email', 'customer3@example.com')->first()->id,
-                'reviewable_type' => CarVariant::class,
-                'reviewable_id' => $carVariants->where('name', 'City G')->first()->id,
-                'rating' => 4,
-                'title' => 'Xe tốt cho người mới lái',
-                'comment' => 'Xe dễ lái, phù hợp cho người mới học lái. Khoang lái thoải mái, tầm nhìn tốt. Giá hơi cao so với đối thủ.',
-                'is_approved' => true,
-                'created_at' => now()->subDays(15),
-                'updated_at' => now()->subDays(14)
-            ],
-            // Ford Ranger XLT Reviews
-            [
-                'user_id' => $users->where('email', 'customer1@example.com')->first()->id,
-                'reviewable_type' => CarVariant::class,
-                'reviewable_id' => $carVariants->where('name', 'Ranger XLT')->first()->id,
-                'rating' => 5,
-                'title' => 'Xe bán tải mạnh mẽ',
-                'comment' => 'Ford Ranger XLT có động cơ mạnh mẽ, phù hợp cho việc chở hàng và đi phượt. Thiết kế nam tính, cabin rộng rãi.',
-                'is_approved' => true,
-                'created_at' => now()->subDays(10),
-                'updated_at' => now()->subDays(9)
-            ],
-            [
-                'user_id' => $users->where('email', 'vip@example.com')->first()->id,
-                'reviewable_type' => CarVariant::class,
-                'reviewable_id' => $carVariants->where('name', 'Ranger XLT')->first()->id,
-                'rating' => 4,
-                'title' => 'Xe tốt cho công việc',
-                'comment' => 'Sử dụng xe cho công việc kinh doanh. Xe chở được nhiều hàng, tiết kiệm nhiên liệu. Tuy nhiên giá hơi cao.',
-                'is_approved' => true,
-                'created_at' => now()->subDays(5),
-                'updated_at' => now()->subDays(4)
-            ]
+        $titlesCar = ['Rất hài lòng','Ổn trong tầm giá','Đáng tiền','Êm ái, tiết kiệm','Thiết kế đẹp'];
+        $titlesAcc = ['Hài lòng','Ổn áp','Đáng mua','Đúng mô tả','Chất lượng tốt'];
+        $commentsCar = [
+            'Vận hành ổn định, cách âm khá.',
+            'Tiết kiệm nhiên liệu, phù hợp đi phố.',
+            'Ghế ngồi thoải mái, treo êm.',
+            'Công nghệ an toàn hữu ích.',
+            'Ngoại hình hiện đại, giá hợp lý.',
+        ];
+        $commentsAcc = [
+            'Phụ kiện đúng mô tả, lắp đặt dễ.',
+            'Đóng gói chắc chắn, giao nhanh.',
+            'Dùng ổn, bền bỉ theo thời gian.',
+            'Tương thích tốt với xe của tôi.',
+            'Giá hợp lý so với chất lượng.',
         ];
 
-        foreach ($reviews as $review) {
-            Review::create($review);
+        $totalReviews = 300; // tổng số review mong muốn
+        $variantReviewCount = (int) round($totalReviews * 0.6); // 60% cho xe
+        $accessoryReviewCount = $totalReviews - $variantReviewCount; // 40% cho phụ kiện
+
+        // Phân phối rating nghiêng về 4★
+        $weightedRating = function (): int {
+            $r = rand(1,100);
+            if ($r <= 5) return 2;       // 5%
+            if ($r <= 30) return 3;      // +25% = 30%
+            if ($r <= 85) return 4;      // +55% = 85%
+            return 5;                    // 15%
+        };
+
+        for ($i = 0; $i < $variantReviewCount; $i++) {
+            if ($variantIds->isEmpty()) break;
+            $author = $users->random();
+            $variantId = $variantIds->random();
+            Review::create([
+                'user_id' => $author->id,
+                'reviewable_type' => \App\Models\CarVariant::class,
+                'reviewable_id' => $variantId,
+                'rating' => $weightedRating(),
+                'title' => $titlesCar[array_rand($titlesCar)],
+                'comment' => $commentsCar[array_rand($commentsCar)],
+                'is_approved' => rand(1,100) <= 70,
+            ]);
         }
 
-        // ---- Generate more variant reviews dynamically ----
-        if ($users->count() > 0 && $carVariants->count() > 0) {
-            $sampleComments = [
-                'Chạy đầm và êm, cách âm tốt. Rất hài lòng!',
-                'Thiết kế đẹp, tiết kiệm nhiên liệu.',
-                'Giá hợp lý trong phân khúc, nhiều công nghệ.',
-                'Vô lăng nhẹ, dễ lái trong phố.',
-                'Nội thất rộng rãi, ghế ngồi thoải mái.',
-                'Hệ thống an toàn đầy đủ, yên tâm khi sử dụng.',
-            ];
-
-            $carVariants->take(20)->each(function (CarVariant $variant) use ($users, $sampleComments) {
-                $numReviews = rand(2, 5);
-                $picked = $users->random(min($users->count(), $numReviews));
-                $reviewUsers = $picked instanceof \Illuminate\Support\Collection ? $picked : collect([$picked]);
-
-                foreach ($reviewUsers as $user) {
-                    Review::create([
-                        'user_id' => $user->id,
-                        'reviewable_type' => CarVariant::class,
-                        'reviewable_id' => $variant->id,
-                        'rating' => rand(4, 5),
-                        'title' => 'Đánh giá ' . $variant->name,
-                        'comment' => $sampleComments[array_rand($sampleComments)],
-                        'is_approved' => true,
-                        'created_at' => now()->subDays(rand(3, 60)),
-                        'updated_at' => now(),
-                    ]);
-                }
-
-                // Update aggregated rating on variant
-                $approved = $variant->approvedReviews()->get();
-                $variant->rating_count = $approved->count();
-                $variant->average_rating = $approved->avg('rating') ?: 0;
-                $variant->save();
-            });
-        }
-
-        // ---- Generate accessory reviews ----
-        if ($users->count() > 0 && $accessories->count() > 0) {
-            $accessories->take(15)->each(function (Accessory $acc) use ($users) {
-                $numReviews = rand(1, 3);
-                $picked = $users->random(min($users->count(), $numReviews));
-                $reviewUsers = $picked instanceof \Illuminate\Support\Collection ? $picked : collect([$picked]);
-
-                foreach ($reviewUsers as $user) {
-                    Review::create([
-                        'user_id' => $user->id,
-                        'reviewable_type' => Accessory::class,
-                        'reviewable_id' => $acc->id,
-                        'rating' => rand(4, 5),
-                        'title' => 'Phụ kiện chất lượng',
-                        'comment' => 'Hài lòng với chất lượng và độ hoàn thiện. Đáng tiền!',
-                        'is_approved' => true,
-                        'created_at' => now()->subDays(rand(2, 40)),
-                        'updated_at' => now(),
-                    ]);
-                }
-
-                $approved = $acc->approvedReviews()->get();
-                $acc->rating_count = $approved->count();
-                $acc->average_rating = $approved->avg('rating') ?: 0;
-                $acc->save();
-            });
+        for ($i = 0; $i < $accessoryReviewCount; $i++) {
+            if ($accessoryIds->isEmpty()) break;
+            $author = $users->random();
+            $accId = $accessoryIds->random();
+            Review::create([
+                'user_id' => $author->id,
+                'reviewable_type' => \App\Models\Accessory::class,
+                'reviewable_id' => $accId,
+                'rating' => $weightedRating(),
+                'title' => $titlesAcc[array_rand($titlesAcc)],
+                'comment' => $commentsAcc[array_rand($commentsAcc)],
+                'is_approved' => rand(1,100) <= 70,
+            ]);
         }
     }
 }
+
+

@@ -24,7 +24,7 @@
     $hasDiscount = ($variant->has_discount ?? false) && ($variant->discount_percentage ?? 0) > 0;
     $offerPrice = $hasDiscount ? (int) round($variant->price * (1 - ($variant->discount_percentage/100))) : (int) ($variant->price ?? 0);
     $availability = $variant->is_available ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock';
-    $avgForSchema = $variant->approved_reviews_avg ?? $variant->average_rating ?? 0;
+    $avgForSchema = $variant->approved_reviews_avg ?? 0;
     $aggregateRating = ($avgForSchema ?? 0) > 0 ? [
         '@type' => 'AggregateRating',
         'ratingValue' => number_format((float)$avgForSchema, 1),
@@ -209,7 +209,7 @@
                     </div>
                     
                     <!-- Rating -->
-                    @php $avgInline = isset($approvedAvg) ? $approvedAvg : ($variant->approved_reviews_avg ?? $variant->average_rating ?? 0); @endphp
+                    @php $avgInline = isset($approvedAvg) ? $approvedAvg : ($variant->approved_reviews_avg ?? 0); @endphp
                     <div id="rating-summary-inline" class="flex items-center space-x-4 {{ ($avgInline>0?'':'hidden') }}">
                         <div id="rating-stars-inline" class="flex items-center space-x-1" data-avg="{{ (float)$avgInline }}">
                             @for($i = 1; $i <= 5; $i++)
@@ -813,7 +813,7 @@
                             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                                 <!-- Rating Summary - Centered and Prominent -->
                                 <div class="lg:col-span-1 text-center bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-100">
-                                    @php $avgRating = isset($approvedAvg) ? $approvedAvg : ($variant->approved_reviews_avg ?? $variant->average_rating ?? 0); @endphp
+                                    @php $avgRating = isset($approvedAvg) ? $approvedAvg : ($variant->approved_reviews_avg ?? 0); @endphp
                                     <div id="reviews-avg" class="text-6xl font-black text-blue-600 mb-3">{{ number_format((float) $avgRating, 1) }}</div>
                                     <div id="reviews-stars" class="flex items-center justify-center gap-1 mb-3">
                                         @for($i = 1; $i <= 5; $i++)

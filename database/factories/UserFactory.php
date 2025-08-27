@@ -16,15 +16,18 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => $this->faker->name(),
             'email' => $this->faker->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => bcrypt('password'),
             'remember_token' => Str::random(10),
-            'phone' => $this->faker->numerify('09########'),
             'role' => 'user',
-            'is_verified' => true,
+            'email_verified' => true,
+            'employee_id' => null,
+            'department' => null,
+            'position' => null,
+            'hire_date' => null,
             'is_active' => true,
+            'last_login_at' => null,
         ];
     }
 
@@ -32,7 +35,7 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
-            'is_verified' => false,
+            'email_verified' => false,
         ]);
     }
 

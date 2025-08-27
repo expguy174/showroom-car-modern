@@ -3,18 +3,15 @@
 namespace Tests\Feature\Web;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 
 class TestDriveTest extends TestCase
 {
-    /**
-     * A basic feature test example.
-     */
-    public function test_example(): void
-    {
-        $response = $this->get('/');
+    use RefreshDatabase;
 
+    public function test_test_drive_page_loads(): void
+    {
+        $response = $this->get('/test-drives');
         $response->assertStatus(200);
     }
 }

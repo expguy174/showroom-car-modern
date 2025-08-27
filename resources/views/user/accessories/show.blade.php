@@ -113,7 +113,7 @@
                     @endif
                     
                     <!-- Rating -->
-                    @php $avgInline = $accessory->approved_reviews_avg ?? $accessory->average_rating ?? 0; $accCount = $accessory->approved_reviews_count ?? $accessory->reviews()->where('is_approved', true)->count(); @endphp
+                    @php $avgInline = $accessory->approved_reviews_avg ?? 0; $accCount = $accessory->approved_reviews_count ?? $accessory->reviews()->where('is_approved', true)->count(); @endphp
                     <div id="rating-summary-inline" class="flex items-center space-x-4 {{ ($avgInline>0?'':'hidden') }}">
                         <div class="flex items-center space-x-1" id="rating-stars-inline" data-avg="{{ (float)$avgInline }}">
                             @for($i = 1; $i <= 5; $i++)
@@ -416,7 +416,7 @@
                             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                                 <!-- Rating Summary - Centered and Prominent -->
                                 <div class="lg:col-span-1 text-center bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-100">
-                                    @php $avgRating = $accessory->approved_reviews_avg ?? $accessory->average_rating ?? 0; @endphp
+                                    @php $avgRating = $accessory->approved_reviews_avg ?? 0; @endphp
                                     <div id="reviews-avg" class="text-6xl font-black text-blue-600 mb-3">{{ number_format((float) $avgRating, 1) }}</div>
                                     <div id="reviews-stars" class="flex items-center justify-center gap-1 mb-3">
                                         @for($i = 1; $i <= 5; $i++)

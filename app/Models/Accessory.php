@@ -18,79 +18,68 @@ class Accessory extends Model
 
     protected $fillable = [
         'name',
-        'description',
-        'price',
-        'original_price',
-        'brand',
-        'compatibility',
-        'warranty',
-        'is_active',
-        'is_featured',
-        'average_rating',
-        'rating_count',
-        'has_discount',
-        'discount_percentage',
-        'is_bestseller',
-        'stock_quantity',
-        'stock_status',
-        'material',
-        'weight',
-        'dimensions',
-        'color_options',
-        'installation_service_available',
-        'installation_fee',
-        'warranty_months',
-        'slug',
-        'code',
         'sku',
+        'description',
         'short_description',
         'category',
         'subcategory',
         'compatible_car_brands',
         'compatible_car_models',
         'compatible_car_years',
-        'cost_price',
-        'wholesale_price',
+        'price',
+        'original_price',
         'is_on_sale',
         'sale_price',
         'sale_start_date',
         'sale_end_date',
-        'min_stock_level',
-        'max_stock_level',
-        'track_quantity',
-        'allow_backorder',
-        'backorder_quantity',
+        'stock_quantity',
+        'stock_status',
         'gallery',
-        'video_url',
-        'manual_pdf_path',
         'specifications',
         'features',
         'installation_instructions',
         'warranty_info',
+        'warranty_months',
+        'slug',
         'meta_title',
         'meta_description',
         'meta_keywords',
+        'is_featured',
+        'is_bestseller',
         'is_popular',
-        'is_new',
         'sort_order',
-        'is_visible',
-        'status',
-        'view_count',
-        'purchase_count',
+        'is_active',
+        'installation_service_available',
+        'installation_fee',
+        'installation_requirements',
+        'installation_time_minutes',
+        'warranty_terms',
+        'warranty_contact',
+        'return_policy',
+        'support_contact',
+        'return_policy_days',
+        'weight',
+        'dimensions',
+        'material',
+        'color_options',
         'is_new_arrival',
-        
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
         'original_price' => 'decimal:2',
-        'average_rating' => 'decimal:2',
-        'discount_percentage' => 'decimal:2',
         'is_active' => 'boolean',
         'is_featured' => 'boolean',
-        'has_discount' => 'boolean',
         'is_bestseller' => 'boolean',
-        'is_available' => 'boolean',
+        'is_on_sale' => 'boolean',
+        'installation_service_available' => 'boolean',
+        'is_new_arrival' => 'boolean',
+        'sale_start_date' => 'date',
+        'sale_end_date' => 'date',
+        'installation_fee' => 'decimal:2',
+        'weight' => 'decimal:2',
+        'price' => 'decimal:2',
+        'original_price' => 'decimal:2',
         // JSON columns
         'gallery' => 'array',
         'specifications' => 'array',
@@ -159,23 +148,23 @@ class Accessory extends Model
         return $pool[(int) ($seed % count($pool))];
     }
 
-    public function getStockStatusAttribute()
+    // Stock status helper based on stock_quantity
+    public function getStockStatusTextAttribute()
     {
-        return $this->is_available ? 'Còn hàng' : 'Hết hàng';
-    }
-
-    public function getDiscountAmountAttribute()
-    {
-        if ($this->has_discount && $this->discount_percentage > 0) {
-            return $this->price * ($this->discount_percentage / 100);
-        }
-        return 0;
+        $status = $this->stock_status;
+        return match ($status) {
+            'in_stock' => 'Còn hàng',
+            'low_stock' => 'Sắp hết',
+            'out_of_stock' => 'Hết hàng',
+            'discontinued' => 'Ngừng kinh doanh',
+            default => $status,
+        };
     }
 
     public function getFinalPriceAttribute()
     {
-        if ($this->has_discount && $this->discount_percentage > 0) {
-            return $this->price * (1 - $this->discount_percentage / 100);
+        if ($this->is_on_sale && $this->sale_price !== null) {
+            return $this->sale_price;
         }
         return $this->price;
     }
@@ -183,14 +172,12 @@ class Accessory extends Model
     /**
      * Tự động tính toán is_available dựa trên stock_quantity
      */
+    // Availability derived from quantity and status
     public function getIsAvailableAttribute()
     {
-        // Nếu có trường is_available trong database, ưu tiên sử dụng
-        if (isset($this->attributes['is_available'])) {
-            return (bool) $this->attributes['is_available'];
+        if ($this->stock_status === 'out_of_stock' || $this->stock_status === 'discontinued') {
+            return false;
         }
-        
-        // Tự động tính toán dựa trên stock_quantity
         return ($this->stock_quantity ?? 0) > 0;
     }
 }

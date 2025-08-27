@@ -15,14 +15,13 @@ class AccessoryController extends Controller
             ->withAvg('approvedReviews as approved_reviews_avg', 'rating')
             ->findOrFail($id);
         
-        // Lấy các phụ kiện liên quan (cùng danh mục hoặc thương hiệu)
+        // Lấy các phụ kiện liên quan (cùng danh mục/phân loại)
         $relatedAccessories = Accessory::where('is_active', true)
             ->withCount(['approvedReviews as approved_reviews_count'])
             ->withAvg('approvedReviews as approved_reviews_avg', 'rating')
             ->where('id', '!=', $accessory->id)
             ->where(function($query) use ($accessory) {
                 $query->where('category', $accessory->category)
-                      ->orWhere('brand', $accessory->brand)
                       ->orWhere('subcategory', $accessory->subcategory);
             })
             ->inRandomOrder()

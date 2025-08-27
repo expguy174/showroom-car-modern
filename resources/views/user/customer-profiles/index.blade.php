@@ -40,7 +40,7 @@
                         <i class="fas fa-user text-emerald-600 text-2xl"></i>
                     </div>
                     <div>
-                        <h2 class="text-xl font-bold text-gray-900">{{ $customerProfile->full_name }}</h2>
+                        <h2 class="text-xl font-bold text-gray-900">{{ $customerProfile->name }}</h2>
                         <div class="flex items-center gap-2 mt-1">
                             <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium {{ $customerProfile->is_vip ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800' }}">
                                 <i class="fas fa-{{ $customerProfile->is_vip ? 'crown' : 'user' }} mr-1"></i>
@@ -370,28 +370,9 @@
                             </h3>
                         </div>
                         <div class="p-6 space-y-4">
-                            <div class="flex items-center gap-3 p-3 rounded-lg {{ $customerProfile->consent_to_marketing ? 'bg-green-50 border border-green-200' : 'bg-gray-50' }}">
-                                <div class="w-6 h-6 rounded-full {{ $customerProfile->consent_to_marketing ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400' }} flex items-center justify-center">
-                                    <i class="fas fa-{{ $customerProfile->consent_to_marketing ? 'check' : 'times' }} text-xs"></i>
-                                </div>
-                                <div class="text-sm text-gray-700">Nhận thông tin khuyến mãi</div>
-                            </div>
                             
-                            <div class="flex items-center gap-3 p-3 rounded-lg {{ $customerProfile->consent_to_sms ? 'bg-green-50 border border-green-200' : 'bg-gray-50' }}">
-                                <div class="w-6 h-6 rounded-full {{ $customerProfile->consent_to_sms ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400' }} flex items-center justify-center">
-                                    <i class="fas fa-{{ $customerProfile->consent_to_sms ? 'check' : 'times' }} text-xs"></i>
-                                </div>
-                                <div class="text-sm text-gray-700">Nhận SMS</div>
-                            </div>
-                            
-                            <div class="flex items-center gap-3 p-3 rounded-lg {{ $customerProfile->consent_to_email ? 'bg-green-50 border border-green-200' : 'bg-gray-50' }}">
-                                <div class="w-6 h-6 rounded-full {{ $customerProfile->consent_to_email ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400' }} flex items-center justify-center">
-                                    <i class="fas fa-{{ $customerProfile->consent_to_email ? 'check' : 'times' }} text-xs"></i>
-                                </div>
-                                <div class="text-sm text-gray-700">Nhận email</div>
-                            </div>
                         </div>
-                        </div>
+                    </div>
 
                     <!-- Quick Actions -->
                     <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">

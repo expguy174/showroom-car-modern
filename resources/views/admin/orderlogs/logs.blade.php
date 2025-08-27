@@ -10,7 +10,7 @@
         </h6>
     </div>
     <div class="card-body">
-        <p><strong>Khách hàng:</strong> {{ $order->name }}</p>
+        <p><strong>Khách hàng:</strong> {{ optional($order->user)->name }}</p>
         <p><strong>Trạng thái hiện tại:</strong> 
             <span class="badge 
                 @if($order->status == 'pending') badge-warning

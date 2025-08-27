@@ -122,12 +122,12 @@
                         <div class="px-4 py-4 space-y-3">
                             <div class="text-sm text-gray-700">
                                 <div class="font-semibold mb-1">Người nhận</div>
-                                <div>{{ $order->name }}</div>
-                                <div class="text-gray-500">{{ $order->phone }} • {{ $order->email }}</div>
+                                <div>{{ optional($order->user)->name }}</div>
+                                <div class="text-gray-500">{{ optional($order->user)->phone }}@if(optional($order->user)->email) • {{ optional($order->user)->email }} @endif</div>
                             </div>
                             <div class="text-sm text-gray-700">
                                 <div class="font-semibold mb-1">Địa chỉ giao</div>
-                                <div>{{ $order->shippingAddress->line1 ?? $order->address }}</div>
+                                <div>{{ $order->shippingAddress->line1 ?? ($order->billingAddress->line1 ?? 'Không có thông tin') }}</div>
                             </div>
                             <div class="flex items-center justify-between text-sm text-gray-600">
                                 <span>Tạm tính</span>

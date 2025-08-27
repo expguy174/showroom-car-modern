@@ -18,6 +18,7 @@ class PaymentMethod extends Model
         'fee_flat',
         'fee_percent',
         'config',
+        'sort_order',
         'notes'
     ];
 

@@ -9,6 +9,7 @@ use App\Models\OrderItem;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Arr;
 
 class OrderController extends Controller
 {
@@ -27,8 +28,7 @@ class OrderController extends Controller
                     ->orWhere('tracking_number', 'like', "%{$search}%")
                     ->orWhere('referrer', 'like', "%{$search}%")
                     ->orWhereHas('user', function ($uq) use ($search) {
-                        $uq->where('name', 'like', "%{$search}%")
-                           ->orWhere('email', 'like', "%{$search}%");
+                        $uq->where('email', 'like', "%{$search}%");
                     });
             });
         }
@@ -60,19 +60,8 @@ class OrderController extends Controller
     {
         $order = Order::findOrFail($id);
 
-        $request->merge([
-            'name' => optional($order->user)->name,
-            'email' => optional($order->user)->email,
-            'phone' => optional($order->user)->phone,
-            'address' => optional($order->shippingAddress)->address ?? optional($order->billingAddress)->address,
-        ]);
-
         $validated = $request->validate([
             'user_id' => 'nullable|exists:users,id',
-            'phone' => 'required|string',
-            'name' => 'required|string',
-            'email' => 'required|email',
-            'address' => 'required|string',
             'note' => 'nullable|string',
             'status' => 'required|in:' . implode(',', \App\Models\Order::STATUSES),
             'payment_method_id' => 'nullable|exists:payment_methods,id',
@@ -84,7 +73,9 @@ class OrderController extends Controller
             'payment_method_id' => $order->payment_method_id,
         ];
 
-        $order->update($validated);
+        // Only persist columns that actually exist on orders table
+        $data = Arr::only($validated, ['user_id', 'note', 'status', 'payment_method_id']);
+        $order->update($data);
 
         $after = [
             'status' => $order->status,
@@ -154,20 +145,7 @@ class OrderController extends Controller
         $oldStatus = $order->status;
 
         if ($oldStatus !== 'cancelled') {
-            // Restock items
-            foreach ($order->items as $it) {
-                if ($it->item_type === 'car_variant') {
-                    $variant = \App\Models\CarVariant::find($it->item_id);
-                    if ($variant) {
-                        if ($it->color_id) {
-                            $color = $variant->colors()->find($it->color_id);
-                            if ($color) { $color->increment('stock_quantity', (int) $it->quantity); }
-                        } else {
-                            $variant->increment('stock_quantity', (int) $it->quantity);
-                        }
-                    }
-                }
-            }
+            // Inventory restock removed as schema no longer tracks per-color or variant stock quantities
             $order->update(['status' => 'cancelled']);
 
             OrderLog::create([

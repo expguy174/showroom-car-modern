@@ -34,10 +34,10 @@
     <div class="card-body">
         <div class="row mb-4">
             <div class="col-md-6">
-                <p><strong>Họ tên:</strong> {{ $order->name }}</p>
-                <p><strong>Số điện thoại:</strong> {{ $order->phone }}</p>
-                <p><strong>Email:</strong> {{ $order->email }}</p>
-                <p><strong>Địa chỉ:</strong> {{ $order->address }}</p>
+                <p><strong>Họ tên:</strong> {{ optional($order->user)->name }}</p>
+                <p><strong>Số điện thoại:</strong> {{ optional($order->user)->phone }}</p>
+                <p><strong>Email:</strong> {{ optional($order->user)->email }}</p>
+                <p><strong>Địa chỉ:</strong> {{ $order->shippingAddress->line1 ?? $order->billingAddress->line1 ?? 'Không có thông tin' }}</p>
             </div>
             <div class="col-md-6">
                 <p><strong>Phương thức thanh toán:</strong> {{ optional($order->paymentMethod)->name ?? 'N/A' }}</p>

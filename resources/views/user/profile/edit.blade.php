@@ -201,7 +201,7 @@
                                     @foreach($user->addresses()->orderByDesc('is_default')->take(4)->get() as $addr)
                                     <div class="p-4 rounded-xl border border-gray-200 bg-gradient-to-br from-gray-50 to-blue-50 hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 hover:shadow-md">
                                         <div class="flex items-center justify-between mb-3">
-                                            <div class="text-sm font-semibold text-gray-800">{{ $addr->full_name }}</div>
+                                            <div class="text-sm font-semibold text-gray-800">{{ $addr->contact_name }}</div>
                 @if($addr->is_default)
                                             <span class="addr-default-badge px-3 py-1 text-xs rounded-full bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-700 font-medium border border-emerald-200">
                                                 <i class="fas fa-star mr-1"></i>Mặc định

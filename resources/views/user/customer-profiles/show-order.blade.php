@@ -266,7 +266,7 @@
                                 </div>
                                 <div>
                                     <div class="text-sm text-gray-500">Họ và tên</div>
-                                    <div class="font-semibold text-gray-900">{{ $order->name }}</div>
+                                    <div class="font-semibold text-gray-900">{{ optional($order->user)->name }}</div>
                                 </div>
                             </div>
                             <div class="flex items-center gap-3">
@@ -275,17 +275,17 @@
                                 </div>
                                 <div>
                                     <div class="text-sm text-gray-500">Số điện thoại</div>
-                                    <div class="font-semibold text-gray-900">{{ $order->phone }}</div>
+                                    <div class="font-semibold text-gray-900">{{ optional($order->user)->phone }}</div>
                                 </div>
                             </div>
-                            @if($order->email)
+                            @if(optional($order->user)->email)
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center">
                                     <i class="fas fa-envelope"></i>
                                 </div>
                                 <div>
                                     <div class="text-sm text-gray-500">Email</div>
-                                    <div class="font-semibold text-gray-900">{{ $order->email }}</div>
+                                    <div class="font-semibold text-gray-900">{{ optional($order->user)->email }}</div>
                                 </div>
                             </div>
                             @endif
@@ -295,7 +295,7 @@
                                 </div>
                                 <div>
                                     <div class="text-sm text-gray-500">Địa chỉ giao hàng</div>
-                                    <div class="font-semibold text-gray-900">{{ $order->shippingAddress->line1 ?? $order->address ?? 'Không có thông tin' }}</div>
+                                    <div class="font-semibold text-gray-900">{{ $order->shippingAddress->line1 ?? ($order->billingAddress->line1 ?? 'Không có thông tin') }}</div>
                                     @if($order->shippingAddress && ($order->shippingAddress->district || $order->shippingAddress->province))
                                         <div class="text-sm text-gray-600 mt-1">
                                             {{ $order->shippingAddress->district ? $order->shippingAddress->district . ', ' : '' }}{{ $order->shippingAddress->province }}

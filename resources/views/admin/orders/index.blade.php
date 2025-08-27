@@ -33,8 +33,8 @@
                     @forelse ($orders as $order)
                         <tr>
                             <td class="text-center">{{ $order->id }}</td>
-                            <td>{{ $order->name }}</td>
-                            <td>{{ $order->phone }}</td>
+                            <td>{{ optional($order->user)->name }}</td>
+                            <td>{{ optional($order->user)->phone }}</td>
                             <td>{{ number_format($order->total_price, 0, ',', '.') }} đ</td>
                             <td class="text-center">
                                 @php

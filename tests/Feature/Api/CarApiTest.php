@@ -3,18 +3,15 @@
 namespace Tests\Feature\Api;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 
 class CarApiTest extends TestCase
 {
-    /**
-     * A basic feature test example.
-     */
-    public function test_example(): void
-    {
-        $response = $this->get('/');
+    use RefreshDatabase;
 
+    public function test_list_car_brands_endpoint(): void
+    {
+        $response = $this->getJson('/api/brands');
         $response->assertStatus(200);
     }
 }

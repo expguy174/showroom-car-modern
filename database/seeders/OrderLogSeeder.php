@@ -2,181 +2,43 @@
 
 namespace Database\Seeders;
 
-use App\Models\OrderLog;
-use App\Models\Order;
-use App\Models\User;
 use Illuminate\Database\Seeder;
+use App\Models\Order;
+use App\Models\OrderLog;
+use Illuminate\Support\Facades\Auth;
 
 class OrderLogSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        $orders = Order::all();
-        $users = User::all();
-
-        $orderLogs = [
-            // VIP Customer Order 1 Logs
-            [
-                'order_id' => $orders->where('order_number', 'ORD-2024-001')->first()->id,
-                'user_id' => $users->where('email', 'admin@showroom.com')->first()->id,
-                'action' => 'status_changed',
-                'details' => ['from_status' => null, 'to_status' => 'pending'],
-                'message' => 'Đơn hàng được tạo bởi khách hàng VIP',
-                'ip_address' => '192.168.1.100',
-                'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'created_at' => now()->subDays(30),
-                'updated_at' => now()->subDays(30)
-            ],
-            [
-                'order_id' => $orders->where('order_number', 'ORD-2024-001')->first()->id,
-                'user_id' => $users->where('email', 'admin@showroom.com')->first()->id,
-                'action' => 'status_changed',
-                'details' => ['from_status' => 'pending', 'to_status' => 'confirmed'],
-                'message' => 'Đơn hàng được xác nhận và chuyển sang xử lý',
-                'ip_address' => '192.168.1.100',
-                'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'created_at' => now()->subDays(29),
-                'updated_at' => now()->subDays(29)
-            ],
-            [
-                'order_id' => $orders->where('order_number', 'ORD-2024-001')->first()->id,
-                'user_id' => $users->where('email', 'admin@showroom.com')->first()->id,
-                'action' => 'status_changed',
-                'details' => ['from_status' => 'confirmed', 'to_status' => 'shipping'],
-                'message' => 'Đơn hàng đang được chuẩn bị giao',
-                'ip_address' => '192.168.1.100',
-                'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'created_at' => now()->subDays(28),
-                'updated_at' => now()->subDays(28)
-            ],
-            [
-                'order_id' => $orders->where('order_number', 'ORD-2024-001')->first()->id,
-                'user_id' => $users->where('email', 'admin@showroom.com')->first()->id,
-                'action' => 'status_changed',
-                'details' => ['from_status' => 'shipping', 'to_status' => 'delivered'],
-                'message' => 'Đơn hàng đã được giao thành công',
-                'ip_address' => '192.168.1.100',
-                'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'created_at' => now()->subDays(27),
-                'updated_at' => now()->subDays(27)
-            ],
-
-            // VIP Customer Order 2 Logs
-            [
-                'order_id' => $orders->where('order_number', 'ORD-2024-002')->first()->id,
-                'user_id' => $users->where('email', 'vip@example.com')->first()->id,
-                'action' => 'status_changed',
-                'details' => ['from_status' => null, 'to_status' => 'pending'],
-                'message' => 'Đơn hàng được tạo online bởi khách hàng VIP',
-                'ip_address' => '203.162.1.50',
-                'user_agent' => 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15',
-                'created_at' => now()->subDays(5),
-                'updated_at' => now()->subDays(5)
-            ],
-            [
-                'order_id' => $orders->where('order_number', 'ORD-2024-002')->first()->id,
-                'user_id' => $users->where('email', 'admin@showroom.com')->first()->id,
-                'action' => 'status_changed',
-                'details' => ['from_status' => 'pending', 'to_status' => 'confirmed'],
-                'message' => 'Đơn hàng được xác nhận, chờ thanh toán',
-                'ip_address' => '192.168.1.100',
-                'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'created_at' => now()->subDays(4),
-                'updated_at' => now()->subDays(4)
-            ],
-
-            // Regular Customer 1 Order Logs
-            [
-                'order_id' => $orders->where('order_number', 'ORD-2024-003')->first()->id,
-                'user_id' => $users->where('email', 'customer1@example.com')->first()->id,
-                'action' => 'status_changed',
-                'details' => ['from_status' => null, 'to_status' => 'pending'],
-                'message' => 'Đơn hàng được tạo online',
-                'ip_address' => '203.162.1.51',
-                'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'created_at' => now()->subDays(45),
-                'updated_at' => now()->subDays(45)
-            ],
-            [
-                'order_id' => $orders->where('order_number', 'ORD-2024-003')->first()->id,
-                'user_id' => $users->where('email', 'sales1@showroom.com')->first()->id,
-                'action' => 'status_changed',
-                'details' => ['from_status' => 'pending', 'to_status' => 'confirmed'],
-                'message' => 'Đơn hàng được xác nhận bởi nhân viên bán hàng',
-                'ip_address' => '192.168.1.101',
-                'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'created_at' => now()->subDays(44),
-                'updated_at' => now()->subDays(44)
-            ],
-            [
-                'order_id' => $orders->where('order_number', 'ORD-2024-003')->first()->id,
-                'user_id' => $users->where('email', 'sales1@showroom.com')->first()->id,
-                'action' => 'status_changed',
-                'details' => ['from_status' => 'confirmed', 'to_status' => 'shipping'],
-                'message' => 'Đơn hàng đang được chuẩn bị giao',
-                'ip_address' => '192.168.1.101',
-                'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'created_at' => now()->subDays(10),
-                'updated_at' => now()->subDays(10)
-            ],
-            [
-                'order_id' => $orders->where('order_number', 'ORD-2024-003')->first()->id,
-                'user_id' => $users->where('email', 'sales1@showroom.com')->first()->id,
-                'action' => 'status_changed',
-                'details' => ['from_status' => 'shipping', 'to_status' => 'delivered'],
-                'message' => 'Đơn hàng đã được giao thành công',
-                'ip_address' => '192.168.1.101',
-                'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            ],
-
-            // Regular Customer 2 Order Logs
-            [
-                'order_id' => $orders->where('order_number', 'ORD-2024-004')->first()->id,
-                'user_id' => $users->where('email', 'customer2@example.com')->first()->id,
-                'action' => 'status_changed',
-                'details' => ['from_status' => null, 'to_status' => 'pending'],
-                'message' => 'Đơn hàng được tạo qua điện thoại',
-                'ip_address' => '203.162.1.52',
-                'user_agent' => 'Mozilla/5.0 (Android 11; Mobile) AppleWebKit/537.36',
-            ],
-            [
-                'order_id' => $orders->where('order_number', 'ORD-2024-004')->first()->id,
-                'user_id' => $users->where('email', 'sales2@showroom.com')->first()->id,
-                'action' => 'status_changed',
-                'details' => ['from_status' => 'pending', 'to_status' => 'confirmed'],
-                'message' => 'Đơn hàng được xác nhận, chờ thanh toán',
-                'ip_address' => '192.168.1.102',
-                'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            ],
-
-            // Cancelled Order Logs
-            [
-                'order_id' => $orders->where('order_number', 'ORD-2024-005')->first()->id,
-                'user_id' => $users->where('email', 'customer2@example.com')->first()->id,
-                'action' => 'status_changed',
-                'details' => ['from_status' => null, 'to_status' => 'pending'],
-                'message' => 'Đơn hàng được tạo online',
-                'ip_address' => '203.162.1.52',
-                'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            ],
-            [
-                'order_id' => $orders->where('order_number', 'ORD-2024-005')->first()->id,
-                'user_id' => $users->where('email', 'customer2@example.com')->first()->id,
-                'action' => 'status_changed',
-                'details' => ['from_status' => 'pending', 'to_status' => 'cancelled'],
-                'message' => 'Đơn hàng bị hủy do thay đổi kế hoạch',
-                'ip_address' => '203.162.1.52',
-                'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'created_at' => now()->subDays(9),
-                'updated_at' => now()->subDays(9)
-            ]
-        ];
-
-        foreach ($orderLogs as $orderLog) {
-            OrderLog::create($orderLog);
+        foreach (Order::cursor() as $order) {
+            $flow = ['pending','confirmed','shipping','delivered'];
+            $current = 'pending';
+            OrderLog::create([
+                'order_id' => $order->id,
+                'user_id' => null,
+                'action' => 'order_created',
+                'details' => json_encode(['from' => null, 'to' => 'pending']),
+                'message' => 'Đơn hàng được tạo.',
+                'ip_address' => '127.0.0.1',
+                'user_agent' => 'Seeder',
+            ]);
+            foreach ($flow as $next) {
+                if ($current === $next) continue;
+                OrderLog::create([
+                    'order_id' => $order->id,
+                    'user_id' => null,
+                    'action' => 'status_changed',
+                    'details' => json_encode(['from' => $current, 'to' => $next]),
+                    'message' => 'Đơn chuyển từ ' . $current . ' sang ' . $next,
+                    'ip_address' => '127.0.0.1',
+                    'user_agent' => 'Seeder',
+                ]);
+                $current = $next;
+                if ($order->status === $next) break;
+            }
         }
     }
 }
+
+

@@ -3,18 +3,15 @@
 namespace Tests\Feature\Admin;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 
 class OrdersAdminTest extends TestCase
 {
-    /**
-     * A basic feature test example.
-     */
-    public function test_example(): void
-    {
-        $response = $this->get('/');
+    use RefreshDatabase;
 
+    public function test_admin_orders_index_loads(): void
+    {
+        $response = $this->get('/admin/orders');
         $response->assertStatus(200);
     }
 }

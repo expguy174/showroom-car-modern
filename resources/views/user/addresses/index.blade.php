@@ -222,7 +222,7 @@
                                         </div>
                                         
                                         <div class="space-y-2 mb-4">
-                                            <div class="text-sm text-gray-600">{{ $addr->full_name }}</div>
+                                            <div class="text-sm text-gray-600">{{ $addr->contact_name }}</div>
                                             <div class="text-sm text-gray-600">{{ $addr->address }}</div>
                                             @if($addr->city)
                                             <div class="text-sm text-gray-600">{{ $addr->city }}{{ $addr->state ? ', ' . $addr->state : '' }}</div>

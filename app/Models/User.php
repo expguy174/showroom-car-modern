@@ -12,78 +12,36 @@ class User extends Authenticatable
     use HasFactory, Notifiable, SoftDeletes;
 
     protected $fillable = [
-        'name', 
-        'email', 
-        'password', 
-        'phone', 
+        'email',
+        'password',
         'role',
-        'avatar_path', 
-        'is_verified',
-        'verification_token',
-        'email_verification_sent_at',
-        'phone_verified_at',
-        'two_factor_enabled',
-        'two_factor_code',
-        'two_factor_expires_at',
+        'email_verified',
         'employee_id',
         'department',
         'position',
         'hire_date',
         'is_active',
-        'last_login_at'
+        'last_login_at',
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
-        'verification_token',
-        'two_factor_code',
     ];
 
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'phone_verified_at' => 'datetime',
-        'two_factor_enabled' => 'boolean',
-        'two_factor_expires_at' => 'datetime',
+        'email_verified' => 'boolean',
         'hire_date' => 'date',
-        'is_verified' => 'boolean',
         'is_active' => 'boolean',
         'last_login_at' => 'datetime',
-        'email_verification_sent_at' => 'datetime',
     ];
 
     protected static function booted(): void
     {
-        static::creating(function (User $user): void {
-            if (array_key_exists('is_admin', $user->attributes ?? [])) {
-                $val = (bool) ($user->attributes['is_admin'] ?? false);
-                if ($val) {
-                    $user->role = 'admin';
-                }
-                unset($user->attributes['is_admin']);
-            }
-        });
-        static::updating(function (User $user): void {
-            if (array_key_exists('is_admin', $user->attributes ?? [])) {
-                $val = (bool) ($user->attributes['is_admin'] ?? false);
-                if ($val) {
-                    $user->role = 'admin';
-                }
-                unset($user->attributes['is_admin']);
-            }
-        });
+        // No-op hooks; removed legacy is_admin mapping
     }
 
-    public function setIsAdminAttribute($value): void
-    {
-        if ((bool) $value) {
-            $this->attributes['role'] = 'admin';
-        }
-        // Do not persist non-existent column
-        if (isset($this->attributes['is_admin'])) {
-            unset($this->attributes['is_admin']);
-        }
-    }
 
     public function addresses()
     {
@@ -105,9 +63,9 @@ class User extends Authenticatable
         return $this->hasMany(Order::class);
     }
 
-    public function customerProfile()
+    public function userProfile()
     {
-        return $this->hasOne(CustomerProfile::class);
+        return $this->hasOne(UserProfile::class);
     }
 
     public function blogs()
@@ -149,22 +107,6 @@ class User extends Authenticatable
     public function installments()
     {
         return $this->hasMany(Installment::class);
-    }
-
-    // Staff relationships
-    public function assignedCustomers()
-    {
-        return $this->hasMany(CustomerProfile::class, 'assigned_sales_person_id');
-    }
-
-    public function assignedServiceAppointments()
-    {
-        return $this->hasMany(ServiceAppointment::class, 'assigned_technician_id');
-    }
-
-    public function qualityCheckedAppointments()
-    {
-        return $this->hasMany(ServiceAppointment::class, 'quality_check_by');
     }
 
     // Order audit relationships

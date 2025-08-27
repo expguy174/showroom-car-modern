@@ -48,7 +48,7 @@ class AddressController extends Controller
 
         $address = new Address();
         $address->user_id = $user->id;
-        $address->full_name = $request->name;
+        $address->contact_name = $request->name;
         $address->phone = $request->phone;
         $address->address = $fullAddress;
         $address->city = $request->province ?: 'Unknown';
@@ -95,7 +95,7 @@ class AddressController extends Controller
         ]);
         $fullAddress = implode(', ', $addressParts);
 
-        $address->full_name = $request->name;
+        $address->contact_name = $request->name;
         $address->phone = $request->phone;
         $address->address = $fullAddress;
         $address->city = $request->province ?: 'Unknown';

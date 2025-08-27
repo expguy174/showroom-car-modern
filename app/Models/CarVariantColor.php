@@ -18,10 +18,8 @@ class CarVariantColor extends Model
         'color_type',
         'availability',
         'price_adjustment',
-        'stock_quantity',
         'is_free',
         'description',
-        'material',
         'is_popular',
         'is_active',
         'sort_order',
@@ -32,7 +30,6 @@ class CarVariantColor extends Model
         'is_free' => 'boolean',
         'is_popular' => 'boolean',
         'is_active' => 'boolean',
-        'stock_quantity' => 'integer',
         'sort_order' => 'integer',
     ];
 

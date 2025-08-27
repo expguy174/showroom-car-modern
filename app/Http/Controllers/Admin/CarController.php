@@ -128,8 +128,7 @@ class CarController extends Controller
 
         $car->update($data);
         
-        // Cập nhật thống kê
-        $this->updateBrandStatistics($car);
+        // Bỏ cập nhật thống kê do bảng brand không còn cột tổng
         
         return redirect()->route('admin.cars.index')->with('success', 'Cập nhật hãng xe thành công!');
     }
@@ -154,14 +153,5 @@ class CarController extends Controller
     /**
      * Cập nhật thống kê cho brand
      */
-    private function updateBrandStatistics(CarBrand $brand)
-    {
-        $totalModels = $brand->carModels()->count();
-        $totalVariants = $brand->carModels()->withCount('carVariants')->get()->sum('car_variants_count');
-        
-        $brand->update([
-            'total_models' => $totalModels,
-            'total_variants' => $totalVariants
-        ]);
-    }
+    private function updateBrandStatistics(CarBrand $brand) {}
 }

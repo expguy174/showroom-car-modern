@@ -27,7 +27,7 @@ class OrderItemFactory extends Factory
                 ?? Accessory::factory()->create()->id;
         }
 
-        $price = $this->faker->numberBetween(100000, 5000000);
+        $price = $this->faker->randomFloat(2, 100000, 5000000);
         $qty = $this->faker->numberBetween(1, 5);
 
         return [
@@ -36,13 +36,13 @@ class OrderItemFactory extends Factory
             'item_id' => $itemId,
             'color_id' => null,
             'item_name' => $this->faker->words(3, true),
-            'item_sku' => $this->faker->bothify('SKU-####'),
-            'item_metadata' => [],
+            'item_sku' => $this->faker->optional()->bothify('SKU-####'),
+            'item_metadata' => null,
             'quantity' => $qty,
             'price' => $price,
             'tax_amount' => 0,
             'discount_amount' => 0,
-            'line_total' => $price * $qty,
+            'line_total' => (float) number_format($price * $qty, 2, '.', ''),
         ];
     }
 }

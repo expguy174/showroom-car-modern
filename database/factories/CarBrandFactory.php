@@ -31,21 +31,19 @@ class CarBrandFactory extends Factory
             'name' => $name,
             'slug' => Str::slug($name),
             'logo_path' => null,
-            'country' => $this->faker->country(),
-            'description' => $this->faker->paragraph(),
-            'meta_title' => $this->faker->sentence(),
-            'meta_description' => $this->faker->sentence(10),
-            'keywords' => $this->faker->words(3, true),
-            'founded_year' => $this->faker->numberBetween(1900, 2020),
-            'website' => $this->faker->url(),
-            'phone' => $this->faker->phoneNumber(),
-            'email' => $this->faker->companyEmail(),
-            'address' => $this->faker->address(),
-            'is_active' => $this->faker->boolean(80), // 80% chance of being active
-            'is_featured' => $this->faker->boolean(20), // 20% chance of being featured
+            'country' => $this->faker->optional()->country(),
+            'description' => $this->faker->optional()->paragraph(),
+            'meta_title' => $this->faker->optional()->sentence(),
+            'meta_description' => $this->faker->optional()->sentence(10),
+            'keywords' => $this->faker->optional()->words(3, true),
+            'founded_year' => $this->faker->optional()->numberBetween(1900, 2020),
+            'website' => $this->faker->optional()->url(),
+            'phone' => $this->faker->optional()->phoneNumber(),
+            'email' => $this->faker->optional()->companyEmail(),
+            'address' => $this->faker->optional()->address(),
+            'is_active' => true,
+            'is_featured' => false,
             'sort_order' => $this->faker->numberBetween(0, 100),
-            'total_models' => 0,
-            'total_variants' => 0,
         ];
     }
 

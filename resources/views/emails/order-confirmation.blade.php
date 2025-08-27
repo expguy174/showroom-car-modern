@@ -57,7 +57,7 @@
     </div>
 
     <div class="content">
-        <h2>Xin chào {{ $order->name }},</h2>
+        <h2>Xin chào {{ optional($order->user)->name }},</h2>
         
         <p>Cảm ơn bạn đã đặt hàng tại Showroom Car. Đơn hàng của bạn đã được xác nhận và đang được xử lý.</p>
 
@@ -66,7 +66,7 @@
             
             <div class="item">
                 <span><strong>Mã đơn hàng:</strong></span>
-                <span>#{{ $order->id }}</span>
+                <span>#{{ $order->order_number ?? $order->id }}</span>
             </div>
             
             <div class="item">
@@ -122,12 +122,12 @@
 
         <div class="order-details">
             <h3>📍 Thông tin giao hàng</h3>
-            <p><strong>Người nhận:</strong> {{ $order->name }}</p>
-            <p><strong>Số điện thoại:</strong> {{ $order->phone }}</p>
-            @if($order->email)
-            <p><strong>Email:</strong> {{ $order->email }}</p>
+            <p><strong>Người nhận:</strong> {{ optional($order->user)->name }}</p>
+            <p><strong>Số điện thoại:</strong> {{ optional($order->user)->phone }}</p>
+            @if(optional($order->user)->email)
+            <p><strong>Email:</strong> {{ optional($order->user)->email }}</p>
             @endif
-            <p><strong>Địa chỉ:</strong> {{ $order->address }}</p>
+            <p><strong>Địa chỉ:</strong> {{ $order->shippingAddress->line1 ?? ($order->billingAddress->line1 ?? 'Không có thông tin') }}</p>
             @if($order->note)
             <p><strong>Ghi chú:</strong> {{ $order->note }}</p>
             @endif

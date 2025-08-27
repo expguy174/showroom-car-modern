@@ -16,15 +16,15 @@ class RefundFactory extends Factory
     public function definition(): array
     {
         $status = $this->faker->randomElement(['pending','processing','refunded','failed']);
+        $paymentTransactionId = PaymentTransaction::query()->inRandomOrder()->value('id')
+            ?? PaymentTransaction::factory()->create()->id;
         return [
-            'payment_transaction_id' => PaymentTransaction::query()->inRandomOrder()->value('id'),
+            'payment_transaction_id' => $paymentTransactionId,
             'amount' => $this->faker->numberBetween(100000, 10000000),
             'reason' => $this->faker->sentence(8),
             'status' => $status,
             'processed_at' => in_array($status, ['processing','refunded']) ? now() : null,
-            'meta' => [
-                'refund_method' => $this->faker->randomElement(['cash','bank_transfer']),
-            ],
+            'meta' => null,
         ];
     }
 }

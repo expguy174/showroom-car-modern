@@ -9,7 +9,7 @@ use App\Models\CarVariant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
-class BrandController extends Controller
+class CarBrandController extends Controller
 {
     /**
      * Display a listing of all car brands
@@ -32,7 +32,7 @@ class BrandController extends Controller
 
             return view('user.car-brands.index', compact('brands', 'groupedBrands'));
         } catch (\Exception $e) {
-            Log::error('Error in BrandController@index: ' . $e->getMessage());
+            Log::error('Error in CarBrandController@index: ' . $e->getMessage());
             return view('user.car-brands.index', [
                 'brands' => collect(),
                 'groupedBrands' => collect()
@@ -101,7 +101,7 @@ class BrandController extends Controller
 
             return view('user.car-brands.show', compact('brand', 'featuredVariants', 'models', 'stats', 'brandVariants', 'totalModelsCount'));
         } catch (\Exception $e) {
-            Log::error('Error in BrandController@show: ' . $e->getMessage());
+            Log::error('Error in CarBrandController@show: ' . $e->getMessage());
             abort(404, 'Không tìm thấy hãng xe này.');
         }
     }
@@ -167,3 +167,5 @@ class BrandController extends Controller
         }
     }
 }
+
+

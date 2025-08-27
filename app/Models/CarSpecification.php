@@ -9,6 +9,8 @@ class CarSpecification extends Model
 {
     use HasFactory;
 
+    protected $table = 'car_variant_specifications';
+
     protected $fillable = [
         'car_variant_id',
         'category',

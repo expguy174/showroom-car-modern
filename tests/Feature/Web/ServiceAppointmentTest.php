@@ -3,18 +3,15 @@
 namespace Tests\Feature\Web;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 
 class ServiceAppointmentTest extends TestCase
 {
-    /**
-     * A basic feature test example.
-     */
-    public function test_example(): void
-    {
-        $response = $this->get('/');
+    use RefreshDatabase;
 
+    public function test_service_page_loads(): void
+    {
+        $response = $this->get('/services');
         $response->assertStatus(200);
     }
 }
