@@ -417,64 +417,105 @@
 
 /* Cart table styles */
 .cart-table {
+    border-collapse: collapse;
     width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-}
-.cart-table thead th {
-    font-weight: 700;
-    border-bottom: 1px solid #e5e7eb;
-}
-.cart-table td, .cart-table th {
-    padding: 1rem 1.5rem;
-    vertical-align: middle;
-}
-.cart-table tbody tr:hover {
-    background: #fafafa;
 }
 
-/* Laptop <=1280px: giữ layout bảng nhưng thu gọn khoảng cách */
-@media (max-width: 1280px) and (min-width: 1025px) {
-    .cart-table td, .cart-table th { padding: .75rem 1rem; }
-    .cart-table th:nth-child(2), .cart-table td:nth-child(2) { min-width: 220px; }
+.cart-table th,
+.cart-table td {
+    padding: 1rem;
+    text-align: left;
+    vertical-align: top;
 }
 
-/* Remove previous fixed widths; let content define width with min constraints */
-.cart-table th, .cart-table td { width: auto; }
-.cart-table th:nth-child(1), .cart-table td:nth-child(1) { min-width: 90px; }   /* Ảnh */
-.cart-table th:nth-child(2), .cart-table td:nth-child(2) { min-width: 240px; }  /* Thông tin */
-.cart-table th:nth-child(3), .cart-table td:nth-child(3) { min-width: 130px; }  /* Số lượng */
-.cart-table th:nth-child(4), .cart-table td:nth-child(4) { min-width: 130px; }  /* Giá */
-.cart-table th:nth-child(5), .cart-table td:nth-child(5) { min-width: 150px; }  /* Tổng */
-.cart-table th:nth-child(6), .cart-table td:nth-child(6) { min-width: 90px; }   /* Thao tác */
+.cart-table th {
+    background-color: #f9fafb;
+    font-weight: 600;
+    color: #374151;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+}
 
-/* Tablet & below stack */
-@media (max-width: 640px) {
-    .cart-table thead { display: none; }
-    .cart-table, .cart-table tbody, .cart-table tr, .cart-table td {
-        display: block;
-        width: 100%;
+/* Responsive behavior */
+@media (max-width: 768px) {
+    /* Hide desktop layout completely on mobile */
+    .desktop-only {
+        display: none !important;
     }
-    .cart-table tr { margin-bottom: 1rem; border: 1px solid #e5e7eb; border-radius: 0.75rem; overflow: hidden; }
-    .cart-table td { padding: 0.75rem 1rem; }
-    .cart-table td[data-label]::before {
-        content: attr(data-label);
-        display: block;
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        color: #6b7280;
-        margin-bottom: 0.25rem;
+    
+    /* Show mobile layout on mobile */
+    .mobile-only {
+        display: table-row !important;
+    }
+    
+    /* Hide table headers on mobile */
+    .cart-table thead {
+        display: none;
+    }
+    
+    /* Mobile-specific cart item styling */
+    .cart-item-row td {
+        padding: 0;
+    }
+    
+    /* Ensure mobile cards are properly spaced */
+    .cart-item-row:not(:last-child) {
+        margin-bottom: 1rem;
+    }
+}
+
+@media (min-width: 769px) {
+    /* Hide mobile layout completely on desktop */
+    .mobile-only {
+        display: none !important;
+    }
+    
+    /* Show desktop layout on desktop */
+    .desktop-only {
+        display: table-row !important;
+    }
+    
+    /* Show table headers on desktop */
+    .cart-table thead {
+        display: table-header-group;
     }
 }
 
 /* Mobile touch tweaks */
+@media (max-width: 768px) {
+    .cart-qty-input {
+        font-size: 0.875rem;
+        padding: 0.5rem;
+    }
+    
+    .quantity-control {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+    }
+    
+    /* Separator between items */
+    .cart-separator {
+        background-color: #f9fafb; /* gray-50 */
+        border-bottom: 1px solid #f3f4f6; /* gray-100 */
+    }
+}
+
+/* Additional mobile optimizations */
 @media (max-width: 640px) {
-    .cart-table td { padding: 0.75rem 0.875rem; }
-    .cart-table .quantity-control { padding: .375rem .625rem; }
-    .cart-table .cart-qty-input { width: 3.25rem; }
-    .btn-delete { width: 40px; height: 40px; }
-    /* Ảnh nhỏ hơn để tiết kiệm chỗ */
-    .cart-table td[data-label='Ảnh'] a { width: 5rem !important; height: 4rem !important; }
+    .cart-item-row .bg-white {
+        margin-left: 0.5rem;
+        margin-right: 0.5rem;
+    }
+    
+    .cart-item-row .p-4 {
+        padding: 0.75rem;
+    }
+    
+    .cart-item-row .px-4 {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
 }
 
 /* Centered table variant */

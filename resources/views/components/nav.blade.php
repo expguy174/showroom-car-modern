@@ -38,7 +38,11 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                         <div class="p-3 grid grid-cols-3 gap-2">
                             @forelse($navBrands as $brand)
                             <a href="{{ route('car-brands.show', $brand->id) }}" class="flex items-center gap-3 p-2 rounded-lg hover:bg-white transition-colors duration-150">
-                                <img src="{{ $brand->logo_path }}" alt="{{ $brand->name }}" class="w-8 h-8 object-contain rounded" loading="lazy" onerror="this.onerror=null;this.src='https://placehold.co/40x40?text=%2B';" />
+                                @php
+                                    $logoRaw = $brand->logo_url ?? $brand->logo_path ?? null;
+                                    $logoSrc = $logoRaw ? (filter_var($logoRaw, FILTER_VALIDATE_URL) ? $logoRaw : asset('storage/'.ltrim($logoRaw,'/'))) : null;
+                                @endphp
+                                <img src="{{ $logoSrc }}" alt="{{ $brand->name }}" class="w-8 h-8 object-contain rounded" loading="lazy" onerror="this.onerror=null;this.src='https://placehold.co/40x40?text=%2B';" />
                                 <div class="min-w-0">
                                     <div class="font-semibold text-sm truncate">{{ $brand->name }}</div>
                                     @php $modelsCount = $brand->relationLoaded('carModels') ? $brand->carModels->count() : ($brand->carModels()->count()); @endphp
@@ -115,7 +119,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                 {{-- Search (Desktop) --}}
                 <form action="{{ route('products.index') }}" method="GET" class="relative hidden lg:block self-center">
                     <div class="relative h-10 flex items-center">
-                        <input id="desktop-search-input" name="q" type="search" class="search-input h-10 w-56 xl:w-72 rounded-lg border border-gray-200 pl-10 pr-10 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Tìm kiếm xe, hãng, model..." autocomplete="off" />
+                        <input id="desktop-search-input" name="q" type="search" class="search-input h-10 w-56 xl:w-72 rounded-lg border border-gray-200 pl-10 pr-10 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Tìm kiếm" autocomplete="off" />
                         <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                         <button type="submit" class="absolute right-1 top-1/2 -translate-y-1/2 px-2 py-1 text-indigo-600 hover:text-indigo-800">
                             <i class="fas fa-arrow-right"></i>
@@ -194,7 +198,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                 <div class="profile-dropdown-wrapper dropdown-group hidden lg:block">
                     <button class="px-2.5 py-2 rounded-lg border border-gray-200 text-sm text-gray-700 hover:text-white hover:bg-gray-900 inline-flex items-center gap-2">
                         <i class="fas fa-user-circle"></i>
-                        <span class="nav-label">@auth {{ \Illuminate\Support\Str::limit(auth()->user()->name, 14) }} @else Tài khoản @endauth</span>
+                        <span class="nav-label">@auth {{ \Illuminate\Support\Str::limit(optional(auth()->user()->userProfile)->name ?? 'Tài khoản', 14) }} @else Tài khoản @endauth</span>
                         <i class="fas fa-chevron-down text-xs"></i>
                     </button>
                     <div class="dropdown-bridge"></div>
@@ -216,7 +220,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                                 </button>
                             </form>
                             @else
-                            <a href="{{ route('login') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white"><i class="fas fa-sign-in-alt text-gray-400"></i><span>Đăng nhập</span></a>
+                            <a href="{{ route('login', ['redirect' => request()->fullUrl()]) }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white"><i class="fas fa-sign-in-alt text-gray-400"></i><span>Đăng nhập</span></a>
                             <a href="{{ route('register') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white"><i class="fas fa-user-plus text-gray-400"></i><span>Tạo tài khoản</span></a>
                             @endauth
                         </div>
@@ -231,7 +235,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
             <form action="{{ route('products.index') }}" method="GET" class="relative">
                 <div class="relative">
-                    <input name="q" type="search" class="search-input w-full rounded-lg border border-gray-200 pl-10 pr-12 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Tìm kiếm xe, hãng, model..." autocomplete="off" />
+                    <input name="q" type="search" class="search-input w-full rounded-lg border border-gray-200 pl-10 pr-12 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Tìm kiếm" autocomplete="off" />
                     <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                     <button type="submit" class="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-indigo-600 hover:text-indigo-800">
                         <i class="fas fa-arrow-right"></i>
@@ -346,7 +350,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                 {{-- Auth section --}}
                 <div class="pt-4 mt-2 border-t">
                     @auth
-                    <div class="px-4 pb-2 text-sm text-gray-600">Xin chào, <span class="font-semibold text-gray-900">{{ auth()->user()->name }}</span></div>
+                    <div class="px-4 pb-2 text-sm text-gray-600">Xin chào, <span class="font-semibold text-gray-900">{{ optional(auth()->user()->userProfile)->name ?? 'Khách' }}</span></div>
                     <a href="{{ route('user.profile.edit') }}" class="block px-4 py-3 rounded-lg hover:bg-gray-50"><i class="fas fa-user-cog mr-3 text-gray-400"></i>Tài khoản</a>
                     <a href="{{ route('user.customer-profiles.index') }}" class="block px-4 py-3 rounded-lg hover:bg-gray-50"><i class="fas fa-id-badge mr-3 text-gray-400"></i>Hồ sơ khách hàng</a>
                     <a href="{{ route('user.customer-profiles.orders') }}" class="block px-4 py-3 rounded-lg hover:bg-gray-50"><i class="fas fa-file-invoice-dollar mr-3 text-gray-400"></i>Đơn hàng</a>
@@ -362,7 +366,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                     </form>
                     @else
                     <div class="grid grid-cols-2 gap-2">
-                        <a href="{{ route('login') }}" class="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg border hover:bg-gray-50">
+                        <a href="{{ route('login', ['redirect' => request()->fullUrl()]) }}" class="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg border hover:bg-gray-50">
                             <i class="fas fa-sign-in-alt"></i> Đăng nhập
                         </a>
                         <a href="{{ route('register') }}" class="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-gray-900 text-white hover:bg-gray-800">

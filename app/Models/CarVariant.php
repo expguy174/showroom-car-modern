@@ -23,10 +23,9 @@ class CarVariant extends Model
         'sku',
         'description',
         'short_description',
-        'price',
-        'original_price',
-        'has_discount',
-        'discount_percentage',
+        'base_price',
+        'current_price',
+        'is_on_sale',
         'color_inventory',
         'is_active',
         'is_featured',
@@ -39,13 +38,12 @@ class CarVariant extends Model
     ];
 
     protected $casts = [
-        'price' => 'decimal:2',
-        'original_price' => 'decimal:2',
-        'discount_percentage' => 'decimal:2',
+        'base_price' => 'decimal:2',
+        'current_price' => 'decimal:2',
         'color_inventory' => 'array',
         'is_active' => 'boolean',
         'is_featured' => 'boolean',
-        'has_discount' => 'boolean',
+        'is_on_sale' => 'boolean',
         'is_available' => 'boolean',
         'is_new_arrival' => 'boolean',
         'is_bestseller' => 'boolean',
@@ -172,25 +170,17 @@ class CarVariant extends Model
     }
     public function getFormattedPriceAttribute()
     {
-        if ($this->has_discount && $this->discount_percentage > 0) {
-            $discountedPrice = $this->price * (1 - $this->discount_percentage / 100);
-            return number_format($discountedPrice, 0, ',', '.') . ' VNĐ';
-        }
-        return number_format($this->price, 0, ',', '.') . ' VNĐ';
+        return number_format($this->current_price, 0, ',', '.') . ' VNĐ';
     }
 
     public function getFormattedOriginalPriceAttribute()
     {
-        return number_format($this->original_price ?? $this->price, 0, ',', '.') . ' VNĐ';
+        return number_format($this->base_price, 0, ',', '.') . ' VNĐ';
     }
 
     public function getMonthlyPaymentAttribute()
     {
-        $price = $this->has_discount && $this->discount_percentage > 0
-            ? $this->price * (1 - $this->discount_percentage / 100)
-            : $this->price;
-
-        $monthlyPayment = $price / 60; // 60 tháng
+        $monthlyPayment = $this->current_price / 60; // 60 tháng
         return 'Trả góp từ ' . number_format($monthlyPayment, 0, ',', '.') . ' VNĐ/tháng';
     }
 
@@ -206,23 +196,33 @@ class CarVariant extends Model
 
     public function getDiscountAmountAttribute()
     {
-        if ($this->has_discount && $this->discount_percentage > 0) {
-            return $this->price * ($this->discount_percentage / 100);
+        if ($this->is_on_sale && $this->current_price < $this->base_price) {
+            return $this->base_price - $this->current_price;
         }
         return 0;
     }
 
     public function getFinalPriceAttribute()
     {
-        $base = ($this->has_discount && $this->discount_percentage > 0)
-            ? $this->price * (1 - $this->discount_percentage / 100)
-            : $this->price;
-        return $base;
+        return $this->current_price;  // Giá cuối = giá bán hiện tại
+    }
+
+    public function getDiscountPercentageAttribute()
+    {
+        if ($this->is_on_sale && $this->current_price < $this->base_price) {
+            return round((($this->base_price - $this->current_price) / $this->base_price) * 100, 1);
+        }
+        return 0;
+    }
+
+    public function getHasDiscountAttribute()
+    {
+        return $this->is_on_sale && $this->current_price < $this->base_price;
     }
 
     public function getPriceWithColorAdjustment(?int $colorId): float
     {
-        $base = (float) $this->final_price;
+        $base = (float) $this->current_price;
         if ($colorId) {
             $color = $this->colors()->where('id', $colorId)->first();
             if ($color && $color->is_active) {

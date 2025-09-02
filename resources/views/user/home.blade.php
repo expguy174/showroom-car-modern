@@ -73,28 +73,7 @@
                             <i class="fas fa-tags mr-1"></i> Khuyến mãi
                         </a>
                     </div>
-                    @if(isset($fuelTypes) || isset($transmissions))
-                    <!-- Quick Filters: horizontal scroll -->
-                    <div class="mt-5 space-y-3">
-                        @if(isset($fuelTypes) && count($fuelTypes))
-                        <div class="text-white/80 text-sm mb-1">Nhiên liệu</div>
-                        <div class="flex gap-2 overflow-x-auto no-scrollbar snap-x snap-mandatory py-1">
-                            @foreach($fuelTypes->take(8) as $ft)
-                            <a href="{{ route('products.index', ['fuel_type' => $ft]) }}" class="snap-start shrink-0 px-3 py-1.5 rounded-full bg-white/10 text-white border border-white/20 hover:bg-white/20 text-sm whitespace-nowrap">{{ $ft }}</a>
-                            @endforeach
-                        </div>
-                        @endif
-                        @if(isset($transmissions) && count($transmissions))
-                        <div class="text-white/80 text-sm mb-1">Hộp số</div>
-                        <div class="flex gap-2 overflow-x-auto no-scrollbar snap-x snap-mandatory py-1">
-                            @foreach($transmissions->take(8) as $tm)
-                            <a href="{{ route('products.index', ['transmission' => $tm]) }}" class="snap-start shrink-0 px-3 py-1.5 rounded-full bg-white/10 text-white border border-white/20 hover:bg-white/20 text-sm whitespace-nowrap">{{ $tm }}</a>
-                            @endforeach
-                        </div>
-                        @endif
-                        
-                    </div>
-                    @endif
+                    
                 </div>
 
                 
@@ -228,43 +207,47 @@
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             @foreach($promotions as $promo)
-            <div class="group relative overflow-hidden rounded-2xl border border-amber-100 bg-white shadow transition-transform duration-300 hover:-translate-y-1 hover:shadow-lg">
-                <div class="absolute inset-0 pointer-events-none bg-gradient-to-br from-amber-50/60 via-transparent to-transparent"></div>
-                <div class="p-5">
-                    <div class="flex items-start justify-between gap-3">
-                        <div class="min-w-0">
-                            <h3 class="text-lg font-extrabold text-gray-900 truncate">{{ $promo->name }}</h3>
-                            @if($promo->code)
-                            <div class="mt-1 inline-flex items-center gap-2 text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
-                                <i class="fas fa-ticket-alt"></i>
-                                <span class="truncate max-w-[140px]">{{ $promo->code }}</span>
-                            </div>
+            <article class="group card-surface overflow-hidden h-full flex flex-col min-h-fit rounded-2xl border border-amber-100 bg-white shadow transition-all duration-300 transform-gpu">
+                <div class="relative">
+                    <!-- Visual header to match blog card media area -->
+                    <div class="card-media w-full h-40 bg-gradient-to-br from-amber-100 via-amber-50 to-white">
+                        <span class="card-overlay"></span>
+                        <span class="card-sheen"></span>
+                        <div class="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium text-amber-700 inline-flex items-center gap-2">
+                            <i class="fas fa-tags"></i>
+                            <span>Khuyến mãi</span>
+                        </div>
+                        <div class="absolute top-4 right-4 inline-flex items-baseline gap-1 px-2.5 py-1.5 rounded-xl bg-amber-100 text-amber-700 font-extrabold">
+                            @if($promo->type === 'percentage')
+                                <span class="text-xl">-{{ (int) $promo->discount_value }}</span><span class="text-xs">%</span>
+                            @else
+                                <span class="text-xl">-{{ number_format((int) $promo->discount_value, 0, ',', '.') }}</span><span class="text-xs">₫</span>
                             @endif
                         </div>
-                        <div class="text-right shrink-0">
-                            <div class="inline-flex items-baseline gap-1 px-2.5 py-1.5 rounded-xl bg-amber-100 text-amber-700 font-extrabold">
-                                @if($promo->type === 'percentage')
-                                    <span class="text-xl">-{{ (int) $promo->discount_value }}</span><span class="text-xs">%</span>
-                                @else
-                                    <span class="text-xl">-{{ number_format((int) $promo->discount_value, 0, ',', '.') }}</span><span class="text-xs">₫</span>
-                                @endif
-                            </div>
-                            <div class="mt-1 text-[11px] text-gray-500">{{ optional($promo->start_date)->format('d/m') }} - {{ optional($promo->end_date)->format('d/m') }}</div>
-                        </div>
                     </div>
+                </div>
+                <div class="p-6 flex-1 flex flex-col justify-between">
+                    <h3 class="font-extrabold text-lg text-gray-900 mb-2 line-clamp-2">{{ $promo->name }}</h3>
+                    @if($promo->code)
+                    <div class="mb-2 inline-flex items-center gap-2 text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
+                        <i class="fas fa-ticket-alt"></i>
+                        <span class="truncate max-w-[140px]">{{ $promo->code }}</span>
+                    </div>
+                    @endif
+                    <div class="text-[11px] text-gray-500">{{ optional($promo->start_date)->format('d/m') }} - {{ optional($promo->end_date)->format('d/m') }}</div>
 
                     @if($promo->description)
-                    <p class="mt-3 text-sm text-gray-700 line-clamp-2">{{ $promo->description }}</p>
+                    <p class="mt-3 text-sm text-gray-600 line-clamp-3">{{ $promo->description }}</p>
                     @endif
-
                     <div class="mt-4 flex items-center justify-between">
-                        <a href="{{ route('products.index') }}" class="inline-flex items-center gap-2 text-sm font-semibold text-amber-700 hover:text-amber-800">
-                            Xem áp dụng <i class="fas fa-arrow-right text-xs"></i>
+                        <a href="{{ route('products.index') }}" class="inline-flex items-center text-amber-700 font-semibold">
+                            <span>Xem áp dụng</span>
+                            <i class="fas fa-arrow-right ml-2 text-xs"></i>
                         </a>
                         <span class="inline-flex items-center gap-1 text-[11px] text-gray-500"><i class="fas fa-info-circle"></i> Điều kiện kèm theo</span>
                     </div>
                 </div>
-            </div>
+            </article>
             @endforeach
         </div>
     </div>
@@ -292,7 +275,7 @@
                             <i class="fas fa-user"></i>
                         </div>
                         <div>
-                            <div class="font-semibold text-gray-900">{{ optional($review->user)->name ?? 'Khách hàng' }}</div>
+                            <div class="font-semibold text-gray-900">{{ optional(optional($review->user)->userProfile)->name ?? 'Khách hàng' }}</div>
                             <div class="text-xs text-gray-500">{{ $review->created_at->format('d/m/Y') }}</div>
                         </div>
                     </div>
@@ -445,30 +428,47 @@
 
     
 
-    // Toast notification function
+    // Toast notification function - use global showMessage if available
     function showToast(message, type = 'info') {
-        const toast = document.createElement('div');
-        toast.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg text-white font-medium shadow-lg transform translate-x-full transition-transform duration-300`;
-
-        if (type === 'success') {
-            toast.className += ' bg-green-500';
-        } else if (type === 'error') {
-            toast.className += ' bg-red-500';
-        } else {
-            toast.className += ' bg-blue-500';
+        if (typeof window.showMessage === 'function') {
+            window.showMessage(message, type);
+            return;
         }
+        
+        // Fallback toast with consistent styling
+        const existingToasts = document.querySelectorAll('.toast-notification');
+        existingToasts.forEach(toast => toast.remove());
 
-        toast.textContent = message;
+        const toast = document.createElement('div');
+        toast.className = `toast-notification`;
+
+        const colors = {
+            success: 'bg-green-500 text-white',
+            error: 'bg-red-500 text-white',
+            warning: 'bg-yellow-500 text-white',
+            info: 'bg-blue-500 text-white'
+        };
+
+        toast.className += ` ${colors[type] || colors.info}`;
+        toast.innerHTML = `
+            <div class="toast-content">
+                <span class="toast-message">${message}</span>
+                <button class="toast-close" aria-label="Đóng" onclick="this.closest('.toast-notification').remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+
         document.body.appendChild(toast);
 
-        setTimeout(() => {
-            toast.classList.remove('translate-x-full');
-        }, 100);
+        requestAnimationFrame(() => {
+            toast.classList.add('show');
+        });
 
         setTimeout(() => {
-            toast.classList.add('translate-x-full');
+            toast.classList.add('hide');
             setTimeout(() => {
-                document.body.removeChild(toast);
+                if (toast.parentElement) toast.remove();
             }, 300);
         }, 3000);
     }

@@ -21,15 +21,18 @@ class AccessorySeeder extends Seeder
                 'compatible_car_brands' => json_encode(['Toyota','Hyundai','VinFast']),
                 'compatible_car_models' => null,
                 'compatible_car_years' => null,
-                'price' => 450000,
-                'original_price' => 550000,
+                'base_price' => 550000,
+                'current_price' => 450000,
                 'is_on_sale' => true,
-                'sale_price' => 450000,
                 'sale_start_date' => now()->subDays(7)->toDateString(),
                 'sale_end_date' => now()->addDays(7)->toDateString(),
                 'stock_quantity' => 50,
                 'stock_status' => 'in_stock',
-                'gallery' => json_encode([]),
+                'gallery' => json_encode([
+                    'https://placehold.co/1200x800?text=' . urlencode('Tham lot san'),
+                    'https://placehold.co/1200x800?text=Detail+' . urlencode('Tham lot san'),
+                    'https://placehold.co/1200x800?text=Usage+' . urlencode('Tham lot san'),
+                ]),
                 'specifications' => null,
                 'features' => null,
                 'installation_instructions' => null,
@@ -69,15 +72,18 @@ class AccessorySeeder extends Seeder
                 'compatible_car_brands' => json_encode(['Toyota','Hyundai','VinFast']),
                 'compatible_car_models' => null,
                 'compatible_car_years' => null,
-                'price' => 2200000,
-                'original_price' => 2500000,
+                'base_price' => 2500000,
+                'current_price' => 2200000,
                 'is_on_sale' => true,
-                'sale_price' => 2200000,
                 'sale_start_date' => now()->subDays(3)->toDateString(),
                 'sale_end_date' => now()->addDays(14)->toDateString(),
                 'stock_quantity' => 30,
                 'stock_status' => 'in_stock',
-                'gallery' => json_encode([]),
+                'gallery' => json_encode([
+                    'https://placehold.co/1200x800?text=' . urlencode('Camera hanh trinh'),
+                    'https://placehold.co/1200x800?text=Detail+' . urlencode('Camera 2K'),
+                    'https://placehold.co/1200x800?text=Mounted',
+                ]),
                 'specifications' => null,
                 'features' => null,
                 'installation_instructions' => 'Cắm nguồn tẩu 12V, dán kính lái.',
@@ -110,7 +116,7 @@ class AccessorySeeder extends Seeder
         ];
 
         foreach ($items as $data) {
-            Accessory::create($data);
+            Accessory::updateOrCreate(['slug' => $data['slug']], $data);
         }
 
         // Thêm nhiều phụ kiện ngẫu nhiên
@@ -135,7 +141,7 @@ class AccessorySeeder extends Seeder
         ];
         for ($i = 1; $i <= 30; $i++) {
             $cat = $categories[array_rand($categories)];
-            Accessory::create([
+            Accessory::updateOrCreate(['slug' => 'phu-kien-' . $i], [
                 'name' => 'Phụ kiện #' . $i,
                 'sku' => 'ACC-' . strtoupper(Str::random(6)),
                 'description' => 'Phụ kiện số ' . $i . ' chất lượng cho xe.',
@@ -145,15 +151,18 @@ class AccessorySeeder extends Seeder
                 'compatible_car_brands' => json_encode(['Toyota','Hyundai','Kia']),
                 'compatible_car_models' => null,
                 'compatible_car_years' => null,
-                'price' => rand(100, 2000) * 1000,
-                'original_price' => rand(200, 2500) * 1000,
+                'base_price' => rand(200, 2500) * 1000,
+                'current_price' => rand(100, 2000) * 1000,
                 'is_on_sale' => (bool) rand(0,1),
-                'sale_price' => null,
                 'sale_start_date' => null,
                 'sale_end_date' => null,
                 'stock_quantity' => rand(5, 200),
                 'stock_status' => 'in_stock',
-                'gallery' => json_encode([]),
+                'gallery' => json_encode([
+                    'https://placehold.co/1200x800?text=' . urlencode('Phu kien #' . $i),
+                    'https://placehold.co/1200x800?text=Detail+' . urlencode('Phu kien #' . $i),
+                    'https://placehold.co/1200x800?text=Packaging+' . urlencode('#' . $i),
+                ]),
                 'specifications' => null,
                 'features' => null,
                 'installation_instructions' => null,

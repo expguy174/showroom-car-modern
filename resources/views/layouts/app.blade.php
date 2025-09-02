@@ -853,26 +853,7 @@
             display: none !important;
         }
 
-        #wishlist-count-badge:not(.hidden),
-        #cart-count-badge:not(.hidden),
-        #wishlist-count-badge-mobile:not(.hidden),
-        #cart-count-badge-mobile:not(.hidden) {
-            animation: countPulse 0.6s ease-in-out;
-        }
-
-        @keyframes countPulse {
-            0% {
-                transform: scale(1);
-            }
-
-            50% {
-                transform: scale(1.2);
-            }
-
-            100% {
-                transform: scale(1);
-            }
-        }
+        /* Remove zoom/pulse animation on load for count badges */
 
         /* removed legacy mobile menu styles */
 
@@ -901,7 +882,29 @@
         .cmp-modal .modal-panel {
             animation: cmpFadeIn .18s ease-out;
         }
-
+        /* Normalize image size and remove button position inside compare headers */
+        #compare-modal th img {
+            height: 140px !important;
+            width: 100% !important;
+            max-width: 240px !important; /* limit horizontal size when ít cột */
+            object-fit: cover !important;
+            border-radius: 0.5rem;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        #compare-modal th .relative [data-compare-remove] {
+            position: absolute !important;
+            top: 6px !important;
+            right: 6px !important;
+            z-index: 20;
+        }
+        @media (max-width: 640px) {
+            #compare-modal th img { height: 110px !important; max-width: 180px !important; }
+        }
+        @media (min-width: 1024px) and (max-width: 1279.98px) {
+            #compare-modal th img { height: 120px !important; max-width: 200px !important; }
+        }
         .cmp-modal .modal-panel.cmp-open {
             animation: cmpZoomIn .22s cubic-bezier(.2, .8, .2, 1);
         }
@@ -943,6 +946,8 @@
         .cmp-snap {
             scroll-snap-align: start;
         }
+
+        
     </style>
     {{-- Preload main CSS to reduce FOUC and load critical styles first --}}
     @php try { $appCss = Vite::asset('resources/css/app.css'); } catch (\Throwable $e) { $appCss = null; } @endphp
@@ -977,43 +982,37 @@
 
     <!-- New Navigation Component -->
     @include('components.nav')
-
-    <!-- Global Compare FAB -->
-    <button id="compare-fab" class="hidden fixed right-4 bottom-16 z-40 px-4 py-3 rounded-full shadow-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold hover:from-purple-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-purple-400">
+    
+    <!-- Compare FAB (modern) -->
+    <button id="compare-fab" class="hidden fixed right-3 bottom-4 sm:right-4 sm:bottom-16 z-40 px-3 py-2 sm:px-4 sm:py-3 rounded-full shadow-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold text-sm sm:text-base hover:from-purple-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-purple-400">
         <i class="fas fa-balance-scale mr-2"></i>
         <span>So sánh (<span id="compare-fab-count">0</span>)</span>
     </button>
 
-    <!-- Compare Modal -->
-    <div id="compare-modal" class="cmp-modal fixed inset-0 z-[10000] bg-black/60 hidden" style="display:none; align-items:center; justify-content:center;" role="dialog" aria-modal="true" aria-labelledby="compare-modal-title">
-        <div class="modal-panel cmp-open bg-white/95 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,.25)] w-full max-w-full md:max-w-5xl lg:max-w-6xl p-4 md:p-6 relative border border-white/40">
-            <button type="button" class="absolute top-3 right-3 text-gray-400 hover:text-red-500" id="compare-modal-close" aria-label="Đóng so sánh"><i class="fas fa-times text-xl"></i></button>
-            <div class="mb-4 flex items-center justify-between gap-3">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow"><i class="fas fa-balance-scale"></i></div>
-                    <div>
-                        <h3 id="compare-modal-title" class="text-xl md:text-2xl font-bold text-gray-900 leading-tight">So sánh nhanh</h3>
-                        <p class="text-xs md:text-sm text-gray-500">Chọn tối đa 4 mẫu để so sánh các thông số chính</p>
+    <!-- Compare Modal (rebuilt: responsive, no-sticky) -->
+    <div id="compare-modal" class="fixed inset-0 z-[10000] hidden bg-black/60 p-3 sm:p-5 flex items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="compare-modal-title">
+        <div class="mx-auto inline-block max-w-[96vw] sm:max-w-[90vw] align-middle">
+            <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
+                <div class="flex items-center justify-between px-4 py-3 sm:px-5 sm:py-4 border-b">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0"><i class="fas fa-balance-scale"></i></div>
+                        <div class="min-w-0">
+                            <h3 id="compare-modal-title" class="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 truncate">So sánh xe</h3>
+                            <p class="text-xs text-gray-500 hidden sm:block">Chọn tối đa 4 mẫu để so sánh</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button id="compare-clear-all-top" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-red-600 hover:text-white hover:bg-red-600 text-xs sm:text-sm font-semibold border border-red-200"><i class="fas fa-trash"></i> Xóa tất cả</button>
+                        <button type="button" id="compare-modal-close" class="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center" aria-label="Đóng">
+                            <i class="fas fa-times"></i>
+                        </button>
                     </div>
                 </div>
-                <div class="flex items-center gap-2 ml-auto">
-                    <label for="compare-toggle-diff" class="inline-flex items-center gap-2 text-xs md:text-sm text-gray-600 select-none cursor-pointer">
-                        <input type="checkbox" id="compare-toggle-diff" class="w-4 h-4 text-indigo-600 rounded border-gray-300">
-                        <span>Chỉ hiển thị khác nhau</span>
-                    </label>
-                    <button id="compare-clear-all-mobile" class="sm:hidden inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-red-600 hover:text-white hover:bg-red-600 text-xs font-semibold border border-red-200">
-                        <i class="fas fa-trash"></i>
-                        Xóa tất cả
-                    </button>
+                <div id="compare-modal-body" class="min-h-[220px] max-h-[72vh] sm:max-h-[78vh] md:max-h-[80vh] overflow-auto overscroll-contain bg-white">
+                    <div class="flex items-center gap-3 text-gray-500 p-6"><i class="fas fa-spinner fa-spin"></i><span>Đang tải...</span></div>
                 </div>
-
             </div>
-            <div id="compare-modal-body" class="cmp-scroll min-h-[160px] max-h-[70vh] overflow-auto rounded-xl border border-gray-100 bg-white touch-pan-x">
-                <div class="flex items-center gap-3 text-gray-500 p-6"><i class="fas fa-spinner fa-spin"></i><span>Đang tải...</span></div>
-            </div>
-
         </div>
-    </div>
     </div>
 
 
@@ -1234,11 +1233,6 @@
             }
         });
 
-        // Minimal compare state (localStorage) to control FAB visibility only
-        (function() {
-            const STORAGE_KEY = 'compare.variants';
-            const MAX_ITEMS = 4;
-
             function readCompare() {
                 try {
                     return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
@@ -1254,6 +1248,9 @@
                     document.cookie = `compare_variants=${encodeURIComponent(JSON.stringify(list))}; path=/; max-age=${60*60*24*7}`;
                 } catch {}
             }
+            // Expose helpers so app.js can call add/remove directly
+            window.__cmp_read = readCompare;
+            window.__cmp_write = saveCompare;
 
             function updateCompareFab() {
                 const list = readCompare();
@@ -1279,33 +1276,21 @@
                     }
                 });
             }
+            // Expose for other bundles (e.g., app.js stubs)
+            window.updateCompareFab = updateCompareFab;
+            // Flag to indicate layout owns variant-compare handling
+            window.__cmp_layout = true;
 
-            // Toggle add/remove on card compare buttons
+            // Disable layout's own toggle to avoid double handling (app.js owns it now)
             document.addEventListener('click', function(e) {
-                const btn = e.target.closest('.js-compare-toggle');
+                const btn = e.target.closest('.js-compare-toggle[data-variant-id]');
                 if (!btn) return;
-                e.preventDefault();
-                const idStr = btn.getAttribute('data-variant-id');
-                const id = parseInt(idStr, 10);
-                if (!id) return;
-                let list = readCompare();
-                if (list.includes(id)) {
-                    list = list.filter(x => x !== id);
-                    showMessage('Đã bỏ khỏi danh sách so sánh', 'info');
-                } else {
-                    if (list.length >= MAX_ITEMS) {
-                        showMessage(`Chỉ so sánh tối đa ${MAX_ITEMS} mẫu. Hãy bỏ bớt để thêm mới.`, 'warning');
-                    } else {
-                        list.push(id);
-                        showMessage('Đã thêm vào danh sách so sánh', 'success');
-                    }
-                }
-                saveCompare(list);
-                updateCompareFab();
+                // Do not handle here to prevent duplicate toasts; app.js controller handles it
             });
 
             // FAB click -> open modal with quick compare table (client-side only)
             document.addEventListener('click', function(e) {
+                return; // disabled legacy compare handler; compare.js owns this
                 const fab = e.target.closest('#compare-fab');
                 if (!fab) return;
                 e.preventDefault();
@@ -1319,7 +1304,7 @@
                 modal.style.display = 'flex';
                 modal.classList.remove('hidden');
                 // Use flex centering via utility classes; avoid inline display override to prevent stacking white layer
-                body.innerHTML = '<div class="flex items-center gap-2 text-gray-500"><i class="fas fa-spinner fa-spin"></i><span>Đang tải...</span></div>';
+                body.innerHTML = '<div class="flex items-center gap-2 text-gray-500 p-6"><i class="fas fa-spinner fa-spin"></i><span>Đang tải...</span></div>';
                 const diffToggle = document.getElementById('compare-toggle-diff');
                 if (diffToggle) {
                     try {
@@ -1385,6 +1370,7 @@
                         return false;
                     }
                 })();
+                const useGrid = (typeof window !== 'undefined') ? (window.innerWidth < 640 || list.length <= 3) : false;
                 const hideClear = (hide) => {
                     if (clearBtn) {
                         clearBtn.classList.toggle('hidden', hide);
@@ -1401,7 +1387,7 @@
                 hideClear(false);
 
                 // Fetch minimal variant info via API v1/variants/{id}
-                Promise.all(list.map(id => fetch(`/api/v1/variants/${id}`).then(r => r.json()).catch(() => null)))
+                Promise.all(list.map(id => fetch(`/api/v1/variants/${id}`, { headers: { 'X-Requested-With': 'XMLHttpRequest' }}).then(r => r.json()).catch(() => null)))
                     .then(responses => {
                         const items = responses
                             .map(r => (r && r.success && r.data) ? r.data : null)
@@ -1410,21 +1396,48 @@
                             body.innerHTML = '<div class="text-center text-gray-500 py-10">Không tải được dữ liệu so sánh</div>';
                             return;
                         }
+                        if (useGrid) {
+                            const cards = items.map(v => {
+                                const firstImg = (Array.isArray(v.images) && v.images.length > 0) ? (v.images.find(i => i?.is_main) || v.images[0]) : null;
+                                const img = firstImg && (firstImg.image_url || firstImg.image_path || firstImg.path) ? (firstImg.image_url || firstImg.image_path || firstImg.path) : '';
+                                const fallback = 'https://via.placeholder.com/300x200/eeeeee/999999?text=No+Image';
+                                const src = img || fallback;
+                                const brand = (v.car_model?.car_brand?.name || '');
+                                const model = (v.car_model?.name || '');
+                                const title = `${brand} ${model} – ${v.name || ''}`.trim();
+                                return `
+                                  <div class=\"bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 overflow-hidden flex flex-col\">
+                                    <div class=\"w-full aspect-[4/3] bg-gray-100 overflow-hidden\">
+                                      <img src=\"${src}\" onerror=\"this.onerror=null;this.src='${fallback}'\" alt=\"${title}\" class=\"w-full h-full object-cover\">
+                                    </div>
+                                    <div class=\"p-4 space-y-2\">
+                                      <div class=\"text-xs text-gray-500\">#${v.id}</div>
+                                      <div class=\"font-semibold text-gray-900 line-clamp-2\">${title}</div>
+                                      <div class=\"text-indigo-600 font-bold\">${(Number(v.price)||0).toLocaleString('vi-VN')}₫</div>
+                                    </div>
+                                  </div>`;
+                            }).join('');
+                            body.innerHTML = `<div class=\"grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4\">${cards}</div>`;
+                            return;
+                        }
                         const headers = items.map(v => {
                             const firstImg = (Array.isArray(v.images) && v.images.length > 0) ? (v.images.find(i => i?.is_main) || v.images[0]) : null;
                             const img = firstImg && (firstImg.image_url || firstImg.image_path || firstImg.path) ? (firstImg.image_url || firstImg.image_path || firstImg.path) : '';
-                            const fallback = 'https://via.placeholder.com/300x200/eeeeee/999999?text=No+Image';
+                            const fallback = 'https://via.placeholder.com/300x200/eeeeee/999999?text=Khong+co+anh';
                             const src = img || fallback;
                             const imgTag = `<img src="${src}" alt="Ảnh xe" class="w-28 h-20 md:w-32 md:h-24 object-cover rounded-xl shadow" onerror="this.onerror=null;this.src='${fallback}';">`;
                             const brand = (v.car_model?.car_brand?.name || '');
                             const model = (v.car_model?.name || '');
                             const title = `${brand} ${model} – ${v.name || ''}`.trim();
+                            const colors = '';
                             return `
-              <th class="p-2 sm:p-3 md:p-4 align-top bg-gray-50 min-w-[180px] overflow-visible">
+              <th class="p-2 sm:p-3 md:p-4 align-top bg-gray-50 min-w-[140px] sm:min-w-[180px] overflow-visible">
                 <div class="relative overflow-visible">
-                  <button class="absolute -top-2 -right-2 z-20 bg-white/95 border border-red-200 text-red-600 hover:bg-red-600 hover:text-white rounded-full w-6 h-6 flex items-center justify-center shadow" data-compare-remove="${v.id}" title="Bỏ"><i class="fas fa-times text-[10px]"></i></button>
-                  <div class="flex flex-col items-start gap-1">
+                  <div class="relative inline-block">
                     ${imgTag}
+                    <button class="absolute top-1 right-1 z-20 bg-white/95 border border-red-200 text-red-600 hover:bg-red-600 hover:text-white rounded-full w-6 h-6 flex items-center justify-center shadow" data-compare-remove="${v.id}" title="Xóa khỏi so sánh"><i class="fas fa-times text-[10px]"></i></button>
+                  </div>
+                  <div class="flex flex-col items-start gap-1 mt-1">
                     <div class="max-w-[160px] text-[11px] text-gray-700 truncate" title="${title}">${title}</div>
                   </div>
                 </div>
@@ -1476,28 +1489,79 @@
                             const type = engineVI((v.specifications || []).find(s => String(s.spec_name).toLowerCase() === 'engine_type')?.spec_value);
                             return (liters || type) ? [liters, type].filter(Boolean).join(' ') : '';
                         };
+                        // Displacement in liters only
+                        const displacementL = (v) => {
+                            let disp = v.engine_displacement || getSpec(v, ['engine_displacement','engine_size','displacement']);
+                            if (!disp) return '';
+                            const num = parseFloat(String(disp).replace(/[^0-9.]/g, ''));
+                            if (isNaN(num)) return String(disp);
+                            return (num > 50 ? (num/1000) : num).toFixed(1) + ' L';
+                        };
+                        const boolVN = (val) => {
+                            const s = String(val ?? '').toLowerCase().trim();
+                            if (!s) return '';
+                            if (['1','true','yes','có','enabled','ok'].includes(s)) return 'Có';
+                            if (['0','false','no','không','disabled','none','-'].includes(s)) return 'Không';
+                            return val;
+                        };
+
+                        const sizeCombo = (v) => {
+                            const L = val(getSpec(v, ['length','dài']));
+                            const W = val(getSpec(v, ['width','rộng']));
+                            const H = val(getSpec(v, ['height','cao']));
+                            if (!L && !W && !H) return '';
+                            return [L,W,H].filter(Boolean).join(' × ');
+                        };
 
                         const cells = {
                             'Hãng': items.map(v => val(v.car_model?.car_brand?.name || '')),
                             'Dòng xe': items.map(v => val(v.car_model?.name || '')),
                             'Phiên bản': items.map(v => val(v.name || '')),
                             'Giá': items.map(v => {
-                                const price = toPriceVN(v.price);
-                                const badge = (v.has_discount && v.discount_percentage) ? `<span class=\\"ml-2 inline-flex items-center px-1.5 py-0.5 rounded bg-red-50 text-red-600 text-[10px]\\">-${Number(v.discount_percentage)}%</span>` : '';
+                                const raw = (v.current_price ?? v.final_price ?? v.price ?? 0);
+                                const base = (v.base_price ?? v.original_price ?? raw);
+                                const n = Number(raw) || 0;
+                                const price = toPriceVN(n);
+                                let badge = '';
+                                if ((Number(base) || 0) > n) {
+                                    const pct = Math.round(((Number(base) - n) / Number(base)) * 100);
+                                    badge = `<span class=\"ml-2 inline-flex items-center px-1.5 py-0.5 rounded bg-red-50 text-red-600 text-[10px]\">-${pct}%</span>`;
+                                } else if (v.has_discount && v.discount_percentage) {
+                                    badge = `<span class=\"ml-2 inline-flex items-center px-1.5 py-0.5 rounded bg-red-50 text-red-600 text-[10px]\">-${Number(v.discount_percentage)}%</span>`;
+                                }
                                 return `${price}${badge}`;
                             }),
                             'Nhiên liệu': items.map(v => val(fuelVI((v.specifications || []).find(s => String(s.spec_name).toLowerCase() === 'fuel_type')?.spec_value))),
                             'Động cơ': items.map(v => val(engineDisplay(v))),
                             'Mô-men xoắn': items.map(v => val(v.torque ? (v.torque + ' Nm') : '')),
-                            'Hộp số': items.map(v => val((v.specifications || []).find(s => String(s.spec_name).toLowerCase() === 'transmission')?.spec_value)),
-                            'Dẫn động': items.map(v => val((v.specifications || []).find(s => String(s.spec_name).toLowerCase() === 'drivetrain')?.spec_value)),
+                            'Hộp số': items.map(v => {
+                                const raw = (v.specifications || []).find(s => String(s.spec_name).toLowerCase() === 'transmission')?.spec_value || '';
+                                const lower = String(raw).toLowerCase();
+                                if (/\bdct\b/.test(lower) || lower.includes('dual clutch')) return 'Ly hợp kép';
+                                if (/\becvt\b|\be-cvt\b|\bcvt\b|continuously variable/.test(lower)) return 'CVT';
+                                if (/\bamt\b/.test(lower)) return 'Tự động kiểu cơ';
+                                if (/\bautomatic\b|\bat\b|\ba\/t\b|\btiptronic\b|\bsteptronic\b/.test(lower)) return 'Tự động';
+                                if (/\bmanual\b|\bmt\b|\bm\/t\b/.test(lower)) return 'Số sàn';
+                                if (/\bsemi[-\s]?automatic\b/.test(lower)) return 'Bán tự động';
+                                if (/\bsequential\b/.test(lower)) return 'Tuần tự';
+                                return raw;
+                            }),
+                            'Dẫn động': items.map(v => {
+                                const raw = (v.specifications || []).find(s => String(s.spec_name).toLowerCase() === 'drivetrain')?.spec_value || '';
+                                const l = String(raw).toLowerCase();
+                                if (/awd|4wd|4x4|all-?wheel/.test(l)) return 'Hai cầu';
+                                if (/rwd|rear/.test(l)) return 'Cầu sau';
+                                if (/fwd|front/.test(l)) return 'Cầu trước';
+                                return raw;
+                            }),
                             'Số chỗ': items.map(v => val((v.specifications || []).find(s => String(s.spec_name).toLowerCase() === 'seating_capacity')?.spec_value)),
                             'Công suất': items.map(v => val((v.specifications || []).find(s => String(s.spec_name).toLowerCase() === 'power_output')?.spec_value)),
-                            'Dài': items.map(v => val(getSpec(v, ['dài', 'length']))),
-                            'Rộng': items.map(v => val(getSpec(v, ['rộng', 'width']))),
-                            'Cao': items.map(v => val(getSpec(v, ['cao', 'height']))),
+                            '0–100 km/h': items.map(v => val((v.specifications || []).find(s => String(s.spec_name).toLowerCase() === 'acceleration')?.spec_value)),
+                            'Tốc độ tối đa': items.map(v => val((v.specifications || []).find(s => String(s.spec_name).toLowerCase() === 'max_speed')?.spec_value)),
+                            'Kích thước (D×R×C)': items.map(v => val(sizeCombo(v))),
                             'Chiều dài cơ sở': items.map(v => val(getSpec(v, ['chiều dài cơ sở', 'wheelbase']))),
                             'Khoảng sáng gầm': items.map(v => val(getSpec(v, ['khoảng sáng gầm', 'ground clearance']))),
+                            // Lược gọn: chỉ giữ các hàng cốt lõi; các hàng chi tiết khung gầm/tiện nghi/an toàn sẽ thể hiện trong "Tính năng nổi bật"
                             'Dung tích bình nhiên liệu': items.map(v => val(v.fuel_tank_capacity ? (v.fuel_tank_capacity + ' L') : '')),
                             'Tăng tốc 0-100 km/h': items.map(v => val(v.acceleration ? (v.acceleration + ' s') : '')),
                             'Tốc độ tối đa': items.map(v => val(v.max_speed ? (v.max_speed + ' km/h') : '')),
@@ -1525,7 +1589,12 @@
                                 const list = names.slice(0, 3).join(' - ');
                                 return `<div class=\\"text-xs md:text-[13px] text-gray-700\\">${list || '-'}</div>`;
                             });
-                            return arrs.some(x => x) ? `<tr><td class=\\"p-2 sm:p-3 md:p-4 font-medium bg-gray-50\\">Màu sắc</td>${arrs.map(x=>`<td class=\\"p-2 sm:p-3 md:p-4\\">${x || '-'}</td>`).join('')}</tr>` : '';
+                            if (!arrs.some(x => x)) return '';
+                            // Diff-only: compare normalized plain text
+                            const normalized = arrs.map(x => String(x).replace(/<[^>]*>/g,'').toLowerCase().trim());
+                            const allSame = normalized.length <= 1 ? true : normalized.every(v => v === normalized[0]);
+                            if (diffOnly && allSame) return '';
+                            return `<tr><td class=\\"p-2 sm:p-3 md:p-4 font-medium bg-gray-50\\">Màu sắc</td>${arrs.map(x=>`<td class=\\"p-2 sm:p-3 md:p-4\\">${x || '-'}</td>`).join('')}</tr>`;
                         })();
 
                         const featuresRow = (() => {
@@ -1536,7 +1605,11 @@
                                 const list = names.slice(0, 3).join(' - ');
                                 return `<div class=\\"text-xs md:text-[13px] text-gray-700\\">${list}</div>`;
                             });
-                            return arrs.some(x => x) ? `<tr><td class=\\"p-2 sm:p-3 md:p-4 font-medium bg-gray-50\\">Tính năng nổi bật</td>${arrs.map(x=>`<td class=\\"p-2 sm:p-3 md:p-4\\">${x || '-'}</td>`).join('')}</tr>` : '';
+                            if (!arrs.some(x => x)) return '';
+                            const normalized = arrs.map(x => String(x).replace(/<[^>]*>/g,'').toLowerCase().trim());
+                            const allSame = normalized.length <= 1 ? true : normalized.every(v => v === normalized[0]);
+                            if (diffOnly && allSame) return '';
+                            return `<tr><td class=\\"p-2 sm:p-3 md:p-4 font-medium bg-gray-50\\">Tính năng nổi bật</td>${arrs.map(x=>`<td class=\\"p-2 sm:p-3 md:p-4\\">${x || '-'}</td>`).join('')}</tr>`;
                         })();
 
                         const optionsRow = (() => {
@@ -1547,7 +1620,11 @@
                                 const list = names.slice(0, 3).join(' - ');
                                 return `<div class=\\"text-xs md:text-[13px] text-gray-700\\">${list}</div>`;
                             });
-                            return arrs.some(x => x) ? `<tr><td class=\\"p-2 sm:p-3 md:p-4 font-medium bg-gray-50\\">Tùy chọn</td>${arrs.map(x=>`<td class=\\"p-2 sm:p-3 md:p-4\\">${x || '-'}</td>`).join('')}</tr>` : '';
+                            if (!arrs.some(x => x)) return '';
+                            const normalized = arrs.map(x => String(x).replace(/<[^>]*>/g,'').toLowerCase().trim());
+                            const allSame = normalized.length <= 1 ? true : normalized.every(v => v === normalized[0]);
+                            if (diffOnly && allSame) return '';
+                            return `<tr><td class=\\"p-2 sm:p-3 md:p-4 font-medium bg-gray-50\\">Tùy chọn</td>${arrs.map(x=>`<td class=\\"p-2 sm:p-3 md:p-4\\">${x || '-'}</td>`).join('')}</tr>`;
                         })();
 
                         const rowHtml = Object.entries(cells)
@@ -1558,7 +1635,7 @@
                                 const allSame = compareLen <= 1 ? true : normalized.every(v => v === normalized[0]);
                                 if (diffOnly && allSame) return '';
                                 const tds = arr.map(v => `<td class=\\"p-2 sm:p-3 md:p-4 ${(!allSame ? 'text-indigo-700 font-semibold' : '')}\\">${v || '-'}</td>`).join('');
-                                return `<tr class=\\"cmp-snap\\"><td class=\\"sticky left-0 p-2 sm:p-3 md:p-4 font-medium bg-gray-50 z-10\\">${label}</td>${tds}</tr>`;
+                                return `<tr class=\\"cmp-snap\\"><td class=\\"p-2 sm:p-3 md:p-4 font-medium bg-gray-50\\">${label}</td>${tds}</tr>`;
                             })
                             .join('') + colorsRow + featuresRow + optionsRow;
 
@@ -1580,8 +1657,8 @@
 
                         body.innerHTML = `
               <div class=\"overflow-x-auto rounded-xl cmp-table\">
-                <table class=\"min-w-full text-[11px] xs:text-xs md:text-sm\">
-                  <thead class=\"sticky top-0 bg-gray-50\"><tr><th class=\"p-2 sm:p-3 md:p-4 text-left text-gray-500 bg-gray-50 min-w-[120px]\">Thông số</th>${headers}</tr></thead>
+                <table class=\"min-w-full text-[10px] xs:text-[11px] md:text-xs\">
+                  <thead class=\"bg-gray-50\"><tr><th class=\"p-2 sm:p-3 md:p-4 text-left text-gray-500 bg-gray-50 min-w-[100px] sm:min-w-[120px]\">Thông số</th>${headers}</tr></thead>
                   <tbody class=\"divide-y divide-gray-100\">${rowHtml}</tbody>
                 </table>
               </div>
@@ -1648,7 +1725,12 @@
                 } catch {}
                 renderCompareContent();
             });
-        })();
+            document.addEventListener('change', function(e) {
+                const toggle = e.target.closest('#compare-toggle-grid');
+                if (!toggle) return;
+                renderCompareContent();
+            });
+        
     </script>
 
 
@@ -1710,82 +1792,12 @@
 
         // Update cart count function (global) - using vanilla JS
         function updateCartCount(count) {
-            console.log('Updating cart count to:', count);
-
-            // Update all cart count badges on the page
-            const cartCounters = document.querySelectorAll('.cart-count');
-            cartCounters.forEach(counter => {
-                counter.textContent = count > 99 ? '99+' : count;
-                counter.style.display = count === 0 ? 'none' : 'flex';
-                // Ensure proper centering
-                counter.style.justifyContent = 'center';
-                counter.style.alignItems = 'center';
-                counter.style.textAlign = 'center';
-            });
-
-            // Also update the cart count badge in the header navigation
-            const cartBadges = document.querySelectorAll('#cart-count-badge, #cart-count-badge-mobile');
-            cartBadges.forEach(badge => {
-                badge.textContent = count > 99 ? '99+' : count;
-                badge.style.display = count === 0 ? 'none' : 'flex';
-                // Ensure proper centering
-                badge.style.justifyContent = 'center';
-                badge.style.alignItems = 'center';
-                badge.style.textAlign = 'center';
-            });
-
-            // Update any other cart count elements
-            const cartDataElements = document.querySelectorAll('[data-cart-count]');
-            cartDataElements.forEach(element => {
-                element.textContent = count > 99 ? '99+' : count;
-                element.style.display = count === 0 ? 'none' : 'flex';
-                // Ensure proper centering
-                element.style.justifyContent = 'center';
-                element.style.alignItems = 'center';
-                element.style.textAlign = 'center';
-            });
-
-            console.log('Cart count update completed. Found badges:', cartBadges.length, 'counters:', cartCounters.length);
+            if (window.CountManager) { window.CountManager.setCart(parseInt(count) || 0); }
         }
 
         // Update wishlist count function (global) - using vanilla JS
         function updateWishlistCount(count) {
-            console.log('Updating wishlist count to:', count);
-
-            // Update all wishlist count badges on the page
-            const wishlistCounters = document.querySelectorAll('.wishlist-count');
-            wishlistCounters.forEach(counter => {
-                counter.textContent = count > 99 ? '99+' : count;
-                counter.style.display = count === 0 ? 'none' : 'flex';
-                // Ensure proper centering
-                counter.style.justifyContent = 'center';
-                counter.style.alignItems = 'center';
-                counter.style.textAlign = 'center';
-            });
-
-            // Also update the wishlist count badge in the header navigation
-            const wishlistBadges = document.querySelectorAll('#wishlist-count-badge, #wishlist-count-badge-mobile');
-            wishlistBadges.forEach(badge => {
-                badge.textContent = count > 99 ? '99+' : count;
-                badge.style.display = count === 0 ? 'none' : 'flex';
-                // Ensure proper centering
-                badge.style.justifyContent = 'center';
-                badge.style.alignItems = 'center';
-                badge.style.textAlign = 'center';
-            });
-
-            // Update any other wishlist count elements
-            const wishlistDataElements = document.querySelectorAll('[data-wishlist-count]');
-            wishlistDataElements.forEach(element => {
-                element.textContent = count > 99 ? '99+' : count;
-                element.style.display = count === 0 ? 'none' : 'flex';
-                // Ensure proper centering
-                element.style.justifyContent = 'center';
-                element.style.alignItems = 'center';
-                element.style.textAlign = 'center';
-            });
-
-            console.log('Wishlist count update completed. Found badges:', wishlistBadges.length, 'counters:', wishlistCounters.length);
+            if (window.CountManager) { window.CountManager.setWishlist(parseInt(count) || 0); }
         }
 
         // Refresh cart count from server
@@ -1825,23 +1837,7 @@
             });
         }
 
-        // Initialize counts on page load
-        $(document).ready(function() {
-            // Get initial wishlist count from server
-            refreshWishlistCount();
-
-            // Get initial cart count from server
-            refreshCartCount();
-        });
-
-        // Also initialize on page show (for browser navigation)
-        window.addEventListener('pageshow', function() {
-            // Get initial wishlist count from server
-            refreshWishlistCount();
-
-            // Get initial cart count from server
-            refreshCartCount();
-        });
+        // CountManager đã init tự reconcile; bỏ init trùng lặp tại layout
 
         // Force refresh counts function (global)
         window.refreshCounts = function() {

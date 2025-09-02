@@ -62,12 +62,12 @@ Route::prefix('reviews')->name('reviews.')->group(function () {
     Route::get('/summary', [UserReviewController::class, 'summary'])->name('summary');
 });
 
-// Test Drives
-Route::prefix('test-drives')->name('test-drives.')->group(function () {
+// Test Drives (require auth)
+Route::middleware('auth')->prefix('test-drives')->name('test-drives.')->group(function () {
     Route::post('/book', [UserTestDriveController::class, 'store'])->name('book');
     Route::get('/', [UserTestDriveController::class, 'index'])->name('index');
     Route::get('/{testDrive}', [UserTestDriveController::class, 'show'])->name('show');
-})->middleware('auth');
+});
 
 // Search
 Route::prefix('search')->name('search.')->group(function () {
@@ -146,6 +146,18 @@ Route::prefix('user/cart')->name('user.cart.')->group(function () {
     Route::post('/update/{cartItem}', [CartController::class, 'update'])->name('update'); // Cập nhật số lượng
     Route::delete('/remove/{cartItem}', [CartController::class, 'remove'])->name('remove'); // Xóa khỏi giỏ
     Route::post('/clear', [CartController::class, 'clear'])->name('clear'); // Xóa toàn bộ giỏ
+});
+
+// Legacy cart routes and aliases (pretty URL /cart, keep names under user.cart.*)
+Route::middleware('auth')->group(function () {
+    // Pretty URL for viewing cart
+    Route::get('/cart', function() { return redirect()->route('user.cart.index'); })->name('cart.index');
+    // Backward-compatible endpoints if any old JS hits them
+    Route::post('/cart/add', function() { return redirect()->to('/user/cart/add'); });
+    Route::post('/cart/clear', function() { return redirect()->to('/user/cart/clear'); });
+    Route::get('/cart/count', function() { return redirect()->to('/user/cart/count'); });
+    Route::post('/cart/update/{cartItem}', function($cartItem) { return redirect()->to("/user/cart/update/{$cartItem}"); });
+    Route::delete('/cart/remove/{cartItem}', function($cartItem) { return redirect()->to("/user/cart/remove/{$cartItem}"); });
 });
 
 // --- Cart routes --- (moved under /user)
@@ -409,5 +421,4 @@ Route::prefix('wishlist')->name('wishlist.')->group(function () {
     Route::get('/count', [WishlistController::class, 'getCount'])->name('count');
     Route::post('/migrate-session', [WishlistController::class, 'migrateSessionWishlist'])->name('migrate-session');
 });
-
 

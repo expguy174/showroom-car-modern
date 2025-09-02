@@ -174,8 +174,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     try {
         // Wishlist page functionality
-        const wishlistPage = new WishlistPage();
-        wishlistPage.init();
+        window.wishlistPage = new WishlistPage();
+        window.wishlistPage.init();
         console.log('WishlistPage initialized successfully');
     } catch (error) {
         console.error('Error initializing WishlistPage:', error);

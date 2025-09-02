@@ -82,11 +82,11 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Họ và tên</label>
-                                <input type="text" name="name" value="{{ old('name', $user?->name) }}" required class="mt-1 block w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" />
+                                <input type="text" name="name" value="{{ old('name', optional($user?->userProfile)->name) }}" required class="mt-1 block w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" />
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Số điện thoại</label>
-                                <input type="text" name="phone" value="{{ old('phone', $user?->phone) }}" required class="mt-1 block w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" />
+                                <input type="text" name="phone" value="{{ old('phone', optional(($addresses ?? collect())->firstWhere('is_default', true) ?: ($addresses ?? collect())->first())->phone) }}" required class="mt-1 block w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" />
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Email</label>
@@ -174,16 +174,13 @@
                                 $model = $ci->item;
                                 $baseUnit = ($ci->item_type === 'car_variant' && method_exists($model, 'getPriceWithColorAdjustment'))
                                     ? $model->getPriceWithColorAdjustment($ci->color_id)
-                                    : ($model->price ?? 0);
+                                    : ($model->current_price ?? 0);
                                 // add-ons from session meta
                                 $meta = session('cart_item_meta.' . $ci->id, []);
                                 $featIds = collect($meta['feature_ids'] ?? [])->filter()->map(fn($v)=> (int)$v)->unique()->all();
-                                $optIds = collect($meta['option_ids'] ?? [])->filter()->map(fn($v)=> (int)$v)->unique()->all();
                                 $selFeats = !empty($featIds) ? \App\Models\CarVariantFeature::whereIn('id', $featIds)->get() : collect();
-                                $selOpts  = !empty($optIds) ? \App\Models\CarVariantOption::whereIn('id', $optIds)->get() : collect();
                                 $addonSum = 0;
-                                foreach($selFeats as $sf){ $addonSum += (float)($sf->package_price ?? $sf->price ?? 0); }
-                                foreach($selOpts as $so){ $addonSum += (float)($so->package_price ?? $so->price ?? 0); }
+                                foreach($selFeats as $sf){ $addonSum += (float)($sf->price ?? 0); }
                                 $displayUnit = $baseUnit + $addonSum;
                                 $line = $displayUnit * $ci->quantity;
                                 $baseLine = $baseUnit * $ci->quantity;
@@ -210,28 +207,16 @@
                                     @php 
                                         $meta = session('cart_item_meta.' . $ci->id, []);
                                         $featIds = collect($meta['feature_ids'] ?? [])->filter()->map(fn($v)=> (int)$v)->unique()->all();
-                                        $optIds = collect($meta['option_ids'] ?? [])->filter()->map(fn($v)=> (int)$v)->unique()->all();
                                         $selFeats = !empty($featIds) ? \App\Models\CarVariantFeature::whereIn('id', $featIds)->get() : collect();
-                                        $selOpts  = !empty($optIds) ? \App\Models\CarVariantOption::whereIn('id', $optIds)->get() : collect();
                                     @endphp
-                                    @if($selFeats->count() > 0 || $selOpts->count() > 0)
+                                    @if($selFeats->count() > 0)
                                         <div class="mt-1 space-y-1">
-                                            @if($selFeats->count() > 0)
                                                 <div class="text-[11px] text-gray-600">Tính năng: 
                                                     @foreach($selFeats as $sf)
-                                                        @php $fee=(float)($sf->package_price ?? $sf->price ?? 0); @endphp
+                                                        @php $fee=(float)($sf->price ?? 0); @endphp
                                                         <span class="inline-flex items-center gap-1 mr-2">{{ $sf->feature_name }}@if($fee>0)<span class="text-indigo-700">(+{{ number_format($fee,0,',','.') }}đ)</span>@endif</span>
                                                     @endforeach
                                                 </div>
-                                            @endif
-                                            @if($selOpts->count() > 0)
-                                                <div class="text-[11px] text-gray-600">Tuỳ chọn: 
-                                                    @foreach($selOpts as $so)
-                                                        @php $fee=(float)($so->package_price ?? $so->price ?? 0); @endphp
-                                                        <span class="inline-flex items-center gap-1 mr-2">{{ $so->option_name }}@if($fee>0)<span class="text-indigo-700">(+{{ number_format($fee,0,',','.') }}đ)</span>@endif</span>
-                                                    @endforeach
-                                                </div>
-                                            @endif
                                         </div>
                                     @endif
                                 </div>
@@ -260,10 +245,8 @@
                         foreach ($cartItems as $aci) {
                             $meta = session('cart_item_meta.' . $aci->id, []);
                             $featIds = collect($meta['feature_ids'] ?? [])->filter()->map(fn($v)=> (int)$v)->unique()->all();
-                            $optIds = collect($meta['option_ids'] ?? [])->filter()->map(fn($v)=> (int)$v)->unique()->all();
                             $selFeats = !empty($featIds) ? \App\Models\CarVariantFeature::whereIn('id', $featIds)->get() : collect();
-                            $selOpts  = !empty($optIds) ? \App\Models\CarVariantOption::whereIn('id', $optIds)->get() : collect();
-                            $addonSumUnit = 0; foreach($selFeats as $sf){ $addonSumUnit += (float)($sf->package_price ?? $sf->price ?? 0); } foreach($selOpts as $so){ $addonSumUnit += (float)($so->package_price ?? $so->price ?? 0); }
+                            $addonSumUnit = 0; foreach($selFeats as $sf){ $addonSumUnit += (float)($sf->price ?? 0); }
                             $addonCart += $addonSumUnit * (int) $aci->quantity;
                         }
                         $tax = (int) round($total * 0.1);

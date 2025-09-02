@@ -261,7 +261,8 @@
                 <!-- Price + Inline Actions -->
                 @php 
                     $hasDiscount = ($variant->has_discount && ($variant->discount_percentage ?? 0) > 0);
-                    $baseOriginal = (int) ($variant->price ?? 0);
+                    // Use original_price if available, otherwise use price as fallback
+                    $baseOriginal = (int) ($variant->original_price ?? $variant->price ?? 0);
                     $baseCurrent  = $hasDiscount
                         ? (int) round($baseOriginal * (1 - ($variant->discount_percentage/100)))
                         : $baseOriginal;
@@ -409,8 +410,11 @@
                     @if($variant->is_available)
                 <!-- CTA row: full-width equal buttons -->
                 <div class="mt-3 grid grid-cols-2 gap-2">
-                    <button type="button" class="action-btn action-ghost w-full js-wishlist-toggle" aria-label="Yêu thích" title="Yêu thích" data-item-type="car_variant" data-item-id="{{ $variant->id }}">
-                        <i class="fas fa-heart"></i><span>Yêu thích</span>
+                    @php
+                        $__inWishlistVarPage = \App\Helpers\WishlistHelper::isInWishlist('car_variant', $variant->id);
+                    @endphp
+                    <button type="button" class="action-btn action-ghost w-full js-wishlist-toggle {{ $__inWishlistVarPage ? 'in-wishlist' : 'not-in-wishlist' }}" aria-label="Yêu thích" title="Yêu thích" aria-pressed="{{ $__inWishlistVarPage ? 'true' : 'false' }}" data-item-type="car_variant" data-item-id="{{ $variant->id }}">
+                        <i class="fa-heart {{ $__inWishlistVarPage ? 'fas text-red-500' : 'far' }}"></i><span>Yêu thích</span>
                     </button>
                     <form action="{{ route('user.cart.add') }}" method="POST" class="w-full add-to-cart-form" data-item-type="car_variant" data-item-id="{{ $variant->id }}">
                         @csrf

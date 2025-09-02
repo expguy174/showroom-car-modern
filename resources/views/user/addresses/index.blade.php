@@ -83,7 +83,7 @@
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">Họ tên *</label>
-                                        <input name="name" type="text" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 @error('name') border-red-500 focus:border-red-500 focus:ring-red-200 @enderror" required value="{{ old('name', $user->name) }}" placeholder="Nhập họ tên"/>
+                                        <input name="name" type="text" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 @error('name') border-red-500 focus:border-red-500 focus:ring-red-200 @enderror" required value="{{ old('name', optional($user->userProfile)->name) }}" placeholder="Nhập họ tên"/>
                                         @error('name')
                                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                                         @enderror
@@ -91,7 +91,7 @@
                                     
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">Số điện thoại *</label>
-                                        <input name="phone" type="tel" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 @error('phone') border-red-500 focus:border-red-500 focus:ring-red-200 @enderror" required value="{{ old('phone', $user->phone) }}" placeholder="Nhập số điện thoại"/>
+                                        <input name="phone" type="tel" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 @error('phone') border-red-500 focus:border-red-500 focus:ring-red-200 @enderror" required value="{{ old('phone', optional($user->addresses->firstWhere('is_default', true) ?: $user->addresses->first())->phone ?? null) }}" placeholder="Nhập số điện thoại"/>
                                         @error('phone')
                                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                                         @enderror

@@ -58,7 +58,7 @@ class CarController extends Controller
 
     public function variants($modelId)
     {
-        $variants = CarVariant::with(['carModel.carBrand', 'colors', 'images', 'specifications', 'options', 'featuresRelation'])
+        $variants = CarVariant::with(['carModel.carBrand', 'colors', 'images', 'specifications', 'featuresRelation'])
         ->where('car_model_id', $modelId)
         ->where('is_active', 1)
         ->get();
@@ -71,19 +71,33 @@ class CarController extends Controller
 
     public function variant($id)
     {
-        $variant = CarVariant::with([
-            'carModel.carBrand',
-            'colors',
-            'images',
-            'specifications',
-            'options',
-            'featuresRelation'
-        ])->findOrFail($id);
+        try {
+            $variant = CarVariant::query()->with([
+                'carModel.carBrand',
+                'colors',
+                'images',
+                'specifications',
+                'featuresRelation'
+            ])->find($id);
 
-        return response()->json([
-            'success' => true,
-            'data' => $variant
-        ]);
+            if (!$variant) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Variant not found'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $variant
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('API variants show error', [ 'id' => $id, 'error' => $e->getMessage() ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Internal Server Error'
+            ], 500);
+        }
     }
 
     public function accessory($id)

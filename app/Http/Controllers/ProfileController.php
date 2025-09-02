@@ -18,7 +18,7 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
-        $user = $request->user();
+        $user = $request->user()->loadMissing(['userProfile', 'addresses' => function($q){ $q->orderByDesc('is_default'); }]);
         $orders = $user->orders()->with(['items', 'items.color', 'paymentMethod'])->orderByDesc('created_at')->get();
         return view('profile.edit', [
             'user' => $user,
@@ -31,8 +31,12 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse|JsonResponse
     {
-        $user = $request->user();
-        $user->fill($request->validated());
+        $user = $request->user()->loadMissing(['userProfile', 'addresses']);
+
+        $data = $request->validated();
+
+        // Sync user core fields
+        $user->fill(collect($data)->only(['email'])->toArray());
 
         // Handle avatar upload
         if ($request->hasFile('avatar') && $request->file('avatar')->isValid()) {
@@ -53,6 +57,20 @@ class ProfileController extends Controller
 
         $user->save();
 
+        // Update or create profile name
+        if (!empty($data['name'])) {
+            $user->userProfile()->updateOrCreate([], ['name' => $data['name']]);
+        }
+
+        // Update default address phone if provided
+        if (!empty($data['phone'])) {
+            $defaultAddress = $user->addresses->firstWhere('is_default', true) ?: $user->addresses->first();
+            if ($defaultAddress) {
+                $defaultAddress->phone = $data['phone'];
+                $defaultAddress->save();
+            }
+        }
+
         if ($request->expectsJson() || $request->wantsJson() || $request->ajax()) {
             $avatarPath = $user->avatar_path;
             $avatarUrl = null;
@@ -63,13 +81,13 @@ class ProfileController extends Controller
                 'success' => true,
                 'status' => 'profile-updated',
                 'user' => [
-                    'name' => $user->name,
+                    'name' => optional($user->userProfile)->name,
                     'email' => $user->email,
-                    'phone' => $user->phone,
-                    'gender' => $user->gender,
-                    'nationality' => $user->nationality,
-                    'date_of_birth' => $user->date_of_birth ? $user->date_of_birth->format('Y-m-d') : null,
-                    'date_of_birth_display' => $user->date_of_birth ? $user->date_of_birth->format('d/m/Y') : null,
+                    'phone' => optional($user->addresses->firstWhere('is_default', true) ?: $user->addresses->first())->phone,
+                    'gender' => optional($user->userProfile)->gender,
+                    'nationality' => null,
+                    'date_of_birth' => optional($user->userProfile->birth_date ?? null)?->format('Y-m-d'),
+                    'date_of_birth_display' => optional($user->userProfile->birth_date ?? null)?->format('d/m/Y'),
                     'avatar_url' => $avatarUrl,
                 ],
             ]);

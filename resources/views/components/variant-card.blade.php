@@ -58,14 +58,23 @@ if (empty($powerDisplay) && !empty($maxPower)) {
 $fuelConsumption = method_exists($variant, 'getSpecValue') ? ($variant->getSpecValue('Tiêu thụ nhiên liệu', 'fuel') ?? null) : null;
 // Build primary info values to avoid N/A
 $fuelDisplay = $fuelVi ?: ($engineType ?: ($fuelConsumption ? ($fuelConsumption . ' L/100km') : null));
+// Price computation aligned with model fields
+$originalPrice = (float) ($variant->base_price ?? 0);
+$currentPrice = (float) ($variant->current_price ?? 0);
+$hasAutoDiscount = ($variant->has_discount ?? false) || (($originalPrice > 0) && ($currentPrice > 0) && ($currentPrice < $originalPrice));
+$computedDiscountPercentage = $hasAutoDiscount
+  ? (int) round((($originalPrice - $currentPrice) / max($originalPrice, 1)) * 100)
+  : 0;
 @endphp
 
-<div class="variant-card group bg-white rounded-2xl shadow-lg hover:shadow-2xl border border-gray-100 overflow-hidden h-full flex flex-col transition-all duration-500 hover:-translate-y-2 min-h-fit">
+<div class="variant-card group card-surface overflow-hidden h-full flex flex-col min-h-fit">
   <div class="relative">
     <a href="{{ route('car-variants.show', $variant->id) }}" class="block">
       @if($img)
-      <div class="relative w-full aspect-[4/3] overflow-hidden">
-        <img src="{{ $img }}" data-src="{{ $img }}" alt="{{ $variant->name }}" class="absolute inset-0 w-full h-full object-cover sm:group-hover:scale-110 duration-500 lazy-image" loading="lazy" decoding="async" width="800" height="600" onerror="this.onerror=null;this.src='https://via.placeholder.com/800x600?text=No+Image';">
+      <div class="card-media w-full aspect-[4/3]">
+        <img src="{{ $img }}" data-src="{{ $img }}" alt="{{ $variant->name }}" class="card-img" loading="lazy" decoding="async" width="800" height="600" onerror="this.onerror=null;this.src='https://via.placeholder.com/800x600?text=No+Image';">
+        <span class="card-overlay"></span>
+        <span class="card-sheen"></span>
       </div>
       @else
       <div class="relative w-full aspect-[4/3] bg-gray-200 flex items-center justify-center" role="img" aria-label="No image">
@@ -78,8 +87,14 @@ $fuelDisplay = $fuelVi ?: ($engineType ?: ($fuelConsumption ? ($fuelConsumption 
     <div class="absolute top-3 right-3 flex flex-col items-end z-10 gap-2">
 
       <!-- Wishlist Button - Always visible -->
-      <button type="button" class="w-9 h-9 sm:w-10 sm:h-10 inline-flex items-center justify-center bg-white/90 hover:bg-white border-2 border-gray-200 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 js-wishlist-toggle" aria-label="Yêu thích" title="Yêu thích" data-item-type="car_variant" data-item-id="{{ $variant->id }}">
-        <i class="far fa-heart text-gray-700 text-sm sm:text-base"></i>
+      @php
+        $__inWishlist = \App\Helpers\WishlistHelper::isInWishlist('car_variant', $variant->id);
+      @endphp
+      <button type="button"
+              class="w-9 h-9 sm:w-10 sm:h-10 inline-flex items-center justify-center bg-white/90 hover:bg-white border-2 border-gray-200 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 js-wishlist-toggle {{ $__inWishlist ? 'in-wishlist' : 'not-in-wishlist' }}"
+              aria-label="Yêu thích" title="Yêu thích" aria-pressed="{{ $__inWishlist ? 'true' : 'false' }}"
+              data-item-type="car_variant" data-item-id="{{ $variant->id }}">
+        <i class="{{ $__inWishlist ? 'fas text-red-500' : 'far text-gray-700' }} fa-heart text-sm sm:text-base"></i>
       </button>
 
       <!-- Compare Button (if enabled) - Hidden by default, visible on hover -->
@@ -187,18 +202,18 @@ $fuelDisplay = $fuelVi ?: ($engineType ?: ($fuelConsumption ? ($fuelConsumption 
 
     <!-- Price Section -->
     <div class="flex flex-col gap-1">
-      @if(!is_null($variant->price) && $variant->price > 0)
+      @if($currentPrice > 0)
       <div class="flex items-baseline gap-2">
-        <span class="price-main text-indigo-600 font-bold text-base sm:text-lg whitespace-nowrap shrink-0">{{ number_format($variant->has_discount ? ($variant->price * (1 - ($variant->discount_percentage ?? 0)/100)) : $variant->price, 0, ',', '.') }}₫</span>
-        @if($variant->has_discount && $variant->original_price)
-        <span class="text-xs text-gray-400 line-through decoration-2 decoration-gray-400">{{ number_format($variant->original_price, 0, ',', '.') }}₫</span>
+        <span class="price-main text-indigo-600 font-bold text-base sm:text-lg whitespace-nowrap shrink-0">{{ number_format($currentPrice, 0, ',', '.') }}₫</span>
+        @if($hasAutoDiscount)
+        <span class="text-xs text-gray-400 line-through decoration-2 decoration-gray-400">{{ number_format($originalPrice, 0, ',', '.') }}₫</span>
         @endif
       </div>
-      @if($variant->has_discount && $variant->discount_percentage)
+      @if($hasAutoDiscount && $computedDiscountPercentage > 0)
       <div class="flex items-center gap-1">
         <span class="inline-flex items-center px-2 py-1 bg-red-100 text-red-700 text-xs font-medium rounded-full">
           <i class="fas fa-tag mr-1"></i>
-          Giảm {{ $variant->discount_percentage }}%
+          Giảm {{ $computedDiscountPercentage }}%
         </span>
       </div>
       @endif

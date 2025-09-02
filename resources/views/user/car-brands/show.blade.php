@@ -202,14 +202,10 @@
     <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Section Header -->
         <div class="text-center mb-10 sm:mb-12">
-            <div class="inline-flex items-center px-4 py-2 rounded-full bg-indigo-100 text-indigo-700 text-sm font-semibold mb-4">
-                <i class="fas fa-layer-group mr-2"></i>
-                Dòng xe & Phiên bản
-            </div>
-            <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
+            <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 mb-3">
                 Chọn dòng xe để xem phiên bản
             </h2>
-            <p class="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto">
+            <p class="text-sm sm:text-base text-slate-500 max-w-2xl mx-auto">
                 Dòng xe hiển thị theo hàng ngang, bên dưới là các phiên bản tương ứng. Bạn cũng có thể xem chi tiết dòng xe.
             </p>
         </div>
@@ -238,29 +234,27 @@
                 </a>
             </div>
         @else
-            <!-- Models Row (horizontal) -->
-            <div class="mb-8">
-                <div class="flex items-stretch gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent snap-x">
+            <!-- Models Row (horizontal, simplified chips) -->
+            <div class="mb-6">
+                <div class="flex items-center justify-center gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent snap-x">
                     @foreach($modelsWithVariants as $m)
-                        <div class="js-model-card relative snap-start flex-shrink-0 w-[320px] sm:w-[360px] bg-white rounded-2xl border {{ $m->id === $activeModelId ? 'border-indigo-300 ring-2 ring-indigo-200' : 'border-gray-200' }} shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer" data-model-id="{{ $m->id }}">
-                            <div class="relative aspect-[4/3] rounded-t-2xl overflow-hidden">
-                                <img src="{{ $m->image_url }}" alt="{{ $m->name }}" class="w-full h-full object-cover">
-                            </div>
-                            <a href="{{ route('car-models.show', $m->id) }}" class="absolute top-2 right-2 z-20 inline-flex items-center px-2.5 py-1 rounded-full text-[12px] bg-white/95 text-gray-800 border border-gray-200 shadow-sm hover:bg-white"><i class="fas fa-external-link-alt mr-1"></i>Xem chi tiết</a>
-                            <div class="p-4">
-                                <h3 class="text-lg font-bold text-gray-900 mb-1 line-clamp-1">{{ $m->name }}</h3>
-                                <div class="text-sm text-gray-600 mb-3 line-clamp-2">{{ $m->description ?? ($brand->name . ' ' . $m->name) }}</div>
-                                <div class="flex flex-wrap gap-2">
-                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[12px] bg-indigo-50 text-indigo-700 border border-indigo-100"><i class="fas fa-tag mr-1"></i>{{ !empty($m->starting_price) ? (number_format($m->starting_price, 0, ',', '.') . '₫') : 'Liên hệ' }}</span>
-                                    @php $activeCount = $m->carVariants()->where('is_active', true)->count(); @endphp
-                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[12px] bg-emerald-50 text-emerald-700 border border-emerald-100"><i class="fas fa-layer-group mr-1"></i>{{ $activeCount }} phiên bản</span>
-                                    @if($activeCount === 0)
-                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[12px] bg-gray-100 text-gray-700 border border-gray-200"><i class="fas fa-clock mr-1"></i>Chưa có phiên bản</span>
-                                    @endif
-                                </div>
-                            </div>
+                        @php $activeCount = $m->carVariants()->where('is_active', true)->count(); @endphp
+                        <div class="snap-start flex-shrink-0">
+                            <button type="button" class="js-model-tab inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border {{ $m->id === $activeModelId ? 'border-indigo-500 bg-indigo-50 text-indigo-800' : 'border-gray-200 bg-white text-gray-700' }} hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 transition-all duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400/40"
+                                    data-model-id="{{ $m->id }}" title="{{ $m->name }}">
+                                <span class="min-w-0 text-left leading-tight">
+                                    <span class="block text-sm font-semibold truncate">{{ $m->name }}</span>
+                                    <span class="block text-[11px] text-gray-500 truncate {{ $m->id === $activeModelId ? 'text-indigo-700' : '' }}">{{ $activeCount }} phiên bản</span>
+                                </span>
+                            </button>
                         </div>
                     @endforeach
+                </div>
+                <div class="mt-4 flex items-center justify-center gap-2">
+                    <a id="model-detail-link" href="{{ route('car-models.show', $activeModelId) }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 bg-white text-gray-700 hover:border-indigo-400 hover:text-indigo-700 transition-colors">
+                        <i class="fas fa-external-link-alt"></i>
+                        <span>Xem chi tiết dòng xe</span>
+                    </a>
                 </div>
             </div>
 
@@ -268,7 +262,7 @@
             @foreach($modelsWithVariants as $m)
                 @php $variants = $m->carVariants()->where('is_active', true)->get(); @endphp
                 <div class="js-variants-row {{ $m->id === $activeModelId ? '' : 'hidden' }}" data-model-id="{{ $m->id }}">
-                    <div class="flex items-stretch gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent snap-x">
+                    <div class="flex items-stretch gap-4 overflow-x-auto p-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent snap-x">
                         @foreach($variants as $variant)
                             <div class="snap-start flex-shrink-0 w-[280px] sm:w-[320px]">
                                 @include('components.variant-card', ['variant' => $variant, 'showCompare' => true])
@@ -302,7 +296,7 @@
         <!-- Featured Variants Grid -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
             @foreach($featuredVariants as $variant)
-                <div class="group transform hover:-translate-y-2 transition-all duration-300">
+                <div class="group">
                     @include('components.variant-card', ['variant' => $variant, 'showCompare' => true])
                 </div>
             @endforeach
@@ -399,12 +393,6 @@
     transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
 }
 
-/* Hover effects */
-.group:hover .variant-card {
-    transform: translateY(-4px);
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-}
-
 /* Responsive improvements */
 @media (max-width: 640px) {
     .container {
@@ -427,6 +415,11 @@
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+/* Remove shadow on hover for cards within model variants row */
+.js-variants-row .variant-card:hover {
+    box-shadow: none !important;
 }
 </style>
 @endpush
@@ -451,24 +444,31 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     });
 });
 
-// Model tabs functionality
+// Model tabs functionality (chip buttons with hover/active states)
 document.addEventListener('click', function(e) {
-    const card = e.target.closest('.js-model-card');
-    if (!card) return;
-    const id = card.getAttribute('data-model-id');
+    const tab = e.target.closest('.js-model-tab');
+    if (!tab) return;
+    const id = tab.getAttribute('data-model-id');
     
-    // Update card highlight
-    document.querySelectorAll('.js-model-card').forEach(c => {
-        c.classList.remove('ring-2', 'ring-indigo-200', 'border-indigo-300');
-        c.classList.add('border-gray-200');
+    // Update active styles
+    document.querySelectorAll('.js-model-tab').forEach(b => {
+        b.classList.remove('border-indigo-400','border-indigo-500','bg-indigo-50','text-indigo-800');
+        b.classList.add('border-gray-200','bg-white','text-gray-700');
     });
-    card.classList.remove('border-gray-200');
-    card.classList.add('ring-2', 'ring-indigo-200', 'border-indigo-300');
+    tab.classList.remove('border-gray-200','bg-white','text-gray-700');
+    tab.classList.add('border-indigo-500','bg-indigo-50','text-indigo-800');
     
     // Toggle rows
     document.querySelectorAll('.js-variants-row').forEach(row => row.classList.add('hidden'));
     const target = document.querySelector('.js-variants-row[data-model-id="' + id + '"]');
     if (target) target.classList.remove('hidden');
+
+    // Update detail button
+    const detail = document.getElementById('model-detail-link');
+    if (detail) {
+        const base = detail.getAttribute('href').split('/').slice(0,-1).join('/');
+        detail.setAttribute('href', base + '/' + id);
+    }
 });
 
 // Intersection Observer for animations

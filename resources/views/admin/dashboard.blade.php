@@ -7,7 +7,7 @@
     <h1 class="text-2xl font-bold text-gray-800 mb-4">🎯 Admin Dashboard</h1>
 
     <p class="text-gray-700 text-lg">
-        Xin chào, <strong class="text-indigo-600">{{ Auth::user()->name }}</strong> 👋
+        Xin chào, <strong class="text-indigo-600">{{ optional(Auth::user()->userProfile)->name ?? 'Admin' }}</strong> 👋
     </p>
 
     <p class="text-gray-600 mt-2">

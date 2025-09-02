@@ -70,12 +70,12 @@
                     Bạn chưa có sản phẩm nào trong giỏ hàng. Hãy khám phá các xe hơi và phụ kiện chất lượng cao!
                 </p>
                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                    <a href="{{ route('products.index') }}" 
+                    <a href="{{ route('products.index', ['type' => 'car']) }}" 
                        class="inline-flex items-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition duration-300 transform hover:scale-105 shadow-lg">
                         <i class="fas fa-car mr-3"></i>
                         Xem xe hơi
                     </a>
-                    <a href="{{ route('accessories.index') }}" 
+                    <a href="{{ route('products.index', ['type' => 'accessory']) }}" 
                        class="inline-flex items-center bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-emerald-700 hover:to-teal-700 transition duration-300 transform hover:scale-105 shadow-lg">
                         <i class="fas fa-tools mr-3"></i>
                         Xem phụ kiện
@@ -108,17 +108,16 @@
                                 <table id="car-table" class="cart-table centered min-w-full">
                                     <thead>
                                         <tr class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider">
-                                            <th class="px-6 py-3">Ảnh</th>
-                                            <th class="px-6 py-3">Thông tin</th>
-                                            <th class="px-6 py-3">Số lượng</th>
-                                            <th class="px-6 py-3">Giá</th>
-                                            <th class="px-6 py-3">Tổng</th>
-                                            <th class="px-6 py-3">Thao tác</th>
+                                            <th class="px-6 py-3 whitespace-nowrap">Ảnh</th>
+                                            <th class="px-6 py-3 whitespace-nowrap">Thông tin</th>
+                                            <th class="px-6 py-3 whitespace-nowrap">Số lượng</th>
+                                            <th class="px-6 py-3 whitespace-nowrap">Giá</th>
+                                            <th class="px-6 py-3 whitespace-nowrap">Thao tác</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-gray-100">
                                         @foreach($carItems as $item)
-                                            @include('cart.partials.car-item', ['item' => $item])
+                                            @include('user.cart.partials.car-item', ['item' => $item])
                                         @endforeach
                                     </tbody>
                                 </table>
@@ -143,17 +142,16 @@
                                 <table id="accessory-table" class="cart-table centered min-w-full">
                                     <thead>
                                         <tr class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider">
-                                            <th class="px-6 py-3">Ảnh</th>
-                                            <th class="px-6 py-3">Thông tin</th>
-                                            <th class="px-6 py-3">Số lượng</th>
-                                            <th class="px-6 py-3">Giá</th>
-                                            <th class="px-6 py-3">Tổng</th>
-                                            <th class="px-6 py-3">Thao tác</th>
+                                            <th class="px-6 py-3 whitespace-nowrap">Ảnh</th>
+                                            <th class="px-6 py-3 whitespace-nowrap">Thông tin</th>
+                                            <th class="px-6 py-3 whitespace-nowrap">Số lượng</th>
+                                            <th class="px-6 py-3 whitespace-nowrap">Giá</th>
+                                            <th class="px-6 py-3 whitespace-nowrap">Thao tác</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-gray-100">
                                         @foreach($accessoryItems as $item)
-                                            @include('cart.partials.accessory-item', ['item' => $item])
+                                            @include('user.cart.partials.accessory-item', ['item' => $item])
                                                 @endforeach
                                     </tbody>
                                 </table>
@@ -189,9 +187,9 @@
                                             <span id="subtotal">{{ number_format($cartItems->sum(function($ci){ 
                                                 $u = ($ci->item_type==='car_variant' && method_exists($ci->item,'getPriceWithColorAdjustment')) 
                                                     ? $ci->item->getPriceWithColorAdjustment($ci->color_id) 
-                                                    : ($ci->item->price ?? 0); 
+                                                    : ($ci->item->current_price ?? 0); 
                                                 return $u * $ci->quantity; 
-                                            })) }}</span> đ
+                                            }), 0, ',', '.') }}</span> đ
                                         </span>
                                     </div>
                                     <div class="flex justify-between text-gray-600">
@@ -204,9 +202,9 @@
                                             <span id="tax">{{ number_format($cartItems->sum(function($ci){ 
                                                 $u = ($ci->item_type==='car_variant' && method_exists($ci->item,'getPriceWithColorAdjustment')) 
                                                     ? $ci->item->getPriceWithColorAdjustment($ci->color_id) 
-                                                    : ($ci->item->price ?? 0); 
+                                                    : ($ci->item->current_price ?? 0); 
                                                 return $u * $ci->quantity * 0.1; 
-                                            })) }}</span> đ
+                                            }), 0, ',', '.') }}</span> đ
                                         </span>
                                     </div>
                                 </div>
@@ -219,9 +217,9 @@
                                             <span id="cart-total">{{ number_format($cartItems->sum(function($ci){ 
                                                 $u = ($ci->item_type==='car_variant' && method_exists($ci->item,'getPriceWithColorAdjustment')) 
                                                     ? $ci->item->getPriceWithColorAdjustment($ci->color_id) 
-                                                    : ($ci->item->price ?? 0); 
+                                                    : ($ci->item->current_price ?? 0); 
                                                 return $u * $ci->quantity * 1.1; 
-                                            })) }}</span> đ
+                                            }), 0, ',', '.') }}</span> đ
                                         </span>
                                     </div>
                                     <p class="text-sm text-gray-500 mt-1">Đã bao gồm VAT</p>
@@ -279,7 +277,6 @@
 @endpush
 
 @push('scripts')
-<script src="{{ asset('js/cart-manager.js') }}"></script>
 <script>
  document.addEventListener('DOMContentLoaded', function() {
     // Initialize color displays
@@ -289,8 +286,38 @@
             el.style.backgroundColor = hex; 
         }
    });
-    
-    // CartManager auto-initializes inside cart-manager.js. No manual init needed here.
+   
+   // Color display initialization only - price updates handled by cart-fast.js
+   
+   // Function to update cart totals
+   window.updateCartTotals = function() {
+     let subtotal = 0;
+     let tax = 0;
+     let cartTotal = 0;
+     
+     // Calculate from all cart items
+     document.querySelectorAll('.cart-item-row').forEach(function(row) {
+       const totalEl = document.querySelector('.item-total[data-id="' + row.dataset.id + '"]');
+       if (totalEl) {
+         const total = parseInt(totalEl.textContent.replace(/[^\d]/g, ''));
+         if (!isNaN(total)) subtotal += total;
+       }
+     });
+     
+     tax = Math.round(subtotal * 0.1);
+     cartTotal = subtotal + tax;
+     
+     const nf = new Intl.NumberFormat('vi-VN');
+     
+     // Update summary display
+     const subtotalEl = document.getElementById('subtotal');
+     const taxEl = document.getElementById('tax');
+     const cartTotalEl = document.getElementById('cart-total');
+     
+     if (subtotalEl) subtotalEl.textContent = nf.format(subtotal);
+     if (taxEl) taxEl.textContent = nf.format(tax);
+     if (cartTotalEl) cartTotalEl.textContent = nf.format(cartTotal);
+   }
  });
 </script>
 @endpush

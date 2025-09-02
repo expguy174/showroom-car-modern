@@ -1,21 +1,25 @@
 @props(['accessory', 'showCompare' => false])
 
 @php
-$img = $accessory->image_url ?? null;
+$galleryRaw = $accessory->gallery;
+$gallery = is_array($galleryRaw) ? $galleryRaw : (json_decode($galleryRaw ?? '[]', true) ?: []);
+$img = $gallery[0] ?? null;
 $name = $accessory->name ?? 'N/A';
-$price = $accessory->price ?? 0;
-$originalPrice = $accessory->original_price ?? $price;
-$discountPercentage = $accessory->discount_percentage ?? 0;
-$hasDiscount = $discountPercentage > 0 || $originalPrice > $price;
-$finalPrice = $hasDiscount ? ($originalPrice * (1 - $discountPercentage/100)) : $price;
+$price = (float) ($accessory->current_price ?? 0);
+$originalPrice = (float) ($accessory->base_price ?? $price);
+$hasDiscount = ($originalPrice > 0) && ($price > 0) && ($originalPrice > $price);
+$computedDiscount = $hasDiscount ? (int) round((($originalPrice - $price) / max($originalPrice,1)) * 100) : 0;
+$finalPrice = $price;
 @endphp
 
-<div class="accessory-card group bg-white rounded-2xl shadow-lg hover:shadow-2xl border border-gray-100 overflow-hidden h-full flex flex-col transition-transform duration-500 hover:-translate-y-2 transform-gpu min-h-fit">
+<div class="accessory-card group card-surface overflow-hidden h-full flex flex-col min-h-fit">
   <div class="relative">
     <a href="{{ route('accessories.show', $accessory->id) }}" class="block">
       @if($img)
-      <div class="relative w-full aspect-[4/3] overflow-hidden">
-        <img src="{{ $img }}" data-src="{{ $img }}" alt="{{ $name }}" class="absolute inset-0 w-full h-full object-cover sm:group-hover:scale-110 transition-transform duration-500 lazy-image [will-change:transform]" loading="lazy" decoding="async" width="800" height="600" onerror="this.onerror=null;this.src='https://via.placeholder.com/800x600?text=No+Image';">
+      <div class="card-media w-full aspect-[4/3]">
+        <img src="{{ $img }}" alt="{{ $name }}" class="card-img" loading="lazy" decoding="async" width="800" height="600" onerror="this.onerror=null;this.src='https://via.placeholder.com/800x600?text=No+Image';">
+        <span class="card-overlay"></span>
+        <span class="card-sheen"></span>
       </div>
       @else
       <div class="relative w-full aspect-[4/3] bg-gray-200 flex items-center justify-center" role="img" aria-label="No image">
@@ -68,8 +72,14 @@ $finalPrice = $hasDiscount ? ($originalPrice * (1 - $discountPercentage/100)) : 
   <div class="absolute top-3 right-3 flex flex-col items-end z-10 gap-2">
 
     <!-- Wishlist Button - Always visible -->
-    <button type="button" class="w-9 h-9 sm:w-10 sm:h-10 inline-flex items-center justify-center bg-white/90 hover:bg-white border-2 border-gray-200 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 js-wishlist-toggle" aria-label="Yêu thích" title="Yêu thích" data-item-type="accessory" data-item-id="{{ $accessory->id }}">
-      <i class="far fa-heart text-gray-700 text-sm sm:text-base"></i>
+    @php
+      $__inWishlistAcc = \App\Helpers\WishlistHelper::isInWishlist('accessory', $accessory->id);
+    @endphp
+    <button type="button"
+            class="w-9 h-9 sm:w-10 sm:h-10 inline-flex items-center justify-center bg-white/90 hover:bg-white border-2 border-gray-200 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 js-wishlist-toggle {{ $__inWishlistAcc ? 'in-wishlist' : 'not-in-wishlist' }}"
+            aria-label="Yêu thích" title="Yêu thích" aria-pressed="{{ $__inWishlistAcc ? 'true' : 'false' }}"
+            data-item-type="accessory" data-item-id="{{ $accessory->id }}">
+      <i class="{{ $__inWishlistAcc ? 'fas text-red-500' : 'far text-gray-700' }} fa-heart text-sm sm:text-base"></i>
     </button>
 
     <!-- Compare Button (if enabled) - Hidden by default, visible on hover -->
@@ -129,29 +139,22 @@ $finalPrice = $hasDiscount ? ($originalPrice * (1 - $discountPercentage/100)) : 
       @if($price > 0)
       <div class="flex items-baseline gap-2">
         <span class="price-main text-indigo-600 font-bold text-base sm:text-lg whitespace-nowrap shrink-0">{{ number_format($price, 0, ',', '.') }}₫</span>
-        @if($hasDiscount && $originalPrice > $price)
+        @if($hasDiscount)
         <span class="text-xs text-gray-400 line-through decoration-2 decoration-gray-400">{{ number_format($originalPrice, 0, ',', '.') }}₫</span>
         @endif
       </div>
-      @if($hasDiscount && $discountPercentage > 0)
+      @if($hasDiscount && $computedDiscount > 0)
       <div class="flex items-center gap-1">
         <span class="inline-flex items-center px-2 py-1 bg-red-100 text-red-700 text-xs font-medium rounded-full">
           <i class="fas fa-tag mr-1"></i>
-          Giảm {{ number_format($discountPercentage, 0) }}%
+          Giảm {{ $computedDiscount }}%
         </span>
       </div>
-      @elseif($hasDiscount && $originalPrice > $price)
-        <div class="flex items-center gap-1">
-          <span class="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
-            <i class="fas fa-tag mr-1"></i>
-            Giá tốt
-          </span>
-        </div>
-        @endif
-        @else
-        <span class="text-gray-500 font-medium whitespace-nowrap">Liên hệ</span>
-        @endif
-      </div>
+      @endif
+      @else
+      <span class="text-gray-500 font-medium whitespace-nowrap">Liên hệ</span>
+      @endif
+    </div>
 
       <!-- Product Info removed per request -->
 

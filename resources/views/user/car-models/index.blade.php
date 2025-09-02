@@ -5,7 +5,32 @@
 @section('content')
 @php
     $brand = $carModel->carBrand;
+    // Robust hero image fallback
     $mainImage = $carModel->image_url ?? ($gallery[0] ?? null);
+    if (empty($mainImage)) {
+        try {
+            $firstVariant = $carModel->carVariants()->where('is_active', true)->with('images')->first();
+            $mainImage = $firstVariant->image_url
+                ?? optional(optional($firstVariant)->images->first())->image_url
+                ?? optional(optional($firstVariant)->images->first())->url
+                ?? null;
+        } catch (\Throwable $e) { /* ignore */ }
+    }
+    // Ensure gallery has items; fallback to first few active variant images
+    if (empty($gallery) || count($gallery) === 0) {
+        try {
+            $variantImages = $carModel->carVariants()
+                ->where('is_active', true)
+                ->with('images')
+                ->limit(4)->get()
+                ->flatMap(function($v){
+                    return collect($v->images ?: [])->map(function($img){
+                        return $img->image_url ?? $img->url ?? null;
+                    })->filter();
+                })->take(6)->values()->all();
+            $gallery = $variantImages;
+        } catch (\Throwable $e) { /* ignore */ }
+    }
     $minPrice = $stats['price_range']['min'] ?? null;
     $maxPrice = $stats['price_range']['max'] ?? null;
     $avgRating = $stats['average_rating'] ?? null;
@@ -17,6 +42,11 @@
 
 <!-- Hero / Intro -->
 <section class="relative overflow-hidden bg-gradient-to-br from-neutral-950 via-slate-900 to-black">
+
+    <!-- Background Pattern to match brand page -->
+    <div class="absolute inset-0 opacity-10" aria-hidden="true">
+        <div class="absolute inset-0" style="background-image: radial-gradient(circle at 25% 25%, white 2px, transparent 2px), radial-gradient(circle at 75% 75%, white 2px, transparent 2px); background-size: 48px 48px;"></div>
+    </div>
 
     <div class="relative container mx-auto px-4 sm:px-6 lg:px-8 pt-14 sm:pt-20 pb-12 sm:pb-16">
         <!-- Breadcrumb -->
@@ -63,9 +93,10 @@
                     <div class="px-4 sm:px-6 pb-4 sm:pb-6 pt-3">
                         <div id="model-hero-thumbs" class="flex items-center gap-3 overflow-x-auto scrollbar-hide">
                             @foreach($gallery as $img)
-                                <div class="flex-shrink-0 w-24 h-16 sm:w-28 sm:h-20 rounded-xl overflow-hidden border border-white/20 cursor-pointer hover:scale-[1.02] transition-transform duration-200">
-                                    <img data-src="{{ $img }}" alt="{{ $carModel->name }}" class="w-full h-full object-cover lazy-image">
-                                </div>
+                                <button type="button" class="js-hero-thumb flex-shrink-0 w-24 h-16 sm:w-28 sm:h-20 rounded-xl overflow-hidden border border-white/20 cursor-pointer hover:scale-[1.02] transition-transform duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                                    data-src="{{ $img }}" aria-label="Chọn ảnh {{ $loop->iteration }}">
+                                    <img src="{{ $img }}" alt="{{ $carModel->name }}" class="w-full h-full object-cover">
+                                </button>
                             @endforeach
                         </div>
                     </div>
@@ -75,293 +106,60 @@
 
             <!-- Heading / Meta -->
             <div class="order-1 lg:order-2">
-                <div class="flex items-center gap-4 mb-5">
-                    @if($brand && $brand->logo_url)
-                        <div class="w-14 h-14 rounded-2xl bg-white/90 backdrop-blur ring-2 ring-white/30 shadow flex items-center justify-center overflow-hidden">
-                            <img src="{{ $brand->logo_url }}" alt="{{ $brand->name }}" class="w-12 h-12 object-contain" loading="lazy" decoding="async">
-                        </div>
-                    @endif
-                    <div class="min-w-0">
-                        <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold text-indigo-100 tracking-tight">{{ $brand->name ?? '' }} {{ $carModel->name }}</h1>
-                        <div class="mt-3 flex flex-wrap items-center gap-2">
-                            @if($minPrice)
-                                <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-400/20 text-green-100 text-sm font-semibold border border-green-400/30"><i class="fas fa-tag"></i>Từ {{ number_format($minPrice, 0, ',', '.') }}₫</span>
-                            @endif
-                            @if(!empty($avgRating))
-                                <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-400/20 text-amber-100 text-sm font-semibold border border-amber-400/30"><i class="fas fa-star"></i>{{ number_format($avgRating, 1) }} @if($ratingCount) <span class="opacity-80">({{ number_format($ratingCount) }})</span> @endif</span>
-                            @endif
-                            @if($carModel->is_new)
-                                <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-400/20 text-indigo-100 text-sm font-semibold border border-indigo-400/30"><i class="fas fa-bolt"></i>Mới</span>
-                            @endif
-                            @if($carModel->is_featured)
-                                <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-400/20 text-purple-100 text-sm font-semibold border border-purple-400/30"><i class="fas fa-star"></i>Nổi bật</span>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-
-                @if(!empty($carModel->description))
-                    <p class="text-gray-200/90 leading-relaxed mb-6">{{ $carModel->description }}</p>
-                @endif
-
-                <!-- Quick specs -->
-                @php
-                    // Fallbacks: ưu tiên giá trị trên model; sau đó thống kê; rồi compareMatrix; cuối cùng đọc trực tiếp từ variants
-                    $__fuelListModel = [];
-                    if (!empty($carModel->fuel_type)) { $__fuelListModel = [ (string) $carModel->fuel_type ]; }
-                    $__fuelList = !empty($__fuelListModel) ? $__fuelListModel : (($fuelTypes && $fuelTypes->count()) ? $fuelTypes->toArray() : array_values(array_unique(array_filter(($compareMatrix['Nhiên liệu'] ?? [])))));
-                    if (empty($__fuelList) && isset($variants)) { $__fuelList = array_values(array_unique(array_filter(($variants ?? collect())->pluck('fuel_type')->toArray()))); }
-                    $__transList = ($transmissions && $transmissions->count()) ? $transmissions->toArray() : array_values(array_unique(array_filter(($compareMatrix['Hộp số'] ?? []))));
-                    if (empty($__transList) && isset($variants)) { $__transList = array_values(array_unique(array_filter(($variants ?? collect())->pluck('transmission')->toArray()))); }
-                    $__seatList = ($seats && $seats->count()) ? $seats->toArray() : array_values(array_unique(array_filter(($compareMatrix['Số chỗ'] ?? []))));
-                    if (empty($__seatList) && isset($variants)) { $__seatList = array_values(array_unique(array_filter(($variants ?? collect())->pluck('seating_capacity')->toArray()))); }
-                @endphp
-                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
-                    @php $hasBody = !empty($carModel->body_type); @endphp
-                    @if($hasBody)
-                    <div class="flex items-center gap-3 p-3 rounded-xl bg-white/10 border border-white/20 text-white">
-                        <i class="fas fa-car text-white/80"></i>
-                        <div>
-                            <div class="text-xs text-white/70">Kiểu dáng</div>
-                            <div class="text-sm font-semibold">{{ $carModel->body_type }}</div>
-                        </div>
-                    </div>
-                    @else
-                    <div class="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 text-white/80">
-                        <i class="fas fa-car text-white/60"></i>
-                        <div>
-                            <div class="text-xs text-white/60">Kiểu dáng</div>
-                            <div class="text-sm font-medium">Đang cập nhật</div>
-                        </div>
-                    </div>
-                    @endif
-                    @if(!empty($carModel->segment))
-                    @php
-                        $segRaw = trim((string) $carModel->segment);
-                        $segUpper = strtoupper($segRaw);
-                        $segMap = [
-                            'A' => 'Hạng A (city cỡ nhỏ)',
-                            'B' => 'Hạng B (hatchback/sedan cỡ nhỏ)',
-                            'C' => 'Hạng C (cỡ trung)',
-                            'D' => 'Hạng D (cỡ lớn)',
-                            'E' => 'Hạng E (cao cấp)',
-                            'F' => 'Hạng F (sang trọng)',
-                            'SUV-A' => 'SUV cỡ A',
-                            'SUV-B' => 'SUV cỡ B',
-                            'SUV-C' => 'SUV cỡ C',
-                            'SUV-D' => 'SUV cỡ D',
-                            'SUV-E' => 'SUV cỡ E',
-                            'SUV' => 'SUV',
-                            'CROSSOVER' => 'Crossover',
-                            'CUV' => 'Crossover',
-                            'MPV' => 'MPV/Minivan',
-                            'MVP' => 'MPV/Minivan',
-                            'PICKUP' => 'Bán tải',
-                            'PICK-UP' => 'Bán tải',
-                            'TRUCK' => 'Bán tải',
-                            'SPORT' => 'Thể thao',
-                            'COUPE' => 'Coupe',
-                            'HATCHBACK' => 'Hatchback',
-                            'SEDAN' => 'Sedan',
-                            'WAGON' => 'Wagon',
-                        ];
-                        $segLabel = $segMap[$segUpper] ?? $segRaw;
-                    @endphp
-                    <div class="flex items-center gap-3 p-3 rounded-xl bg-white/10 border border-white/20 text-white">
-                        <i class="fas fa-layer-group text-white/80"></i>
-                        <div>
-                            <div class="text-xs text-white/70">Phân khúc</div>
-                            <div class="text-sm font-semibold">{{ $segLabel }}</div>
-                        </div>
-                    </div>
-                    @endif
-                    <div class="flex items-center gap-3 p-3 rounded-xl {{ !empty($__fuelList) ? 'bg-white/10 border-white/20 text-white' : 'bg-white/5 border-white/10 text-white/80' }} border">
-                        <i class="fas fa-gas-pump text-white/80"></i>
-                        <div>
-                            <div class="text-xs text-white/70">Nhiên liệu</div>
-                            @if(!empty($__fuelList))
-                                <div class="text-sm font-semibold space-y-0.5">
-                                    @foreach($__fuelList as $__f)
-                                        <div class="uppercase">{{ strtoupper($__f) }}</div>
-                                    @endforeach
-                                </div>
-                            @else
-                                <div class="text-sm font-medium">Đang cập nhật</div>
-                            @endif
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-3 p-3 rounded-xl {{ !empty($__transList) ? 'bg-white/10 border-white/20 text-white' : 'bg-white/5 border-white/10 text-white/80' }} border">
-                        <i class="fas fa-cogs text-white/80"></i>
-                        <div>
-                            <div class="text-xs text-white/70">Hộp số</div>
-                            @if(!empty($__transList))
-                                <div class="text-sm font-semibold space-y-0.5">
-                                    @foreach($__transList as $__t)
-                                        <div class="uppercase">{{ strtoupper($__t) }}</div>
-                                    @endforeach
-                                </div>
-                            @else
-                                <div class="text-sm font-medium">Đang cập nhật</div>
-                            @endif
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-3 p-3 rounded-xl {{ !empty($__seatList) ? 'bg-white/10 border-white/20 text-white' : 'bg-white/5 border-white/10 text-white/80' }} border">
-                        <i class="fas fa-users text-white/80"></i>
-                        <div>
-                            <div class="text-xs text-white/70">Số chỗ</div>
-                            @if(!empty($__seatList))
-                                <div class="text-sm font-semibold space-y-0.5">
-                                    @foreach($__seatList as $__s)
-                                        <div>{{ $__s }}</div>
-                                    @endforeach
-                                </div>
-                            @else
-                                <div class="text-sm font-medium">Đang cập nhật</div>
-                            @endif
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-3 p-3 rounded-xl {{ (!empty($carModel->production_start_year) || !empty($carModel->production_end_year)) ? 'bg-white/10 border-white/20 text-white' : 'bg-white/5 border-white/10 text-white/80' }} border">
-                        <i class="fas fa-calendar-alt text-white/80"></i>
-                        <div>
-                            <div class="text-xs text-white/70">Năm ra mắt</div>
-                            @if(!empty($carModel->production_start_year) || !empty($carModel->production_end_year))
-                                <div class="text-sm font-semibold">{{ $carModel->production_start_year }}@if(!empty($carModel->production_end_year)) – {{ $carModel->production_end_year }} @endif</div>
-                            @else
-                                <div class="text-sm font-medium">Đang cập nhật</div>
-                            @endif
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-3 p-3 rounded-xl {{ !empty($carModel->generation) ? 'bg-white/10 border-white/20 text-white' : 'bg-white/5 border-white/10 text-white/80' }} border">
-                        <i class="fas fa-history text-white/80"></i>
-                        <div>
-                            <div class="text-xs text-white/70">Thế hệ</div>
-                            @if(!empty($carModel->generation))
-                                <div class="text-sm font-semibold">{{ $carModel->generation }}</div>
-                            @else
-                                <div class="text-sm font-medium">Đang cập nhật</div>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Thông số chính (tổng hợp từ các phiên bản) -->
-                @php
-                    $__specRows = ['Động cơ','Công suất','Mô-men xoắn','Dẫn động','Tiêu thụ nhiên liệu'];
-                    $__dimRows = ['Dài (mm)','Rộng (mm)','Cao (mm)'];
-                @endphp
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    @foreach($__specRows as $lbl)
-                        @php
-                            $vals = ($compareMatrix[$lbl] ?? null);
-                            $lines = null;
-                            if ($vals) {
-                                $u = array_values(array_unique(array_map(function($v){ return $v ?: '-'; }, $vals)));
-                                $lines = $u;
-                            }
-                        @endphp
-                        @if(!empty($lines))
-                        <div class="flex items-center gap-3 p-3 rounded-xl bg-white/10 border border-white/20 text-white">
-                            <div class="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center">
-                                <i class="fas fa-info text-white/80"></i>
+                <div class="grid grid-cols-1 xl:grid-cols-[auto,1fr] items-center gap-6 xl:gap-8">
+                    <!-- Logo -->
+                    <div class="flex items-center justify-center xl:justify-start">
+                        @if($brand && $brand->logo_url)
+                            <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white/95 backdrop-blur-sm ring-2 ring-white/20 shadow-2xl flex items-center justify-center overflow-hidden">
+                                <img src="{{ $brand->logo_url }}" alt="{{ $brand->name }}" class="w-16 h-16 sm:w-20 sm:h-20 object-contain" loading="lazy" decoding="async">
                             </div>
-                            <div class="min-w-0">
-                                <div class="text-xs text-white/70">{{ $lbl }}</div>
-                                <div class="text-sm font-semibold space-y-0.5">
-                                    @foreach($lines as $__opt)
-                                        <div>{{ $__opt }}</div>
-                                    @endforeach
-                                </div>
+                        @else
+                            <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white/95 backdrop-blur-sm ring-2 ring-white/20 shadow-2xl flex items-center justify-center">
+                                <i class="fas fa-car text-gray-700 text-2xl sm:text-3xl"></i>
                             </div>
-                        </div>
-                        @endif
-                    @endforeach
-                    @php
-                        $d = [];
-                        foreach($__dimRows as $__d){ if(!empty($compareMatrix[$__d])){ $u = array_values(array_unique($compareMatrix[$__d])); $d[$__d] = $u; } }
-                        $dimHas = count($d)===3;
-                    @endphp
-                    @if($dimHas)
-                    <div class="flex items-center gap-3 p-3 rounded-xl bg-white/10 border border-white/20 text-white sm:col-span-2">
-                        <div class="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center">
-                            <i class="fas fa-ruler-combined text-white/80"></i>
-                        </div>
-                        <div class="min-w-0">
-                            <div class="text-xs text-white/70">Kích thước (DxRxC)</div>
-                            <div class="text-sm font-semibold space-y-0.5">
-                                @for($i=0; $i < max(count($d['Dài (mm)']), count($d['Rộng (mm)']), count($d['Cao (mm)'])); $i++)
-                                    @php
-                                        $x = $d['Dài (mm)'][$i] ?? end($d['Dài (mm)']);
-                                        $y = $d['Rộng (mm)'][$i] ?? end($d['Rộng (mm)']);
-                                        $z = $d['Cao (mm)'][$i] ?? end($d['Cao (mm)']);
-                                    @endphp
-                                    <div>{{ $x }} × {{ $y }} × {{ $z }}</div>
-                                @endfor
-                            </div>
-                        </div>
-                    </div>
-                    @endif
-                </div>
-
-                @if(($highlightSpecs ?? []) && count($highlightSpecs))
-                <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    @foreach($highlightSpecs as $label => $val)
-                    <div class="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 text-white">
-                        <div class="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center">
-                            <i class="fas fa-info text-white/80"></i>
-                        </div>
-                        <div class="min-w-0">
-                            <div class="text-xs text-white/70">{{ $label }}</div>
-                            <div class="text-sm font-semibold truncate">{{ $val }}</div>
-                        </div>
-                    </div>
-                    @endforeach
-                </div>
-                @endif
-
-                @if(($aggregatedColors ?? []) && count($aggregatedColors))
-                @php
-                    $__showColors = array_slice($aggregatedColors, 0, 8);
-                @endphp
-                <div class="mt-4">
-                    <div class="text-xs text-white/70 mb-2">Màu ngoại thất</div>
-                    <div class="flex flex-wrap items-center gap-3">
-                        @foreach($__showColors as $c)
-                        @php
-                            $hexClr = $c['hex'] ?? null;
-                            if ($hexClr) { $hexClr = '#' . ltrim($hexClr, '#'); } else { $hexClr = '#e5e7eb'; }
-                        @endphp
-                        <div class="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-white/5 border border-white/10">
-                            <span class="w-3.5 h-3.5 rounded-full border js-color-dot" data-color="{{ $hexClr }}"></span>
-                            <span class="text-xs text-white/90">{{ $c['name'] }}</span>
-                        </div>
-                        @endforeach
-                        @if(count($aggregatedColors) > count($__showColors))
-                            <span class="text-xs text-white/80">+{{ count($aggregatedColors) - count($__showColors) }} màu</span>
                         @endif
                     </div>
-                </div>
-                @endif
 
-                @if(($featuresByCategory ?? []) && count($featuresByCategory))
-                @php
-                    $_flat = [];
-                    foreach ($featuresByCategory as $cat => $items) { foreach ($items as $it) { $_flat[] = $it; } }
-                    $_flat = array_slice(array_values(array_unique($_flat)), 0, 8);
-                @endphp
-                @if(count($_flat))
-                <div class="mt-4">
-                    <div class="text-xs text-white/70 mb-2">Tính năng nổi bật</div>
-                    <div class="flex flex-wrap items-center gap-2">
-                        @foreach($_flat as $f)
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-white/5 border border-white/10 text-[12px] text-white/90"><i class="fas fa-check text-emerald-300"></i>{{ $f }}</span>
-                        @endforeach
+                    <!-- Basic Info -->
+                    <div class="min-w-0 text-center xl:text-left">
+                        <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                            {{ $brand->name ?? '' }} {{ $carModel->name }}
+                        </h1>
+
+                        @if(!empty($carModel->description))
+                            <p class="mt-3 text-gray-200 leading-relaxed max-w-2xl xl:max-w-3xl">
+                                {{ $carModel->description }}
+                            </p>
+                        @endif
+
+                        <!-- Simple badges -->
+                        <div class="mt-4 flex flex-wrap items-center justify-center xl:justify-start gap-2">
+                            @php $hasBody = !empty($carModel->body_type); @endphp
+                            <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 text-white text-sm font-medium border border-white/20">
+                                <i class="fas fa-car"></i>
+                                {{ $hasBody ? $carModel->body_type : 'Kiểu dáng: Đang cập nhật' }}
+                            </span>
+                            @if(!empty($carModel->segment))
+                                <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 text-white text-sm font-medium border border-white/20">
+                                    <i class="fas fa-layer-group"></i>
+                                    {{ $carModel->segment }}
+                                </span>
+                            @endif
+                            <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 text-white text-sm font-medium border border-white/20">
+                                <i class="fas fa-calendar-alt"></i>
+                                @if(!empty($carModel->production_start_year) || !empty($carModel->production_end_year))
+                                    {{ $carModel->production_start_year }}@if(!empty($carModel->production_end_year)) – {{ $carModel->production_end_year }} @endif
+                                @else
+                                    Năm ra mắt: Đang cập nhật
+                                @endif
+                            </span>
+                            <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 text-white text-sm font-medium border border-white/20">
+                                <i class="fas fa-history"></i>
+                                {{ !empty($carModel->generation) ? $carModel->generation : 'Thế hệ: Đang cập nhật' }}
+                            </span>
+                        </div>
                     </div>
                 </div>
-                @endif
-                @endif
-
-                <!-- CTAs -->
-                
             </div>
         </div>
     </div>
@@ -406,7 +204,7 @@
         @else
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
                 @foreach($variants as $variant)
-                    <div class="group transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="group">
                         @include('components.variant-card', ['variant' => $variant, 'showCompare' => true])
                     </div>
                 @endforeach
@@ -415,45 +213,7 @@
     </div>
     </section>
 
-@if(($compareMatrix ?? []) && count($compareMatrix) && ($variants ?? collect())->count() > 0)
-<section id="compare" class="py-12 sm:py-16 bg-white">
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between gap-4 mb-6 sm:mb-8">
-            <div>
-                <h3 class="text-2xl sm:text-3xl font-bold text-gray-900">Bảng so sánh nhanh</h3>
-                <p class="text-gray-600 mt-1">Đối chiếu các thông số chính giữa các phiên bản</p>
-            </div>
-        </div>
-        <div class="overflow-x-auto rounded-xl border border-gray-200">
-            <table class="min-w-full text-sm">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="p-3 sm:p-4 text-left text-gray-600 font-semibold min-w-[160px]">Thông số</th>
-                        @foreach($variants as $variant)
-                            <th class="p-3 sm:p-4 text-left text-gray-600 font-semibold min-w-[200px]">
-                                <div class="text-gray-900 font-bold truncate">{{ $variant->name }}</div>
-                                <div class="text-[12px] text-indigo-600 font-semibold">@if($variant->final_price) {{ number_format($variant->final_price, 0, ',', '.') }}₫ @else Liên hệ @endif</div>
-                            </th>
-                        @endforeach
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100">
-                    @foreach($compareMatrix as $label => $row)
-                        <tr>
-                            <td class="p-3 sm:p-4 font-medium bg-gray-50 text-gray-800">{{ $label }}</td>
-                            @foreach($row as $val)
-                                <td class="p-3 sm:p-4 text-gray-800">{{ $val }}</td>
-                            @endforeach
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </div>
-</section>
-@endif
-
-@php /* Đã đưa Màu sắc và Tính năng lên phần giới thiệu để gọn hơn */ @endphp
+{{-- Quick compare table removed as requested --}}
 
 @if(($featuredVariants ?? collect())->count() > 0)
 <section id="featured" class="py-16 sm:py-20 bg-white">
@@ -464,7 +224,7 @@
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
             @foreach($featuredVariants as $variant)
-                <div class="group transform hover:-translate-y-2 transition-all duration-300">
+                <div class="group">
                     @include('components.variant-card', ['variant' => $variant, 'showCompare' => true])
                 </div>
             @endforeach
@@ -483,24 +243,92 @@
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
             @foreach($relatedModels as $m)
-            <a href="{{ route('car-models.show', $m->id) }}" class="group block bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
-                <div class="relative aspect-[4/3]">
-                    <img data-src="{{ $m->image_url }}" alt="{{ $m->name }}" class="absolute inset-0 w-full h-full object-cover lazy-image">
-                    <div class="absolute inset-0 skeleton-image"></div>
-                </div>
-                <div class="p-4">
-                    <div class="flex items-center gap-2 text-sm text-gray-600 mb-1">
-                        <span>{{ $brand->name ?? '' }}</span>
-                        <span class="text-gray-400">•</span>
-                        <span>{{ $m->carVariants?->count() ?? 0 }} phiên bản</span>
+            @php
+                $relImg = null;
+                try {
+                    // 1) images relation or attribute (collection/array/json) -> pick first image_url/url/path
+                    if (isset($m->images)) {
+                        if ($m->images instanceof \Illuminate\Support\Collection) {
+                            $first = $m->images->first();
+                            $relImg = $first->image_url ?? $first->url ?? $first->path ?? $relImg;
+                        } elseif (is_array($m->images) && count($m->images)) {
+                            $first = $m->images[0];
+                            if (is_array($first)) { $relImg = $first['image_url'] ?? $first['url'] ?? $first['path'] ?? $relImg; }
+                        } elseif (is_string($m->images)) {
+                            $arr = json_decode($m->images, true);
+                            if (json_last_error() === JSON_ERROR_NONE && is_array($arr) && count($arr)) {
+                                $first = $arr[0];
+                                if (is_array($first)) { $relImg = $first['image_url'] ?? $first['url'] ?? $first['path'] ?? $relImg; }
+                                elseif (is_string($first)) { $relImg = $first; }
+                            }
+                        }
+                    }
+                    // 2) gallery first (array/json/string)
+                    if (empty($relImg) && !empty($m->gallery)) {
+                        if (is_array($m->gallery) && count($m->gallery)) {
+                            $relImg = $m->gallery[0];
+                        } elseif (is_string($m->gallery)) {
+                            $g = json_decode($m->gallery, true);
+                            if (json_last_error() === JSON_ERROR_NONE && is_array($g) && count($g)) {
+                                $relImg = $g[0] ?? null;
+                            } elseif (filter_var($m->gallery, FILTER_VALIDATE_URL)) {
+                                $relImg = $m->gallery;
+                            }
+                        }
+                    }
+                    // 3) image_url field
+                    if (empty($relImg)) {
+                        $relImg = $m->image_url ?? null;
+                    }
+                    // 4) Fallback to first active variant image
+                    if (empty($relImg)) {
+                        $fv = $m->carVariants()->where('is_active', true)->with('images')->first();
+                        $relImg = $fv->image_url
+                            ?? optional(optional($fv)->images->first())->image_url
+                            ?? optional(optional($fv)->images->first())->url
+                            ?? optional(optional($fv)->images->first())->path
+                            ?? $relImg;
+                    }
+                } catch (\Throwable $e) { /* ignore */ }
+            @endphp
+            <a href="{{ route('car-models.show', $m->id) }}" class="group block">
+                <div class="variant-card card-surface overflow-hidden h-full flex flex-col min-h-fit rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-xl transition-shadow duration-300">
+                    <div class="relative">
+                        <div class="card-media w-full aspect-[4/3]">
+                            <img src="{{ $relImg }}" data-src="{{ $relImg }}" alt="{{ $m->name }}" class="card-img" onerror="this.onerror=null;this.src='https://via.placeholder.com/800x600?text=No+Image';">
+                            <span class="card-overlay"></span>
+                            <span class="card-sheen"></span>
+                        </div>
+                        <!-- Top-left badges -->
+                        <div class="absolute top-3 left-3 flex flex-col gap-2 pointer-events-none">
+                            <div class="bg-white/90 backdrop-blur-sm text-gray-800 text-[10px] px-2.5 py-1 rounded-full inline-flex items-center gap-1 leading-none font-bold border border-gray-200 shadow">
+                                <i class="fas fa-layer-group text-[12px] leading-none"></i>
+                                {{ $m->carVariants?->count() ?? 0 }} phiên bản
+                            </div>
+                            @if(!empty($m->starting_price))
+                            <div class="bg-indigo-50 text-indigo-700 text-[10px] px-2.5 py-1 rounded-full inline-flex items-center gap-1 leading-none font-bold border border-indigo-100 shadow">
+                                <i class="fas fa-tag text-[12px] leading-none"></i>
+                                Từ {{ number_format($m->starting_price, 0, ',', '.') }}₫
+                            </div>
+                            @endif
+                        </div>
                     </div>
-                    <h3 class="text-lg font-bold text-gray-900 line-clamp-1 group-hover:text-indigo-600 transition-colors">{{ $m->name }}</h3>
-                    <div class="mt-2 text-sm text-gray-700">
-                        @if(!empty($m->starting_price))
-                            <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100"><i class="fas fa-tag"></i>{{ number_format($m->starting_price, 0, ',', '.') }}₫</span>
-                        @else
-                            <span class="text-gray-500">Giá: Liên hệ</span>
-                        @endif
+                    <div class="p-4 sm:p-5 flex flex-col justify-between flex-1 space-y-3 sm:space-y-4">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs sm:text-sm text-gray-700 font-medium">{{ $brand->name ?? '' }}</span>
+                        </div>
+                        <div class="text-base sm:text-lg font-bold text-gray-900 group-hover:text-indigo-600 transition-colors line-clamp-2">{{ $m->name }}</div>
+                        <div class="flex items-center justify-between mt-auto">
+                            @if(!empty($m->starting_price))
+                                <span class="text-sm text-gray-700">Giá từ <strong class="text-indigo-600">{{ number_format($m->starting_price, 0, ',', '.') }}₫</strong></span>
+                            @else
+                                <span class="text-sm text-gray-500">Giá: Liên hệ</span>
+                            @endif
+                            <span class="inline-flex items-center gap-1 text-indigo-600 text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
+                                <span>Xem chi tiết</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </span>
+                        </div>
                     </div>
                 </div>
             </a>
@@ -520,10 +348,17 @@
                 <i class="fas fa-phone mr-2"></i>
                 Nhận tư vấn/Báo giá
             </a>
+            @auth
             <a href="{{ route('test-drives.index') }}" class="border-2 border-white/30 text-white px-8 py-4 min-h-[48px] rounded-full font-bold text-lg hover:bg-white/10 transition-all duration-300 backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900/40">
                 <i class="fas fa-steering-wheel mr-2"></i>
                 Đặt lái thử
             </a>
+            @else
+            <a href="{{ route('login', ['redirect' => request()->fullUrl()]) }}" class="border-2 border-white/30 text-white px-8 py-4 min-h-[48px] rounded-full font-bold text-lg hover:bg-white/10 transition-all duration-300 backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900/40">
+                <i class="fas fa-sign-in-alt mr-2"></i>
+                Đăng nhập để đặt lái thử
+            </a>
+            @endauth
         </div>
     </div>
 </section>
@@ -555,13 +390,49 @@ document.addEventListener('DOMContentLoaded', function(){
   try {
     var hero = document.getElementById('model-hero-image');
     var thumbsWrap = document.getElementById('model-hero-thumbs');
+    var skeleton = hero ? hero.closest('.relative')?.querySelector('.skeleton-image') : null;
+    // Swap hero to selected thumbnail
+    function selectThumb(btn){
+      if (!hero || !btn) return;
+      var src = btn.getAttribute('data-src');
+      if (!src) return;
+      if (skeleton) skeleton.style.display = 'block';
+      hero.classList.remove('loaded');
+      hero.src = src;
+      // active state
+      try {
+        thumbsWrap?.querySelectorAll('.js-hero-thumb').forEach(function(b){
+          b.classList.remove('ring-2','ring-indigo-300','border-white/40');
+          b.classList.add('border-white/20');
+          b.setAttribute('aria-pressed', 'false');
+        });
+        btn.classList.add('ring-2','ring-indigo-300','border-white/40');
+        btn.classList.remove('border-white/20');
+        btn.setAttribute('aria-pressed', 'true');
+      } catch(e) {}
+    }
+    // Bind click handlers
+    if (thumbsWrap) {
+      thumbsWrap.querySelectorAll('.js-hero-thumb').forEach(function(btn, idx){
+        btn.addEventListener('click', function(){ selectThumb(btn); });
+        if (idx === 0) {
+          btn.setAttribute('aria-pressed', 'true');
+          btn.classList.add('ring-2','ring-indigo-300','border-white/40');
+          btn.classList.remove('border-white/20');
+        }
+      });
+    }
+    // Hide skeleton after image load and reveal image
+    if (hero) {
+      hero.addEventListener('load', function(){
+        if (skeleton) skeleton.style.display = 'none';
+        hero.classList.add('loaded');
+      });
+    }
     function swapToFirstThumb(){
       if (!thumbsWrap) return;
-      var firstImg = thumbsWrap.querySelector('img');
-      var src = firstImg ? (firstImg.getAttribute('data-src') || firstImg.getAttribute('src')) : null;
-      if (hero && src) {
-        hero.src = src;
-      }
+      var firstBtn = thumbsWrap.querySelector('.js-hero-thumb');
+      if (firstBtn) selectThumb(firstBtn);
     }
     if (hero) {
       hero.addEventListener('error', swapToFirstThumb, { once: true });
@@ -570,6 +441,7 @@ document.addEventListener('DOMContentLoaded', function(){
         try {
           var hasSize = hero.naturalWidth > 0 && hero.naturalHeight > 0;
           if (!hasSize) swapToFirstThumb();
+          else { if (skeleton) skeleton.style.display='none'; hero.classList.add('loaded'); }
         } catch(e) {}
       }, 500);
     }

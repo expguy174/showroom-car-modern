@@ -44,10 +44,15 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
             <!-- Image Gallery -->
             <div class="space-y-6">
+                @php
+                    $galleryRaw = $accessory->gallery;
+                    $gallery = is_array($galleryRaw) ? $galleryRaw : (json_decode($galleryRaw ?? '[]', true) ?: []);
+                    $mainImageUrl = $gallery[0] ?? null;
+                @endphp
                 <!-- Main Image -->
                 <div class="relative group">
                     <div class="aspect-square bg-white rounded-3xl shadow-2xl overflow-hidden">
-                        <img src="{{ $accessory->image_url }}" 
+                        <img src="{{ $mainImageUrl }}" 
                              id="main-image"
                              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
                              alt="{{ $accessory->name }}">
@@ -83,9 +88,9 @@
                 </div>
                 
                 <!-- Thumbnail Gallery -->
-                @if($accessory->gallery && count(json_decode($accessory->gallery, true) ?? []) > 0)
+                @if(!empty($gallery))
                 <div class="grid grid-cols-4 gap-4">
-                    @foreach(json_decode($accessory->gallery, true) as $index => $image)
+                    @foreach($gallery as $index => $image)
                     <div class="aspect-square bg-white rounded-2xl shadow-lg overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 thumbnail-image" 
                          data-image="{{ $image }}">
                         <img src="{{ $image }}" alt="{{ $accessory->name }}" class="w-full h-full object-cover hover:scale-110 transition-transform duration-300">
@@ -175,8 +180,9 @@
                     @if($accessory->is_available)
                     <!-- CTA row: full-width equal buttons -->
                     <div class="grid grid-cols-2 gap-4">
-                        <button type="button" class="action-btn action-ghost w-full js-wishlist-toggle" aria-label="Yêu thích" title="Yêu thích" data-item-type="accessory" data-item-id="{{ $accessory->id }}">
-                            <i class="fas fa-heart"></i><span>Yêu thích</span>
+                        @php($__inWishlistAccPage = \App\Helpers\WishlistHelper::isInWishlist('accessory', $accessory->id))
+                        <button type="button" class="action-btn action-ghost w-full js-wishlist-toggle {{ $__inWishlistAccPage ? 'in-wishlist' : 'not-in-wishlist' }}" aria-label="Yêu thích" title="Yêu thích" aria-pressed="{{ $__inWishlistAccPage ? 'true' : 'false' }}" data-item-type="accessory" data-item-id="{{ $accessory->id }}">
+                            <i class="fa-heart {{ $__inWishlistAccPage ? 'fas text-red-500' : 'far' }}"></i><span>Yêu thích</span>
                         </button>
                         <form action="{{ route('user.cart.add') }}" method="POST" class="w-full add-to-cart-form" data-item-type="accessory" data-item-id="{{ $accessory->id }}">
                             @csrf
@@ -622,6 +628,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     submitButton.innerHTML = '<i class="fas fa-check mr-2"></i>Đã thêm!';
                     submitButton.classList.add('bg-green-600');
                     
+                    // Show toast notification
+                    if (typeof window.showMessage === 'function') {
+                        window.showMessage(data.message || 'Đã thêm vào giỏ hàng!', 'success');
+                    }
+                    
                     // Update cart count if available
                     const cartCountBadge = document.querySelector('#cart-count-badge');
                     if (cartCountBadge && data.cart_count !== undefined) {
@@ -645,6 +656,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Show error message
                 submitButton.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>Lỗi!';
                 submitButton.classList.add('bg-red-600');
+                
+                // Show error toast
+                if (typeof window.showMessage === 'function') {
+                    window.showMessage('Có lỗi xảy ra khi thêm vào giỏ hàng!', 'error');
+                }
                 
                 // Reset button after 2 seconds
                 setTimeout(() => {

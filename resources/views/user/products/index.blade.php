@@ -81,7 +81,7 @@
                                 @endforeach
                         <div class="flex items-center gap-2 flex-1 min-w-[220px] sm:min-w-[260px] max-w-xl">
                             <div class="relative flex-1">
-                                <input type="search" name="q" value="{{ request('q') }}" placeholder="Tìm kiếm xe, hãng, model..." aria-label="Tìm kiếm"
+                                <input type="search" name="q" value="{{ request('q') }}" placeholder="Tìm kiếm" aria-label="Tìm kiếm"
                                        class="search-input w-full rounded-lg border border-gray-200 pl-10 pr-12 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" autocomplete="off" />
                                 <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                                 <button type="submit" class="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-indigo-600 hover:text-indigo-800">

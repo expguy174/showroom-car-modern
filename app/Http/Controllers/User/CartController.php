@@ -34,11 +34,11 @@ class CartController extends Controller
 
         foreach ($cartItems as $item) {
             if ($item->item_type === 'car_variant') {
-                $item->item->load('colors', 'images', 'featuresRelation', 'options');
+                $item->item->load('colors', 'images', 'featuresRelation');
             }
         }
 
-        return view('cart.index', compact('cartItems'));
+        return view('user.cart.index', compact('cartItems'));
     }
 
     public function add(Request $request)
@@ -51,8 +51,7 @@ class CartController extends Controller
                 'color_id' => 'nullable|integer|exists:car_variant_colors,id',
                 'feature_ids' => 'nullable|array',
                 'feature_ids.*' => 'integer|exists:car_variant_features,id',
-                'option_ids' => 'nullable|array',
-                'option_ids.*' => 'integer|exists:car_variant_options,id'
+                
             ]);
 
             $quantity = $validated['quantity'] ?? 1;
@@ -82,19 +81,47 @@ class CartController extends Controller
                 ], 400);
             }
 
-            // Stock guard: for car_variant, check variant or selected color stock
+            // Stock guard: prefer per-color control if color selected; otherwise allow add (choose color later)
             if ($validated['item_type'] === 'car_variant') {
-                // If color selected, prefer color stock; else use variant stock
                 if (!is_null($colorId)) {
                     $color = $item->colors()->where('id', $colorId)->first();
-                    if (!$color || ($color->stock_quantity ?? 0) <= 0) {
+                    if (!$color || !$color->is_active || (isset($color->availability) && strtolower((string)$color->availability) === 'discontinued')) {
                         return response()->json([
                             'success' => false,
                             'message' => 'Màu đã hết hàng'
                         ], 400);
                     }
+
+                    // Read per-color availability from color_inventory JSON
+                    $inventory = is_array($item->color_inventory) ? $item->color_inventory : [];
+                    $colorInventory = $inventory[$colorId] ?? null;
+                    $available = (int) ($colorInventory['available'] ?? $colorInventory['quantity'] ?? 0);
+
+                    // Current quantity in cart for this variant+color
+                    $userIdCheck = \Illuminate\Support\Facades\Auth::id();
+                    $sessionIdCheck = session()->getId();
+                    $currentInCart = \App\Models\CartItem::where('item_type', 'car_variant')
+                        ->where('item_id', $item->id)
+                        ->where('color_id', $colorId)
+                        ->where(function($q) use ($userIdCheck, $sessionIdCheck) {
+                            if ($userIdCheck) { $q->where('user_id', $userIdCheck); }
+                            else { $q->where('session_id', $sessionIdCheck); }
+                        })
+                        ->sum('quantity');
+
+                    $requestedTotal = $currentInCart + $quantity;
+
+                    // If inventory entry exists, enforce available >= requested
+                    if ($colorInventory !== null && $available < $requestedTotal) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Số lượng màu này không đủ trong kho'
+                        ], 400);
+                    }
                 } else {
-                    if (($item->stock_quantity ?? 0) <= 0) {
+                    // No color chosen at add-to-cart time: if variant has inventory data and all colors are zero, block; else allow
+                    $hasInventoryData = is_array($item->color_inventory) && count($item->color_inventory) > 0;
+                    if ($hasInventoryData && (int) $item->effective_available_quantity <= 0) {
                         return response()->json([
                             'success' => false,
                             'message' => 'Phiên bản đã hết hàng'
@@ -111,11 +138,10 @@ class CartController extends Controller
                 $colorId
             );
 
-            // Persist selected features/options in session keyed by cart_item_id (lightweight without schema changes)
+            // Persist selected features in session keyed by cart_item_id (lightweight without schema changes)
             if (!empty($result['cart_item_id'])) {
                 $meta = [
                     'feature_ids' => array_values(array_unique(array_map('intval', $validated['feature_ids'] ?? []))),
-                    'option_ids' => array_values(array_unique(array_map('intval', $validated['option_ids'] ?? []))),
                 ];
                 session()->put('cart_item_meta.' . $result['cart_item_id'], $meta);
             }
@@ -153,8 +179,7 @@ class CartController extends Controller
                 'color_id' => 'nullable|exists:car_variant_colors,id',
                 'feature_ids' => 'nullable|array',
                 'feature_ids.*' => 'integer|exists:car_variant_features,id',
-                'option_ids' => 'nullable|array',
-                'option_ids.*' => 'integer|exists:car_variant_options,id'
+                
             ]);
 
             $updateData = [];
@@ -174,15 +199,29 @@ class CartController extends Controller
             if ($request->has('color_id')) {
                 $updateData['color_id'] = $request->color_id;
             }
-            // Persist selected features/options into session meta for this cart item
+            // Persist selected features into session meta for this cart item
             $featureIds = $request->input('feature_ids', null);
-            $optionIds = $request->input('option_ids', null);
-            if (is_array($featureIds) || is_array($optionIds)) {
+            if (is_array($featureIds)) {
                 $meta = [
                     'feature_ids' => array_values(array_unique(array_map('intval', $featureIds ?? []))),
-                    'option_ids' => array_values(array_unique(array_map('intval', $optionIds ?? []))),
                 ];
                 session()->put('cart_item_meta.' . $cartItem->id, $meta);
+            } else {
+                // Support single toggle update: feature_id + feature_enabled
+                $fid = $request->input('feature_id');
+                $fen = $request->boolean('feature_enabled', null);
+                if (!is_null($fid) && !is_null($fen)) {
+                    $meta = session('cart_item_meta.' . $cartItem->id, []);
+                    $ids = collect($meta['feature_ids'] ?? [])->map(fn($v)=> (int)$v)->toArray();
+                    $fid = (int) $fid;
+                    if ($fen) {
+                        $ids[] = $fid;
+                    } else {
+                        $ids = array_values(array_filter($ids, fn($v) => $v !== $fid));
+                    }
+                    $meta['feature_ids'] = array_values(array_unique($ids));
+                    session()->put('cart_item_meta.' . $cartItem->id, $meta);
+                }
             }
 
             $cartItem->update($updateData);
@@ -192,36 +231,66 @@ class CartController extends Controller
                 // Invalidate nav cached counts so first paint is correct
                 $this->invalidateNavCountsCache();
                 $cartCount = $this->computeCartCount(Auth::id(), session()->getId());
-                // Tính lại đơn giá theo màu (nếu là car_variant)
-                $unitPrice = 0;
-                if ($cartItem->item) {
-                    if ($cartItem->item_type === 'car_variant' && method_exists($cartItem->item, 'getPriceWithColorAdjustment')) {
-                        $unitPrice = $cartItem->item->getPriceWithColorAdjustment($cartItem->color_id);
-                    } else {
-                        $unitPrice = $cartItem->item->price ?? 0;
+                // Chuẩn hoá dữ liệu giá trả về cho FE
+                $item = $cartItem->item;
+                $currentPrice = 0.0; // giá hiện tại (chưa gồm màu/tuỳ chọn)
+                $originalPrice = 0.0; // giá gốc
+                $colorPriceAdjustment = 0.0; // phụ phí màu
+                $featSum = 0.0; // tổng phụ kiện thêm
+                $itemPrice = 0.0; // đơn giá hiển thị (current + color + addons)
+
+                if ($item) {
+                    $originalPrice = (float) ($item->base_price ?? ($item->original_price ?? 0));
+                    $currentPrice  = (float) ($item->current_price ?? ($item->price ?? 0));
+
+                    if ($cartItem->item_type === 'car_variant' && method_exists($item, 'getPriceWithColorAdjustment')) {
+                        $priceWithColor = (float) $item->getPriceWithColorAdjustment($cartItem->color_id);
+                        $colorPriceAdjustment = max(0.0, $priceWithColor - $currentPrice);
                     }
-                    // Include selected add-ons from session meta
+
                     $meta = session('cart_item_meta.' . $cartItem->id, []);
                     $featIds = collect($meta['feature_ids'] ?? [])->filter()->map(fn($v)=> (int)$v)->unique()->all();
-                    $optIds = collect($meta['option_ids'] ?? [])->filter()->map(fn($v)=> (int)$v)->unique()->all();
-                    $featSum = !empty($featIds) ? (float) CarVariantFeature::whereIn('id', $featIds)->sum(DB::raw('COALESCE(package_price, price, 0)')) : 0;
-                    $optSum  = !empty($optIds) ? (float) CarVariantOption::whereIn('id', $optIds)->sum(DB::raw('COALESCE(package_price, price, 0)')) : 0;
-                    $unitPrice += ($featSum + $optSum);
+                    $featSum = 0.0;
+                    if (!empty($featIds)) {
+                        $features = CarVariantFeature::whereIn('id', $featIds)->get(['price']);
+                        foreach ($features as $f) {
+                            $featSum += (float) ($f->price ?? 0);
+                        }
+                    }
+
+                    $itemPrice = max(0.0, $currentPrice + $colorPriceAdjustment + $featSum);
                 }
-                $itemTotal = $unitPrice * $cartItem->quantity;
+
+                $itemTotal = $itemPrice * (int) $cartItem->quantity;
                 $colorName = $cartItem->color ? $cartItem->color->color_name : null;
+
+                $discountAmount = ($originalPrice > 0 && $currentPrice >= 0 && $currentPrice < $originalPrice)
+                    ? ($originalPrice - $currentPrice) : 0.0;
+                // Round to whole percent for consistent display (e.g., 5%)
+                $discountPercentage = $discountAmount > 0 ? round(($discountAmount / $originalPrice) * 100, 0) : 0.0;
+                $hasDiscount = $discountAmount > 0;
 
                 return response()->json([
                     'success' => true,
                     'cart_count' => $cartCount,
-                    'unit_price' => $unitPrice,
+                    'item_price' => $itemPrice,
+                    'unit_price' => $itemPrice,
                     'item_total' => $itemTotal,
                     'quantity' => $cartItem->quantity,
                     'color_id' => $cartItem->color_id,
                     'color_name' => $colorName,
                     'message' => $request->has('color_id') ? 'Cập nhật màu sắc thành công!' : 'Cập nhật thành công!',
                     'feature_ids' => $featureIds ?? ($meta['feature_ids'] ?? []),
-                    'option_ids' => $optionIds ?? ($meta['option_ids'] ?? []),
+                    // Discount info
+                    'discount_percentage' => $discountPercentage,
+                    'has_discount' => $hasDiscount,
+                    'original_price_before_discount' => $originalPrice,
+                    'discount_amount' => $discountAmount,
+                    // Price breakdown
+                    'current_price' => $currentPrice,
+                    'original_base_price' => $originalPrice,
+                    'color_price_adjustment' => $colorPriceAdjustment,
+                    'addon_sum' => $featSum
                 ]);
             }
             return back()->with('success', 'Cập nhật thành công!');
@@ -331,10 +400,8 @@ class CartController extends Controller
                 // Add selected feature/option surcharges from session meta
                 $meta = session('cart_item_meta.' . $ci->id, []);
                 $featIds = collect($meta['feature_ids'] ?? [])->filter()->map(fn($v)=> (int)$v)->unique()->all();
-                $optIds = collect($meta['option_ids'] ?? [])->filter()->map(fn($v)=> (int)$v)->unique()->all();
-                $featSum = !empty($featIds) ? (float) CarVariantFeature::whereIn('id', $featIds)->sum(DB::raw('COALESCE(package_price, price, 0)')) : 0;
-                $optSum  = !empty($optIds) ? (float) CarVariantOption::whereIn('id', $optIds)->sum(DB::raw('COALESCE(package_price, price, 0)')) : 0;
-                $unit += ($featSum + $optSum);
+                $featSum = !empty($featIds) ? (float) CarVariantFeature::whereIn('id', $featIds)->sum('price') : 0;
+                $unit += $featSum;
                 return $unit * $ci->quantity;
             });
 
@@ -356,7 +423,7 @@ class CartController extends Controller
 
         $paymentMethods = PaymentMethod::where('is_active', true)->orderBy('id')->get();
 
-        return view('cart.checkout', compact('cartItems', 'total', 'user', 'addresses', 'paymentMethods'));
+        return view('user.cart.checkout', compact('cartItems', 'total', 'user', 'addresses', 'paymentMethods'));
     }
 
     public function processCheckout(Request $request)
@@ -448,7 +515,7 @@ class CartController extends Controller
                 $meta = session('cart_item_meta.' . $item->id, []);
                 $featIds = collect($meta['feature_ids'] ?? [])->filter()->map(fn($v)=> (int)$v)->unique()->all();
                 $optIds = collect($meta['option_ids'] ?? [])->filter()->map(fn($v)=> (int)$v)->unique()->all();
-                $featSum = !empty($featIds) ? (float) CarVariantFeature::whereIn('id', $featIds)->sum(DB::raw('COALESCE(package_price, price, 0)')) : 0;
+                $featSum = !empty($featIds) ? (float) CarVariantFeature::whereIn('id', $featIds)->sum('price') : 0;
                 $optSum  = !empty($optIds) ? (float) CarVariantOption::whereIn('id', $optIds)->sum(DB::raw('COALESCE(package_price, price, 0)')) : 0;
                 $unitPrice += ($featSum + $optSum);
                 $itemTotal = $unitPrice * $item->quantity;
@@ -665,7 +732,7 @@ class CartController extends Controller
             'shippingAddress',
         ]);
 
-        return view('order.success', [
+        return view('user.cart.success', [
             'order' => $order,
         ]);
     }

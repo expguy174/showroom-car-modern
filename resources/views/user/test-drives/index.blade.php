@@ -38,7 +38,7 @@
 
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Họ và tên</label>
-              <input type="text" name="name" required autocomplete="name" class="w-full border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" value="{{ auth()->user()->name ?? '' }}">
+              <input type="text" name="name" required autocomplete="name" class="w-full border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" value="{{ optional(auth()->user()?->userProfile)->name ?? '' }}">
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>

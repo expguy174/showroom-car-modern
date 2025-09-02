@@ -26,10 +26,9 @@ class Accessory extends Model
         'compatible_car_brands',
         'compatible_car_models',
         'compatible_car_years',
-        'price',
-        'original_price',
+        'base_price',
+        'current_price',
         'is_on_sale',
-        'sale_price',
         'sale_start_date',
         'sale_end_date',
         'stock_quantity',
@@ -66,8 +65,8 @@ class Accessory extends Model
     ];
 
     protected $casts = [
-        'price' => 'decimal:2',
-        'original_price' => 'decimal:2',
+        'base_price' => 'decimal:2',
+        'current_price' => 'decimal:2',
         'is_active' => 'boolean',
         'is_featured' => 'boolean',
         'is_bestseller' => 'boolean',
@@ -78,8 +77,6 @@ class Accessory extends Model
         'sale_end_date' => 'date',
         'installation_fee' => 'decimal:2',
         'weight' => 'decimal:2',
-        'price' => 'decimal:2',
-        'original_price' => 'decimal:2',
         // JSON columns
         'gallery' => 'array',
         'specifications' => 'array',
@@ -113,25 +110,27 @@ class Accessory extends Model
     // Accessors
     public function getFormattedPriceAttribute()
     {
-        if ($this->has_discount && $this->discount_percentage > 0) {
-            $discountedPrice = $this->price * (1 - $this->discount_percentage / 100);
-            return number_format($discountedPrice, 0, ',', '.') . ' VNĐ';
-        }
-        return number_format($this->price, 0, ',', '.') . ' VNĐ';
+        return number_format($this->current_price, 0, ',', '.') . ' VNĐ';
     }
 
     public function getFormattedOriginalPriceAttribute()
     {
-        return number_format($this->original_price ?? $this->price, 0, ',', '.') . ' VNĐ';
+        return number_format($this->base_price, 0, ',', '.') . ' VNĐ';
     }
 
     public function getImageUrlAttribute()
     {
-        // Prefer main_image_path then image_path
+        // Prefer main_image_path then image_path, then first gallery image
         $paths = [
             $this->main_image_path ?? null,
             $this->image_path ?? null,
         ];
+        if (is_array($this->gallery) && !empty($this->gallery)) {
+            $first = $this->gallery[0] ?? null;
+            if ($first) {
+                $paths[] = $first;
+            }
+        }
         foreach ($paths as $p) {
             if (!$p) continue;
             if (filter_var($p, FILTER_VALIDATE_URL)) return $p;
@@ -163,10 +162,28 @@ class Accessory extends Model
 
     public function getFinalPriceAttribute()
     {
-        if ($this->is_on_sale && $this->sale_price !== null) {
-            return $this->sale_price;
+        return $this->current_price;  // Giá cuối = giá bán hiện tại
+    }
+
+    public function getDiscountAmountAttribute()
+    {
+        if ($this->is_on_sale && $this->current_price < $this->base_price) {
+            return $this->base_price - $this->current_price;
         }
-        return $this->price;
+        return 0;
+    }
+
+    public function getDiscountPercentageAttribute()
+    {
+        if ($this->is_on_sale && $this->current_price < $this->base_price) {
+            return round((($this->base_price - $this->current_price) / $this->base_price) * 100, 1);
+        }
+        return 0;
+    }
+
+    public function getHasDiscountAttribute()
+    {
+        return $this->is_on_sale && $this->current_price < $this->base_price;
     }
     
     /**

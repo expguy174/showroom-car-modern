@@ -84,7 +84,7 @@
                                 <div class="flex items-center">
                                     <i class="fas fa-user-check text-blue-500 mr-3"></i>
                         <div>
-                                        <p class="text-blue-800 font-medium">Xin chào, {{ auth()->user()->name }}!</p>
+                                        <p class="text-blue-800 font-medium">Xin chào, {{ optional(auth()->user()?->userProfile)->name ?? 'bạn' }}!</p>
                                         <p class="text-blue-600 text-sm">Thông tin cá nhân đã được điền sẵn. Bạn có thể chỉnh sửa nếu cần.</p>
                         </div>
                     </div>
@@ -100,7 +100,7 @@
                             <input type="text" 
                                    id="name" 
                                    name="name" 
-                                   value="{{ request('name', old('name', auth()->user()->name ?? '')) }}"
+                                   value="{{ request('name', old('name', optional(auth()->user()?->userProfile)->name ?? '')) }}"
                                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
                                    placeholder="Nhập họ và tên của bạn"
                                    required>

@@ -21,10 +21,9 @@ return new class extends Migration {
             $table->text('short_description')->nullable();
 
             // Giá cả và khuyến mãi
-            $table->decimal('price', 15, 2)->default(0);
-            $table->decimal('original_price', 15, 2)->nullable();
-            $table->boolean('has_discount')->default(false);
-            $table->decimal('discount_percentage', 5, 2)->default(0);
+            $table->decimal('base_price', 15, 2)->default(0)->comment('Giá gốc (MSRP)');
+            $table->decimal('current_price', 15, 2)->default(0)->comment('Giá bán hiện tại');
+            $table->boolean('is_on_sale')->default(false)->comment('Đang giảm giá không');
             
             // Inventory theo màu (JSON)
             $table->json('color_inventory')->nullable()->comment('{"color_id": {"quantity": 3, "reserved": 1, "available": 2}}');
@@ -47,7 +46,8 @@ return new class extends Migration {
             // Indexes tối ưu
             $table->index(['car_model_id', 'is_active']);
             $table->index(['car_model_id', 'is_active', 'is_available']);
-            $table->index(['price', 'is_active']);
+            $table->index(['base_price', 'is_active']);
+            $table->index(['current_price', 'is_active']);
             $table->index(['is_featured', 'is_active']);
             $table->index(['is_new_arrival', 'is_active']);
             $table->index(['is_bestseller', 'is_active']);

@@ -27,9 +27,9 @@
                     @forelse ($users as $user)
                         <tr>
                             <td class="text-center">{{ $user->id }}</td>
-                            <td>{{ $user->name }}</td>
+                            <td>{{ optional($user->userProfile)->name ?? '-' }}</td>
                             <td>{{ $user->email ?? '-' }}</td>
-                            <td>{{ $user->phone ?? '-' }}</td>
+                            <td>{{ optional($user->addresses->firstWhere('is_default', true) ?: $user->addresses->first())->phone ?? '-' }}</td>
                             <td class="text-center">
                                 @if ($user->role === 'admin')
                                     <span class="badge badge-primary">Admin</span>

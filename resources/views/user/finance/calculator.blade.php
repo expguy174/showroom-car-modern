@@ -458,12 +458,20 @@ const form = document.getElementById('calc-form');
             if (data.success) {
                 displayResults(data.calculation);
             } else {
-                alert(data.message);
+                if (typeof window.showMessage === 'function') {
+                    window.showMessage(data.message, 'error');
+                } else {
+                    alert(data.message);
+                }
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Có lỗi xảy ra khi tính toán. Vui lòng thử lại.');
+            if (typeof window.showMessage === 'function') {
+                window.showMessage('Có lỗi xảy ra khi tính toán. Vui lòng thử lại.', 'error');
+            } else {
+                alert('Có lỗi xảy ra khi tính toán. Vui lòng thử lại.');
+            }
         });
     });
 

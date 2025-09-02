@@ -51,7 +51,7 @@
                             <div class="relative">
             @php
             $isAbs = function($p){ return preg_match('/^https?:\/\//i', (string)$p) === 1; };
-            $fallback = 'https://ui-avatars.com/api/?name='.urlencode($user->name).'&background=4f46e5&color=fff&size=128';
+            $fallback = 'https://ui-avatars.com/api/?name='.urlencode(optional($user->userProfile)->name ?? ($user->email ?? 'User')).'&background=4f46e5&color=fff&size=128';
             $avatar = $user->avatar_path ? ($isAbs($user->avatar_path) ? $user->avatar_path : asset('storage/'.$user->avatar_path)) : $fallback;
             @endphp
                                 <div class="relative">
@@ -64,7 +64,7 @@
                             
                             <!-- User Info -->
                             <div class="flex-1">
-                                <h2 class="text-xl font-bold text-white mb-1">{{ $user->name }}</h2>
+                                <h2 class="text-xl font-bold text-white mb-1">{{ optional($user->userProfile)->name ?? 'Khách' }}</h2>
                                 <p class="text-indigo-100 text-sm mb-3">Thành viên từ {{ $user->created_at->format('M Y') }}</p>
                                 
                                 <!-- Stats Cards -->
@@ -288,38 +288,49 @@
 
 @push('scripts')
 <script>
-  // Toast notification function
+  // Toast notification function - use global showMessage if available
   function showToast(message, type = 'success') {
-    const container = document.getElementById('toast-container');
-    if (!container) return;
+    if (typeof window.showMessage === 'function') {
+      window.showMessage(message, type);
+      return;
+    }
     
+    // Fallback toast with consistent styling
+    const existingToasts = document.querySelectorAll('.toast-notification');
+    existingToasts.forEach(toast => toast.remove());
+
     const toast = document.createElement('div');
-    const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
-    const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
-    
-    toast.className = `${bgColor} text-white px-6 py-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full max-w-sm pointer-events-auto relative`;
+    toast.className = `toast-notification`;
+
+    const colors = {
+      success: 'bg-green-500 text-white',
+      error: 'bg-red-500 text-white',
+      warning: 'bg-yellow-500 text-white',
+      info: 'bg-blue-500 text-white'
+    };
+
+    toast.className += ` ${colors[type] || colors.success}`;
     toast.innerHTML = `
-      <div class="flex items-center gap-3">
-        <i class="fas ${icon} text-lg"></i>
-        <span class="flex-1">${message}</span>
-        <button onclick="this.parentElement.parentElement.remove()" class="text-white/80 hover:text-white">
+      <div class="toast-content">
+        <span class="toast-message">${message}</span>
+        <button class="toast-close" aria-label="Đóng" onclick="this.closest('.toast-notification').remove()">
           <i class="fas fa-times"></i>
         </button>
       </div>
     `;
-    
-    container.appendChild(toast);
-    
-    // Animate in
+
+    document.body.appendChild(toast);
+
+    requestAnimationFrame(() => {
+      toast.classList.add('show');
+    });
+
     setTimeout(() => {
-      toast.classList.remove('translate-x-full');
-    }, 100);
-    
-    // Auto remove after 5 seconds
-    setTimeout(() => {
-      toast.classList.add('translate-x-full');
-      setTimeout(() => toast.remove(), 300);
-    }, 5000);
+      toast.classList.add('hide');
+      setTimeout(() => {
+        if (toast.parentElement) toast.remove();
+      }, 300);
+    }, 3000);
   }
 
   (function() {
@@ -426,13 +437,21 @@
       const file = input.files && input.files[0];
       if (!file) return;
       if (!file.type || !/^image\//i.test(file.type)) {
-        alert('Vui lòng chọn tệp hình ảnh hợp lệ.');
+        if (typeof window.showMessage === 'function') {
+          window.showMessage('Vui lòng chọn tệp hình ảnh hợp lệ.', 'error');
+        } else {
+          alert('Vui lòng chọn tệp hình ảnh hợp lệ.');
+        }
         input.value = '';
         return;
       }
       const maxBytes = 2 * 1024 * 1024; // 2MB
       if (file.size > maxBytes) {
-        alert('Ảnh vượt quá 2MB, vui lòng chọn ảnh khác.');
+        if (typeof window.showMessage === 'function') {
+          window.showMessage('Ảnh vượt quá 2MB, vui lòng chọn ảnh khác.', 'error');
+        } else {
+          alert('Ảnh vượt quá 2MB, vui lòng chọn ảnh khác.');
+        }
         input.value = '';
         return;
       }
@@ -572,7 +591,7 @@
         <div>
           <label class="block text-sm text-gray-700">Ảnh đại diện</label>
           <div class="flex items-center gap-3">
-            <img id="avatar-preview" src="{{ $user->avatar_path ? (Str::startsWith($user->avatar_path, ['http://','https://']) ? $user->avatar_path : asset('storage/'.$user->avatar_path)) : 'https://ui-avatars.com/api/?name='.urlencode($user->name).'&background=4f46e5&color=fff&size=96' }}" alt="Avatar" class="w-12 h-12 rounded-full object-cover">
+            <img id="avatar-preview" src="{{ $user->avatar_path ? (Str::startsWith($user->avatar_path, ['http://','https://']) ? $user->avatar_path : asset('storage/'.$user->avatar_path)) : 'https://ui-avatars.com/api/?name='.urlencode(optional($user->userProfile)->name ?? ($user->email ?? 'User')).'&background=4f46e5&color=fff&size=96' }}" alt="Avatar" class="w-12 h-12 rounded-full object-cover">
             <input id="avatar-input" class="form-input" type="file" name="avatar" accept="image/*" form="edit-profile-form">
           </div>
           @error('avatar')<div class="error-text">{{ $message }}</div>@enderror
@@ -580,7 +599,7 @@
         </div>
         <div>
           <label class="block text-sm text-gray-700">Họ tên</label>
-          <input class="form-input" name="name" type="text" value="{{ old('name', $user->name) }}" required>
+          <input class="form-input" name="name" type="text" value="{{ old('name', optional($user->userProfile)->name) }}" required>
           @error('name')<div class="error-text">{{ $message }}</div>@enderror
         </div>
         <div>

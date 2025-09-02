@@ -61,7 +61,7 @@ class HomeController extends Controller
             $allBlogs = Blog::where('status', 'published')
                 ->where('is_active', 1)
                 ->where('is_published', 1)
-                ->with(['admin:id,name'])
+                ->with(['admin.userProfile:id,user_id,name'])
                 ->orderBy('created_at', 'desc')
                 ->get(['id', 'admin_id', 'title', 'content', 'image_path', 'created_at']);
             
@@ -71,7 +71,7 @@ class HomeController extends Controller
 
         // Top 3 approved reviews: highest rating first, then newest
         $recentReviews = \App\Models\Review::where('is_approved', true)
-            ->with(['user:id,name'])
+            ->with(['user.userProfile:id,user_id,name'])
             ->with('reviewable') // Load reviewable models without specifying relationships
             ->select('id', 'rating', 'comment', 'user_id', 'reviewable_type', 'reviewable_id', 'created_at')
             ->orderByDesc('rating')
@@ -88,18 +88,11 @@ class HomeController extends Controller
 
         // Featured/active showrooms (for contact & map teaser)
         $showrooms = Showroom::where('is_active', 1)
-            ->orderByDesc('is_featured')
             ->orderBy('name')
             ->take(3)
-            ->get(['id','name','phone','email','address','city','state','postal_code','opening_time','closing_time','latitude','longitude']);
+            ->get(['id','name','phone','email','address','city']);
 
-        // Quick search options - cache riêng vì ít thay đổi
-        $fuelTypes = Cache::remember('home_fuel_types', now()->addHours(6), function () {
-            return \App\Models\CarSpecification::where('spec_name', 'fuel_type')->distinct()->pluck('spec_value')->values();
-        });
-        $transmissions = Cache::remember('home_transmissions', now()->addHours(6), function () {
-            return \App\Models\CarSpecification::where('spec_name', 'transmission')->distinct()->pluck('spec_value')->values();
-        });
+        // Quick search options removed (fuel types, transmissions)
 
         // Popular variants for quick test drive form
         $testDriveVariants = CarVariant::where('is_active', 1)
@@ -122,8 +115,6 @@ class HomeController extends Controller
             'featuredVariants',
             'featuredAccessories',
             'showrooms',
-            'fuelTypes',
-            'transmissions',
             'blogs',
             'testDriveVariants',
             'recentReviews',

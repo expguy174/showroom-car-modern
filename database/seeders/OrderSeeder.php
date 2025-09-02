@@ -78,7 +78,7 @@ class OrderSeeder extends Seeder
             for ($j = 0; $j < $numItems; $j++) {
                 if (rand(0,1) || $accessories->isEmpty()) {
                     $variant = $variants->random();
-                    $price = $variant->price;
+                    $price = $variant->current_price;
                     $line = [
                         'item_type' => 'car_variant',
                         'item_id' => $variant->id,
@@ -94,7 +94,7 @@ class OrderSeeder extends Seeder
                     ];
                 } else {
                     $acc = $accessories->random();
-                    $price = $acc->price;
+                    $price = $acc->current_price;
                     $quantity = rand(1,2);
                     $line = [
                         'item_type' => 'accessory',

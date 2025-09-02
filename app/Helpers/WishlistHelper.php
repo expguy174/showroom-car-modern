@@ -95,16 +95,19 @@ class WishlistHelper
                     ->with(['item'])
                     ->orderBy('created_at', 'desc')
                     ->get();
-                return $items->map(function($item) {
-                    $itemType = $item->item_type === \App\Models\CarVariant::class ? 'car_variant' : 'accessory';
-                    return (object) [
-                        'id' => $item->id,
-                        'item' => $item->item,
-                        'item_type' => $itemType,
-                        'item_id' => $item->item_id,
-                        'created_at' => $item->created_at
-                    ];
-                });
+                if ($items->isNotEmpty()) {
+                    return $items->map(function($item) {
+                        $itemType = $item->item_type === \App\Models\CarVariant::class ? 'car_variant' : 'accessory';
+                        return (object) [
+                            'id' => $item->id,
+                            'item' => $item->item,
+                            'item_type' => $itemType,
+                            'item_id' => $item->item_id,
+                            'created_at' => $item->created_at
+                        ];
+                    });
+                }
+                // If no DB rows for this session, fall through to session storage below
             } catch (\Throwable $e) {
                 // fall through to session fallback
             }
@@ -164,7 +167,7 @@ class WishlistHelper
             self::clearWishlistCountCache();
             return [
                 'success' => $wishlistItem->wasRecentlyCreated,
-                'message' => $wishlistItem->wasRecentlyCreated ? 'Đã thêm vào danh sách yêu thích!' : 'Sản phẩm đã có trong danh sách yêu thích!',
+                'message' => $wishlistItem->wasRecentlyCreated ? 'Đã thêm vào yêu thích!' : 'Sản phẩm đã có trong yêu thích!',
                 'wishlist_count' => self::getWishlistCount()
             ];
         }
@@ -174,7 +177,7 @@ class WishlistHelper
         if (isset($wishlistData[$itemKey])) {
             return [
                 'success' => false,
-                'message' => 'Sản phẩm đã có trong danh sách yêu thích!',
+                'message' => 'Sản phẩm đã có trong yêu thích!',
                 'wishlist_count' => count($wishlistData)
             ];
         }
@@ -187,7 +190,7 @@ class WishlistHelper
         self::clearWishlistCountCache();
         return [
             'success' => true,
-            'message' => 'Đã thêm vào danh sách yêu thích!',
+            'message' => 'Đã thêm vào yêu thích!',
             'wishlist_count' => count($wishlistData)
         ];
     }
@@ -207,7 +210,7 @@ class WishlistHelper
             self::clearWishlistCountCache();
             return [
                 'success' => true,
-                'message' => $deleted > 0 ? 'Đã xóa khỏi danh sách yêu thích!' : 'Sản phẩm không có trong danh sách yêu thích!',
+                'message' => $deleted > 0 ? 'Đã xóa khỏi yêu thích!' : 'Sản phẩm không có trong yêu thích!',
                 'wishlist_count' => self::getWishlistCount()
             ];
         }
@@ -220,13 +223,13 @@ class WishlistHelper
             self::clearWishlistCountCache();
             return [
                 'success' => true,
-                'message' => 'Đã xóa khỏi danh sách yêu thích!',
+                'message' => 'Đã xóa khỏi yêu thích!',
                 'wishlist_count' => count($wishlistData)
             ];
         }
         return [
             'success' => false,
-            'message' => 'Sản phẩm không có trong danh sách yêu thích!',
+            'message' => 'Sản phẩm không có trong yêu thích!',
             'wishlist_count' => count($wishlistData)
         ];
     }

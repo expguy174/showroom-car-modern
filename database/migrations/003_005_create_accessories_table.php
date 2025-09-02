@@ -20,10 +20,9 @@ return new class extends Migration {
             $table->json('compatible_car_years')->nullable();
             
             // Pricing
-            $table->decimal('price', 15, 2);
-            $table->decimal('original_price', 15, 2)->nullable();
-            $table->boolean('is_on_sale')->default(false);
-            $table->decimal('sale_price', 15, 2)->nullable();
+            $table->decimal('base_price', 15, 2)->comment('Giá gốc (MSRP)');
+            $table->decimal('current_price', 15, 2)->comment('Giá bán hiện tại');
+            $table->boolean('is_on_sale')->default(false)->comment('Đang giảm giá không');
             $table->date('sale_start_date')->nullable();
             $table->date('sale_end_date')->nullable();
             
@@ -86,7 +85,8 @@ return new class extends Migration {
             $table->index(['stock_status', 'is_active']);
             $table->index(['is_featured', 'is_active']);
             $table->index(['is_on_sale', 'is_active']);
-            $table->index('price');
+            $table->index(['base_price', 'is_active']);
+            $table->index(['current_price', 'is_active']);
             $table->index('sort_order');
             $table->index(['is_new_arrival', 'is_active']);
             $table->index(['is_bestseller', 'is_active']);

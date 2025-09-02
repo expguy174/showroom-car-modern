@@ -26,85 +26,31 @@ class ProductController extends Controller
             $modelsQuery->where('car_brand_id', $request->brand);
         }
         $models = $modelsQuery->orderBy('name')->get();
-        // Use direct fields for filter options to ensure availability
-        $optionBase = CarVariant::where('is_active', 1);
-        $fuelTypes = (clone $optionBase)
-            ->select('fuel_type')
-            ->whereNotNull('fuel_type')
-            ->whereRaw("TRIM(fuel_type) <> ''")
+        // Build fuel types from specifications only (fuel_type stored in car_variant_specifications)
+        $fuelTypes = CarSpecification::query()
+            ->select('spec_value')
+            ->where('spec_name', 'fuel_type')
             ->distinct()
-            ->orderBy('fuel_type')
-            ->pluck('fuel_type')
+            ->orderBy('spec_value')
+            ->pluck('spec_value')
             ->map(fn($v) => trim((string) $v))
             ->filter()
             ->values();
-        if ($fuelTypes->isEmpty()) {
-            // Global fallback from all active variants
-            $fuelTypes = CarVariant::query()
-                ->select('fuel_type')
-                ->where('is_active', 1)
-                ->whereNotNull('fuel_type')
-                ->whereRaw("TRIM(fuel_type) <> ''")
-                ->distinct()
-                ->orderBy('fuel_type')
-                ->pluck('fuel_type')
-                ->map(fn($v) => trim((string) $v))
-                ->filter()
-                ->values();
-        }
-        if ($fuelTypes->isEmpty()) {
-            // Final fallback from specifications if available (rare)
-            $fuelTypes = CarSpecification::query()
-                ->select('spec_value')
-                ->where('spec_name', 'fuel_type')
-                ->distinct()
-                ->orderBy('spec_value')
-                ->pluck('spec_value')
-                ->map(fn($v) => trim((string) $v))
-                ->filter()
-                ->values();
-        }
         if ($fuelTypes->isEmpty()) {
             // Static safe fallback to keep filter usable
             $fuelTypes = collect(['Xăng', 'Diesel', 'Điện', 'Hybrid']);
         }
 
-        $transmissions = (clone $optionBase)
-            ->select('transmission')
-            ->whereNotNull('transmission')
-            ->whereRaw("TRIM(transmission) <> ''")
+        // Build transmissions from specifications only
+        $transmissions = CarSpecification::query()
+            ->select('spec_value')
+            ->whereIn('spec_name', ['transmission', 'Hộp số'])
             ->distinct()
-            ->orderBy('transmission')
-            ->pluck('transmission')
+            ->orderBy('spec_value')
+            ->pluck('spec_value')
             ->map(fn($v) => trim((string) $v))
             ->filter()
             ->values();
-        if ($transmissions->isEmpty()) {
-            // Global fallback from all active variants
-            $transmissions = CarVariant::query()
-                ->select('transmission')
-                ->where('is_active', 1)
-                ->whereNotNull('transmission')
-                ->whereRaw("TRIM(transmission) <> ''")
-                ->distinct()
-                ->orderBy('transmission')
-                ->pluck('transmission')
-                ->map(fn($v) => trim((string) $v))
-                ->filter()
-                ->values();
-        }
-        if ($transmissions->isEmpty()) {
-            // Final fallback from specifications (support Vietnamese spec_name)
-            $transmissions = CarSpecification::query()
-                ->select('spec_value')
-                ->whereIn('spec_name', ['transmission', 'Hộp số'])
-                ->distinct()
-                ->orderBy('spec_value')
-                ->pluck('spec_value')
-                ->map(fn($v) => trim((string) $v))
-                ->filter()
-                ->values();
-        }
         if ($transmissions->isEmpty()) {
             // Static safe fallback
             $transmissions = collect(['Số tự động', 'CVT', 'Số sàn']);
@@ -166,17 +112,39 @@ class ProductController extends Controller
             $k = function_exists('mb_strtolower') ? mb_strtolower(trim((string)$v), 'UTF-8') : strtolower(trim((string)$v));
             $label = $fuelMap[$k] ?? $v;
             return ['value' => (string)$v, 'label' => (string)$label];
-        })->sortBy('label', SORT_NATURAL|SORT_FLAG_CASE)->values();
+        });
         $transOptions = $transmissions->map(function ($v) use ($transMap) {
             $k = function_exists('mb_strtolower') ? mb_strtolower(trim((string)$v), 'UTF-8') : strtolower(trim((string)$v));
             $label = $transMap[$k] ?? $v;
             return ['value' => (string)$v, 'label' => (string)$label];
-        })->sortBy('label', SORT_NATURAL|SORT_FLAG_CASE)->values();
+        });
         $bodyOptions = $bodyTypes->map(function ($v) use ($bodyMap) {
             $k = function_exists('mb_strtolower') ? mb_strtolower(trim((string)$v), 'UTF-8') : strtolower(trim((string)$v));
             $label = $bodyMap[$k] ?? $v;
             return ['value' => (string)$v, 'label' => (string)$label];
-        })->values();
+        });
+
+        // Dedupe option arrays by label (case/diacritics-insensitive), then sort
+        $dedupeOptions = function ($options) {
+            $seen = [];
+            $out = [];
+            foreach ($options as $opt) {
+                $label = isset($opt['label']) ? (string)$opt['label'] : '';
+                $key = function_exists('mb_strtolower') ? mb_strtolower(trim($label), 'UTF-8') : strtolower(trim($label));
+                if ($key === '' || isset($seen[$key])) continue;
+                $seen[$key] = true;
+                $out[] = $opt;
+            }
+            // Sort naturally by label
+            usort($out, function ($a, $b) {
+                return strnatcasecmp((string)$a['label'], (string)$b['label']);
+            });
+            return array_values($out);
+        };
+
+        $fuelOptions = $dedupeOptions($fuelOptions);
+        $transOptions = $dedupeOptions($transOptions);
+        $bodyOptions = $dedupeOptions($bodyOptions);
 
         // Debug options if requested
         if ($request->get('debug') === 'options') {
@@ -206,13 +174,8 @@ class ProductController extends Controller
             if ($request->filled('q')) {
                 $keyword = trim($request->q);
                 $accQuery->where(function ($q) use ($keyword) {
-                    $q->where('name', 'like', "%{$keyword}%")
-                      ->orWhere('brand', 'like', "%{$keyword}%");
+                    $q->where('name', 'like', "%{$keyword}%");
                 });
-            }
-
-            if ($request->filled('acc_brand')) {
-                $accQuery->where('brand', $request->acc_brand);
             }
             if ($request->filled('acc_category')) {
                 $accQuery->where('category', $request->acc_category);
@@ -254,11 +217,7 @@ class ProductController extends Controller
                 ->withAvg(['reviews as approved_reviews_avg' => function($q){ $q->where('is_approved', true); }], 'rating')
                 ->paginate(12);
 
-            $accBrands = Accessory::where('is_active', 1)
-                ->whereNotNull('brand')
-                ->orderBy('brand')
-                ->distinct()
-                ->pluck('brand');
+            // Brand column does not exist on accessories; skip brand list
 
             $stats = [
                 'total_variants' => CarVariant::where('is_active', 1)->count(),
@@ -270,7 +229,7 @@ class ProductController extends Controller
             $routeName = 'products.index';
 
             $view = view('user.products.index', compact(
-                'mode', 'accessories', 'accBrands', 'brands', 'models', 'fuelTypes', 'transmissions', 'bodyTypes', 'stats', 'routeName', 'accessoryCategories', 'fuelOptions', 'transOptions', 'bodyOptions'
+                'mode', 'accessories', 'brands', 'models', 'fuelTypes', 'transmissions', 'bodyTypes', 'stats', 'routeName', 'accessoryCategories', 'fuelOptions', 'transOptions', 'bodyOptions'
             ));
             if ($request->ajax()) {
                 return $view->render();
@@ -357,12 +316,8 @@ class ProductController extends Controller
             if ($request->filled('q')) {
                 $keyword = trim($request->q);
                 $accQuery->where(function ($q) use ($keyword) {
-                    $q->where('name', 'like', "%{$keyword}%")
-                      ->orWhere('brand', 'like', "%{$keyword}%");
+                    $q->where('name', 'like', "%{$keyword}%");
                 });
-            }
-            if ($request->filled('acc_brand')) {
-                $accQuery->where('brand', $request->acc_brand);
             }
             if ($request->filled('acc_category')) {
                 $accQuery->where('category', $request->acc_category);
@@ -476,20 +431,14 @@ class ProductController extends Controller
         }
         if ($request->filled('fuel_type')) {
             $val = trim((string) $request->fuel_type);
-            $query->where(function($q) use ($val){
-                $q->where('fuel_type', $val)
-                  ->orWhereHas('specifications', function ($sq) use ($val) {
-                      $sq->where('spec_name', 'fuel_type')->where('spec_value', $val);
-                  });
+            $query->whereHas('specifications', function ($sq) use ($val) {
+                $sq->where('spec_name', 'fuel_type')->where('spec_value', $val);
             });
         }
         if ($request->filled('transmission')) {
             $val = trim((string) $request->transmission);
-            $query->where(function($q) use ($val){
-                $q->where('transmission', $val)
-                  ->orWhereHas('specifications', function ($sq) use ($val) {
-                      $sq->where('spec_name', 'transmission')->where('spec_value', $val);
-                  });
+            $query->whereHas('specifications', function ($sq) use ($val) {
+                $sq->where('spec_name', 'transmission')->where('spec_value', $val);
             });
         }
         if ($request->filled('body_type')) {
