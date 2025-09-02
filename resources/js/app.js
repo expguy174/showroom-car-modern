@@ -1,4 +1,6 @@
 import './bootstrap';
+import $ from 'jquery';
+window.$ = window.jQuery = $;
 import './wishlist-manager';
 import './cart-manager';
 import './compare';
