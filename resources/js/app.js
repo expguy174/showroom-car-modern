@@ -1,5 +1,5 @@
 import './bootstrap';
-import './wishlist-fast';
+import './wishlist-manager';
 import './cart-manager';
 import './compare';
 import './count-manager';
