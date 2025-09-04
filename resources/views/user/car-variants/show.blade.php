@@ -21,8 +21,8 @@
     );
     $brandName = optional(optional($variant->carModel)->carBrand)->name;
     $modelName = optional($variant->carModel)->name;
-    $hasDiscount = ($variant->has_discount ?? false) && ($variant->discount_percentage ?? 0) > 0;
-    $offerPrice = $hasDiscount ? (int) round($variant->price * (1 - ($variant->discount_percentage/100))) : (int) ($variant->price ?? 0);
+    $hasDiscount = (bool) ($variant->has_discount ?? false);
+    $offerPrice = (int) ($variant->current_price ?? 0);
     $availability = $variant->is_available ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock';
     $avgForSchema = $variant->approved_reviews_avg ?? 0;
     $aggregateRating = ($avgForSchema ?? 0) > 0 ? [
@@ -261,11 +261,8 @@
                 <!-- Price + Inline Actions -->
                 @php 
                     $hasDiscount = ($variant->has_discount && ($variant->discount_percentage ?? 0) > 0);
-                    // Use original_price if available, otherwise use price as fallback
-                    $baseOriginal = (int) ($variant->original_price ?? $variant->price ?? 0);
-                    $baseCurrent  = $hasDiscount
-                        ? (int) round($baseOriginal * (1 - ($variant->discount_percentage/100)))
-                        : $baseOriginal;
+                    $baseOriginal = (int) ($variant->base_price ?? 0);
+                    $baseCurrent  = (int) ($variant->current_price ?? $baseOriginal);
                     $discountPct  = (float) ($variant->discount_percentage ?? 0);
                 @endphp
                 <div class="inline-block bg-gradient-to-r from-blue-50 to-indigo-50 rounded-3xl p-4 lg:p-5 border border-blue-100">
@@ -300,7 +297,6 @@
                             <input type="hidden" name="item_id" value="{{ $variant->id }}">
                             <input type="hidden" name="color_id" value="" id="selected-color-id">
                             <input type="hidden" name="feature_ids[]" value="" id="selected-features-holder">
-                            <input type="hidden" name="option_ids[]" value="" id="selected-options-holder">
                             <input type="hidden" name="quantity" value="1">
                             
                         </form>
@@ -317,13 +313,7 @@
                         $featureGroups[$cat] = $featureGroups[$cat] ?? [];
                         $featureGroups[$cat][] = $f;
                     }
-                    $optsAll = ($variant->options ?? collect());
-                    $optsGroups = [];
-                    foreach ($optsAll as $o) {
-                        $cat = $o->category ?? 'other';
-                        $optsGroups[$cat] = $optsGroups[$cat] ?? [];
-                        $optsGroups[$cat][] = $o;
-                    }
+                    // Options have been removed in the new schema
                 @endphp
 
                 @if(!empty($featureGroups))
@@ -363,39 +353,7 @@
                 </div>
                 @endif
 
-                @if(!empty($optsGroups))
-                <div class="mt-4 space-y-4">
-                    <h3 class="text-base font-semibold text-gray-900">Chọn tuỳ chọn nâng cấp</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        @foreach($optsGroups as $cat => $list)
-                        <div class="bg-white rounded-xl border p-3">
-                            <div class="text-sm font-semibold text-gray-800 mb-2">{{ Str::of($cat)->replace(['-','_'],' ')->title() }}</div>
-                            <div class="space-y-2">
-                                @foreach($list as $o)
-                                @php $fee = (float)($o->package_price ?? $o->price ?? 0); @endphp
-                                <label class="flex items-start gap-3">
-                                    <input type="checkbox" class="accent-indigo-600 js-option" value="{{ $o->id }}" data-fee="{{ (int)$fee }}" {{ ($o->is_included ?? false) ? 'checked disabled' : '' }}>
-                                    <div class="min-w-0 flex-1">
-                                        <div class="flex items-center gap-2">
-                                            <span class="font-medium text-gray-900">{{ $o->option_name }}</span>
-                                            @if(($o->is_included ?? false))
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs">Bao gồm</span>
-                                            @elseif($fee>0)
-                                                <span class="text-xs text-indigo-700 font-semibold">+{{ number_format($fee,0,',','.') }}₫</span>
-                                            @endif
-                                        </div>
-                                        @if(!empty($o->description))
-                                            <div class="text-xs text-gray-600">{{ $o->description }}</div>
-                                        @endif
-                                    </div>
-                                </label>
-                                @endforeach
-                            </div>
-                        </div>
-                        @endforeach
-                    </div>
-                </div>
-                @endif
+                
 
                 @php
                     $hasFeatures = collect($variant->featuresRelation ?? [])->count() > 0;
@@ -422,7 +380,6 @@
                         <input type="hidden" name="item_id" value="{{ $variant->id }}">
                         <input type="hidden" name="color_id" value="" id="selected-color-id">
                         <input type="hidden" name="feature_ids[]" value="" id="selected-features-holder-2">
-                        <input type="hidden" name="option_ids[]" value="" id="selected-options-holder-2">
                         <input type="hidden" name="quantity" value="1">
                         <button type="submit" class="action-btn action-primary w-full">
                             <i class="fas fa-cart-plus"></i><span>Thêm vào giỏ</span>
@@ -439,7 +396,7 @@
                     </div>
                     <div class="text-center p-4 bg-white rounded-xl border">
                         <i class="fas fa-shield-alt text-2xl text-indigo-600 mb-2"></i>
-                        <div class="text-sm font-semibold">Bảo hành {{ $variant->warranty_years ?? 12 }} năm</div>
+                        <div class="text-sm font-semibold">Bảo hành {{ $variant->warranty_info }}</div>
                         <div class="text-xs text-gray-500">Chính hãng</div>
                     </div>
                     <div class="text-center p-4 bg-white rounded-xl border">
@@ -469,10 +426,7 @@
                         Thông số
                     </button>
                     @if(($variant->options ?? collect())->count() > 0)
-                    <button class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 text-lg font-semibold" data-tab="options">
-                        <i class="fas fa-puzzle-piece mr-2"></i>
-                        Tùy chọn
-                    </button>
+                    
                     @endif
                     <button class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 text-lg font-semibold" data-tab="reviews">
                         <i class="fas fa-star mr-2"></i>
@@ -548,15 +502,13 @@
                                         <span class="font-semibold text-green-600">{{ $variant->is_available ? 'Còn hàng' : 'Hết hàng' }}</span>
                                     </div>
                                     <div class="flex justify-between items-center py-3 border-b border-gray-100">
-                                        <span class="text-gray-600 font-medium">Tồn kho:</span>
-                                        <span class="font-semibold text-gray-900">{{ number_format((int)($variant->effective_stock_quantity ?? $variant->stock_quantity ?? 0), 0, ',', '.') }}</span>
+                                        <span class="text-gray-600 font-medium">Tồn kho khả dụng:</span>
+                                        <span class="font-semibold text-gray-900">{{ number_format((int)($variant->effective_available_quantity ?? 0), 0, ',', '.') }}</span>
                                     </div>
-                                    @if(!empty($variant->warranty_years))
                                     <div class="flex justify-between items-center py-3 border-b border-gray-100">
                                         <span class="text-gray-600 font-medium">Bảo hành:</span>
-                                        <span class="font-semibold text-gray-900">{{ $variant->warranty_years }} năm</span>
+                                        <span class="font-semibold text-gray-900">{{ $variant->warranty_info }}</span>
                                     </div>
-                                    @endif
                                     {{-- Hidden per request: fuel consumption row --}}
                                     <div class="flex justify-between items-center py-3 border-b border-gray-100">
                                         <span class="text-gray-600 font-medium">Lượt xem:</span>
@@ -727,78 +679,7 @@
                     </div>
                 </div>
 
-                <!-- Options Tab -->
-                @php
-                    $opts = ($variant->options ?? collect());
-                    $hasOpts = $opts->count() > 0;
-                @endphp
-                @if($hasOpts)
-                <div id="options" class="tab-content hidden">
-                    <div class="bg-white rounded-3xl shadow-xl p-8">
-                        <h3 class="text-2xl font-bold text-gray-900 mb-6">Tùy chọn & Gói nâng cấp</h3>
-                        @php
-                            $byCat = [];
-                            foreach ($opts as $o) {
-                                if (isset($o->is_active) && !$o->is_active) continue;
-                                $cat = $o->category ? (string) Str::of($o->category)->lower()->replace(['-','_'],' ')->title() : 'Khác';
-                                $byCat[$cat] = $byCat[$cat] ?? [];
-                                $byCat[$cat][] = $o;
-                            }
-                        @endphp
-                        <div class="space-y-6">
-                            @foreach($byCat as $cat => $list)
-                            <div>
-                                <h4 class="text-lg font-semibold text-gray-900 mb-3">{{ $cat }}</h4>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    @foreach($list as $o)
-                                    <div class="flex items-start gap-3 p-4 rounded-xl border border-gray-200 bg-white">
-                                        @php $icon = $o->icon_url ?? null; $img = $o->image_url ?? null; @endphp
-                                        @if($icon)
-                                            <img src="{{ $icon }}" alt="icon" class="w-8 h-8 object-contain mt-0.5" loading="lazy">
-                                        @elseif($img)
-                                            <img src="{{ $img }}" alt="{{ $o->option_name }}" class="w-12 h-12 object-cover rounded-lg" loading="lazy">
-                                        @else
-                                            <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center mt-0.5"><i class="fas fa-cube text-gray-400"></i></div>
-                                        @endif
-                                        <div class="min-w-0 flex-1">
-                                            <div class="flex items-center gap-2">
-                                                <div class="font-semibold text-gray-900 truncate">{{ $o->option_name }}</div>
-                                                @if($o->is_included)
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs">Bao gồm</span>
-                                                @endif
-                                                @if($o->is_popular)
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-xs">Phổ biến</span>
-                                                @endif
-                                                @if($o->is_recommended)
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-xs">Khuyên dùng</span>
-                                                @endif
-                                            </div>
-                                            @if(!empty($o->description))
-                                            <div class="text-sm text-gray-600 line-clamp-2">{{ $o->description }}</div>
-                                            @endif
-                                            <div class="mt-2 flex items-center gap-3">
-                                                @if(!is_null($o->price) && $o->price > 0)
-                                                    <div class="text-indigo-700 font-bold">{{ number_format($o->price, 0, ',', '.') }}₫</div>
-                                                    @if(!empty($o->package_price) && $o->package_price > $o->price)
-                                                        <div class="text-xs text-gray-500 line-through">{{ number_format($o->package_price, 0, ',', '.') }}₫</div>
-                                                    @endif
-                                                @else
-                                                    <div class="text-gray-700 font-medium">Miễn phí</div>
-                                                @endif
-                                                @if(!empty($o->stock_quantity))
-                                                    <span class="text-xs text-gray-500">Kho: {{ number_format((int)$o->stock_quantity, 0, ',', '.') }}</span>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
-                @endif
+                
             </div>
 
             <!-- Reviews Tab with pagination & submit -->
@@ -1101,8 +982,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const optionCbs = document.querySelectorAll('.js-option');
     const featHolder = document.getElementById('selected-features-holder');
     const featHolder2 = document.getElementById('selected-features-holder-2');
-    const optHolder = document.getElementById('selected-options-holder');
-    const optHolder2 = document.getElementById('selected-options-holder-2');
     
     colorOptions.forEach(option => {
         option.addEventListener('click', () => {
@@ -1185,15 +1064,11 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('form.add-to-cart-form').forEach(function(f){
         f.addEventListener('submit', function(){
             const feats = collectSelectedIds(featureCbs);
-            const opts = collectSelectedIds(optionCbs);
             if (featHolder) featHolder.value = '';
             if (featHolder2) featHolder2.value = '';
-            if (optHolder) optHolder.value = '';
-            if (optHolder2) optHolder2.value = '';
             // Remove existing dynamic clones
-            f.querySelectorAll('input[name="feature_ids[]"], input[name="option_ids[]"]').forEach(function(n){ if(n.id && (n.id==='selected-features-holder'||n.id==='selected-features-holder-2'||n.id==='selected-options-holder'||n.id==='selected-options-holder-2')) return; n.remove(); });
+            f.querySelectorAll('input[name="feature_ids[]"]').forEach(function(n){ if(n.id && (n.id==='selected-features-holder'||n.id==='selected-features-holder-2')) return; n.remove(); });
             feats.forEach(function(id){ const i=document.createElement('input'); i.type='hidden'; i.name='feature_ids[]'; i.value=String(id); f.appendChild(i); });
-            opts.forEach(function(id){ const i=document.createElement('input'); i.type='hidden'; i.name='option_ids[]'; i.value=String(id); f.appendChild(i); });
         });
     });
 
