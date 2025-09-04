@@ -4,12 +4,139 @@
 
 class CartManager {
     constructor() {
+        // Track items being processed to prevent race conditions
+        this.processing = new Set();
+        this.recent = new Map();
+        this.recentWindowMs = 500; // 500ms debounce window
+        this.reconciling = false; // Track if reconciliation is in progress
+        this.lastReconcile = 0; // Timestamp of last reconciliation
+        this.checkingCount = false; // Prevent multiple simultaneous count checks
+        this.lastCountCheck = 0; // Timestamp of last count check
+        this.countCheckDebounceMs = 200; // Debounce count checks
+
+        // Cache DOM elements for better performance
+        this.cachedElements = new Map();
+        // Batch operations for better performance
+        this.batchOperations = new Set();
+        this.batchTimeout = null;
+        // Key cache for better performance
+        this.keyCache = new Map();
+
+        // localStorage keys for consistency with wishlist
+        this.STORAGE_KEY = 'cart_items'; // [{t:'car_variant'|'accessory', i:Number, q:Number, c:Number}]
+        this.COUNT_KEY = 'cart_count';
+
+        // Bind once and reuse for add/removeEventListener to avoid leaks
+        this.boundHandleStorageChange = this.handleStorageChange.bind(this);
+
         this.init();
+    }
+
+    // Helper methods for debouncing - optimized with caching and cleanup
+    key(itemType, itemId) {
+        const cacheKey = `${itemType}:${itemId}`;
+        if (!this.keyCache.has(cacheKey)) {
+            // Clean cache if it gets too large (prevent memory leak)
+            if (this.keyCache.size >= 1000) {
+                this.keyCache.clear();
+            }
+            this.keyCache.set(cacheKey, cacheKey);
+        }
+        return this.keyCache.get(cacheKey);
+    }
+
+    // localStorage management methods (consistent with wishlist)
+    loadFromStorage() {
+        try {
+            const raw = localStorage.getItem(this.STORAGE_KEY);
+            if (!raw) return [];
+            return JSON.parse(raw);
+        } catch(_) {
+            return [];
+        }
+    }
+
+    computeLocalCount(items) {
+        try {
+            if (!Array.isArray(items)) return 0;
+            return items.reduce((sum, it) => sum + Math.max(0, parseInt(it.q || 0, 10) || 0), 0);
+        } catch(_) { return 0; }
+    }
+
+    saveToStorage(items) {
+        try {
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(items));
+            localStorage.setItem(this.COUNT_KEY, String(items.length));
+        } catch(_) {}
+    }
+
+    getCartItems() {
+        return this.loadFromStorage();
+    }
+
+    addToLocalCart(itemType, itemId, quantity = 1, colorId = null) {
+        const items = this.getCartItems();
+        const existingIndex = items.findIndex(item => 
+            item.t === itemType && item.i === itemId && item.c === colorId
+        );
+        
+        if (existingIndex >= 0) {
+            items[existingIndex].q += quantity;
+        } else {
+            items.push({ t: itemType, i: itemId, q: quantity, c: colorId });
+        }
+        
+        this.saveToStorage(items);
+        return items;
+    }
+
+    removeFromLocalCart(itemType, itemId, colorId = null) {
+        const items = this.getCartItems();
+        const filteredItems = items.filter(item => 
+            !(item.t === itemType && item.i === itemId && item.c === colorId)
+        );
+        
+        this.saveToStorage(filteredItems);
+        return filteredItems;
+    }
+
+    updateLocalCartQuantity(itemType, itemId, quantity, colorId = null) {
+        const items = this.getCartItems();
+        const itemIndex = items.findIndex(item => 
+            item.t === itemType && item.i === itemId && item.c === colorId
+        );
+        
+        if (itemIndex >= 0) {
+            if (quantity <= 0) {
+                items.splice(itemIndex, 1);
+            } else {
+                items[itemIndex].q = quantity;
+            }
+        }
+        
+        this.saveToStorage(items);
+        return items;
+    }
+
+    markRecent(itemType, itemId) {
+        const key = this.key(itemType, itemId);
+        this.recent.set(key, Date.now());
+        setTimeout(() => this.recent.delete(key), this.recentWindowMs);
+    }
+
+    isRecent(itemType, itemId) {
+        const key = this.key(itemType, itemId);
+        const timestamp = this.recent.get(key);
+        return timestamp && (Date.now() - timestamp) < this.recentWindowMs;
     }
 
     init() {
         this.bindEvents();
-        this.refreshCartCount();
+        this.loadCartCountFromStorage();
+        
+        // Don't call checkServerCountAndReconcile here - let app.js handle it
+        // This prevents duplicate calls on initial load
+        
         this.initializeQuantityInputs();
         // Helper to update sections visibility when items become empty
         window.updateCartSectionsVisibility = function() {
@@ -19,56 +146,112 @@ class CartManager {
             if (carRows === 0) { $('#car-section').fadeOut(150); } else { $('#car-section').show(); }
             if (accRows === 0) { $('#accessory-section').fadeOut(150); } else { $('#accessory-section').show(); }
             if (carRows === 0 && accRows === 0) {
-                window.location.reload();
+                if (window.cartManager && typeof window.cartManager.showEmptyCartState === 'function') {
+                    window.cartManager.showEmptyCartState();
+                }
             }
         };
     }
 
     bindEvents() {
         // Cart add
-        $(document).on('click', '.js-add-to-cart', this.handleCartAdd.bind(this));
+        $(document).on('click.cart', '.js-add-to-cart', this.handleCartAdd.bind(this));
         
         // Cart remove
-        $(document).on('click', '.js-remove-from-cart', this.handleCartRemove.bind(this));
+        $(document).on('click.cart', '.js-remove-from-cart', this.handleCartRemove.bind(this));
         // Support existing remove buttons
-        $(document).on('click', '.remove-item-btn', this.handleCartRemove.bind(this));
+        $(document).on('click.cart', '.remove-item-btn', this.handleCartRemove.bind(this));
         
         // Cart update quantity - handle both desktop and mobile
-        $(document).on('change', '.js-cart-quantity, .cart-qty-input', this.handleCartQuantityChange.bind(this));
+        $(document).on('change.cart', '.js-cart-quantity, .cart-qty-input', this.handleCartQuantityChange.bind(this));
         
         // Prevent invalid input (negative numbers, zero)
-        $(document).on('input', '.js-cart-quantity, .cart-qty-input', this.handleQuantityInput.bind(this));
+        $(document).on('input.cart', '.js-cart-quantity, .cart-qty-input', this.handleQuantityInput.bind(this));
         
         // Cart clear
-        $(document).on('click', '.js-clear-cart', this.handleCartClear.bind(this));
+        $(document).on('click.cart', '.js-clear-cart', this.handleCartClear.bind(this));
         // Support existing clear button by id
-        $(document).on('click', '#clear-cart-btn', this.handleCartClear.bind(this));
+        $(document).on('click.cart', '#clear-cart-btn', this.handleCartClear.bind(this));
         
         // Quantity controls - handle both desktop and mobile
-        $(document).on('click', '.qty-increase, .qty-decrease', this.handleQuantityControl.bind(this));
+        $(document).on('click.cart', '.qty-increase, .qty-decrease', this.handleQuantityControl.bind(this));
         
         // Feature selection for both layouts
-        $(document).on('change', '.cart-feature.js-opt', this.handleFeatureChange.bind(this));
+        $(document).on('change.cart', '.cart-feature.js-opt', this.handleFeatureChange.bind(this));
         
         // Color selection for both layouts
-        $(document).on('click', '.color-option', this.handleColorChange.bind(this));
+        $(document).on('click.cart', '.color-option', this.handleColorChange.bind(this));
+        
+        // Listen for cart count changes from other pages/tabs
+        window.addEventListener('storage', this.boundHandleStorageChange);
+        
+        // Prevent duplicate global updates creating oscillation
+        // If some legacy code calls window.updateCartCount, ensure it doesn't recursively trigger manager updates
+        if (!window.__cartCountGuardInstalled) {
+            window.__cartCountGuardInstalled = true;
+            const original = window.updateCartCount;
+            window.updateCartCount = function(count){
+                const n = parseInt(count || 0, 10) || 0;
+                const prev = parseInt(localStorage.getItem('cart_count') || '0', 10) || 0;
+                if (n === prev) {
+                    // Only paint badges; skip LS write to avoid storage event loops
+                    const sels = ['.cart-count','#cart-count-badge','#cart-count-badge-mobile','[data-cart-count]'];
+                    if (window.paintBadge) { window.paintBadge(sels, n); }
+                    return;
+                }
+                // Write once then paint
+                try { localStorage.setItem('cart_count', String(n)); } catch(_) {}
+                if (window.paintBadge) { window.paintBadge(['.cart-count','#cart-count-badge','#cart-count-badge-mobile','[data-cart-count]'], n); }
+            }
+        }
     }
 
     handleCartAdd(e) {
         e.preventDefault();
         const button = $(e.currentTarget);
-        const itemId = button.data('item-id') || button.attr('data-item-id');
-        const itemType = button.data('item-type') || button.attr('data-item-type') || 'car_variant';
-        const quantity = button.data('quantity') || 1;
+        
+        // Optimized data extraction
+        const itemIdRaw = button.data('item-id') || button.attr('data-item-id');
+        const itemType = (button.data('item-type') || button.attr('data-item-type') || 'car_variant').toString();
+        let quantity = parseInt(button.data('quantity')) || 1;
+        const itemId = parseInt(itemIdRaw, 10);
         const colorId = button.data('color-id') || null;
         
-        if (!itemId) {
+        // Validate inputs - optimized validation
+        if (!Number.isFinite(itemId) || itemId <= 0 || !itemType || quantity <= 0 || quantity !== Math.floor(quantity)) {
             this.showMessage('Không tìm thấy sản phẩm!', 'error');
             return;
         }
+        if (!Number.isFinite(quantity) || quantity <= 0) quantity = 1;
 
-        // Optimistic update - disable button
+        const itemKey = this.key(itemType, itemId);
+        
+        // Prevent multiple rapid clicks on the same item
+        if (this.processing.has(itemKey)) {
+            return;
+        }
+        
+        // Check if this is a recent action (within 500ms)
+        if (this.isRecent(itemType, itemId)) {
+            return;
+        }
+
+        // CRITICAL: Optimistic UI - add to localStorage immediately
+        const updatedItems = this.addToLocalCart(itemType, itemId, quantity, colorId);
+        this.updateCartCount(this.computeLocalCount(updatedItems));
+        
+        // Mark as processing
+        this.processing.add(itemKey);
+        
+        // Disable button temporarily to prevent rapid clicks
         button.prop('disabled', true);
+        
+        // Add loading state - replace entire button content
+        const originalContent = button.html();
+        button.html('<i class="fas fa-spinner fa-spin mr-2"></i>Đang thêm...');
+        
+        // Mark as recent to prevent duplicate actions
+        this.markRecent(itemType, itemId);
         
         const requestData = {
             item_id: itemId,
@@ -80,29 +263,55 @@ class CartManager {
             requestData.color_id = colorId;
         }
         
-        fetch('/user/cart/add', {
+        const watchdog = setTimeout(() => {
+            if (this.processing.has(itemKey)) {
+                button.prop('disabled', false);
+                button.html(originalContent);
+                this.processing.delete(itemKey);
+                this.showMessage('Kết nối chậm, đã khôi phục nút.', 'warning');
+            }
+        }, 8000);
+
+        fetch(`/user/cart/add?t=${Date.now()}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'Cache-Control': 'no-store'
             },
-            body: JSON.stringify(requestData)
+            body: JSON.stringify(requestData),
+            cache: 'no-store'
         })
-        .then(response => response.json())
+        .then(response => {
+            console.log('Add to cart response:', response);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('Add to cart data:', data);
             if (data.success) {
                 this.showMessage(data.message || 'Đã thêm vào giỏ hàng!', 'success');
-                this.updateCartCount(data.cart_count);
+                this.updateCartCount(parseInt(data.cart_count || 0, 10));
             } else {
                 this.showMessage(data.message || 'Có lỗi xảy ra!', 'error');
             }
         })
-        .catch(() => {
+        .catch((error) => {
+            console.error('Add to cart error:', error);
             this.showMessage('Có lỗi xảy ra khi thêm sản phẩm!', 'error');
         })
         .finally(() => {
-            button.prop('disabled', false);
+            clearTimeout(watchdog);
+            // Re-enable button after a short delay
+            setTimeout(() => {
+                button.prop('disabled', false);
+                // Restore original button content
+                button.html(originalContent);
+                this.processing.delete(itemKey);
+            }, 800);
         });
     }
 
@@ -116,51 +325,132 @@ class CartManager {
             return;
         }
 
-        // Optimistic update - disable button
+        const itemKey = `remove:${cartItemId}`;
+        
+        // Prevent multiple rapid clicks on the same item
+        if (this.processing.has(itemKey)) {
+            return;
+        }
+
+        // CRITICAL: Optimistic UI - remove from localStorage immediately if we have enough info
+        // Try to read metadata from DOM; if missing, fallback to server recon after success
+        let performedLocalRemoval = false;
+        const cartItemElement = button.closest('.cart-item-desktop, .cart-item-row');
+        if (cartItemElement && cartItemElement.length) {
+            const itemType = cartItemElement.data('item-type');
+            const itemId = cartItemElement.data('item-id');
+            const colorId = cartItemElement.data('color-id');
+            if (itemType && itemId) {
+                const updatedItems = this.removeFromLocalCart(String(itemType), Number(itemId), colorId ?? null);
+                this.updateCartCount(this.computeLocalCount(updatedItems));
+                performedLocalRemoval = true;
+            }
+        }
+        
+        // Mark as processing
+        this.processing.add(itemKey);
+        
+        // Disable button temporarily to prevent rapid clicks
         button.prop('disabled', true);
+        
+        // Add loading state - replace entire button content
+        const originalContent = button.html();
+        button.html('<i class="fas fa-spinner fa-spin"></i>');
+        
+        // Optimistic update - remove from DOM immediately
+        const cartItem = button.closest('.cart-item-desktop, .cart-item-row');
+        if (cartItem.length) {
+            const cartItemId = cartItem.data('id');
+            // Remove both desktop and mobile rows for the same item id
+            const selector = `.cart-item-desktop[data-id="${cartItemId}"], .cart-item-row[data-id="${cartItemId}"]`;
+            $(selector).fadeOut(200, function() {
+                $(this).remove();
+                // Update cart totals after removal
+                if (typeof updateCartTotals === 'function') {
+                    updateCartTotals();
+                }
+                if (typeof window.updateCartSectionsVisibility === 'function') {
+                    window.updateCartSectionsVisibility();
+                }
+                
+                // Check if cart is now empty and show empty state
+                const remainingItems = $('.cart-item-desktop, .cart-item-row').length;
+                if (remainingItems === 0) {
+                    // Hide sections and clear button
+                    $('#car-section, #accessory-section').fadeOut(150);
+                    $('#clear-cart-btn').closest('.bg-white').fadeOut(150);
+                    
+                    // Show empty state after sections are hidden
+                    setTimeout(() => {
+                        if (window.cartManager && typeof window.cartManager.showEmptyCartState === 'function') {
+                            window.cartManager.showEmptyCartState();
+                        }
+                    }, 200);
+                }
+            });
+        }
         
         const url = button.data('url') || `/user/cart/remove/${cartItemId}`;
         
-        fetch(url, {
+        const rmWatchdog = setTimeout(() => {
+            if (this.processing.has(itemKey)) {
+                button.prop('disabled', false);
+                button.html(originalContent);
+                this.processing.delete(itemKey);
+                this.showMessage('Kết nối chậm, đã khôi phục nút.', 'warning');
+            }
+        }, 8000);
+
+        fetch(`${url}?t=${Date.now()}`, {
             method: 'DELETE',
             headers: {
                 'X-CSRF-TOKEN': button.data('csrf') || $('meta[name="csrf-token"]').attr('content'),
-                'X-Requested-With': 'XMLHttpRequest'
-            }
+                'X-Requested-With': 'XMLHttpRequest',
+                'Cache-Control': 'no-store'
+            },
+            cache: 'no-store'
         })
-        .then(response => response.json())
+        .then(response => {
+            console.log('Remove from cart response:', response);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('Remove from cart data:', data);
             if (data.success) {
                 this.showMessage('Đã xóa sản phẩm khỏi giỏ hàng!', 'success');
-                this.updateCartCount(data.cart_count);
-                
-                // Remove item from DOM - handle both desktop and mobile layouts
-                const cartItem = button.closest('.cart-item-desktop, .cart-item-row');
-                if (cartItem.length) {
-                    const isDesktopRow = cartItem.hasClass('cart-item-desktop');
-                    const cartItemId = cartItem.data('id');
-                    // Remove both desktop and mobile rows for the same item id to keep counts correct
-                    const selector = `.cart-item-desktop[data-id="${cartItemId}"], .cart-item-row[data-id="${cartItemId}"]`;
-                    $(selector).fadeOut(300, function() {
-                        $(this).remove();
-                        // Update cart totals after removal
-                        if (typeof updateCartTotals === 'function') {
-                            updateCartTotals();
+                // Fetch full cart from server immediately to sync LS and badges without delay
+                this.fetchAllCartFromServer().then((ok)=>{
+                    if (!ok) {
+                        // Fallback: at least sync count from server response
+                        if (typeof data.cart_count !== 'undefined') {
+                            this.updateCartCount(parseInt(data.cart_count, 10) || 0);
+                        } else {
+                            this.checkServerCountAndReconcile();
                         }
-                        if (typeof window.updateCartSectionsVisibility === 'function') {
-                            window.updateCartSectionsVisibility();
-                        }
-                    });
-                }
+                    }
+                });
             } else {
-                this.showMessage(data.message || 'Có lỗi xảy ra!', 'error');
+                throw new Error(data.message || 'error');
             }
         })
-        .catch(() => {
+        .catch((error) => {
+            console.error('Remove from cart error:', error);
             this.showMessage('Có lỗi xảy ra khi xóa sản phẩm!', 'error');
+            // Revert optimistic UI if needed by re-fetching from server without reloading
+            this.fetchAllCartFromServer().then(()=>{
+                try { if (typeof window.updateCartTotals === 'function') window.updateCartTotals(); } catch(_) {}
+                try { if (typeof window.updateCartSectionsVisibility === 'function') window.updateCartSectionsVisibility(); } catch(_) {}
+            });
         })
         .finally(() => {
+            clearTimeout(rmWatchdog);
+            // Re-enable button immediately since DOM is already updated
             button.prop('disabled', false);
+            button.html(originalContent);
+            this.processing.delete(itemKey);
         });
     }
 
@@ -198,12 +488,12 @@ class CartManager {
 
     handleCartQuantityChange(e) {
         const input = $(e.currentTarget);
-        const cartItemId = input.data('id') || input.data('cart-item-id');
-        const quantity = parseInt(input.val());
+        const cartItemId = parseInt(input.data('id') || input.data('cart-item-id'), 10);
+        let quantity = parseInt(input.val(), 10);
         
         // Validate quantity - must be at least 1
-        if (!cartItemId || quantity < 1) {
-            if (quantity < 1) {
+        if (!Number.isFinite(cartItemId) || cartItemId <= 0 || !Number.isFinite(quantity) || quantity < 1) {
+            if (!Number.isFinite(quantity) || quantity < 1) {
                 this.showMessage('Số lượng sản phẩm phải lớn hơn 0!', 'warning');
                 // Reset to previous valid value or 1
                 const previousQuantity = parseInt(input.attr('data-previous-quantity')) || 1;
@@ -211,23 +501,34 @@ class CartManager {
             }
             return;
         }
+        // Ensure integer quantity
+        quantity = Math.max(1, Math.floor(quantity));
 
         const updateUrl = input.data('update-url') || `/user/cart/update/${cartItemId}`;
         const csrfToken = input.data('csrf') || $('meta[name="csrf-token"]').attr('content');
 
-        fetch(updateUrl, {
+        fetch(`${updateUrl}?t=${Date.now()}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': csrfToken,
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'Cache-Control': 'no-store'
             },
-            body: JSON.stringify({ quantity: quantity })
+            body: JSON.stringify({ quantity: quantity }),
+            cache: 'no-store'
         })
-        .then(response => response.json())
+        .then(response => {
+            console.log('Update quantity response:', response);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('Update quantity data:', data);
             if (data.success) {
-                this.updateCartCount(data.cart_count);
+                this.updateCartCount(parseInt(data.cart_count || 0, 10));
                 
                 // Show success toast for quantity update
                 this.showMessage('Đã cập nhật số lượng thành công!', 'success');
@@ -276,10 +577,20 @@ class CartManager {
     handleQuantityControl(e) {
         e.preventDefault();
         const button = $(e.currentTarget);
-        const cartItemId = button.data('id');
+        const cartItemId = parseInt(button.data('id'), 10);
         const isIncrease = button.hasClass('qty-increase');
         
-        if (!cartItemId) return;
+        if (!Number.isFinite(cartItemId) || cartItemId <= 0) return;
+        
+        const itemKey = `qty:${cartItemId}:${isIncrease ? 'inc' : 'dec'}`;
+        
+        // Prevent multiple rapid clicks on the same quantity control
+        if (this.processing.has(itemKey)) {
+            return;
+        }
+        
+        // Mark as processing
+        this.processing.add(itemKey);
         
         // Find the quantity input in the same cart item
         const cartItem = button.closest('.cart-item-desktop, .cart-item-row');
@@ -287,7 +598,8 @@ class CartManager {
         
         if (!quantityInput.length) return;
         
-        let currentQuantity = parseInt(quantityInput.val()) || 1;
+        let currentQuantity = parseInt(quantityInput.val(), 10);
+        if (!Number.isFinite(currentQuantity) || currentQuantity < 1) currentQuantity = 1;
         
         // Store previous quantity for comparison
         const previousQuantity = currentQuantity;
@@ -313,6 +625,11 @@ class CartManager {
         
         // Update button states after quantity change
         this.updateQuantityButtonStates(quantityInput);
+        
+        // Cleanup processing after a short delay
+        setTimeout(() => {
+            this.processing.delete(itemKey);
+        }, 500);
     }
 
     updateQuantityButtonStates(inputElement) {
@@ -357,7 +674,7 @@ class CartManager {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                this.updateCartCount(data.cart_count);
+                this.updateCartCount(parseInt(data.cart_count || 0, 10));
                 
                 // Show success toast for quantity update
                 const previousQuantity = parseInt(inputElement.attr('data-previous-quantity') || 1);
@@ -745,6 +1062,7 @@ class CartManager {
     handleCartClear(e) {
         e.preventDefault();
         const button = $(e.currentTarget);
+        // Note: Do NOT clear immediately. Wait for user confirmation.
         
         // Modern confirm dialog like wishlist
         function showConfirmDialog(title, message, confirmText, cancelText, onConfirm){
@@ -783,58 +1101,371 @@ class CartManager {
             'Hủy',
             () => {
                 button.prop('disabled', true).addClass('opacity-50 cursor-not-allowed');
-        fetch('/user/cart/clear', {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
+                
+                // Optimistic update - clear local state and UI immediately AFTER user confirms
+                this.saveToStorage([]);
+                this.updateCartCount(0);
+                try { localStorage.setItem('cart_last_action', String(Date.now())); } catch(_) {}
+                // Optimistic update - clear UI immediately
+                this.clearCartUI();
+                
+                // Server call
+                const clrWatchdog = setTimeout(() => {
+                    button.prop('disabled', false).removeClass('opacity-50 cursor-not-allowed');
+                    this.showMessage('Kết nối chậm, đã khôi phục nút.', 'warning');
+                }, 8000);
+
+                fetch(`/user/cart/clear?t=${Date.now()}`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Cache-Control': 'no-store'
+                    },
+                    cache: 'no-store'
+                })
                 .then(r=>r.json())
                 .then(data=>{
                     if (!data.success) throw new Error(data.message||'error');
-                this.updateCartCount(data.cart_count);
-                    $('.cart-item-desktop, .cart-item-row').fadeOut(200, function(){ $(this).remove(); });
+                    
+                    // Ensure cart count is properly updated everywhere
+                    const newCount = parseInt(data.cart_count || 0, 10);
+                    this.updateCartCount(newCount);
+                    // Local storage already cleared above; keep empty state
+                    
+                    // Don't call window.updateCartCount to avoid infinite loop
+                    // The global function is meant to be called from outside, not from within CartManager
+                    
                     this.showMessage('Đã xóa toàn bộ giỏ hàng!', 'success');
-                    // Ensure sections disappear and show empty-state like initial
-                    $('#car-section, #accessory-section').fadeOut(150);
-                    setTimeout(()=> window.location.reload(), 200);
+
+                    // Short retry loop to confirm server-side emptiness and avoid stale residues from caches/CDN
+                    const tryConfirmEmpty = async (attempt = 1) => {
+                        const ok = await this.fetchAllCartFromServer();
+                        const items = this.getCartItems();
+                        const len = Array.isArray(items) ? items.length : 0;
+                        if (ok && len === 0) {
+                            this.updateCartCount(0);
+                            try { if (typeof window.updateCartTotals === 'function') window.updateCartTotals(); } catch(_) {}
+                            try { if (typeof window.updateCartSectionsVisibility === 'function') window.updateCartSectionsVisibility(); } catch(_) {}
+                            return true;
+                        }
+                        if (attempt < 3) {
+                            return new Promise(res => setTimeout(async () => res(await tryConfirmEmpty(attempt + 1)), 200));
+                        }
+                        // Finalize UI as empty even if server still not caught up; next reconcile will fix if needed
+                        this.saveToStorage([]);
+                        this.updateCartCount(0);
+                        return false;
+                    };
+                    tryConfirmEmpty();
                 })
-                .catch(()=>{ this.showMessage('Có lỗi xảy ra khi xóa toàn bộ giỏ hàng!', 'error'); })
-                .finally(()=>{ button.prop('disabled', false).removeClass('opacity-50 cursor-not-allowed'); });
+                .catch((error)=> { 
+                    // Keep optimistic empty UI; reconcile in background without reloading
+                    this.showMessage('Có lỗi xảy ra khi xóa toàn bộ giỏ hàng!', 'error');
+                    this.saveToStorage([]);
+                    this.updateCartCount(0);
+                    setTimeout(() => { this.fetchAllCartFromServer(); }, 300);
+                })
+                .finally(()=>{ clearTimeout(clrWatchdog); button.prop('disabled', false).removeClass('opacity-50 cursor-not-allowed'); });
             }
         );
     }
 
-    updateCartCount(count) {
+    loadCartCountFromStorage() {
+        // Load cart count from localStorage first for immediate display
+        const items = this.getCartItems();
+        const count = this.computeLocalCount(items);
         
-        // Update all cart count badges
-        const selectors = [
-            '.cart-count',
-            '#cart-count-badge', 
-            '#cart-count-badge-mobile',
-            '[data-cart-count]'
-        ];
+        // Always update to ensure consistency across navigation
+        this.updateCartCount(count);
+    }
 
-        selectors.forEach(selector => {
-            $(selector).each(function() {
-                const badge = $(this);
-                badge.text(count > 99 ? '99+' : count);
-                
-                // Show/hide badges based on count
-                if (count > 0) {
-                    badge.removeClass('hidden');
-                    
-                } else {
-                    badge.addClass('hidden');
-                    
-                }
+    clearCartUI() {
+        // Clear all cart items from DOM
+        $('.cart-item-desktop, .cart-item-row').fadeOut(200, function(){ $(this).remove(); });
+        
+        // Hide sections
+        $('#car-section, #accessory-section').fadeOut(150);
+        
+        // Hide clear button
+        $('#clear-cart-btn').closest('.bg-white').fadeOut(150);
+        
+        // Show empty state after sections are hidden
+        setTimeout(() => {
+            this.showEmptyCartState();
+        }, 200);
+        
+        // Update cart count to 0 and ensure localStorage is updated
+        this.updateCartCount(0);
+        
+        // Force update localStorage immediately for consistency
+        localStorage.setItem('cart_count', '0');
+        
+        // Don't call window.updateCartCount to avoid infinite loop
+        // The global function is meant to be called from outside, not from within CartManager
+    }
+
+    showEmptyCartState() {
+        // Create empty state HTML that matches the default template exactly
+        const emptyStateHTML = `
+            <div class="text-center py-16">
+                <div class="w-32 h-32 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full mx-auto mb-8 flex items-center justify-center">
+                    <i class="fas fa-car text-blue-500 text-5xl"></i>
+                </div>
+                <h3 class="text-3xl font-bold text-gray-800 mb-4">Giỏ hàng trống</h3>
+                <p class="text-gray-600 mb-8 max-w-md mx-auto text-lg">
+                    Bạn chưa có sản phẩm nào trong giỏ hàng. Hãy khám phá các xe hơi và phụ kiện chất lượng cao!
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                    <a href="/products?type=car" 
+                       class="inline-flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition duration-300 transform hover:scale-105 shadow-lg w-full sm:w-auto min-w-[200px]">
+                        <i class="fas fa-car mr-2 sm:mr-3"></i>
+                        <span class="text-sm sm:text-base">Xem xe hơi</span>
+                    </a>
+                    <a href="/products?type=accessory" 
+                       class="inline-flex items-center justify-center bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold hover:from-emerald-700 hover:to-teal-700 transition duration-300 transform hover:scale-105 shadow-lg w-full sm:w-auto min-w-[200px]">
+                        <i class="fas fa-tools mr-2 sm:mr-3"></i>
+                        <span class="text-sm sm:text-base">Xem phụ kiện</span>
+                    </a>
+                </div>
+            </div>
+        `;
+        
+        // Replace only the cart content area, not the entire container
+        const cartContainer = $('.container.mx-auto.px-4.sm\\:px-6.lg\\:px-8.py-8');
+        if (cartContainer.length) {
+            cartContainer.html(emptyStateHTML);
+        } else {
+            // Fallback: find the py-8 container
+            $('.py-8').html(emptyStateHTML);
+        }
+    }
+
+    async getServerCount() {
+        try {
+            const response = await fetch(`/user/cart/count?t=${Date.now()}`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Cache-Control': 'no-store' },
+                cache: 'no-store'
             });
-        });
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    // Ensure we return a number, not a string
+                    return parseInt(data.cart_count || 0, 10);
+                }
+            }
+        } catch (error) {
+            console.warn('Failed to get server cart count:', error);
+        }
+        return 0;
+    }
+
+    async checkServerCountAndReconcile() {
+        // Prevent multiple simultaneous count checks
+        if (this.checkingCount) {
+            return;
+        }
         
-        // IMPORTANT: Store count in localStorage for cross-page/tab synchronization
-        localStorage.setItem('cart_count', count.toString());
+        // Debounce rapid successive calls
+        const now = Date.now();
+        if (now - this.lastCountCheck < this.countCheckDebounceMs) {
+            return;
+        }
         
+        this.checkingCount = true;
+        this.lastCountCheck = now;
+        
+        try {
+            // First get server count to detect mismatches
+            const serverCount = await this.getServerCount();
+            const localCount = parseInt(localStorage.getItem('cart_count') || '0', 10);
+            
+            // Ensure both are numbers for proper comparison
+            const serverCountNum = parseInt(serverCount, 10) || 0;
+            const localCountNum = parseInt(localCount, 10) || 0;
+            
+            console.log(`Cart count check: local=${localCountNum}, server=${serverCountNum}, type: local=${typeof localCountNum}, server=${typeof serverCountNum}`);
+            
+            // If counts don't match, we need to reconcile
+            if (serverCountNum !== localCountNum) {
+                console.log(`Cart mismatch detected: local=${localCountNum}, server=${serverCountNum}. Reconciling...`);
+                this.reconcileCartState();
+                return;
+            }
+            
+            // If counts match but no local data, still reconcile
+            if (serverCountNum > 0 && localCountNum === 0) {
+                console.log(`Cart count match but no local data: local=${localCountNum}, server=${serverCountNum}. Reconciling...`);
+                this.reconcileCartState();
+                return;
+            }
+            
+            // If counts match, no need to reconcile - just log success
+            if (serverCountNum === localCountNum) {
+                console.log(`Cart count match: local=${localCountNum}, server=${serverCountNum}. No reconciliation needed.`);
+                return;
+            }
+        } catch (error) {
+            // If server check fails, fallback to local data
+            console.warn('Failed to check server cart count, using local data:', error);
+        } finally {
+            this.checkingCount = false;
+        }
+    }
+
+    async reconcileCartState() {
+        // Prevent multiple concurrent reconciliations
+        if (this.reconciling) return;
+        this.reconciling = true;
+        
+        try {
+            // First, try to get all cart items from server if we suspect a mismatch
+            const serverCount = await this.getServerCount();
+            const localCount = parseInt(localStorage.getItem('cart_count') || '0', 10);
+            
+            // Ensure both are numbers for proper comparison
+            const serverCountNum = parseInt(serverCount, 10) || 0;
+            const localCountNum = parseInt(localCount, 10) || 0;
+            
+            if (serverCountNum !== localCountNum) {
+                if (serverCountNum > localCountNum) {
+                    // Server has more items, fetch all from server
+                    console.log(`Fetching all cart items from server (server: ${serverCountNum}, local: ${localCountNum})`);
+                    const success = await this.fetchAllCartFromServer();
+                    if (success) {
+                        this.updateCartCount(serverCountNum);
+                    } else {
+                        // If server fetch fails, keep local data
+                        console.log('Server fetch failed, keeping local data');
+                        this.updateCartCount(localCountNum);
+                    }
+                } else {
+                    // Local has more items, server is source of truth - sync from server
+                    console.log(`Local has more items than server (local: ${localCountNum}, server: ${serverCountNum}). Syncing from server...`);
+                    const success = await this.fetchAllCartFromServer();
+                    if (success) {
+                        this.updateCartCount(serverCountNum);
+                    } else {
+                        // If server fetch fails, keep local data
+                        console.log('Server fetch failed, keeping local data');
+                        this.updateCartCount(localCountNum);
+                    }
+                }
+            } else {
+                // Counts match, just refresh count normally
+                this.refreshCartCount();
+            }
+        } catch (error) {
+            console.warn('Failed to reconcile cart state:', error);
+            // Fallback to normal refresh
+            this.refreshCartCount();
+        } finally {
+            this.reconciling = false;
+        }
+    }
+
+    async fetchAllCartFromServer() {
+        try {
+            // Fetch all cart items from server
+            const response = await fetch(`/user/cart/items?t=${Date.now()}`, {
+                headers: { 
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                    'Cache-Control': 'no-store'
+                },
+                cache: 'no-store'
+            });
+            
+            // Check if response is JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                console.warn('Server returned non-JSON response, likely session expired or server error');
+                return false;
+            }
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.cart_items) {
+                    console.log(`Loaded ${data.cart_items.length} cart items from server`);
+                    
+                    // Convert server items to localStorage format
+                    const localItems = data.cart_items.map(item => ({
+                        t: item.item_type,
+                        i: item.item_id,
+                        q: item.quantity,
+                        c: item.color_id
+                    }));
+                    
+                    // Update localStorage with server data
+                    this.saveToStorage(localItems);
+                    this.updateCartCount(this.computeLocalCount(localItems));
+                    
+                    // If we're on cart page, avoid reload; DOM has been updated optimistically
+                    // Ensure totals/sections reflect current state
+                    try { if (typeof window.updateCartTotals === 'function') window.updateCartTotals(); } catch(_) {}
+                    try { if (typeof window.updateCartSectionsVisibility === 'function') window.updateCartSectionsVisibility(); } catch(_) {}
+                    return true;
+                }
+            } else {
+                console.warn('Server returned error status:', response.status);
+            }
+        } catch (error) {
+            console.warn('Failed to fetch all cart from server:', error);
+        }
+        return false;
+    }
+
+    updateCartCount(count) {
+        // Update all cart count badges - optimized with caching
+        const selectors = ['.cart-count','#cart-count-badge','#cart-count-badge-mobile','[data-cart-count]'];
+        // Guard: avoid redundant paints if value unchanged
+        const prev = parseInt(localStorage.getItem('cart_count') || '0', 10);
+        if (prev === Number(count)) {
+            if (window.paintBadge) { window.paintBadge(selectors, count); }
+        } else {
+            if (window.paintBadge) { window.paintBadge(selectors, count); }
+        }
+        
+        // Store count in localStorage for cross-page/tab synchronization
+        const countStr = count.toString();
+        try { 
+            localStorage.setItem('cart_count', countStr);
+            localStorage.setItem('cart_last_action', String(Date.now()));
+        } catch (error) {
+            console.warn('Failed to update cart count in localStorage:', error);
+        }
+        
+        // Don't call window.updateCartCount to avoid infinite loop
+        // The global function is meant to be called from outside, not from within CartManager
+    }
+
+    handleStorageChange(e) {
+        // Listen for cart_items changes from other pages/tabs
+        if (e.key === this.STORAGE_KEY) {
+            const newItems = e.newValue ? JSON.parse(e.newValue) : [];
+            const oldItems = e.oldValue ? JSON.parse(e.oldValue) : [];
+            
+            // Only update if the items actually changed
+            if (JSON.stringify(newItems) !== JSON.stringify(oldItems)) {
+                const oldCount = this.computeLocalCount(oldItems);
+                const newCount = this.computeLocalCount(newItems);
+                console.log(`Cart items changed from ${oldCount} to ${newCount} (from storage event)`);
+                this.updateCartCount(newCount);
+            }
+        }
+        
+        // Also listen for cart_count changes for backward compatibility
+        if (e.key === this.COUNT_KEY) {
+            const newCount = parseInt(e.newValue || '0', 10);
+            const oldCount = parseInt(e.oldValue || '0', 10);
+            
+            // Only update if the count actually changed
+            if (newCount !== oldCount) {
+                console.log(`Cart count changed from ${oldCount} to ${newCount} (from storage event)`);
+                this.updateCartCount(newCount);
+            }
+        }
     }
 
     refreshCartCount() {
@@ -845,7 +1476,9 @@ class CartManager {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                this.updateCartCount(data.cart_count);
+                // Ensure we pass a number to updateCartCount
+                const count = parseInt(data.cart_count || 0, 10);
+                this.updateCartCount(count);
             }
         })
         .catch(error => {
@@ -853,21 +1486,58 @@ class CartManager {
         });
     }
 
+
+
     showMessage(message, type = 'info') {
+        console.log(`CartManager showMessage: ${message} (${type})`);
+        
         // Try to use existing showMessage function
         if (typeof window.showMessage === 'function') {
-            window.showMessage(message, type);
-        } else if (typeof window.showToast === 'function') {
-            window.showToast(message, type);
-        } else {
-            // Fallback: create a simple toast if no system is available
-            this.createSimpleToast(message, type);
+            try {
+                window.showMessage(message, type);
+                return;
+            } catch (error) {
+                console.warn('window.showMessage failed, falling back to createSimpleToast:', error);
+            }
         }
+        
+        if (typeof window.showToast === 'function') {
+            try {
+                window.showToast(message, type);
+                return;
+            } catch (error) {
+                console.warn('window.showToast failed, falling back to createSimpleToast:', error);
+            }
+        }
+        
+        // Fallback: create a simple toast if no system is available
+        this.createSimpleToast(message, type);
     }
 
     createSimpleToast(message, type = 'info') {
-        // Remove any existing toasts to prevent stacking
+        // Find existing toast with same message and type
         const existingToasts = document.querySelectorAll('.toast-notification');
+        let existingToast = null;
+        
+        // Look for toast with same content and type
+        for (const toast of existingToasts) {
+            const toastMessage = toast.querySelector('.toast-message')?.textContent;
+            const toastType = toast.className.includes('bg-green-500') ? 'success' :
+                             toast.className.includes('bg-red-500') ? 'error' :
+                             toast.className.includes('bg-yellow-500') ? 'warning' : 'info';
+            
+            if (toastMessage === message && toastType === type) {
+                existingToast = toast;
+                break;
+            }
+        }
+        
+        // If found same toast, remove it first to show new one
+        if (existingToast) {
+            existingToast.remove();
+        }
+        
+        // Remove any other existing toasts to prevent stacking
         existingToasts.forEach(toast => toast.remove());
 
         const toast = document.createElement('div');
@@ -996,18 +1666,72 @@ class CartManager {
     }
 }
 
+// Lightweight Cart Count Sync (simple, robust)
+// - Source of truth for instant UX is localStorage('cart_count')
+// - Server is reconciled in background when needed
+// - Common pattern: load from LS on navigation/focus; write to LS on success responses
+window.CartCount = {
+    storageKey: 'cart_items',
+    countKey: 'cart_count',
+    initialized: false,
+    init() {
+        if (this.initialized) return; // Prevent duplicate initialization
+        this.initialized = true;
+        
+        // Initial paint from localStorage
+        this.load();
+        this.guardWindowMs = 1200; // ignore stale server loads for a short window
+        // Note: Event listeners are handled by main cart manager to avoid duplicates
+    },
+    load() {
+        // Load count from cart_items (consistent with wishlist)
+        const items = JSON.parse(localStorage.getItem(this.storageKey) || '[]');
+        const count = items.length;
+        const lastAction = parseInt(localStorage.getItem('cart_last_action') || '0', 10);
+        const now = Date.now();
+        
+        // If a local action just happened, prefer local immediately and skip server-triggered loads
+        if (window.cartManager && Number.isFinite(count)) {
+            if (!lastAction || now - lastAction > this.guardWindowMs) {
+                window.cartManager.updateCartCount(count);
+            }
+        }
+    },
+    apply(count) {
+        const n = parseInt(count || 0, 10);
+        try { localStorage.setItem(this.countKey, String(n)); } catch (_) {}
+        // Apply immediately without being blocked by guard
+        if (window.cartManager && Number.isFinite(n)) {
+            window.cartManager.updateCartCount(n);
+        } else {
+            this.load();
+        }
+    },
+    async reconcile() {
+        try {
+            const r = await fetch(`/user/cart/count?t=${Date.now()}`, { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Cache-Control': 'no-store' }, cache: 'no-store' });
+            const data = r.ok ? await r.json() : null;
+            if (data && data.success && typeof data.cart_count !== 'undefined') {
+                const lastAction = parseInt(localStorage.getItem('cart_last_action') || '0', 10);
+                const now = Date.now();
+                // If a local action just happened, avoid overwriting with stale server count
+                if (!lastAction || now - lastAction > this.guardWindowMs) {
+                    this.apply(data.cart_count);
+                }
+            }
+        } catch (_) {}
+    }
+};
+
 // Initialize CartManager when DOM is ready
 function initializeCartManager() {
     // Destroy existing instance if exists
     if (window.cartManager) {
         // Remove all event handlers
-        $(document).off('click', '.js-add-to-cart');
-        $(document).off('click', '.js-remove-from-cart');
-        $(document).off('change', '.js-cart-quantity, .cart-qty-input');
-        $(document).off('click', '.js-clear-cart');
-        $(document).off('click', '.qty-increase, .qty-decrease');
-        $(document).off('change', '.cart-feature.js-opt');
-        $(document).off('click', '.color-option');
+        $(document).off('.cart');
+        
+        // Remove storage event listener
+        window.removeEventListener('storage', window.cartManager.boundHandleStorageChange);
     }
 
     window.cartManager = new CartManager();
@@ -1017,33 +1741,98 @@ function initializeCartManager() {
 $(document).ready(initializeCartManager);
 
 // Also initialize on page show (for browser navigation)
-$(window).on('pageshow', function() {
-    
+$(window).on('pageshow', function(event) {
     if (window.cartManager) {
-        // Check if localStorage count is different from current display
-        const storedCartCount = parseInt(localStorage.getItem('cart_count')) || 0;
-        const currentCartCount = parseInt($('.cart-count, #cart-count-badge, #cart-count-badge-mobile').first().text()) || 0;
-
-        if (storedCartCount !== currentCartCount) {
-            
-            window.cartManager.updateCartCount(storedCartCount);
+        // Check if page was restored from cache (back/forward navigation)
+        if (event.originalEvent && event.originalEvent.persisted) {
+            // Page was restored from cache, refresh state immediately
+            window.cartManager.loadCartCountFromStorage();
+            console.log('Cart state refreshed from cache');
         } else {
-            
-            window.cartManager.refreshCartCount();
+            // Normal page load, load from storage first
+            window.cartManager.loadCartCountFromStorage();
+        }
+        
+        // Only reconcile if no operations in progress and not recently reconciled
+        if (!window.cartManager.processing.size && !window.cartManager.reconciling) {
+            const lastReconcile = window.cartManager.lastReconcile || 0;
+            const now = Date.now();
+            if (now - lastReconcile > 1500) { // reconcile sớm hơn để tránh cảm giác lag
+                window.cartManager.lastReconcile = now;
+                // Delay reconciliation slightly to let UI settle, but check debounce
+                setTimeout(() => { 
+                    if (Date.now() - window.cartManager.lastCountCheck > window.cartManager.countCheckDebounceMs) {
+                        window.cartManager.checkServerCountAndReconcile(); 
+                    }
+                }, 60);
+            }
         }
     }
-    
-    // Also reconcile counts from server when page is shown
-    if (window.CountManager) {
-        window.CountManager.reconcileCart();
-        window.CountManager.reconcileWishlist();
+});
+
+// Handle browser back/forward navigation for cart
+$(window).on('popstate', function() {
+    if (window.cartManager) {
+        // Immediate state refresh to prevent flickering
+        window.cartManager.loadCartCountFromStorage();
+        console.log('Cart state refreshed after navigation');
+    }
+});
+
+// Handle visibility change (tab focus/blur)
+$(document).on('visibilitychange', function() {
+    if (window.cartManager && !document.hidden) {
+        // Tab became visible, refresh state
+        window.cartManager.loadCartCountFromStorage();
+    }
+});
+
+// Handle window focus (alternative to visibilitychange)
+$(window).on('focus', function() {
+    if (window.cartManager) {
+        // Window gained focus, refresh state
+        window.cartManager.loadCartCountFromStorage();
+    }
+});
+
+// Handle beforeunload to save state before navigation
+$(window).on('beforeunload', function() {
+    if (window.cartManager) {
+        // Ensure state is saved before leaving page
+        const currentCount = parseInt(localStorage.getItem('cart_count') || '0', 10);
+        window.cartManager.updateCartCount(currentCount);
     }
 });
 
 // Global functions for backward compatibility
 window.updateCartCount = function(count) {
+    // This function is meant to be called from outside to update cart count
+    // It should NOT call CartManager methods to avoid infinite loops
     if (window.cartManager) {
-        window.cartManager.updateCartCount(count);
+        // Only update UI elements directly, don't call CartManager methods
+        const selectors = [
+            '.cart-count',
+            '#cart-count-badge', 
+            '#cart-count-badge-mobile',
+            '[data-cart-count]'
+        ];
+
+        selectors.forEach(selector => {
+            $(selector).each(function() {
+                const badge = $(this);
+                badge.text(count > 99 ? '99+' : count);
+                
+                // Show/hide badges based on count
+                if (count > 0) {
+                    badge.removeClass('hidden');
+                } else {
+                    badge.addClass('hidden');
+                }
+            });
+        });
+        
+        // Update localStorage for cross-page/tab synchronization
+        localStorage.setItem('cart_count', count.toString());
     }
 };
 
@@ -1052,5 +1841,8 @@ window.refreshCartCount = function() {
         window.cartManager.refreshCartCount();
     }
 };
+
+// Export cart manager globally
+window.cartManager = window.cartManager || new CartManager();
 
 

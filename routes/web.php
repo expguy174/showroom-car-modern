@@ -142,6 +142,7 @@ Route::post('/order', [UserOrderController::class, 'store'])->middleware('auth')
 Route::prefix('user/cart')->name('user.cart.')->group(function () {
     Route::get('/', [CartController::class, 'index'])->name('index'); // Xem giỏ hàng
     Route::get('/count', [CartController::class, 'getCount'])->name('count'); // Lấy số lượng cart
+    Route::get('/items', [CartController::class, 'getItems'])->name('items'); // Lấy tất cả items cart
     Route::post('/add', [CartController::class, 'add'])->name('add'); // Thêm vào giỏ
     Route::post('/update/{cartItem}', [CartController::class, 'update'])->name('update'); // Cập nhật số lượng
     Route::delete('/remove/{cartItem}', [CartController::class, 'remove'])->name('remove'); // Xóa khỏi giỏ
@@ -419,6 +420,7 @@ Route::prefix('wishlist')->name('wishlist.')->group(function () {
     Route::get('/check', [WishlistController::class, 'check'])->name('check');
     Route::post('/check-bulk', [WishlistController::class, 'checkBulk'])->name('check-bulk');
     Route::get('/count', [WishlistController::class, 'getCount'])->name('count');
+    Route::get('/items', [WishlistController::class, 'getItems'])->name('items'); // Lấy tất cả items wishlist
     Route::post('/migrate-session', [WishlistController::class, 'migrateSessionWishlist'])->name('migrate-session');
 });
 

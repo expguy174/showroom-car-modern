@@ -1,10 +1,7 @@
 import './bootstrap';
-import $ from 'jquery';
-window.$ = window.jQuery = $;
 import './wishlist-manager';
 import './cart-manager';
 import './compare';
-import './count-manager';
 import Alpine from 'alpinejs';
 
 window.Alpine = Alpine;
@@ -19,10 +16,34 @@ window.loadingStates = {
 
 // Re-sync wishlist buttons after navigation/return
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('App.js: DOM loaded, initializing...');
+    
+    // Check if managers are loaded
+    console.log('App.js: Cart manager available:', !!window.cartManager);
+    console.log('App.js: Wishlist manager available:', !!window.wishlistManager);
+    console.log('App.js: Compare manager available:', !!window.compareManager);
+    
     if (typeof window.refreshWishlistStatus === 'function') {
         try { setTimeout(() => window.refreshWishlistStatus(), 200); } catch(e) {}
         try { setTimeout(() => window.refreshWishlistStatus(), 1200); } catch(e) {}
     }
+    
+    // Initialize managers if not already done
+    try { 
+        if (window.CartCount && !window.CartCount.initialized) { 
+            window.CartCount.init(); 
+            console.log('App.js: CartCount initialized');
+        } 
+    } catch(e) { console.warn('App.js: CartCount init failed:', e); }
+    
+    try { 
+        if (window.WishlistCount && !window.WishlistCount.initialized) { 
+            window.WishlistCount.init(); 
+            console.log('App.js: WishlistCount initialized');
+        } 
+    } catch(e) { console.warn('App.js: WishlistCount init failed:', e); }
+    
+    console.log('App.js: Initialization complete');
 });
 
 // Show loading overlay
@@ -154,15 +175,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Sync counts across tabs/pages
-    window.addEventListener('storage', function(e) {
-        if (e.key === 'wishlist_count' && typeof window.updateWishlistCount === 'function') {
-            window.updateWishlistCount(parseInt(e.newValue) || 0);
-        }
-        if (e.key === 'cart_count' && typeof window.updateCartCount === 'function') {
-            window.updateCartCount(parseInt(e.newValue) || 0);
-        }
-    });
+    // Count synchronization is now handled by individual managers
+    // No need for direct count updates here to prevent conflicts
 });
 
 // Delegated handler for Share only
@@ -205,8 +219,29 @@ window.closeModal = function(id) {
 };
 
 window.showMessage = function(message, type = 'info') {
-    // Remove any existing toasts to prevent stacking
+    // Find existing toast with same message and type
     const existingToasts = document.querySelectorAll('.toast-notification');
+    let existingToast = null;
+    
+    // Look for toast with same content and type
+    for (const toast of existingToasts) {
+        const toastMessage = toast.querySelector('.toast-message')?.textContent;
+        const toastType = toast.className.includes('bg-green-500') ? 'success' :
+                         toast.className.includes('bg-red-500') ? 'error' :
+                         toast.className.includes('bg-yellow-500') ? 'warning' : 'info';
+        
+        if (toastMessage === message && toastType === type) {
+            existingToast = toast;
+            break;
+        }
+    }
+    
+    // If found same toast, remove it first to show new one
+    if (existingToast) {
+        existingToast.remove();
+    }
+    
+    // Remove any other existing toasts to prevent stacking
     existingToasts.forEach(toast => toast.remove());
 
     const toast = document.createElement('div');
@@ -247,28 +282,31 @@ window.showMessage = function(message, type = 'info') {
 };
 
 // Global cart count update function - Enhanced with ModernCartFast integration
-window.updateCartCount = function(count) {
-    if (window.CountManager) {
-        window.CountManager.setCart(parseInt(count) || 0);
-    }
+// Note: This function is overridden by cart-manager.js, so we don't define it here
+// to avoid conflicts and infinite loops
+
+// Global wishlist/cart helpers (thin wrappers to new lightweight sync)
+window.updateWishlistCount = function(count) {
+    if (window.WishlistCount) { window.WishlistCount.apply(count); return; }
+    if (window.wishlistManager) { window.wishlistManager.updateCount(parseInt(count) || 0); }
 };
 
-// Global wishlist count update function
-window.updateWishlistCount = function(count) {
-    if (window.CountManager) {
-        window.CountManager.setWishlist(parseInt(count) || 0);
-    }
+window.updateCartCount = function(count) {
+    if (window.CartCount) { window.CartCount.apply(count); return; }
+    if (window.cartManager) { window.cartManager.updateCartCount(parseInt(count) || 0); }
 };
 
 // Auto-initialize ModernCart when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    // Wait a bit for ModernCartFast to be ready
-    setTimeout(() => {
-        if (window.modernCartFast) {
-            window.initializeModernCart();
-        }
-    }, 100);
+    // Initialize ModernCartFast if present
+    try { if (window.modernCartFast) { window.initializeModernCart(); } } catch(_) {}
+
+    // Initialize lightweight counters immediately to reduce visible lag
+    try { window.CartCount && window.CartCount.init(); } catch(_) {}
+    try { window.WishlistCount && window.WishlistCount.init(); } catch(_) {}
 });
+
+
 
 // Simple lazy loading helpers (minimal)
 window.initializeLazyLoading = function(){
@@ -297,4 +335,23 @@ window.loadImage = function(img){
     tmp.onload = function(){ img.src = src; img.removeAttribute('data-src'); };
     tmp.onerror = function(){ try { img.removeAttribute('data-src'); } catch(_) {} };
     tmp.src = src;
+};
+
+// Shared lightweight badge painter to keep UI consistent across managers
+window.paintBadge = function(selectors, count) {
+    try {
+        const text = count > 99 ? '99+' : String(count);
+        (selectors || []).forEach(selector => {
+            document.querySelectorAll(selector).forEach(el => {
+                el.textContent = text;
+                if (count > 0) {
+                    el.classList && el.classList.remove('hidden');
+                    el.style && (el.style.display = '');
+                } else {
+                    el.classList && el.classList.add('hidden');
+                    el.style && (el.style.display = 'none');
+                }
+            });
+        });
+    } catch (_) {}
 };

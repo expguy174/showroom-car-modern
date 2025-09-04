@@ -414,7 +414,7 @@
                         $__inWishlistVarPage = \App\Helpers\WishlistHelper::isInWishlist('car_variant', $variant->id);
                     @endphp
                     <button type="button" class="action-btn action-ghost w-full js-wishlist-toggle {{ $__inWishlistVarPage ? 'in-wishlist' : 'not-in-wishlist' }}" aria-label="Yêu thích" title="Yêu thích" aria-pressed="{{ $__inWishlistVarPage ? 'true' : 'false' }}" data-item-type="car_variant" data-item-id="{{ $variant->id }}">
-                        <i class="fa-heart {{ $__inWishlistVarPage ? 'fas text-red-500' : 'far' }}"></i><span>Yêu thích</span>
+                        <i class="fa-heart {{ $__inWishlistVarPage ? 'fas' : 'far' }}"></i><span>Yêu thích</span>
                     </button>
                     <form action="{{ route('user.cart.add') }}" method="POST" class="w-full add-to-cart-form" data-item-type="car_variant" data-item-id="{{ $variant->id }}">
                         @csrf

@@ -1,16 +1,48 @@
 // Ultra-fast Wishlist toggle with optimistic UI and localStorage source-of-truth
 (function(){
-    const STORAGE_KEY = 'wishlist_items_v2'; // [{t:'car_variant'|'accessory', i:Number}]
+    const STORAGE_KEY = 'wishlist_items'; // [{t:'car_variant'|'accessory', i:Number}]
     const COUNT_KEY = 'wishlist_count';
-    const SELECTORS = ['.wishlist-count', '#wishlist-count-badge', '#wishlist-count-badge-mobile', '[data-wishlist-count]'];
+    const SELECTORS = [
+        '.wishlist-count', 
+        '#wishlist-count-badge', 
+        '#wishlist-count-badge-mobile', 
+        '[data-wishlist-count]',
+        '.wishlist-count-badge',
+        '.js-wishlist-count'
+    ];
 
     const state = {
         items: new Map(), // t -> Set(ids)
         recent: new Map(), // key -> ts
-        recentWindowMs: 2500
+        recentWindowMs: 500, // Reduced to 500ms for better UX
+        processing: new Set(), // Track items being processed to prevent race conditions
+        reconciling: false, // Track if reconciliation is in progress
+        lastReconcile: 0, // Timestamp of last reconciliation
+        updatingCount: false, // Prevent multiple simultaneous count updates
+        lastCountUpdate: 0, // Timestamp of last count update
+        countUpdateDebounceMs: 100, // Debounce count updates
+        // Cache DOM elements for better performance
+        cachedElements: new Map(),
+        // Batch operations for better performance
+        batchOperations: new Set(),
+        batchTimeout: null
     };
 
-    function key(t, id){ return `${t}:${id}`; }
+    // Optimized key generation with caching and cleanup
+    const keyCache = new Map();
+    const MAX_CACHE_SIZE = 1000; // Prevent memory leak
+    
+    function key(t, id){ 
+        const cacheKey = `${t}:${id}`;
+        if (!keyCache.has(cacheKey)) {
+            // Clean cache if it gets too large
+            if (keyCache.size >= MAX_CACHE_SIZE) {
+                keyCache.clear();
+            }
+            keyCache.set(cacheKey, cacheKey);
+        }
+        return keyCache.get(cacheKey);
+    }
 
     function loadFromStorage(){
         state.items.clear();
@@ -18,37 +50,125 @@
             const raw = localStorage.getItem(STORAGE_KEY);
             if (!raw) return;
             const arr = JSON.parse(raw);
+            
+            // Optimized batch processing
+            const typeMap = new Map();
             arr.forEach(({t,i}) => {
-                if (!state.items.has(t)) state.items.set(t, new Set());
-                state.items.get(t).add(i);
+                if (!typeMap.has(t)) typeMap.set(t, new Set());
+                typeMap.get(t).add(i);
             });
+            
+            // Batch set operations
+            typeMap.forEach((ids, type) => {
+                state.items.set(type, ids);
+            });
+            
+            // Sync count with items - ensure both keys are in sync
+            const count = arr.length;
+            const storedCount = parseInt(localStorage.getItem(COUNT_KEY) || '0', 10);
+            if (count !== storedCount) {
+                try { localStorage.setItem(COUNT_KEY, String(count)); } catch(_) {}
+            }
         } catch(_) {}
     }
 
     function saveToStorage(){
+        // Optimized array building
         const arr = [];
-        state.items.forEach((set, t) => set.forEach(i => arr.push({ t, i })));
+        for (const [t, set] of state.items) {
+            for (const i of set) {
+                arr.push({ t, i });
+            }
+        }
+        
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); } catch(_) {}
-        updateCountBadges();
+        
+        // Force update count in localStorage immediately
+        const currentCount = count();
+        try { localStorage.setItem(COUNT_KEY, String(currentCount)); } catch(_) {}
+        
+        // Update count badges immediately - but only if not already updating
+        if (!state.updatingCount) {
+            updateCountBadges();
+        }
     }
 
     function count(){
-        let c = 0; state.items.forEach(set => c += set.size); return c;
-    }
-
-    function setBadges(c){
-        SELECTORS.forEach(sel => {
-            document.querySelectorAll(sel).forEach(el => {
-                el.textContent = c > 99 ? '99+' : String(c);
-                if (c > 0) el.classList.remove('hidden'); else el.classList.add('hidden');
-            });
-        });
+        let c = 0; 
+        for (const set of state.items.values()) {
+            c += set.size;
+        }
+        return c;
     }
 
     function updateCountBadges(){
-        const c = count();
-        try { localStorage.setItem(COUNT_KEY, String(c)); } catch(_) {}
-        setBadges(c);
+        // Prevent multiple simultaneous updates
+        if (state.updatingCount) {
+            return;
+        }
+        
+        // Debounce rapid successive calls
+        const now = Date.now();
+        if (now - state.lastCountUpdate < state.countUpdateDebounceMs) {
+            return;
+        }
+        
+        state.updatingCount = true;
+        state.lastCountUpdate = now;
+        
+        try {
+            const c = count();
+            
+            // Always update localStorage to ensure consistency
+            try { 
+                localStorage.setItem(COUNT_KEY, String(c)); 
+                localStorage.setItem(STORAGE_KEY, c === 0 ? '[]' : JSON.stringify(Array.from(state.items.entries()).flatMap(([type, ids]) => 
+                    Array.from(ids).map(id => ({ t: type, i: id }))
+                )));
+            } catch(_) {}
+            
+            // Update DOM directly with all possible selectors
+            if (window.paintBadge) { window.paintBadge(SELECTORS, c); }
+            
+            // Also update any other count elements that might exist
+            document.querySelectorAll('[class*="wishlist"][class*="count"], [id*="wishlist"][id*="count"]').forEach(el => {
+                if (el.textContent && !isNaN(parseInt(el.textContent))) {
+                    const currentText = el.textContent;
+                    const newText = c > 99 ? '99+' : String(c);
+                    
+                    // Always update to ensure consistency
+                    el.textContent = newText;
+                    
+                    if (c > 0) {
+                        el.classList.remove('hidden');
+                        el.style.display = '';
+                    } else {
+                        el.classList.add('hidden');
+                        el.style.display = 'none';
+                    }
+                }
+            });
+            
+            console.log(`Updated wishlist count to ${c} across all badges`);
+        } finally {
+            state.updatingCount = false;
+        }
+    }
+
+    function forceClearWishlistStorage() {
+        // Force clear all wishlist related localStorage
+        try {
+            localStorage.removeItem(STORAGE_KEY);
+            localStorage.removeItem(COUNT_KEY);
+            localStorage.setItem(STORAGE_KEY, '[]');
+            localStorage.setItem(COUNT_KEY, '0');
+        } catch(_) {}
+        
+        // Force update all count badges to 0
+        const allSelectors = [...SELECTORS,'[class*="wishlist"][class*="count"]','[id*="wishlist"][id*="count"]','[data-wishlist-count]'];
+        if (window.paintBadge) { window.paintBadge(allSelectors, 0); }
+        
+        console.log('Force cleared all wishlist storage and updated UI');
     }
 
     function isIn(t, id){ return state.items.has(t) && state.items.get(t).has(id); }
@@ -65,13 +185,13 @@
         if (inWishlist) {
             button.classList.add('in-wishlist');
             button.classList.remove('not-in-wishlist');
-            if (icon) { icon.classList.remove('far'); icon.classList.add('fas'); icon.style.color = '#ef4444'; }
+            if (icon) { icon.classList.remove('far'); icon.classList.add('fas'); }
             button.setAttribute('aria-pressed','true');
             button.setAttribute('title','Đã yêu thích');
         } else {
             button.classList.remove('in-wishlist');
             button.classList.add('not-in-wishlist');
-            if (icon) { icon.classList.remove('fas'); icon.classList.add('far'); icon.style.color = '#374151'; }
+            if (icon) { icon.classList.remove('fas'); icon.classList.add('far'); }
             button.setAttribute('aria-pressed','false');
             button.setAttribute('title','Yêu thích');
         }
@@ -81,9 +201,19 @@
         document.querySelectorAll('.js-wishlist-toggle').forEach(btn => {
             const t = btn.getAttribute('data-item-type');
             const id = parseInt(btn.getAttribute('data-item-id'));
+            const itemKey = key(t, id);
+            
+            // Skip updating buttons that are currently being processed
+            if (state.processing.has(itemKey)) {
+                return;
+            }
+            
             updateButtonEl(btn, isIn(t, id));
         });
-        updateCountBadges();
+        // Update count badges - but only if not already updating
+        if (!state.updatingCount) {
+            updateCountBadges();
+        }
     }
 
     function buildStateFromDOM(){
@@ -95,10 +225,188 @@
             state.items.get(t).add(id);
         });
     }
+
+    async function getServerCount(){
+        try {
+            const response = await fetch(`/wishlist/count?t=${Date.now()}`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Cache-Control': 'no-store' },
+                cache: 'no-store'
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    return data.wishlist_count || 0;
+                }
+            }
+        } catch (error) {
+            console.warn('Failed to get server count:', error);
+        }
+        return 0;
+    }
+
+    async function fetchAllWishlistFromServer(){
+        try {
+            // Fetch all wishlist items from server
+            const response = await fetch(`/wishlist/items?t=${Date.now()}`, {
+                headers: { 
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                    'Cache-Control': 'no-store'
+                },
+                cache: 'no-store'
+            });
+            
+            // Check if response is JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                console.warn('Server returned non-JSON response, likely session expired or server error');
+                return false;
+            }
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.wishlist_items) {
+                    // Clear current state
+                    state.items.clear();
+                    
+                    // Add all items from server
+                    data.wishlist_items.forEach(item => {
+                        const itemType = item.item_type;
+                        const itemId = item.item_id;
+                        if (!state.items.has(itemType)) {
+                            state.items.set(itemType, new Set());
+                        }
+                        state.items.get(itemType).add(itemId);
+                    });
+                    
+                    console.log(`Loaded ${data.wishlist_items.length} items from server`);
+                    return true;
+                }
+            } else {
+                console.warn('Server returned error status:', response.status);
+            }
+        } catch (error) {
+            console.warn('Failed to fetch all wishlist from server:', error);
+        }
+        return false;
+    }
+
+    async function checkServerCountAndReconcile(){
+        // Suppress immediate reconcile shortly after a local destructive action (e.g., Clear All)
+        try {
+            const lastAction = parseInt(localStorage.getItem('wishlist_last_action') || '0', 10);
+            const now = Date.now();
+            if (lastAction && (now - lastAction) < 1200) {
+                return;
+            }
+        } catch(_) {}
+        try {
+            // First get server count to detect mismatches
+            const serverCount = await getServerCount();
+            const localCount = count();
+            
+            // If counts don't match, we need to reconcile
+            if (serverCount !== localCount) {
+                console.log(`Wishlist mismatch detected: local=${localCount}, server=${serverCount}. Reconciling...`);
+                await reconcileWishlistState();
+                // After reconcile, if still zero and on wishlist page, ensure empty shows and stop progress line
+                if (count() === 0 && window.location.pathname.includes('/wishlist')) {
+                    try {
+                        const empty = document.getElementById('empty-state');
+                        if (empty) { empty.classList.remove('hidden'); empty.style.display=''; }
+                        const barWrap = document.getElementById('filter-progress');
+                        const bar = barWrap && barWrap.querySelector('.filter-loading');
+                        if (bar) bar.classList.add('hidden');
+                    } catch(_) {}
+                }
+                return;
+            }
+            
+            // If counts match but no local data, still reconcile once; if still zero, show empty
+            if (localCount === 0) {
+                if (serverCount > 0) { await reconcileWishlistState(); }
+                if (count() === 0 && window.location.pathname.includes('/wishlist')) {
+                    const empty = document.getElementById('empty-state');
+                    if (empty) { empty.classList.remove('hidden'); empty.style.display=''; }
+                    try {
+                        const barWrap = document.getElementById('filter-progress');
+                        const bar = barWrap && barWrap.querySelector('.filter-loading');
+                        if (bar) bar.classList.add('hidden');
+                    } catch(_) {}
+                }
+                return;
+            }
+            
+            // If we have local data and counts match, apply it but do background sync
+            if (localCount > 0) {
+                applyStateToButtons();
+                // Background sync to ensure accuracy
+                setTimeout(() => {
+                    if (!state.processing.size && !state.reconciling) {
+                        reconcileWishlistState();
+                    }
+                }, 1000);
+            } else {
+                // No data anywhere, just apply empty state and ensure empty UI is visible
+                applyStateToButtons();
+                try { if (window.location.pathname.includes('/wishlist')) { const empty = document.getElementById('empty-state'); if (empty) empty.classList.remove('hidden'); } } catch(_) {}
+            }
+        } catch (error) {
+            // If server check fails, fallback to local data
+            console.warn('Failed to check server count, using local data:', error);
+            applyStateToButtons();
+        }
+    }
     
     async function reconcileWishlistState(){
+        // Hard guard: skip reconcile briefly after destructive local actions
         try {
-            // First try to get all wishlist items from current page DOM
+            const lastActionTs = parseInt(localStorage.getItem('wishlist_last_action') || '0', 10);
+            if (lastActionTs && (Date.now() - lastActionTs) < 2000) {
+                return;
+            }
+        } catch(_) {}
+        // Prevent multiple concurrent reconciliations
+        if (state.reconciling) return;
+        state.reconciling = true;
+        
+        try {
+            // First, try to get all wishlist items from server if we suspect a mismatch
+            const serverCount = await getServerCount();
+            const localCount = count();
+            
+            if (serverCount !== localCount) {
+                if (serverCount > localCount) {
+                    // Server has more items, fetch all from server
+                    console.log(`Fetching all wishlist items from server (server: ${serverCount}, local: ${localCount})`);
+                    const success = await fetchAllWishlistFromServer();
+                    if (success) {
+                        saveToStorage();
+                        applyStateToButtons();
+                    } else {
+                        // If server fetch fails, keep local data
+                        console.log('Server fetch failed, keeping local data');
+                        applyStateToButtons();
+                    }
+                } else {
+                    // Local has more items, server is source of truth - sync from server
+                    console.log(`Local has more items than server (local: ${localCount}, server: ${serverCount}). Syncing from server...`);
+                    const success = await fetchAllWishlistFromServer();
+                    if (success) {
+                        saveToStorage();
+                        applyStateToButtons();
+                    } else {
+                        // If server fetch fails, keep local data
+                        console.log('Server fetch failed, keeping local data');
+                        applyStateToButtons();
+                    }
+                }
+                state.reconciling = false;
+                return;
+            }
+            
+            // Otherwise, proceed with normal reconciliation
             const wishlistButtons = document.querySelectorAll('.js-wishlist-toggle');
             if (wishlistButtons.length > 0) {
                 // Try bulk check first, then fallback to individual checks
@@ -146,7 +454,7 @@
                     
                     success = true;
                 } catch (error) {
-                    console.warn('Bulk check failed, trying individual checks:', error);
+                    // Bulk check failed, continue with individual checks
                 }
                 
                 // Fallback to individual checks if bulk failed
@@ -165,7 +473,7 @@
                                 return { type: t, id: id, inWishlist: data.success && data.in_wishlist };
                             }
                         } catch (error) {
-                            console.warn(`Failed to check item ${t}:${id}:`, error);
+                            // Failed to check item, assume not in wishlist
                         }
                         
                         return { type: t, id: id, inWishlist: false };
@@ -189,29 +497,52 @@
                     // Save to localStorage and update UI
                     saveToStorage();
                     applyStateToButtons();
-                    updateCountBadges();
                     return;
                 }
             }
         } catch (error) {
-            console.warn('Failed to reconcile wishlist state:', error);
+            // Failed to reconcile wishlist state, use fallback
         }
         
         // Final fallback: try to load from localStorage and apply to DOM
         loadFromStorage();
         applyStateToButtons();
-        updateCountBadges();
+        
+        // Mark reconciliation as complete
+        state.reconciling = false;
     }
 
     function toast(msg, type='info'){
         if (typeof window.showMessage === 'function') { try { window.showMessage(msg, type); return; } catch(_) {} }
         // Fallback toast with consistent styling
         const colors = { success:'bg-green-500 text-white', error:'bg-red-500 text-white', warning:'bg-yellow-500 text-white', info:'bg-blue-500 text-white' };
-        const t = document.createElement('div');
-        // Remove any existing toasts to prevent stacking
+        
+        // Find existing toast with same message and type
         const existingToasts = document.querySelectorAll('.toast-notification');
+        let existingToast = null;
+        
+        // Look for toast with same content and type
+        for (const toast of existingToasts) {
+            const toastMessage = toast.querySelector('.toast-message')?.textContent;
+            const toastType = toast.className.includes('bg-green-500') ? 'success' :
+                             toast.className.includes('bg-red-500') ? 'error' :
+                             toast.className.includes('bg-yellow-500') ? 'warning' : 'info';
+            
+            if (toastMessage === msg && toastType === type) {
+                existingToast = toast;
+                break;
+            }
+        }
+        
+        // If found same toast, remove it first to show new one
+        if (existingToast) {
+            existingToast.remove();
+        }
+        
+        // Remove any other existing toasts to prevent stacking
         existingToasts.forEach(toast => toast.remove());
 
+        const t = document.createElement('div');
         t.className = `toast-notification ${colors[type]||colors.info}`;
         t.innerHTML = `
             <div class="toast-content">
@@ -226,38 +557,247 @@
         setTimeout(()=>{ t.classList.add('hide'); setTimeout(()=>t.remove(), 300); }, 3000);
     }
 
-    function markRecent(t,id){ state.recent.set(key(t,id), Date.now()); setTimeout(()=> state.recent.delete(key(t,id)), state.recentWindowMs); }
+    function markRecent(t,id){ 
+        const k = key(t,id);
+        state.recent.set(k, Date.now()); 
+        setTimeout(()=> state.recent.delete(k), state.recentWindowMs); 
+    }
     function isRecent(t,id){ const ts = state.recent.get(key(t,id)); return ts && (Date.now()-ts) < state.recentWindowMs; }
 
     function csrf(){ const m = document.querySelector('meta[name="csrf-token"]'); return m ? m.getAttribute('content') : ''; }
 
     function sendAdd(t,id){
-        fetch('/wishlist/add', { method:'POST', headers:{ 'Content-Type':'application/json','X-CSRF-TOKEN':csrf(),'X-Requested-With':'XMLHttpRequest' }, body: JSON.stringify({ item_type:t, item_id:id }) })
-            .then(r=>r.json()).then(d=>{ if (!d.success) throw new Error(d.message||'error'); if (!isRecent(t,id)) toast(d.message||'Đã thêm vào yêu thích!','success'); if (typeof d.wishlist_count==='number') { try{ localStorage.setItem(COUNT_KEY,String(d.wishlist_count)); }catch(_){} updateCountBadges(); } else { fetch('/wishlist/count',{headers:{'X-Requested-With':'XMLHttpRequest'}}).then(x=>x.json()).then(c=>{ if(c&&c.success&&typeof c.wishlist_count==='number'){ try{ localStorage.setItem(COUNT_KEY,String(c.wishlist_count)); }catch(_){} updateCountBadges(); } }).catch(()=>{}); } })
-            .catch(()=>{ // revert on error
-                setOut(t,id); saveToStorage(); updateButtons(t,id,false); toast('Có lỗi xảy ra!','error');
+        fetch(`/wishlist/add?t=${Date.now()}`, { method:'POST', headers:{ 'Content-Type':'application/json','X-CSRF-TOKEN':csrf(),'X-Requested-With':'XMLHttpRequest', 'Cache-Control':'no-store' }, body: JSON.stringify({ item_type:t, item_id:id }), cache:'no-store' })
+            .then(r=>{
+                // Check if response is JSON
+                const contentType = r.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('session_expired');
+                }
+                return r.json();
+            })
+            .then(d=>{ 
+                if (!d.success) throw new Error(d.message||'error'); 
+                toast(d.message||'Đã thêm vào yêu thích!','success'); 
+                // Count already updated by saveToStorage(), no need to update again
+                
+                // Restore button state after successful server response
+                const btn = document.querySelector(`.js-wishlist-toggle[data-item-type="${t}"][data-item-id="${id}"]`);
+                if (btn) {
+                    btn.disabled = false;
+                    const icon = btn.querySelector('i');
+                    if (icon) {
+                        icon.className = 'fas fa-heart';
+                        // CSS rule will handle the red color for in-wishlist state
+                    }
+                    btn.classList.add('in-wishlist');
+                    btn.classList.remove('not-in-wishlist');
+                }
+                state.processing.delete(key(t,id));
+            })
+            .catch((error)=>{
+                if (error.message === 'session_expired') {
+                    // Session expired - keep optimistic update and show offline message
+                    toast('Đã thêm vào yêu thích (chế độ offline)','info');
+                    const btn = document.querySelector(`.js-wishlist-toggle[data-item-type="${t}"][data-item-id="${id}"]`);
+                    if (btn) {
+                        btn.disabled = false;
+                        const icon = btn.querySelector('i');
+                        if (icon) {
+                            icon.className = 'fas fa-heart';
+                        }
+                        btn.classList.add('in-wishlist');
+                        btn.classList.remove('not-in-wishlist');
+                    }
+                    state.processing.delete(key(t,id));
+                } else {
+                    // Other error - revert optimistic update
+                    setOut(t,id); saveToStorage(); updateButtons(t,id,false); toast('Có lỗi xảy ra!','error');
+                    const btn = document.querySelector(`.js-wishlist-toggle[data-item-type="${t}"][data-item-id="${id}"]`);
+                    if (btn) {
+                        btn.disabled = false;
+                        const icon = btn.querySelector('i');
+                        if (icon) {
+                            icon.className = 'far fa-heart';
+                        }
+                        btn.classList.remove('in-wishlist');
+                        btn.classList.add('not-in-wishlist');
+                    }
+                    state.processing.delete(key(t,id));
+                }
             });
     }
     function sendRemove(t,id){
-        fetch('/wishlist/remove', { method:'POST', headers:{ 'Content-Type':'application/json','X-CSRF-TOKEN':csrf(),'X-Requested-With':'XMLHttpRequest' }, body: JSON.stringify({ item_type:t, item_id:id }) })
-            .then(r=>r.json()).then(d=>{ if (!d.success) throw new Error(d.message||'error'); if (!isRecent(t,id)) toast(d.message||'Đã xóa khỏi yêu thích!','info'); if (typeof d.wishlist_count==='number') { try{ localStorage.setItem(COUNT_KEY,String(d.wishlist_count)); }catch(_){} updateCountBadges(); } else { fetch('/wishlist/count',{headers:{'X-Requested-With':'XMLHttpRequest'}}).then(x=>x.json()).then(c=>{ if(c&&c.success&&typeof c.wishlist_count==='number'){ try{ localStorage.setItem(COUNT_KEY,String(c.wishlist_count)); }catch(_){} updateCountBadges(); } }).catch(()=>{}); }
-                // If on wishlist page, remove the item's card and update empty state
-                try {
-                    if (window.location.pathname.includes('/wishlist')) {
-                        removeItemFromWishlistPage(t, id);
+        // CRITICAL: Update state immediately for optimistic UI
+        setOut(t, id);
+        saveToStorage();
+        try { localStorage.setItem('wishlist_last_action', String(Date.now())); } catch(_) {}
+        
+        // Optimistic update - remove from DOM immediately if on wishlist page
+        if (window.location.pathname.includes('/wishlist')) {
+            const itemElement = document.querySelector(`.wishlist-item[data-item-type="${t}"][data-item-id="${id}"]`);
+            if (itemElement) {
+                // Fade out and remove item
+                itemElement.style.transition = 'all 0.3s ease';
+                itemElement.style.opacity = '0';
+                itemElement.style.transform = 'scale(0.9)';
+                
+                setTimeout(() => {
+                    if (itemElement.parentElement) {
+                        itemElement.parentElement.removeChild(itemElement);
+                        
+                        // Update hero count and check if empty
+                        const remaining = updateWishlistHeroCount();
+                        const totalCount = count();
+                        const form = document.getElementById('filter-form');
+                        const typeSel = form ? (form.querySelector('select[name="type"]')?.value || '') : '';
+                        if (remaining === 0) {
+                            if (typeSel && totalCount > 0) {
+                                // Only current filter became empty -> show filtered empty
+                                const baseEmpty = document.getElementById('empty-state');
+                                if (baseEmpty) { baseEmpty.classList.add('hidden'); baseEmpty.style.display = 'none'; }
+                                showFilteredTypeEmptyIfNeeded();
+                            } else {
+                                // Whole wishlist empty
+                                const filteredNode = document.getElementById('filtered-empty-state');
+                                if (filteredNode) { filteredNode.style.display = 'none'; }
+                                showWishlistEmptyState();
+                            }
+                        } else {
+                            showFilteredTypeEmptyIfNeeded();
+                        }
                     }
-                } catch(_) {}
+                }, 300);
+            }
+        }
+        
+        fetch(`/wishlist/remove?t=${Date.now()}`, { method:'POST', headers:{ 'Content-Type':'application/json','X-CSRF-TOKEN':csrf(),'X-Requested-With':'XMLHttpRequest', 'Cache-Control':'no-store' }, body: JSON.stringify({ item_type:t, item_id:id }), cache:'no-store' })
+            .then(r=>{
+                // Check if response is JSON
+                const contentType = r.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('session_expired');
+                }
+                return r.json();
             })
-            .catch(()=>{ // revert on error
-                setIn(t,id); saveToStorage(); updateButtons(t,id,true); toast('Có lỗi xảy ra!','error');
+            .then(d=>{ 
+                if (!d.success) throw new Error(d.message||'error'); 
+                toast(d.message||'Đã xóa khỏi yêu thích!','info'); 
+                
+                // Count already updated by saveToStorage(), no need to update again
+                
+                // Restore button state after successful server response
+                const btn = document.querySelector(`.js-wishlist-toggle[data-item-type="${t}"][data-item-id="${id}"]`);
+                if (btn) {
+                    btn.disabled = false;
+                    const icon = btn.querySelector('i');
+                    if (icon) {
+                        icon.className = 'far fa-heart';
+                        // CSS rule will handle the gray color for not-in-wishlist state
+                    }
+                    btn.classList.remove('in-wishlist');
+                    btn.classList.add('not-in-wishlist');
+                }
+                // Immediately fetch all from server to ensure LS and badges are correct
+                fetchAllWishlistFromServer().then((ok)=>{
+                    if (ok) {
+                        saveToStorage();
+                        applyStateToButtons();
+                        const visibleNow = document.querySelectorAll('.wishlist-item').length;
+                        const totalNow = count();
+                        const form = document.getElementById('filter-form');
+                        const typeSel = form ? (form.querySelector('select[name="type"]')?.value || '') : '';
+                        if (visibleNow === 0) {
+                            if (typeSel && totalNow > 0) {
+                                const baseEmpty = document.getElementById('empty-state');
+                                if (baseEmpty) { baseEmpty.classList.add('hidden'); baseEmpty.style.display = 'none'; }
+                                showFilteredTypeEmptyIfNeeded();
+                            } else {
+                                const filteredNode = document.getElementById('filtered-empty-state');
+                                if (filteredNode) { filteredNode.style.display = 'none'; }
+                                showWishlistEmptyState();
+                            }
+                        } else {
+                            showFilteredTypeEmptyIfNeeded();
+                        }
+                    } else {
+                        reconcileWishlistState();
+                    }
+                }).finally(()=>{
+                    state.processing.delete(key(t,id));
+                });
+            })
+            .catch((error)=>{
+                if (error.message === 'session_expired') {
+                    // Session expired - keep optimistic update and show offline message
+                    toast('Đã xóa khỏi yêu thích (chế độ offline)','info');
+                    const btn = document.querySelector(`.js-wishlist-toggle[data-item-type="${t}"][data-item-id="${id}"]`);
+                    if (btn) {
+                        btn.disabled = false;
+                        const icon = btn.querySelector('i');
+                        if (icon) {
+                            icon.className = 'far fa-heart';
+                        }
+                        btn.classList.remove('in-wishlist');
+                        btn.classList.add('not-in-wishlist');
+                    }
+                    
+                    // If on wishlist page, still remove the item's card
+                    if (window.location.pathname.includes('/wishlist')) {
+                        setTimeout(() => {
+                            try {
+                                // Direct DOM removal if on wishlist page
+                                const itemElement = document.querySelector(`.wishlist-item[data-item-type="${t}"][data-item-id="${id}"]`);
+                                if (itemElement && itemElement.parentElement) {
+                                    itemElement.parentElement.removeChild(itemElement);
+                                    updateWishlistHeroCount();
+                                    const remaining = document.querySelectorAll('.wishlist-item').length;
+                                    if (remaining === 0) {
+                                        showWishlistEmptyState();
+                                    }
+                                }
+                            } catch(e) {
+                                // Error removing item from wishlist page
+                            }
+                        }, 100);
+                    }
+                    
+                    state.processing.delete(key(t,id));
+                } else {
+                    // Other error - revert optimistic update
+                    setIn(t,id); saveToStorage(); updateButtons(t,id,true); toast('Có lỗi xảy ra!','error');
+                    const btn = document.querySelector(`.js-wishlist-toggle[data-item-type="${t}"][data-item-id="${id}"]`);
+                    if (btn) {
+                        btn.disabled = false;
+                        const icon = btn.querySelector('i');
+                        if (icon) {
+                            icon.className = 'fas fa-heart';
+                        }
+                        btn.classList.add('in-wishlist');
+                        btn.classList.remove('not-in-wishlist');
+                    }
+                    
+                    // If on wishlist page, reload to restore state
+                    if (window.location.pathname.includes('/wishlist')) {
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    }
+                    
+                    state.processing.delete(key(t,id));
+                }
             });
     }
 
     // ----- Wishlist page helpers -----
     function updateWishlistHeroCount(){
-        const remaining = document.querySelectorAll('.wishlist-item, .cart-item').length;
+        const remaining = document.querySelectorAll('.wishlist-item').length;
         const heroCount = document.querySelector('span.text-white.font-semibold');
         if (heroCount) { heroCount.textContent = `${remaining} sản phẩm yêu thích`; }
+        
+        // CRITICAL: Also update count badges to keep them in sync
+        updateCountBadges();
+        
         return remaining;
     }
 
@@ -281,10 +821,14 @@
             </div>
             <h3 class="text-2xl font-semibold text-gray-600 mb-4">Danh sách yêu thích trống</h3>
             <p class="text-gray-500 mb-8 max-w-md mx-auto">Bạn chưa có sản phẩm nào trong danh sách yêu thích. Hãy khám phá các sản phẩm và thêm vào yêu thích!</p>
-            <a href="/" class="inline-flex items-center bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
+            <a href="/products" class="inline-flex items-center bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
                 <i class="fas fa-shopping-bag mr-2"></i>
                 Khám phá sản phẩm
             </a>`;
+        // Ensure both count and UI reflect empty immediately
+        try { localStorage.setItem(COUNT_KEY, '0'); } catch(_) {}
+        try { window.WishlistCount && window.WishlistCount.apply(0); } catch(_) {}
+        updateCountBadges();
         empty.style.display = '';
         empty.classList.remove('hidden');
         // Hide filtered empty state if visible
@@ -300,29 +844,29 @@
         if (grid) grid.style.display = '';
     }
 
-    function removeItemFromWishlistPage(t,id){
-        const selectors = [
-            `.wishlist-item[data-item-type="${t}"][data-item-id="${id}"]`,
-            `.cart-item[data-item-type="${t}"][data-item-id="${id}"]`,
-            `[data-item-id="${id}"][data-item-type="${t}"]`
-        ];
-        let removed = false;
-        selectors.forEach(sel => {
-            document.querySelectorAll(sel).forEach(el => { el.parentElement ? el.parentElement.removeChild(el) : el.remove(); removed = true; });
-        });
-        if (!removed) return;
-        const remaining = updateWishlistHeroCount();
-        // If filter is active, re-apply filter logic to decide correct empty state
-        const filter = document.getElementById('filter-type');
-        if (filter && filter.value) {
-            applyWishlistFilter();
-        } else if (remaining === 0) {
-            showWishlistEmptyState();
-        }
-        if (window.wishlistPage && typeof window.wishlistPage.checkAndUpdateUI === 'function') {
-            try { window.wishlistPage.checkAndUpdateUI(); } catch(_) {}
-        }
+    function showFilteredTypeEmptyIfNeeded(){
+        try {
+            if (!window.location.pathname.includes('/wishlist')) return;
+            const form = document.getElementById('filter-form');
+            const typeSel = form ? (form.querySelector('select[name="type"]')?.value || '') : '';
+            if (!typeSel) return;
+            const gridNode = document.getElementById('wishlist-grid');
+            if (!gridNode) return;
+            const remainingOfType = gridNode.querySelectorAll(`.wishlist-item[data-type="${typeSel}"]`).length;
+            if (remainingOfType === 0) {
+                const label = typeSel === 'accessory' ? 'Phụ kiện' : 'Xe hơi';
+                gridNode.innerHTML = `<div class="col-span-full"><div class="text-center py-16 w-full max-w-md mx-auto">
+                    <i class=\"fas fa-search text-3xl text-gray-300\"></i>
+                    <div class=\"mt-3 font-semibold text-gray-900\">Không có ${label.toLowerCase()} phù hợp</div>
+                    <div class=\"text-sm text-gray-600\">Không tìm thấy ${label.toLowerCase()} phù hợp. Hãy thử thay đổi bộ lọc hoặc từ khóa.</div>
+                </div></div>`;
+                const pag = document.getElementById('wishlist-pagination');
+                if (pag) { pag.innerHTML = ''; pag.style.display = 'none'; }
+            }
+        } catch(_) {}
     }
+
+    // Function removed - logic moved inline where needed
 
     // ----- Wishlist page: filter and clear-all -----
     function getFilterType(){
@@ -423,19 +967,107 @@
             () => {
                 const btn = document.getElementById('clear-all-btn');
                 if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Đang xóa...'; }
-                // Optimistic: clear DOM
-                document.querySelectorAll('.wishlist-item, .cart-item').forEach(el => el.remove());
-                // Clear state and badges
-                state.items.clear(); saveToStorage(); updateCountBadges();
+                
+                // Clear state first
+                state.items.clear();
+                console.log('Clear All: State cleared, items count:', state.items.size);
+                
+                // Force clear all wishlist storage and UI immediately
+                forceClearWishlistStorage();
+                try { localStorage.setItem('wishlist_last_action', String(Date.now())); } catch(_) {}
+                
+                // Apply count update globally without waiting
+                try { window.WishlistCount && window.WishlistCount.apply(0); } catch(_) {}
+                
+                // Clear DOM - use correct selector for wishlist items
+                const itemsToRemove = document.querySelectorAll('.wishlist-item');
+                console.log('Clear All: Found', itemsToRemove.length, 'items to remove from DOM');
+                itemsToRemove.forEach(el => el.remove());
+                
+                // Extra safety: if grid still has residual nodes, empty it
+                const gridNode = document.getElementById('wishlist-grid');
+                if (gridNode && gridNode.querySelectorAll('.wishlist-item').length > 0) {
+                    console.log('Clear All: Grid still has items, forcing innerHTML clear');
+                    gridNode.innerHTML = '';
+                }
+                
+                // Force show ONLY the base empty state (hide any filtered-empty)
+                const filteredNode = document.getElementById('filtered-empty-state');
+                if (filteredNode) { filteredNode.style.display = 'none'; }
                 showWishlistEmptyState();
+                try {
+                    const pag = document.getElementById('wishlist-pagination');
+                    if (pag) { pag.innerHTML = ''; pag.style.display = 'none'; }
+                } catch(_) {}
+                
+                // Force update all badges globally
+                updateCountBadges();
+                
+                // Force localStorage sync
+                try { 
+                    localStorage.setItem(STORAGE_KEY, '[]'); 
+                    localStorage.setItem(COUNT_KEY, '0'); 
+                    console.log('Clear All: localStorage forced to empty arrays');
+                } catch(_) {}
+                
+                // Verify final state
+                const finalItems = document.querySelectorAll('.wishlist-item');
+                const finalCount = localStorage.getItem(COUNT_KEY);
+                console.log('Clear All: Final DOM items:', finalItems.length, 'Final localStorage count:', finalCount);
+                
                 // Reset filter selection if present
                 const select = document.getElementById('filter-type');
                 if (select) select.value = '';
-                // Server call
-                fetch('/wishlist/clear', { method:'POST', headers:{ 'Content-Type':'application/json','X-CSRF-TOKEN':csrf(),'X-Requested-With':'XMLHttpRequest' } })
+                
+                // Server call (no-store to avoid caches/CDN)
+                fetch(`/wishlist/clear?t=${Date.now()}`, { method:'POST', headers:{ 'Content-Type':'application/json','X-CSRF-TOKEN':csrf(),'X-Requested-With':'XMLHttpRequest', 'Cache-Control':'no-store' }, cache:'no-store' })
                     .then(r=>r.json())
-                    .then(d=>{ if (!d.success) throw new Error(); })
-                    .catch(()=>{ /* if server fails, keep empty UI; next navigation will resync */ })
+                    .then(d=>{ 
+                        if (!d.success) throw new Error(d.message||'error');
+                        // Show success toast
+                        toast('Đã xóa toàn bộ danh sách yêu thích','success');
+                        // Ensure localStorage is still clear after server response
+                        if (state.items.size === 0) {
+                            localStorage.setItem(STORAGE_KEY, '[]');
+                            localStorage.setItem(COUNT_KEY, '0');
+                            updateCountBadges();
+                            try { window.WishlistCount && window.WishlistCount.apply(0); } catch(_) {}
+                        }
+                        // Short retry loop to confirm server-side emptiness
+                        const tryConfirmEmpty = async (attempt = 1) => {
+                            const ok = await fetchAllWishlistFromServer();
+                            const c = count();
+                            if (ok && c === 0) {
+                                saveToStorage();
+                                updateCountBadges();
+                                try { window.WishlistCount && window.WishlistCount.apply(0); } catch(_) {}
+                                return true;
+                            }
+                            if (attempt < 3) {
+                                return new Promise(res => setTimeout(async () => res(await tryConfirmEmpty(attempt + 1)), 200));
+                            }
+                            // Finalize UI as empty even if server still not caught up; next reconcile will fix if needed
+                            state.items.clear();
+                            saveToStorage();
+                            updateCountBadges();
+                            try { window.WishlistCount && window.WishlistCount.apply(0); } catch(_) {}
+                            return false;
+                        };
+                        tryConfirmEmpty();
+                    })
+                    .catch((error)=> { 
+                        // If server fails, keep the optimistic update
+                        // But ensure localStorage is still updated
+                        toast('Có lỗi xảy ra khi xóa danh sách yêu thích!','error');
+                        if (state.items.size === 0) {
+                            localStorage.setItem(STORAGE_KEY, '[]');
+                            localStorage.setItem(COUNT_KEY, '0');
+                            updateCountBadges();
+                            try { window.WishlistCount && window.WishlistCount.apply(0); } catch(_) {}
+                        }
+                        // Force empty state even on error
+                        showWishlistEmptyState();
+                    })
                     .finally(()=>{ if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-trash mr-2"></i>Xóa tất cả'; } });
             }
         );
@@ -491,35 +1123,92 @@
         const btn = e.target.closest('.js-wishlist-toggle');
         if (!btn) return;
         e.preventDefault();
-        const t = btn.getAttribute('data-item-type');
+        
+        const t = String(btn.getAttribute('data-item-type') || '');
         const id = parseInt(btn.getAttribute('data-item-id'));
-        const currently = isIn(t, id);
-        markRecent(t,id);
-        if (currently){
-            setOut(t,id); saveToStorage(); updateButtons(t,id,false); toast('Đã xóa khỏi yêu thích','info'); sendRemove(t,id);
-        } else {
-            setIn(t,id); saveToStorage(); updateButtons(t,id,true); toast('Đã thêm vào yêu thích','success'); sendAdd(t,id);
+        if (!t || !Number.isFinite(id) || id <= 0) {
+            toast('Dữ liệu không hợp lệ!', 'error');
+            return;
         }
+        const itemKey = key(t, id);
+        
+        // Prevent multiple rapid clicks on the same item
+        if (state.processing.has(itemKey)) {
+            return;
+        }
+        
+        const currently = isIn(t, id);
+        
+        // Mark as processing
+        state.processing.add(itemKey);
+        
+        // Disable button temporarily to prevent rapid clicks
+        btn.disabled = true;
+        const originalContent = btn.innerHTML;
+        
+        // Add loading state with RED spinner
+        const icon = btn.querySelector('i');
+        if (icon) {
+            icon.className = 'fas fa-spinner fa-spin';
+            // CSS rule will handle the red color for spinner
+        }
+        
+        // Debounce very fast double-clicks
+        if (isRecent(t, id)) {
+            btn.disabled = false;
+            if (icon) icon.className = currently ? 'fas fa-heart' : 'far fa-heart';
+            state.processing.delete(itemKey);
+            return;
+        }
+        markRecent(t, id);
+
+        // Optimistic update
+        if (currently) {
+            setOut(t, id);
+            saveToStorage();
+            try { localStorage.setItem('wishlist_last_action', String(Date.now())); } catch(_) {}
+            // Don't call updateButtons here to keep spinner visible
+            sendRemove(t, id);
+        } else {
+            setIn(t, id);
+            saveToStorage();
+            try { localStorage.setItem('wishlist_last_action', String(Date.now())); } catch(_) {}
+            // Don't call updateButtons here to keep spinner visible
+            sendAdd(t, id);
+        }
+        
+        // Safety timeout: ensure we never keep button stuck in processing state
+        setTimeout(() => {
+            if (state.processing.has(itemKey)) {
+                const still = document.querySelector(`.js-wishlist-toggle[data-item-type="${t}"][data-item-id="${id}"]`);
+                if (still) {
+                    still.disabled = false;
+                    const icon2 = still.querySelector('i');
+                    if (icon2) icon2.className = currently ? 'far fa-heart' : 'fas fa-heart';
+                }
+                state.processing.delete(itemKey);
+            }
+        }, 8000);
     }
 
     let __fastInitBound = false;
     function init(){
+
         // First, try to load from localStorage to restore state
         loadFromStorage();
         
-        // Then check if we need to reconcile with server
-        const needsReconcile = !state.items.size || document.querySelectorAll('.js-wishlist-toggle.in-wishlist').length === 0;
-        
-        if (needsReconcile) {
-            // If no localStorage data or no DOM buttons, fetch from server
-            reconcileWishlistState();
-        } else {
-            // Apply stored state to buttons
-            applyStateToButtons();
+        // Sync count with items on init
+        const currentCount = count();
+        const storedCount = parseInt(localStorage.getItem(COUNT_KEY) || '0', 10);
+        if (currentCount !== storedCount) {
+            try { localStorage.setItem(COUNT_KEY, String(currentCount)); } catch(_) {}
         }
         
-        // Update count badges
-        updateCountBadges();
+        // Don't call updateCountBadges here - let app.js handle it
+        // This prevents duplicate calls on initial load
+        
+        // Always check server count first to detect mismatches
+        checkServerCountAndReconcile();
         
         if (!__fastInitBound) {
             document.addEventListener('click', onToggleClick);
@@ -537,21 +1226,106 @@
             }
         });
         
-        window.addEventListener('pageshow', ()=>{
-            // On page show, always reconcile to ensure accuracy
-            reconcileWishlistState();
+        window.addEventListener('pageshow', (event)=>{
+            // Check if page was restored from cache (back/forward navigation)
+            if (event.persisted) {
+                // Page was restored from cache, refresh state immediately
+                loadFromStorage();
+                updateCountBadges();
+                applyStateToButtons();
+                console.log('Wishlist state refreshed from cache');
+            } else {
+                // Normal page load, load from storage first
+                loadFromStorage();
+                // Don't call updateCountBadges here - app.js will handle it
+                applyStateToButtons();
+            }
             
-            // Also reconcile counts from server when page is shown
-            if (window.CountManager) {
-                window.CountManager.reconcileCart();
-                window.CountManager.reconcileWishlist();
+            // On page show, only reconcile if no operations in progress and not recently reconciled
+            if (!state.processing.size) {
+                const lastReconcile = state.lastReconcile || 0;
+                const now = Date.now();
+                if (now - lastReconcile > 1500) { // reconcile sớm hơn để tránh lag cảm giác
+                    state.lastReconcile = now;
+                    // Delay reconciliation slightly to let UI settle, but check debounce
+                    setTimeout(() => { 
+                        if (Date.now() - state.lastCountUpdate > state.countUpdateDebounceMs) {
+                            reconcileWishlistState(); 
+                        }
+                    }, 60);
+                }
             }
         });
 
+        // Handle browser back/forward navigation
+        window.addEventListener('popstate', ()=>{
+            // Immediate state refresh to prevent flickering
+            loadFromStorage();
+            updateCountBadges();
+            applyStateToButtons();
+            
+            // Force immediate count update for instant navigation consistency
+            const currentCount = count();
+            const storedCount = parseInt(localStorage.getItem(COUNT_KEY) || '0', 10);
+            
+            // Ensure count is immediately visible and consistent
+            if (currentCount !== storedCount) {
+                localStorage.setItem(COUNT_KEY, String(currentCount));
+                updateCountBadges();
+            }
+            
+            console.log('Wishlist state refreshed after navigation');
+        });
+
+        // Handle beforeunload to save state before navigation
+        window.addEventListener('beforeunload', ()=>{
+            // Ensure state is saved before leaving page
+            saveToStorage();
+        });
+        
+        // Handle visibility change (tab focus/blur)
+        document.addEventListener('visibilitychange', ()=>{
+            if (!document.hidden) {
+                // Tab became visible, refresh state
+                loadFromStorage();
+                // Only update count if not recently updated
+                if (Date.now() - state.lastCountUpdate > state.countUpdateDebounceMs) {
+                    updateCountBadges();
+                }
+                applyStateToButtons();
+            }
+        });
+        
+        // Handle window focus (alternative to visibilitychange)
+        window.addEventListener('focus', ()=>{
+            // Window gained focus, refresh state
+            loadFromStorage();
+            // Only update count if not recently updated
+            if (Date.now() - state.lastCountUpdate > state.countUpdateDebounceMs) {
+                updateCountBadges();
+            }
+            applyStateToButtons();
+        });
+
+        // DOM ready handling is done at the bottom of the file
+        // No need to duplicate here
+
         // Compatibility shims for existing code paths
-        window.wishlistManager = window.wishlistManager || {
-            updateCount: (c)=>{ try{ localStorage.setItem(COUNT_KEY, String(c)); }catch(_){} setBadges(c); },
-            checkWishlistStatus: ()=>{ /* no-op: fast module uses local state */ }
+        window.wishlistManager = {
+            updateCount: (c)=>{ 
+                try{ localStorage.setItem(COUNT_KEY, String(c)); localStorage.setItem('wishlist_last_action', String(Date.now())); }catch(_){} 
+                SELECTORS.forEach(sel => {
+                    document.querySelectorAll(sel).forEach(el => {
+                        el.textContent = c > 99 ? '99+' : String(c);
+                        if (c > 0) el.classList.remove('hidden'); else el.classList.add('hidden');
+                    });
+                });
+            },
+            checkWishlistStatus: ()=>{ /* no-op: fast module uses local state */ },
+            addItem: (t, id) => { setIn(t, id); saveToStorage(); },
+            removeItem: (t, id) => { setOut(t, id); saveToStorage(); },
+            getCount: () => count(),
+            clearAll: () => { state.items.clear(); saveToStorage(); }
         };
         window.refreshWishlistStatus = function(){ reconcileWishlistState(); };
     }
@@ -562,5 +1336,64 @@
         init();
     }
 })();
+
+// Lightweight Wishlist Count Sync (simple, robust)
+// - Source of truth for instant UX is localStorage('wishlist_count')
+// - Server is reconciled in background when needed
+// - Common pattern: load from LS on navigation/focus; write to LS on success responses
+window.WishlistCount = {
+    storageKey: 'wishlist_count',
+    initialized: false,
+    init() {
+        if (this.initialized) return; // Prevent duplicate initialization
+        this.initialized = true;
+        
+        this.load();
+        this.guardWindowMs = 1200; // bỏ qua server reconcile trong khoảng ngắn sau hành động local
+        // Note: Event listeners are handled by main wishlist manager to avoid duplicates
+    },
+    load() {
+        const count = parseInt(localStorage.getItem(this.storageKey) || '0', 10);
+        const lastAction = parseInt(localStorage.getItem('wishlist_last_action') || '0', 10);
+        const now = Date.now();
+        if (window.wishlistManager && Number.isFinite(count)) {
+            if (!lastAction || now - lastAction > this.guardWindowMs) {
+                try { window.wishlistManager.updateCount(count); } catch(_) {}
+            }
+        } else {
+            // Fallback update: touch all known selectors
+            const selectors = ['.wishlist-count','#wishlist-count-badge','#wishlist-count-badge-mobile','[data-wishlist-count]','.wishlist-count-badge','.js-wishlist-count'];
+            selectors.forEach(sel => {
+                document.querySelectorAll(sel).forEach(el => {
+                    el.textContent = count > 99 ? '99+' : String(count);
+                    if (count > 0) { el.classList.remove('hidden'); el.style.display = ''; } else { el.classList.add('hidden'); el.style.display = 'none'; }
+                });
+            });
+        }
+    },
+    apply(count) {
+        const n = parseInt(count || 0, 10);
+        try { localStorage.setItem(this.storageKey, String(n)); } catch (_) {}
+        // Apply ngay, không đợi guard
+        if (window.wishlistManager && Number.isFinite(n)) {
+            try { window.wishlistManager.updateCount(n); } catch(_) { this.load(); }
+        } else {
+            this.load();
+        }
+    },
+    async reconcile() {
+        try {
+            const r = await fetch('/wishlist/count', { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            const data = r.ok ? await r.json() : null;
+            if (data && data.success && typeof data.wishlist_count !== 'undefined') {
+                const lastAction = parseInt(localStorage.getItem('wishlist_last_action') || '0', 10);
+                const now = Date.now();
+                if (!lastAction || now - lastAction > this.guardWindowMs) {
+                    this.apply(data.wishlist_count);
+                }
+            }
+        } catch (_) {}
+    }
+};
 
 

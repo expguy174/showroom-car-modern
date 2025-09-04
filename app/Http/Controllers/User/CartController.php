@@ -356,6 +356,38 @@ class CartController extends Controller
         ]);
     }
 
+    public function getItems(Request $request)
+    {
+        $userId = Auth::check() ? Auth::id() : null;
+        $sessionId = session()->getId();
+
+        $cartItems = CartItem::where(function ($q) use ($userId, $sessionId) {
+            if ($userId) $q->where('user_id', $userId);
+            else $q->where('session_id', $sessionId);
+        })->with(['item', 'color'])->get();
+
+        // Format items for frontend
+        $items = $cartItems->map(function ($cartItem) {
+            return [
+                'id' => $cartItem->id,
+                'item_type' => $cartItem->item_type,
+                'item_id' => $cartItem->item_id,
+                'quantity' => $cartItem->quantity,
+                'color_id' => $cartItem->color_id,
+                'color_name' => $cartItem->color ? $cartItem->color->color_name : null,
+                'item_name' => $cartItem->item ? $cartItem->item->name : null,
+                'item_price' => $cartItem->item ? $cartItem->item->current_price : 0,
+                'total_price' => $cartItem->item ? $cartItem->item->current_price * $cartItem->quantity : 0
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'cart_items' => $items,
+            'cart_count' => $this->computeCartCount($userId, $sessionId)
+        ]);
+    }
+
     private function computeCartCount($userId, $sessionId)
     {
         return CartItem::where(function ($q) use ($userId, $sessionId) {

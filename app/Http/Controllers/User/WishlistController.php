@@ -16,28 +16,66 @@ class WishlistController extends Controller
     /**
      * Display the user's wishlist
      */
-    public function index()
+    public function index(Request $request)
     {
-        $wishlistItems = \App\Helpers\WishlistHelper::getWishlistItems();
+        $type = $request->get('type'); // car_variant|accessory|null
+        $q = trim((string) $request->get('q', ''));
+        $sort = $request->get('sort', 'newest'); // newest|oldest
+        // Fixed page size as requested
+        $perPage = 8;
 
-        // Ensure necessary relations and review aggregates are loaded for rendering cards
-        foreach ($wishlistItems as $item) {
-            if (!$item->item) { continue; }
-            // Car variants
+        // Use helper to support both logged-in and session-based wishlists
+        $allItems = \App\Helpers\WishlistHelper::getWishlistItems();
+
+        // Filter by type
+        if (in_array($type, ['car_variant', 'accessory'])) {
+            $allItems = $allItems->where('item_type', $type)->values();
+        }
+
+        // Ensure related item is loaded for filtering and rendering
+        $allItems->each(function($item) {
+            if (!$item->item) { return; }
             if ($item->item_type === 'car_variant' || $item->item instanceof \App\Models\CarVariant) {
                 $item->item->load(['images', 'carModel.carBrand']);
-                // Load aggregates for ratings
                 $item->item->loadCount(['approvedReviews as approved_reviews_count']);
                 $item->item->loadAvg('approvedReviews as approved_reviews_avg', 'rating');
             }
-            // Accessories
             if ($item->item_type === 'accessory' || $item->item instanceof \App\Models\Accessory) {
                 $item->item->loadCount(['approvedReviews as approved_reviews_count']);
                 $item->item->loadAvg('approvedReviews as approved_reviews_avg', 'rating');
             }
+        });
+
+        // Search by name
+        if ($q !== '') {
+            $needle = mb_strtolower($q);
+            $allItems = $allItems->filter(function($w) use ($needle) {
+                $name = mb_strtolower((string) optional($w->item)->name);
+                return $name !== '' && mb_strpos($name, $needle) !== false;
+            })->values();
         }
 
-        return view('user.wishlist.index', compact('wishlistItems'));
+        // Sort by created_at
+        $allItems = $allItems->sortBy(function($w) {
+            return $w->created_at ? $w->created_at->timestamp : 0;
+        }, SORT_REGULAR, $sort !== 'oldest')->values();
+
+        // Paginate collection
+        $page = max(1, (int) $request->get('page', 1));
+        $total = $allItems->count();
+        $results = $allItems->slice(($page - 1) * $perPage, $perPage)->values();
+        $wishlistItems = new \Illuminate\Pagination\LengthAwarePaginator(
+            $results,
+            $total,
+            $perPage,
+            $page,
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]
+        );
+
+        return view('user.wishlist.index', compact('wishlistItems', 'type', 'q', 'sort', 'perPage'));
     }
 
     /**
@@ -173,6 +211,28 @@ class WishlistController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Có lỗi xảy ra khi lấy số lượng danh sách yêu thích!'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get all wishlist items
+     */
+    public function getItems()
+    {
+        try {
+            $items = \App\Helpers\WishlistHelper::getWishlistItems();
+
+            return response()->json([
+                'success' => true,
+                'wishlist_items' => $items,
+                'wishlist_count' => count($items)
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error getting wishlist items: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi lấy danh sách yêu thích!'
             ], 500);
         }
     }
