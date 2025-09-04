@@ -15,6 +15,7 @@ class CartItem extends Model
         'item_type',
         'item_id',
         'color_id',
+        'options_signature',
         'quantity',
     ];
 

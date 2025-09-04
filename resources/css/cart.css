@@ -57,19 +57,80 @@
 
 /* Remove button */
 .remove-item-btn {
-    transition: all 0.2s ease;
-    position: relative;
-    overflow: hidden;
+    transition: all 0.2s ease !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.remove-item-btn::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    width: 100% !important;
+    height: 100% !important;
+    background-color: #fee2e2 !important;
+    border-radius: 50% !important;
+    transform: translate(-50%, -50%) scale(0) !important;
+    transition: all 0.3s ease !important;
+    z-index: 0 !important;
+}
+
+.remove-item-btn:hover::before {
+    transform: translate(-50%, -50%) scale(1) !important;
 }
 
 .remove-item-btn:hover {
-    transform: scale(1.05);
-    background-color: #fee2e2;
+    /* No scale effect - same as duplicate button */
+}
+
+.remove-item-btn i {
+    position: relative !important;
+    z-index: 1 !important;
 }
 
 .remove-item-btn.removing {
     pointer-events: none;
     opacity: 0.7;
+}
+
+/* Duplicate button - same style as remove button */
+.duplicate-item-btn {
+    transition: all 0.2s ease !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.duplicate-item-btn::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    width: 100% !important;
+    height: 100% !important;
+    background-color: #dbeafe !important;
+    border-radius: 50% !important;
+    transform: translate(-50%, -50%) scale(0) !important;
+    transition: all 0.3s ease !important;
+    z-index: 0 !important;
+}
+
+.duplicate-item-btn:hover::before {
+    transform: translate(-50%, -50%) scale(1) !important;
+}
+
+.duplicate-item-btn:hover {
+    /* No scale effect */
+}
+
+.duplicate-item-btn i {
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+.duplicate-item-btn.duplicating {
+    pointer-events: none !important;
+    opacity: 0.7 !important;
 }
 
 /* Clear cart button */

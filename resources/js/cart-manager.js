@@ -871,14 +871,20 @@ class CartManager {
         if (current > 0) { currentWrap.show(); currentWrap.find('.js-price-current-val').text(fmt(current)); }
         else { currentWrap.hide(); }
         const colorWraps = cartItem.find('.js-price-color');
-        // Luôn hiển thị dòng màu, kể cả +0 đ; cập nhật theo từng layout để tránh ghép tên từ nhiều phần tử
+        // Chỉ hiển thị dòng màu khi có màu được chọn
         colorWraps.each(function(){
             const wrap = $(this);
             const root = wrap.closest('.cart-item-desktop, .cart-item-row');
             const name = (root.find('.selected-color-name').first().text() || '').trim();
-            wrap.show();
-            wrap.find('.js-price-color-name').text(name);
-            wrap.find('.js-price-color-val').text(fmt(colorAdj));
+            const hasColorSelected = !!name && name !== 'Chưa chọn';
+            
+            if (hasColorSelected && colorAdj >= 0) {
+                wrap.show();
+                wrap.find('.js-price-color-name').text(name);
+                wrap.find('.js-price-color-val').text(fmt(colorAdj));
+            } else {
+                wrap.hide();
+            }
         });
         const addonWrap = cartItem.find('.js-price-addon');
         const addonList = cartItem.find('.js-price-options');
@@ -1638,11 +1644,15 @@ class CartManager {
             }
         }
         const colorWrap = cartItem.find('.js-price-color');
-        if (colorAdj >= 0) {
-            const colorName = cartItem.find('.selected-color-name').text() || '';
+        const colorName = (cartItem.find('.selected-color-name').text() || '').trim();
+        const hasColorSelected = !!colorName && colorName !== 'Chưa chọn';
+
+        if (hasColorSelected && colorAdj >= 0) {
             colorWrap.show();
             colorWrap.find('.js-price-color-name').text(colorName);
             colorWrap.find('.js-price-color-val').text(nf(colorAdj));
+        } else {
+            colorWrap.hide();
         }
 
         // Addon sum: use server else compute from checked options

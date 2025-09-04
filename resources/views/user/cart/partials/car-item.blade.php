@@ -69,8 +69,10 @@
             @if($item->item_type === 'car_variant' && isset($item->item->colors) && $item->item->colors->count() > 0)
             <div class="mt-1 flex items-center gap-2">
                 @foreach($item->item->colors as $color)
+                    @php $hexColor = \App\Helpers\ColorHelper::getColorHex($color->color_name); @endphp
                     <button type="button" class="color-option w-6 h-6 rounded-full border-2 {{ $item->color_id == $color->id ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-300' }}" title="{{ $color->color_name }}"
-                        data-bg-hex="{{ \App\Helpers\ColorHelper::getColorHex($color->color_name) }}" data-color-id="{{ $color->id }}" data-color-name="{{ $color->color_name }}" data-item-id="{{ $item->id }}"
+                        style="background-color: {{ $hexColor }} !important; border-color: {{ $item->color_id == $color->id ? '#3b82f6' : '#d1d5db' }};"
+                        data-bg-hex="{{ $hexColor }}" data-color-id="{{ $color->id }}" data-color-name="{{ $color->color_name }}" data-item-id="{{ $item->id }}"
                         data-update-url="{{ route('user.cart.update', $item->id) }}" data-csrf="{{ csrf_token() }}"></button>
                 @endforeach
             </div>
@@ -145,7 +147,7 @@
         <div class="text-[11px] text-gray-700 js-price-current" @if(!($currentPrice>0)) style="display:none" @endif>
             Hiện tại: <span class="js-price-current-val">{{ number_format($currentPrice,0,',','.') }}</span> đ
         </div>
-        <div class="text-[11px] text-blue-600 js-price-color">
+        <div class="text-[11px] text-blue-600 js-price-color" @if(!$item->color_id) style="display:none" @endif>
             Màu <span class="js-price-color-name">{{ $item->color->color_name ?? '' }}</span>: +<span class="js-price-color-val">{{ number_format($colorPriceAdjustment,0,',','.') }}</span> đ
         </div>
         <div class="text-[11px] text-indigo-700 js-price-addon" style="display:none"></div>
@@ -166,10 +168,36 @@
             @endif
         </div>
     </td>
-    <td class="text-right align-middle hidden md:table-cell mobile-hide" data-label="Thao tác" style="vertical-align: middle;">
-        <button type="button" aria-label="Xóa" title="Xóa" class="remove-item-btn btn-delete" data-id="{{ $item->id }}" data-url="{{ route('user.cart.remove', $item->id) }}" data-csrf="{{ csrf_token() }}">
-            <i class="fas fa-trash"></i>
-        </button>
+    <td class="text-center align-middle hidden md:table-cell mobile-hide" data-label="Thao tác" style="vertical-align: middle;">
+        <div class="flex items-center justify-center gap-2">
+            <button type="button" aria-label="Thêm cấu hình khác" title="Thêm cấu hình khác" class="duplicate-item-btn w-8 h-8 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center js-duplicate-line" style="transition: all 0.2s ease; position: relative; overflow: hidden;" data-add-url="{{ route('user.cart.add') }}" data-variant-id="{{ $item->item->id }}" data-item-type="{{ $item->item_type }}">
+                <i class="fas fa-plus text-sm" style="position: relative; z-index: 1;"></i>
+            </button>
+            <style>
+                .duplicate-item-btn::before {
+                    content: '';
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    width: 100%;
+                    height: 100%;
+                    background-color: #dbeafe;
+                    border-radius: 50%;
+                    transform: translate(-50%, -50%) scale(0);
+                    transition: all 0.3s ease;
+                    z-index: 0;
+                }
+                .duplicate-item-btn:hover::before {
+                    transform: translate(-50%, -50%) scale(1);
+                }
+                .duplicate-item-btn:hover {
+                    /* No scale effect */
+                }
+            </style>
+            <button type="button" aria-label="Xóa" title="Xóa" class="remove-item-btn w-8 h-8 rounded-full bg-red-50 text-red-500 flex items-center justify-center" data-id="{{ $item->id }}" data-url="{{ route('user.cart.remove', $item->id) }}" data-csrf="{{ csrf_token() }}">
+                <i class="fas fa-trash text-sm"></i>
+            </button>
+        </div>
     </td>
 </tr>
 
@@ -203,11 +231,14 @@
                             <div class="text-xs text-gray-500 mt-1 line-clamp-2">{{ $brief }}</div>
                         @endif
                     </div>
-                    
-                    <!-- Delete Button -->
-                    <button type="button" aria-label="Xóa" title="Xóa" class="remove-item-btn btn-delete flex-shrink-0 w-8 h-8 rounded-full bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-600 flex items-center justify-center transition-colors" data-id="{{ $item->id }}" data-url="{{ route('user.cart.remove', $item->id) }}" data-csrf="{{ csrf_token() }}">
-                        <i class="fas fa-trash text-sm"></i>
-                    </button>
+                    <div class="flex items-center justify-center gap-4">
+                        <button type="button" aria-label="Thêm cấu hình khác" title="Thêm cấu hình khác" class="duplicate-item-btn w-10 h-10 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center js-duplicate-line" style="transition: all 0.2s ease; position: relative; overflow: hidden;" data-add-url="{{ route('user.cart.add') }}" data-variant-id="{{ $item->item->id }}" data-item-type="{{ $item->item_type }}">
+                            <i class="fas fa-plus text-base" style="position: relative; z-index: 1;"></i>
+                        </button>
+                        <button type="button" aria-label="Xóa" title="Xóa" class="remove-item-btn w-10 h-10 rounded-full bg-red-50 text-red-500 flex items-center justify-center" data-id="{{ $item->id }}" data-url="{{ route('user.cart.remove', $item->id) }}" data-csrf="{{ csrf_token() }}">
+                            <i class="fas fa-trash text-base"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -290,19 +321,21 @@
 
             <!-- Action Bar -->
             <div class="bg-gray-50 px-4 py-3 border-t border-gray-100">
-                <div class="flex items-center justify-between">
-                    <!-- Quantity Control -->
-                    <div class="flex items-center gap-3">
-                        <span class="text-sm text-gray-600 font-medium">Số lượng:</span>
-                        <div class="inline-flex items-center border border-gray-300 rounded-lg overflow-hidden bg-white">
-                            <button type="button" class="quantity-control px-3 py-2 text-gray-700 hover:bg-gray-100 qty-decrease transition-colors" data-id="{{ $item->id }}" aria-label="Giảm">-</button>
-                            <input type="number" value="{{ $item->quantity }}" min="1" step="1" inputmode="numeric" pattern="[0-9]*" class="w-12 text-center border-0 cart-qty-input bg-transparent text-sm font-medium" data-update-url="{{ route('user.cart.update', $item->id) }}" data-csrf="{{ csrf_token() }}" data-id="{{ $item->id }}">
-                            <button type="button" class="quantity-control px-3 py-2 text-gray-700 hover:bg-gray-100 qty-increase transition-colors" data-id="{{ $item->id }}" aria-label="Tăng">+</button>
+                <div class="flex flex-col gap-3">
+                    <!-- Quantity and Price Row -->
+                    <div class="flex items-center justify-between">
+                        <!-- Quantity Control -->
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm text-gray-600 font-medium">Số lượng:</span>
+                            <div class="inline-flex items-center border border-gray-300 rounded-lg overflow-hidden bg-white">
+                                <button type="button" class="quantity-control px-3 py-2 text-gray-700 hover:bg-gray-100 qty-decrease transition-colors" data-id="{{ $item->id }}" aria-label="Giảm">-</button>
+                                <input type="number" value="{{ $item->quantity }}" min="1" step="1" inputmode="numeric" pattern="[0-9]*" class="w-12 text-center border-0 cart-qty-input bg-transparent text-sm font-medium" data-update-url="{{ route('user.cart.update', $item->id) }}" data-csrf="{{ csrf_token() }}" data-id="{{ $item->id }}">
+                                <button type="button" class="quantity-control px-3 py-2 text-gray-700 hover:bg-gray-100 qty-increase transition-colors" data-id="{{ $item->id }}" aria-label="Tăng">+</button>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <!-- Total Price Info -->
-                    <div class="text-right">
+                        
+                        <!-- Total Price Info -->
+                        <div class="text-right">
                         <div class="text-lg font-bold text-blue-600">Giá: <span class="item-total" data-id="{{ $item->id }}">{{ number_format($itemTotal,0,',','.') }}</span> đ</div>
                         <div class="text-[11px] text-gray-400 line-through js-price-original" @if(!($originalPriceBeforeDiscount>0)) style="display:none" @endif>
                             <span class="js-price-original-val">{{ number_format($originalPriceBeforeDiscount,0,',','.') }}</span> đ
@@ -313,7 +346,7 @@
                         <div class="text-[11px] text-gray-700 js-price-current" @if(!($currentPrice>0)) style="display:none" @endif>
                             Hiện tại: <span class="js-price-current-val">{{ number_format($currentPrice,0,',','.') }}</span> đ
                         </div>
-                        <div class="text-[11px] text-blue-600 js-price-color">
+                        <div class="text-[11px] text-blue-600 js-price-color" @if(!$item->color_id) style="display:none" @endif>
                             Màu <span class="js-price-color-name">{{ $item->color->color_name ?? '' }}</span>: +<span class="js-price-color-val">{{ number_format($colorPriceAdjustment,0,',','.') }}</span> đ
                         </div>
                         <div class="text-[11px] text-indigo-700 js-price-addon" @if(!($addonSum>0)) style="display:none" @endif>

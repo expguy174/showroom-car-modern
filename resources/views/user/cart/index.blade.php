@@ -99,7 +99,7 @@
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center space-x-3">
                                     <i class="fas fa-car text-gray-700 text-xl"></i>
-                                    <h2 class="text-xl font-bold text-gray-900">Xe hơi <span id="car-count-wrap">(<span id="car-count">{{ $carItems->count() }}</span>)</span></h2>
+                                    <h2 class="text-xl font-bold text-gray-900">Xe hơi</h2>
                                 </div>
                             </div>
                         </div>
@@ -133,7 +133,7 @@
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center space-x-3">
                                     <i class="fas fa-tools text-gray-700 text-xl"></i>
-                                    <h2 class="text-xl font-bold text-gray-900">Phụ kiện <span id="accessory-count-wrap">(<span id="accessory-count">{{ $accessoryItems->count() }}</span>)</span></h2>
+                                    <h2 class="text-xl font-bold text-gray-900">Phụ kiện</h2>
                                 </div>
                             </div>
                                         </div>
@@ -319,5 +319,147 @@
      if (cartTotalEl) cartTotalEl.textContent = nf.format(cartTotal);
    }
  });
+</script>
+<script>
+(function(){
+  // Wait for DOM to be ready
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log('Cart page JavaScript loaded');
+  });
+  
+  document.addEventListener('click', async function(e){
+    const btn = e.target.closest('.js-duplicate-line');
+    if (!btn) return;
+    e.preventDefault();
+    
+    console.log('Duplicate button clicked', btn);
+    
+    try {
+      const itemType = btn.getAttribute('data-item-type') || 'car_variant';
+      const variantId = btn.getAttribute('data-variant-id');
+      const addUrl = btn.getAttribute('data-add-url');
+      
+      console.log('Item type:', itemType, 'Variant ID:', variantId, 'Add URL:', addUrl);
+      
+      if (!variantId) {
+        console.error('No variant ID found');
+        return;
+      }
+      
+      // Force create new line by using a unique options_signature
+      // This ensures we always create a new line, never update existing
+      const timestamp = Date.now();
+      const random = Math.random().toString(36).substr(2, 9);
+      const uniqueSignature = `duplicate_${timestamp}_${random}`;
+      
+      console.log('Creating unique signature:', uniqueSignature);
+      
+      const fd = new FormData();
+      fd.append('item_type', itemType);
+      fd.append('item_id', variantId);
+      fd.append('quantity', '1');
+      fd.append('options_signature', uniqueSignature);
+      // No color_id to allow user to choose later
+      // This will always create a new line because options_signature is unique
+      
+      console.log('Sending request to:', addUrl);
+      
+      const res = await fetch(addUrl, { 
+        method: 'POST', 
+        body: fd, 
+        headers: { 
+          'X-Requested-With':'XMLHttpRequest', 
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content 
+        }
+      });
+      
+      console.log('Response status:', res.status);
+      const data = await res.json();
+      console.log('Response data:', data);
+      
+      if (data && data.success) {
+        console.log('Success! Adding new line to cart...');
+        
+        // Show success message
+        if (typeof showMessage === 'function') {
+          showMessage('Đã thêm cấu hình mới vào giỏ hàng!', 'success');
+        }
+        
+        // Update cart count if available
+        if (data.cart_count !== undefined && typeof window.updateCartCount === 'function') {
+          window.updateCartCount(data.cart_count);
+        }
+        
+        // Add new line to cart immediately without page refresh
+        if (data.cart_item_html) {
+          // Add HTML directly to DOM
+          addNewCartItemHTML(data.cart_item_html);
+        } else {
+          // Fallback: refresh cart if no item data
+          if (typeof window.fetchAllCartFromServer === 'function') {
+            window.fetchAllCartFromServer();
+          } else {
+            // Final fallback: reload page
+            window.location.reload();
+          }
+        }
+      } else {
+        console.error('Failed to add:', data);
+        if (typeof showMessage === 'function') {
+          showMessage((data && data.message) || 'Không thể thêm cấu hình mới', 'error');
+        }
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      if (typeof showMessage === 'function') {
+        showMessage('Không thể thêm cấu hình mới', 'error');
+      }
+    }
+  });
+  
+  // Function to add new cart item HTML directly from server
+  function addNewCartItemHTML(html) {
+    // Find the car table tbody (since we're adding car variants)
+    const carTableBody = document.querySelector('#car-table tbody');
+    
+    if (!carTableBody) {
+      console.error('Car table tbody not found');
+      return;
+    }
+    
+    // Add HTML directly to the end of the car items list
+    try {
+      carTableBody.insertAdjacentHTML('beforeend', html);
+    } catch (error) {
+      console.error('Error inserting HTML:', error);
+      return;
+    }
+    
+    // Initialize color displays for the new item
+    const newItem = carTableBody.lastElementChild;
+    
+    if (newItem) {
+      // Initialize color displays for the new item
+      const colorOptions = newItem.querySelectorAll('.color-option[data-bg-hex]');
+      colorOptions.forEach(function(el) {
+        const hex = el.getAttribute('data-bg-hex');
+        if (hex) {
+          el.style.backgroundColor = hex;
+        }
+      });
+      
+      // Update cart totals
+      if (typeof window.updateCartTotals === 'function') {
+        window.updateCartTotals();
+      }
+    } else {
+      console.error('Failed to find new item in DOM after insertion');
+    }
+  }
+  
+  
+  
+
+})();
 </script>
 @endpush

@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\CarVariant;
 use App\Models\CarVariantImage;
+use App\Models\CarVariantColor;
 
 class CarVariantImageSeeder extends Seeder
 {
@@ -96,6 +97,26 @@ class CarVariantImageSeeder extends Seeder
                     'car_variant_id' => $img['car_variant_id'],
                     'image_url' => $img['image_url'],
                 ], $img);
+            }
+
+            // Seed per-color color-specific exterior image (no swatch records)
+            $colors = CarVariantColor::where('car_variant_id', $variant->id)->get();
+            foreach ($colors as $color) {
+                // Color-specific exterior image (front) for this color
+                CarVariantImage::updateOrCreate([
+                    'car_variant_id' => $variant->id,
+                    'car_variant_color_id' => $color->id,
+                    'image_type' => 'exterior',
+                    'angle' => 'front',
+                ], [
+                    'image_url' => 'https://placehold.co/1200x800?text=' . urlencode($variant->name . ' - ' . $color->color_name),
+                    'alt_text' => $variant->name . ' - ' . $color->color_name,
+                    'title' => $variant->name . ' - Exterior - ' . $color->color_name,
+                    'description' => null,
+                    'is_main' => true,
+                    'is_active' => true,
+                    'sort_order' => 10 + ($color->sort_order ?? 0),
+                ]);
             }
         }
     }

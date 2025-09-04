@@ -48,6 +48,16 @@
                     $galleryRaw = $accessory->gallery;
                     $gallery = is_array($galleryRaw) ? $galleryRaw : (json_decode($galleryRaw ?? '[]', true) ?: []);
                     $mainImageUrl = $gallery[0] ?? null;
+                    // Pricing per migration
+                    $currentPrice = (float) ($accessory->current_price ?? 0);
+                    $basePrice = (float) ($accessory->base_price ?? $currentPrice);
+                    $hasDiscountCalc = ($basePrice > 0) && ($currentPrice > 0) && ($basePrice > $currentPrice);
+                    $discountPctCalc = $hasDiscountCalc ? round((($basePrice - $currentPrice) / max($basePrice, 1)) * 100) : 0;
+                    $discountAmountCalc = $hasDiscountCalc ? ($basePrice - $currentPrice) : 0;
+                    // Stock per migration
+                    $stockStatus = (string) ($accessory->stock_status ?? 'in_stock');
+                    $stockQty = (int) ($accessory->stock_quantity ?? 0);
+                    $isInStock = $stockStatus === 'in_stock' || ($stockStatus === 'low_stock' && $stockQty > 0);
                 @endphp
                 <!-- Main Image -->
                 <div class="relative group">
@@ -80,9 +90,9 @@
 
                     
                     <!-- Discount Badge -->
-                    @if($accessory->has_discount && $accessory->discount_percentage > 0)
+                    @if($hasDiscountCalc && $discountPctCalc > 0)
                     <div class="absolute top-6 left-6 bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-xl">
-                        -{{ rtrim(rtrim(number_format($accessory->discount_percentage, 1), '0'), '.') }}%
+                        -{{ $discountPctCalc }}%
                     </div>
                     @endif
                 </div>
@@ -139,45 +149,48 @@
                 <!-- Price Section -->
                 <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-3xl p-8 border border-blue-100">
                     <div class="space-y-4">
-                        @if($accessory->has_discount && $accessory->discount_percentage > 0)
+                        @if($hasDiscountCalc)
                         <div class="flex items-center space-x-4">
                             <span class="text-4xl lg:text-5xl font-black text-red-600">
-                                {{ number_format($accessory->final_price, 0, ',', '.') }}₫
+                                {{ number_format($currentPrice, 0, ',', '.') }}₫
                             </span>
                             <span class="text-2xl text-gray-500 line-through">
-                                {{ number_format($accessory->original_price ?? $accessory->price, 0, ',', '.') }}₫
+                                {{ number_format($basePrice, 0, ',', '.') }}₫
                             </span>
                         </div>
                         <div class="inline-flex items-center bg-red-100 text-red-700 px-4 py-2 rounded-full text-sm font-bold">
                             <i class="fas fa-tag mr-2"></i>
-                            Tiết kiệm {{ number_format($accessory->discount_amount, 0, ',', '.') }}₫
+                            Tiết kiệm {{ number_format($discountAmountCalc, 0, ',', '.') }}₫
                         </div>
                         @else
                         <div class="text-4xl lg:text-5xl font-black text-blue-600">
-                            {{ number_format($accessory->price, 0, ',', '.') }}₫
+                            {{ number_format($currentPrice ?: $basePrice, 0, ',', '.') }}₫
                         </div>
                         @endif
                         
                         <!-- Stock Status -->
                         <div class="flex items-center space-x-3">
-                            @if($accessory->is_available)
-                            <div class="flex items-center text-green-600">
-                                <i class="fas fa-check-circle mr-2"></i>
-                                <span class="font-semibold">Còn hàng</span>
+                            @php
+                                $stockLabel = [
+                                    'in_stock' => 'Còn hàng',
+                                    'low_stock' => 'Sắp hết',
+                                    'out_of_stock' => 'Hết hàng',
+                                    'discontinued' => 'Ngừng kinh doanh'
+                                ][$stockStatus] ?? 'Còn hàng';
+                                $stockClass = in_array($stockStatus, ['in_stock','low_stock']) ? 'text-green-600' : 'text-red-600';
+                                $stockIcon = in_array($stockStatus, ['in_stock','low_stock']) ? 'fa-check-circle' : 'fa-times-circle';
+                            @endphp
+                            <div class="flex items-center {{ $stockClass }}">
+                                <i class="fas {{ $stockIcon }} mr-2"></i>
+                                <span class="font-semibold">{{ $stockLabel }}@if($stockStatus==='low_stock' && $stockQty>0) ({{ $stockQty }} sp)@endif</span>
                             </div>
-                            @else
-                            <div class="flex items-center text-red-600">
-                                <i class="fas fa-times-circle mr-2"></i>
-                                <span class="font-semibold">Hết hàng</span>
-                            </div>
-                            @endif
                         </div>
                     </div>
                 </div>
                 
                 <!-- Action Buttons -->
                 <div class="space-y-4">
-                    @if($accessory->is_available)
+                    @if($isInStock)
                     <!-- CTA row: full-width equal buttons -->
                     <div class="grid grid-cols-2 gap-4">
                         @php($__inWishlistAccPage = \App\Helpers\WishlistHelper::isInWishlist('accessory', $accessory->id))

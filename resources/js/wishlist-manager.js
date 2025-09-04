@@ -82,11 +82,12 @@
         }
         
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); } catch(_) {}
-        
-        // Force update count in localStorage immediately
+
+        // Force update count in localStorage immediately and push to global badge helper
         const currentCount = count();
         try { localStorage.setItem(COUNT_KEY, String(currentCount)); } catch(_) {}
-        
+        try { window.WishlistCount && window.WishlistCount.apply(currentCount); } catch(_) {}
+
         // Update count badges immediately - but only if not already updating
         if (!state.updatingCount) {
             updateCountBadges();
@@ -149,6 +150,18 @@
                 }
             });
             
+            // Guard: if any badge still shows 0 while c>0, force repaint textContent
+            if (c > 0) {
+                const all = document.querySelectorAll('[data-wishlist-count], .wishlist-count, #wishlist-count-badge, #wishlist-count-badge-mobile, .wishlist-count-badge');
+                all.forEach(el => {
+                    const txt = (el.textContent||'').trim();
+                    if (txt === '0' || txt === '') {
+                        el.textContent = c > 99 ? '99+' : String(c);
+                        el.classList && el.classList.remove('hidden');
+                        if (el.style) el.style.display = '';
+                    }
+                });
+            }
             console.log(`Updated wishlist count to ${c} across all badges`);
         } finally {
             state.updatingCount = false;
@@ -703,22 +716,24 @@
                     if (ok) {
                         saveToStorage();
                         applyStateToButtons();
-                        const visibleNow = document.querySelectorAll('.wishlist-item').length;
-                        const totalNow = count();
-                        const form = document.getElementById('filter-form');
-                        const typeSel = form ? (form.querySelector('select[name="type"]')?.value || '') : '';
-                        if (visibleNow === 0) {
-                            if (typeSel && totalNow > 0) {
-                                const baseEmpty = document.getElementById('empty-state');
-                                if (baseEmpty) { baseEmpty.classList.add('hidden'); baseEmpty.style.display = 'none'; }
-                                showFilteredTypeEmptyIfNeeded();
+                        if (window.location.pathname.includes('/wishlist')) {
+                            const visibleNow = document.querySelectorAll('.wishlist-item').length;
+                            const totalNow = count();
+                            const form = document.getElementById('filter-form');
+                            const typeSel = form ? (form.querySelector('select[name="type"]')?.value || '') : '';
+                            if (visibleNow === 0) {
+                                if (typeSel && totalNow > 0) {
+                                    const baseEmpty = document.getElementById('empty-state');
+                                    if (baseEmpty) { baseEmpty.classList.add('hidden'); baseEmpty.style.display = 'none'; }
+                                    showFilteredTypeEmptyIfNeeded();
+                                } else {
+                                    const filteredNode = document.getElementById('filtered-empty-state');
+                                    if (filteredNode) { filteredNode.style.display = 'none'; }
+                                    showWishlistEmptyState();
+                                }
                             } else {
-                                const filteredNode = document.getElementById('filtered-empty-state');
-                                if (filteredNode) { filteredNode.style.display = 'none'; }
-                                showWishlistEmptyState();
+                                showFilteredTypeEmptyIfNeeded();
                             }
-                        } else {
-                            showFilteredTypeEmptyIfNeeded();
                         }
                     } else {
                         reconcileWishlistState();
@@ -802,6 +817,10 @@
     }
 
     function showWishlistEmptyState(){
+        // Only render base empty state on the wishlist page
+        if (!window.location.pathname.includes('/wishlist')) {
+            return;
+        }
         let empty = document.getElementById('empty-state');
         if (!empty) {
             // Create empty-state right after the grid
@@ -812,7 +831,8 @@
             if (grid && grid.parentElement) {
                 grid.parentElement.insertBefore(empty, grid.nextSibling);
             } else {
-                document.body.appendChild(empty);
+                // If grid missing (unexpected), do nothing on non-wishlist pages
+                return;
             }
         }
         empty.innerHTML = `
@@ -1166,12 +1186,14 @@
         if (currently) {
             setOut(t, id);
             saveToStorage();
+            try { window.WishlistCount && window.WishlistCount.apply(count()); } catch(_) {}
             try { localStorage.setItem('wishlist_last_action', String(Date.now())); } catch(_) {}
             // Don't call updateButtons here to keep spinner visible
             sendRemove(t, id);
         } else {
             setIn(t, id);
             saveToStorage();
+            try { window.WishlistCount && window.WishlistCount.apply(count()); } catch(_) {}
             try { localStorage.setItem('wishlist_last_action', String(Date.now())); } catch(_) {}
             // Don't call updateButtons here to keep spinner visible
             sendAdd(t, id);
@@ -1335,6 +1357,14 @@
     } else {
         init();
     }
+    window.addEventListener('pageshow', function(){
+        // Re-apply badge on BFCache return or logo nav instant paint
+        try {
+            const c = parseInt(localStorage.getItem(COUNT_KEY) || '0', 10);
+            if (window.WishlistCount) { window.WishlistCount.apply(c); }
+            else if (window.paintBadge) { window.paintBadge(SELECTORS, c); }
+        } catch(_) {}
+    });
 })();
 
 // Lightweight Wishlist Count Sync (simple, robust)

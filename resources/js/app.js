@@ -23,10 +23,31 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('App.js: Wishlist manager available:', !!window.wishlistManager);
     console.log('App.js: Compare manager available:', !!window.compareManager);
     
+    // Force badge from localStorage immediately after navigation (e.g., click logo)
+    try {
+        const lc = parseInt(localStorage.getItem('wishlist_count') || '0', 10);
+        if (window.WishlistCount && !isNaN(lc)) {
+            window.WishlistCount.apply(lc);
+        }
+    } catch(_) {}
     if (typeof window.refreshWishlistStatus === 'function') {
         try { setTimeout(() => window.refreshWishlistStatus(), 200); } catch(e) {}
-        try { setTimeout(() => window.refreshWishlistStatus(), 1200); } catch(e) {}
+        try { setTimeout(() => window.refreshWishlistStatus(), 800); } catch(e) {}
+        try { setTimeout(() => window.refreshWishlistStatus(), 1600); } catch(e) {}
     }
+
+    // Extra safety: also re-apply on pageshow (BFCache or instantaneous nav)
+    window.addEventListener('pageshow', () => {
+        try {
+            const lc2 = parseInt(localStorage.getItem('wishlist_count') || '0', 10);
+            if (window.WishlistCount && !isNaN(lc2)) {
+                window.WishlistCount.apply(lc2);
+            } else {
+                // paint directly if helpers not ready yet
+                window.paintBadge && window.paintBadge(['#wishlist-count-badge','#wishlist-count-badge-mobile','.wishlist-count','.wishlist-count-badge','[data-wishlist-count]'], lc2);
+            }
+        } catch(_) {}
+    });
     
     // Initialize managers if not already done
     try { 
@@ -139,10 +160,11 @@ function addToCartServer(itemType, itemId, button) {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
             'X-Requested-With': 'XMLHttpRequest'
         },
-        body: `item_type=${itemType}&item_id=${itemId}&quantity=1`
+        body: `item_type=${itemType}&item_id=${itemId}&quantity=1&options_signature=`
     })
     .then(response => response.json())
     .then(data => {
+        console.log('Add to cart response:', data);
         if (data.success) {
             showMessage(data.message || 'Đã thêm vào giỏ hàng', 'success');
             if (typeof updateCartCount === 'function' && data.cart_count !== undefined) {
@@ -345,11 +367,17 @@ window.paintBadge = function(selectors, count) {
             document.querySelectorAll(selector).forEach(el => {
                 el.textContent = text;
                 if (count > 0) {
-                    el.classList && el.classList.remove('hidden');
-                    el.style && (el.style.display = '');
+                    if (el.classList) {
+                        el.classList.remove('hidden');
+                        el.classList.add('flex');
+                    }
+                    if (el.style) el.style.display = '';
                 } else {
-                    el.classList && el.classList.add('hidden');
-                    el.style && (el.style.display = 'none');
+                    if (el.classList) {
+                        el.classList.add('hidden');
+                        el.classList.remove('flex');
+                    }
+                    if (el.style) el.style.display = 'none';
                 }
             });
         });

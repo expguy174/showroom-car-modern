@@ -44,15 +44,31 @@ class CartController extends Controller
     public function add(Request $request)
     {
         try {
-            $validated = $request->validate([
+            // Basic validation for all items
+            $basicValidated = $request->validate([
                 'item_type' => 'required|in:car_variant,accessory',
                 'item_id' => 'required|integer|min:1',
                 'quantity' => 'integer|min:1|max:10',
-                'color_id' => 'nullable|integer|exists:car_variant_colors,id',
-                'feature_ids' => 'nullable|array',
-                'feature_ids.*' => 'integer|exists:car_variant_features,id',
-                
+                'options_signature' => 'nullable|string',
             ]);
+
+            // Additional validation based on item type
+            if ($basicValidated['item_type'] === 'car_variant') {
+                $validated = $request->validate([
+                    'item_type' => 'required|in:car_variant,accessory',
+                    'item_id' => 'required|integer|min:1',
+                    'quantity' => 'integer|min:1|max:10',
+                    'color_id' => 'nullable|integer|exists:car_variant_colors,id',
+                    'feature_ids' => 'nullable|array',
+                    'feature_ids.*' => 'integer',
+                    'options_signature' => 'nullable|string',
+                ]);
+            } else {
+                // For accessories, only basic fields
+                $validated = $basicValidated;
+                $validated['color_id'] = null;
+                $validated['feature_ids'] = [];
+            }
 
             $quantity = $validated['quantity'] ?? 1;
             $colorId = $validated['color_id'] ?? null;
@@ -74,7 +90,8 @@ class CartController extends Controller
                 ], 404);
             }
 
-            if (!$item->is_active) {
+            // Check if item is active (for both car variants and accessories)
+            if (isset($item->is_active) && !$item->is_active) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Sản phẩm hiện không có sẵn'
@@ -131,17 +148,27 @@ class CartController extends Controller
             }
 
             // Use CartHelper to add item
+            // Build options signature (sorted unique feature ids) so different selections are separate lines
+            $featureIdsForSignature = array_values(array_unique(array_map('intval', $validated['feature_ids'] ?? [])));
+            sort($featureIdsForSignature);
+            $signature = empty($featureIdsForSignature) ? null : implode('-', $featureIdsForSignature);
+
+            // If options_signature starts with "duplicate_", always create new line
+            $forceNewLine = isset($validated['options_signature']) && str_starts_with($validated['options_signature'], 'duplicate_');
+            
             $result = \App\Helpers\CartHelper::addToCart(
                 $validated['item_type'],
                 $validated['item_id'],
                 $quantity,
-                $colorId
+                $colorId,
+                $forceNewLine ? $validated['options_signature'] : $signature,
+                $forceNewLine // Pass flag to force new line
             );
 
             // Persist selected features in session keyed by cart_item_id (lightweight without schema changes)
-            if (!empty($result['cart_item_id'])) {
+            if (!empty($result['cart_item_id']) && !empty($validated['feature_ids'])) {
                 $meta = [
-                    'feature_ids' => array_values(array_unique(array_map('intval', $validated['feature_ids'] ?? []))),
+                    'feature_ids' => array_values(array_unique(array_map('intval', $validated['feature_ids']))),
                 ];
                 session()->put('cart_item_meta.' . $result['cart_item_id'], $meta);
             }

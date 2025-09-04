@@ -17,7 +17,7 @@ return new class extends Migration {
             $table->string('title')->nullable(); // Tiêu đề/chú thích ảnh
 
             // Loại ảnh
-            $table->string('image_type')->default('gallery')->comment('gallery, interior, exterior, color_swatch');
+            $table->string('image_type')->default('gallery')->comment('gallery, interior, exterior');
 
             // Sắp xếp và hiển thị
             $table->boolean('is_main')->default(false); // Ảnh chính

@@ -14,9 +14,18 @@
         }
         return 'https://placehold.co/1200x800/111827/ffffff?text=' . urlencode($val);
     };
+    // Pick main image by type priority: gallery main -> first gallery -> first exterior -> first interior
+    $imagesGrouped = optional($variant->images)->groupBy('image_type') ?? collect();
+    $gallery = $imagesGrouped->get('gallery', collect());
+    $exterior = $imagesGrouped->get('exterior', collect());
+    $interior = $imagesGrouped->get('interior', collect());
+    $colorSwatches = collect();
+    $pick = $gallery->firstWhere('is_main', true)
+        ?: $gallery->first()
+        ?: $exterior->first()
+        ?: $interior->first();
     $mainImage = $resolveImage(
-        $variant->image_url 
-        ?? optional(optional($variant->images)->first())->image_url,
+        optional($pick)->image_url,
         $variant->name ?? 'No Image'
     );
     $brandName = optional(optional($variant->carModel)->carBrand)->name;
@@ -133,27 +142,32 @@
                     
                 </div>
                 
-                <!-- Thumbnail Gallery -->
-                <div id="variant-thumbs" class="sm:grid sm:grid-cols-4 sm:gap-3 flex gap-3 overflow-x-auto pb-2 thumbnails-container scrollbar-hide">
-                    @if($variant->colors->count() > 0)
-                    @foreach($variant->colors as $color)
-                        @php $thumb = $resolveImage($color->image_url, $variant->name . ' ' . ($color->color_name ?? '')); @endphp
-                        <div class="aspect-square min-w-[72px] sm:min-w-0 bg-white rounded-2xl shadow-lg overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 thumbnail-image" 
-                             data-image="{{ $thumb }}" data-lightbox-src="{{ $thumb }}">
-                            <img src="{{ $thumb }}" alt="{{ $color->color_name }}" class="w-full h-full object-cover hover:scale-110 transition-transform duration-300" loading="lazy" decoding="async" width="300" height="300">
+                <!-- Thumbnail Gallery grouped by image_type -->
+                @php
+                    $thumbBlocks = [
+                        'gallery' => $gallery,
+                        'exterior' => $exterior,
+                        'interior' => $interior,
+                    ];
+                @endphp
+                <div class="space-y-2">
+                    @foreach($thumbBlocks as $typeKey => $collection)
+                        @if($collection->count() > 0)
+                        <div class="flex items-center text-sm font-semibold text-gray-700 mt-1">
+                            <i class="fas fa-images mr-2"></i>{{ Str::ucfirst($typeKey) }} ({{ $collection->count() }})
                         </div>
-                    @endforeach
-                    @endif
-                    
-                    @if($variant->images && $variant->images->where('is_main', false)->count() > 0)
-                        @foreach($variant->images->where('is_main', false)->take(4 - $variant->colors->count()) as $image)
+                        <div id="variant-thumbs-{{ $typeKey }}" class="sm:grid sm:grid-cols-4 sm:gap-3 flex gap-3 overflow-x-auto pb-2 thumbnails-container scrollbar-hide">
+                            @foreach($collection as $image)
                         @php $thumb = $resolveImage($image->image_url, $variant->name ?? ''); @endphp
                         <div class="aspect-square min-w-[72px] sm:min-w-0 bg-white rounded-2xl shadow-lg overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 thumbnail-image" 
-                             data-image="{{ $thumb }}" data-lightbox-src="{{ $thumb }}">
+                                     data-image="{{ $thumb }}" data-lightbox-src="{{ $thumb }}" data-type="{{ $typeKey }}" data-color-id="{{ (int)($image->car_variant_color_id ?? 0) }}" data-is-main="{{ $image->is_main ? '1' : '0' }}">
                             <img src="{{ $thumb }}" alt="{{ $variant->name }}" class="w-full h-full object-cover hover:scale-110 transition-transform duration-300" loading="lazy" decoding="async" width="300" height="300">
                         </div>
                         @endforeach
+                        </div>
                     @endif
+                    @endforeach
+                    {{-- Removed color_swatch thumbnails. Swatches are rendered from car_variant_colors above. --}}
                 </div>
             </div>
 
@@ -225,10 +239,7 @@
                         <span class="text-lg font-semibold text-gray-900"><span id="rating-avg-inline">{{ number_format((float)$avgInline, 1) }}</span></span>
                         @php $approvedCount = isset($approvedCount) ? $approvedCount : ($variant->approved_reviews_count ?? $variant->approvedReviews()->count()); @endphp
                         <span class="text-gray-500 {{ (($approvedCount ?? 0)>0?'':'hidden') }}">(<span id="rating-count-inline">{{ number_format($approvedCount ?? 0) }}</span> đánh giá)</span>
-                        <div class="flex flex-wrap items-center gap-2 pt-1">
-                            <span class="inline-flex items-center px-2 py-0.5 rounded bg-gray-100 text-gray-700 text-xs"><i class="fas fa-receipt mr-1"></i>Đã gồm VAT</span>
-                            <span class="inline-flex items-center px-2 py-0.5 rounded bg-green-100 text-green-700 text-xs"><i class="fas fa-truck mr-1"></i>Giao hàng miễn phí</span>
-                        </div>
+                        
                     </div>
                 </div>
 
@@ -241,14 +252,23 @@
                     <div id="selected-color-display" class="text-xs text-gray-700"></div>
                     <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">
                         @foreach($variant->colors as $color)
+                            @php
+                                $allImgs = $variant->images ?? collect();
+                                $byColor = $allImgs->where('car_variant_color_id', $color->id);
+                                $pickColorImg = $byColor->firstWhere('is_main', true)
+                                    ?: $byColor->where('image_type','gallery')->first()
+                                    ?: $byColor->where('image_type','exterior')->first()
+                                    ?: $byColor->where('image_type','interior')->first();
+                                $colorMainImg = $resolveImage(optional($pickColorImg)->image_url, $variant->name . ' ' . ($color->color_name ?? ''));
+                            @endphp
                             <button type="button"
                                 class="color-option flex flex-col items-center p-2.5 border border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-1 js-color-option"
                                     data-color-id="{{ $color->id }}"
                                     data-color-name="{{ $color->color_name }}"
-                                    data-image-url="{{ $color->image_url }}"
+                                    data-image-url="{{ $colorMainImg }}"
                                     data-hex="{{ \App\Helpers\ColorHelper::getColorHex($color->color_name) }}"
                                     data-price-adjustment="{{ (int) ($color->price_adjustment ?? 0) }}">
-                            <div class="relative w-6 h-6 sm:w-7 sm:h-7 rounded-full mb-1.5" data-bg-hex="{{ \App\Helpers\ColorHelper::getColorHex($color->color_name) }}" data-color-name="{{ $color->color_name }}">
+                            <div class="relative w-6 h-6 sm:w-7 sm:h-7 rounded-full mb-1.5 ring-1 ring-inset ring-gray-300" data-bg-hex="{{ \App\Helpers\ColorHelper::getColorHex($color->color_name) }}" data-color-name="{{ $color->color_name }}">
                                 <i class="fas fa-check text-white text-[10px] absolute inset-0 m-auto w-3 h-3 flex items-center justify-center hidden"></i>
                             </div>
                             <span class="text-xs text-gray-700 font-medium truncate max-w-[90px]">{{ $color->color_name }}</span>
@@ -295,8 +315,8 @@
                             @csrf
                             <input type="hidden" name="item_type" value="car_variant">
                             <input type="hidden" name="item_id" value="{{ $variant->id }}">
-                            <input type="hidden" name="color_id" value="" id="selected-color-id">
-                            <input type="hidden" name="feature_ids[]" value="" id="selected-features-holder">
+                            <input type="hidden" name="color_id" value="" id="selected-color-id" class="js-selected-color-id">
+                            <input type="hidden" name="" value="" id="selected-features-holder">
                             <input type="hidden" name="quantity" value="1">
                             
                         </form>
@@ -304,52 +324,58 @@
                     </div>
                 </div>
 
-                <!-- Features & Options selectors -->
+                <!-- Features & Options selectors (split into Sẵn có vs Tuỳ chọn thêm) -->
                 @php
                     $features = ($variant->featuresRelation ?? collect());
-                    $featureGroups = [];
-                    foreach ($features as $f) {
-                        $cat = $f->category ?? 'other';
-                        $featureGroups[$cat] = $featureGroups[$cat] ?? [];
-                        $featureGroups[$cat][] = $f;
-                    }
-                    // Options have been removed in the new schema
+                    $included = $features->filter(function($f){
+                        $isIncluded = (bool)($f->is_included ?? false) || (($f->availability ?? 'standard') === 'standard');
+                        return $isIncluded;
+                    });
+                    $optional = $features->filter(function($f){
+                        $isIncluded = (bool)($f->is_included ?? false) || (($f->availability ?? 'standard') === 'standard');
+                        $fee = (float)($f->package_price ?? $f->price ?? 0);
+                        return !$isIncluded || $fee > 0;
+                    });
                 @endphp
 
-                @if(!empty($featureGroups))
+                @if($included->count() > 0 || $optional->count() > 0)
                 <div class="mt-6 space-y-4">
-                    <h3 class="text-base font-semibold text-gray-900">Chọn tính năng (tuỳ chọn/gói)</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        @foreach($featureGroups as $cat => $list)
+                    <h3 class="text-base font-semibold text-gray-900">Tính năng</h3>
+                    @if($included->count() > 0)
                         <div class="bg-white rounded-xl border p-3">
-                            <div class="text-sm font-semibold text-gray-800 mb-2">{{ Str::of($cat)->replace(['-','_'],' ')->title() }}</div>
+                        <div class="text-sm font-semibold text-emerald-700 mb-2 flex items-center gap-2"><i class="fas fa-check-circle"></i> Sẵn có</div>
+                        <div class="flex flex-wrap gap-2">
+                            @foreach($included as $f)
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium border border-emerald-100" title="{{ $f->description }}">{{ $f->feature_name }}</span>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+
+                    @if($optional->count() > 0)
+                        <div class="bg-white rounded-xl border p-3">
+                        <div class="text-sm font-semibold text-indigo-700 mb-2 flex items-center gap-2"><i class="fas fa-plus-circle"></i> Tuỳ chọn thêm</div>
                             <div class="space-y-2">
-                                @foreach($list as $f)
-                                @php
-                                    $isIncluded = (bool)($f->is_included ?? false) || (($f->availability ?? 'standard') === 'standard');
-                                    $fee = (float)($f->package_price ?? $f->price ?? 0);
-                                @endphp
+                            @foreach($optional as $f)
+                                @php $fee = (float)($f->package_price ?? $f->price ?? 0); @endphp
                                 <label class="flex items-start gap-3">
-                                    <input type="checkbox" class="accent-indigo-600 js-feature" value="{{ $f->id }}" data-fee="{{ (int)$fee }}" {{ $isIncluded ? 'checked disabled' : '' }}>
+                                    <input type="checkbox" name="feature_ids[]" class="mt-1 accent-indigo-600 js-feature" value="{{ $f->id }}" data-fee="{{ (int)$fee }}">
                                     <div class="min-w-0 flex-1">
-                                        <div class="flex items-center gap-2">
-                                            <span class="font-medium text-gray-900">{{ $f->feature_name }}</span>
-                                            @if($isIncluded)
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs">Bao gồm</span>
-                                            @elseif($fee>0)
-                                                <span class="text-xs text-indigo-700 font-semibold">+{{ number_format($fee,0,',','.') }}₫</span>
+                                        <div class="flex items-start gap-3">
+                                            <span class="font-medium text-gray-900 flex-1">{{ $f->feature_name }}</span>
+                                            @if($fee>0)
+                                                <span class="text-sm text-indigo-700 font-semibold whitespace-nowrap">+{{ number_format($fee,0,',','.') }}₫</span>
                                             @endif
                                         </div>
                                         @if(!empty($f->description))
-                                            <div class="text-xs text-gray-600">{{ $f->description }}</div>
+                                            <div class="text-xs text-gray-600 mt-0.5">{{ $f->description }}</div>
                                         @endif
                                     </div>
                                 </label>
                                 @endforeach
                             </div>
                         </div>
-                        @endforeach
-                    </div>
+                    @endif
                 </div>
                 @endif
 
@@ -367,19 +393,22 @@
 
                     @if($variant->is_available)
                 <!-- CTA row: full-width equal buttons -->
-                <div class="mt-3 grid grid-cols-2 gap-2">
+                <div class="mt-3 grid grid-cols-3 gap-2">
                     @php
                         $__inWishlistVarPage = \App\Helpers\WishlistHelper::isInWishlist('car_variant', $variant->id);
                     @endphp
                     <button type="button" class="action-btn action-ghost w-full js-wishlist-toggle {{ $__inWishlistVarPage ? 'in-wishlist' : 'not-in-wishlist' }}" aria-label="Yêu thích" title="Yêu thích" aria-pressed="{{ $__inWishlistVarPage ? 'true' : 'false' }}" data-item-type="car_variant" data-item-id="{{ $variant->id }}">
                         <i class="fa-heart {{ $__inWishlistVarPage ? 'fas' : 'far' }}"></i><span>Yêu thích</span>
                     </button>
+                    <button type="button" class="action-btn action-ghost w-full js-compare-toggle" aria-label="So sánh" title="So sánh" data-variant-id="{{ $variant->id }}">
+                        <i class="fas fa-balance-scale"></i><span>So sánh</span>
+                    </button>
                     <form action="{{ route('user.cart.add') }}" method="POST" class="w-full add-to-cart-form" data-item-type="car_variant" data-item-id="{{ $variant->id }}">
                         @csrf
                         <input type="hidden" name="item_type" value="car_variant">
                         <input type="hidden" name="item_id" value="{{ $variant->id }}">
-                        <input type="hidden" name="color_id" value="" id="selected-color-id">
-                        <input type="hidden" name="feature_ids[]" value="" id="selected-features-holder-2">
+                        <input type="hidden" name="color_id" value="" class="js-selected-color-id">
+                        <input type="hidden" name="" value="" id="selected-features-holder-2">
                         <input type="hidden" name="quantity" value="1">
                         <button type="submit" class="action-btn action-primary w-full">
                             <i class="fas fa-cart-plus"></i><span>Thêm vào giỏ</span>
@@ -388,28 +417,7 @@
                 </div>
                 @endif
                 <!-- Trust badges / Quick Info -->
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-6 border-t border-gray-200">
-                    <div class="text-center p-4 bg-white rounded-xl border">
-                        <i class="fas fa-shipping-fast text-2xl text-emerald-600 mb-2"></i>
-                        <div class="text-sm font-semibold">Giao hàng miễn phí</div>
-                        <div class="text-xs text-gray-500">Trong 3-5 ngày</div>
-                    </div>
-                    <div class="text-center p-4 bg-white rounded-xl border">
-                        <i class="fas fa-shield-alt text-2xl text-indigo-600 mb-2"></i>
-                        <div class="text-sm font-semibold">Bảo hành {{ $variant->warranty_info }}</div>
-                        <div class="text-xs text-gray-500">Chính hãng</div>
-                    </div>
-                    <div class="text-center p-4 bg-white rounded-xl border">
-                        <i class="fas fa-tools text-2xl text-amber-600 mb-2"></i>
-                        <div class="text-sm font-semibold">Bảo dưỡng định kỳ</div>
-                        <div class="text-xs text-gray-500">Ưu đãi khách hàng mới</div>
-                    </div>
-                    <div class="text-center p-4 bg-white rounded-xl border">
-                        <i class="fas fa-hand-holding-usd text-2xl text-rose-600 mb-2"></i>
-                        <div class="text-sm font-semibold">Hỗ trợ tài chính</div>
-                        <div class="text-xs text-gray-500">Lãi suất ưu đãi</div>
-                    </div>
-                </div>
+                
             </div>
         </div>
 
@@ -453,20 +461,7 @@
                                 </button>
                                 @endif
                             </div>
-                            @php $featList = ($variant->featuresRelation ?? collect())->filter(function($f){ return (bool)($f->is_included ?? true); })->take(12); @endphp
-                            @if($featList->count() > 0)
-                            <div class="mt-8">
-                                <h4 class="text-xl font-semibold text-gray-900 mb-4">Tính năng nổi bật</h4>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    @foreach($featList as $f)
-                                    <div class="flex items-center gap-2 bg-gradient-to-r from-gray-50 to-white border rounded-xl p-3">
-                                        <i class="fas fa-check-circle text-emerald-600"></i>
-                                        <span class="font-medium text-gray-900">{{ $f->feature_name ?? 'Tính năng' }}</span>
-                                    </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                            @endif
+                            
                         </div>
                     </div>
                 </div>
@@ -474,210 +469,125 @@
                 <!-- Specifications Tab -->
                 <div id="specifications" class="tab-content hidden">
                     <div class="bg-white rounded-3xl shadow-xl p-8">
-                        <h3 class="text-2xl font-bold text-gray-900 mb-6">Thông số kỹ thuật</h3>
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            <div class="space-y-6">
-                                <h4 class="text-xl font-semibold text-gray-900 mb-4">Thông tin cơ bản</h4>
-                                <div class="space-y-4">
-                                    <div class="flex justify-between items-center py-3 border-b border-gray-100">
-                                        <span class="text-gray-600 font-medium">Tên phiên bản:</span>
-                                        <span class="font-semibold text-gray-900">{{ $variant->name }}</span>
-                                    </div>
-                                    <div class="flex justify-between items-center py-3 border-b border-gray-100">
-                                        <span class="text-gray-600 font-medium">Dòng xe:</span>
-                                        <span class="font-semibold text-gray-900">{{ $variant->carModel->name ?? 'N/A' }}</span>
-                                    </div>
-                                    <div class="flex justify-between items-center py-3 border-b border-gray-100">
-                                        <span class="text-gray-600 font-medium">Hãng xe:</span>
-                                        <span class="font-semibold text-gray-900">{{ $variant->carModel->carBrand->name ?? 'N/A' }}</span>
-                                    </div>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            @php // Left: Basic Info @endphp
+                            <div class="lg:col-span-1 space-y-6">
+                                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                                    <div class="text-base font-semibold text-gray-900 mb-3">Thông tin cơ bản</div>
+                                    <div class="rounded-xl border border-gray-100 overflow-hidden text-sm">
+                                        <div class="grid grid-cols-1">
+                                            <div class="flex justify-between items-center px-4 py-3 border-b border-gray-100 odd:bg-gray-50/60"><span class="text-gray-600">Phiên bản</span><span class="font-semibold text-gray-900 text-right ml-4">{{ $variant->name }}</span></div>
+                                            <div class="flex justify-between items-center px-4 py-3 border-b border-gray-100 odd:bg-gray-50/60"><span class="text-gray-600">Dòng xe</span><span class="font-semibold text-gray-900 text-right ml-4">{{ $variant->carModel->name ?? 'N/A' }}</span></div>
+                                            <div class="flex justify-between items-center px-4 py-3 border-b border-gray-100 odd:bg-gray-50/60"><span class="text-gray-600">Hãng</span><span class="font-semibold text-gray-900 text-right ml-4">{{ $variant->carModel->carBrand->name ?? 'N/A' }}</span></div>
+                                            <div class="flex justify-between items-center px-4 py-3 border-b border-gray-100 odd:bg-gray-50/60"><span class="text-gray-600">Tình trạng</span><span class="font-semibold {{ $variant->is_available ? 'text-green-600' : 'text-red-600' }} text-right ml-4">{{ $variant->is_available ? 'Còn hàng' : 'Hết hàng' }}</span></div>
                                     @if(!empty($variant->sku))
-                                    <div class="flex justify-between items-center py-3 border-b border-gray-100">
-                                        <span class="text-gray-600 font-medium">SKU:</span>
-                                        <span class="font-semibold text-gray-900">{{ $variant->sku }}</span>
-                                    </div>
+                                            <div class="flex justify-between items-center px-4 py-3 border-b border-gray-100 odd:bg-gray-50/60"><span class="text-gray-600">SKU</span><span class="font-semibold text-gray-900 text-right ml-4">{{ $variant->sku }}</span></div>
                                     @endif
-                                    <div class="flex justify-between items-center py-3 border-b border-gray-100">
-                                        <span class="text-gray-600 font-medium">Trạng thái:</span>
-                                        <span class="font-semibold text-green-600">{{ $variant->is_available ? 'Còn hàng' : 'Hết hàng' }}</span>
+                                            <div class="flex justify-between items-center px-4 py-3 border-b border-gray-100 odd:bg-gray-50/60"><span class="text-gray-600">Bảo hành</span><span class="font-semibold text-gray-900 text-right ml-4">{{ $variant->warranty_info }}</span></div>
                                     </div>
-                                    <div class="flex justify-between items-center py-3 border-b border-gray-100">
-                                        <span class="text-gray-600 font-medium">Tồn kho khả dụng:</span>
-                                        <span class="font-semibold text-gray-900">{{ number_format((int)($variant->effective_available_quantity ?? 0), 0, ',', '.') }}</span>
-                                    </div>
-                                    <div class="flex justify-between items-center py-3 border-b border-gray-100">
-                                        <span class="text-gray-600 font-medium">Bảo hành:</span>
-                                        <span class="font-semibold text-gray-900">{{ $variant->warranty_info }}</span>
-                                    </div>
-                                    {{-- Hidden per request: fuel consumption row --}}
-                                    <div class="flex justify-between items-center py-3 border-b border-gray-100">
-                                        <span class="text-gray-600 font-medium">Lượt xem:</span>
-                                        <span class="font-semibold text-gray-900">{{ number_format((int)($variant->view_count ?? 0), 0, ',', '.') }}</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="space-y-6">
-                                <h4 class="text-xl font-semibold text-gray-900 mb-4">Thông số chi tiết</h4>
-                                <!-- Tabs header will be rendered below after grouped specs are built -->
-                                @php
-                                    $groupedSpecs = [
-                                        'performance' => [], 'battery' => [], 'dimensions' => [], 'capacity' => [], 'safety' => [], 'warranty' => [],
-                                    ];
-                                    $seenKeys = [];
-                                    foreach (($variant->specifications ?? []) as $spec) {
-                                        $groupKey = \App\Helpers\SpecHelper::groupForCategory($spec->category ?? '');
-                                        if (!$groupKey) { continue; }
-                                        if (empty($spec->spec_value)) { continue; }
-                                        $specName = (string) $spec->spec_name;
-                                        $label = \App\Helpers\SpecHelper::labelFor($specName);
-                                        $value = \App\Helpers\SpecHelper::formatValue($spec->spec_value, $spec->unit, $specName);
-                                        if ($value === '') { continue; }
-                                        $normKey = $groupKey + '|' + strtolower(trim(str_replace(['-',' '],'_', $specName)));
-                                        if (isset($seenKeys[$normKey])) { continue; }
-                                        $seenKeys[$normKey] = true;
-                                        $groupedSpecs[$groupKey][] = [
+                            @php
+                                // Right: Specs in tabs
+                                $viCat = [
+                                    'engine' => 'Động cơ', 'performance' => 'Vận hành', 'transmission' => 'Hộp số', 'dimensions' => 'Kích thước',
+                                    'capacity' => 'Dung tích/Tải trọng', 'seating' => 'Chỗ ngồi', 'chassis' => 'Khung gầm', 'brake' => 'Phanh',
+                                    'wheels' => 'Mâm/Lốp', 'comfort' => 'Tiện nghi', 'technology' => 'Công nghệ', 'safety' => 'An toàn', 'warranty' => 'Bảo hành',
+                                ];
+                                $viField = [
+                                    'fuel_type'=>'Nhiên liệu','engine_type'=>'Kiểu động cơ','engine_displacement'=>'Dung tích','power_output'=>'Công suất','torque'=>'Mô-men xoắn',
+                                    'acceleration'=>'Tăng tốc','top_speed'=>'Tốc độ tối đa','drivetrain'=>'Dẫn động','transmission'=>'Hộp số',
+                                    'length'=>'Dài','width'=>'Rộng','height'=>'Cao','wheelbase'=>'Chiều dài cơ sở','ground_clearance'=>'Khoảng sáng gầm','turning_radius'=>'Bán kính quay vòng',
+                                    'seating_capacity'=>'Số chỗ ngồi',
+                                    'front_suspension'=>'Treo trước','rear_suspension'=>'Treo sau','front_brake'=>'Phanh trước','rear_brake'=>'Phanh sau',
+                                    'wheel_size'=>'Kích thước mâm','tire_size'=>'Cỡ lốp','abs'=>'ABS','ebd'=>'EBD','esc'=>'ESP/ESC','airbag_count'=>'Túi khí',
+                                    'warranty_years'=>'Bảo hành (năm)','warranty_km'=>'Bảo hành (km)',
+                                    // Extra VI mappings per request
+                                    'max_speed'=>'Tốc độ tối đa', 'auto_climate'=>'Điều hoà tự động', 'power_seats'=>'Ghế chỉnh điện', 'memory_seats'=>'Ghế nhớ vị trí', 'android_auto'=>'Android Auto',
+                                ];
+                                $specGroups = [];
+                                foreach(($variant->specifications ?? []) as $spec){
+                                    $cat = $spec->category ?: 'other';
+                                    $rawLabel = trim((string)$spec->spec_name);
+                                    $norm = Str::of($rawLabel)->lower()->replace([' ','-'],'_');
+                                    $label = $viField[(string)$norm] ?? ($viField[(string)Str::of($rawLabel)->snake()] ?? (\App\Helpers\SpecHelper::labelFor($rawLabel) ?? $rawLabel));
+                                    $val = $spec->spec_value;
+                                    if (strtolower(trim($val)) === '3 years') { $val = '3 năm'; }
+                                    if (strtolower(trim($val)) === 'auto climate') { $val = 'Điều hoà tự động'; }
+                                    if ($val === '' || $val === null) continue;
+                                    $specGroups[$cat] = $specGroups[$cat] ?? [];
+                                    $specGroups[$cat][] = [
                                             'label' => $label,
-                                            'value' => $value,
-                                            'important' => (bool) $spec->is_important,
+                                        'value' => \App\Helpers\SpecHelper::formatValue($val, $spec->unit, $rawLabel),
                                             'order' => (int) ($spec->sort_order ?? 0),
                                         ];
                                     }
-                                    // Ensure curated essentials if missing, including more fields
-                                    $ensure = [
-                                        'performance' => [
-                                            // Hidden specs per request: engine, power, fuel, transmission
-                                            ['drivetrain', $variant->drivetrain],
-                                            ['top_speed', $variant->getSpecValue('top_speed','performance') ?? $variant->getSpecValue('max_speed','performance')],
-                                        ],
-                                        'battery' => [
-                                            ['battery_capacity', $variant->getSpecValue('battery_capacity','battery') ?? $variant->getSpecValue('battery_capacity')],
-                                            ['battery_range', $variant->getSpecValue('battery_range','battery') ?? $variant->getSpecValue('battery_range')],
-                                            ['charging_time', $variant->getSpecValue('charging_time','battery') ?? $variant->getSpecValue('charging_time')],
-                                        ],
-                                        'dimensions' => [
-                                            ['length', $variant->getSpecValue('length','dimensions') ?? $variant->getSpecValue('length')],
-                                            ['width', $variant->getSpecValue('width','dimensions') ?? $variant->getSpecValue('width')],
-                                            ['height', $variant->getSpecValue('height','dimensions') ?? $variant->getSpecValue('height')],
-                                            ['wheelbase', $variant->getSpecValue('wheelbase','dimensions') ?? $variant->getSpecValue('wheelbase')],
-                                            ['ground_clearance', $variant->getSpecValue('ground_clearance','dimensions') ?? $variant->getSpecValue('ground_clearance')],
-                                            ['track_width_front', $variant->getSpecValue('track_width_front','dimensions')],
-                                            ['track_width_rear', $variant->getSpecValue('track_width_rear','dimensions')],
-                                            ['turning_radius', $variant->getSpecValue('turning_radius','dimensions')],
-                                        ],
-                                        'capacity' => [
-                                            ['fuel_tank_capacity', $variant->getSpecValue('fuel_tank_capacity','capacity') ?? $variant->getSpecValue('fuel_tank_capacity')],
-                                            ['cargo_volume', $variant->getSpecValue('cargo_volume','capacity') ?? $variant->getSpecValue('cargo_volume')],
-                                            ['trunk_volume', $variant->getSpecValue('trunk_volume','capacity') ?? $variant->getSpecValue('trunk_volume')],
-                                            ['payload', $variant->getSpecValue('payload','capacity') ?? $variant->getSpecValue('payload')],
-                                            ['towing_capacity', $variant->getSpecValue('towing_capacity','capacity') ?? $variant->getSpecValue('towing_capacity')],
-                                        ],
-                                        'safety' => [
-                                            ['airbag_count', $variant->getSpecValue('airbag_count','safety') ?? $variant->airbag_count],
-                                            ['abs', $variant->getSpecValue('abs','safety') ?? ($variant->has_abs ? 'Standard' : null)],
-                                            ['ebd', $variant->getSpecValue('ebd','safety')],
-                                            ['esc', $variant->getSpecValue('esc','safety') ?? ($variant->has_esp ? 'Standard' : null)],
-                                            ['traction_control', $variant->getSpecValue('traction_control','safety') ?? ($variant->has_traction_control ? 'Standard' : null)],
-                                            ['parking_sensors', $variant->getSpecValue('parking_sensors','safety') ?? ($variant->has_parking_sensors ? 'Có' : null)],
-                                            ['rear_camera', $variant->getSpecValue('rear_camera','safety') ?? ($variant->has_rear_camera ? 'Có' : null)],
-                                            ['camera_360', $variant->getSpecValue('camera_360','safety') ?? ($variant->has_360_camera ? 'Có' : null)],
-                                            ['front_brake', $variant->getSpecValue('front_brake','safety')],
-                                            ['rear_brake', $variant->getSpecValue('rear_brake','safety')],
-                                            ['front_suspension', $variant->getSpecValue('front_suspension','safety')],
-                                            ['rear_suspension', $variant->getSpecValue('rear_suspension','safety')],
-                                            ['steering_type', $variant->getSpecValue('steering_type','safety')],
-                                            ['tire_size', $variant->getSpecValue('tire_size','safety')],
-                                            ['wheel_size', $variant->getSpecValue('wheel_size','safety')],
-                                        ],
-                                        'warranty' => [
-                                            ['warranty_years', $variant->getSpecValue('warranty_years','warranty')],
-                                            ['warranty_km', $variant->getSpecValue('warranty_km','warranty')],
-                                            ['warranty_details', $variant->getSpecValue('warranty_details','warranty')],
-                                        ],
-                                    ];
-                                    foreach ($ensure as $gk => $pairs) {
-                                        foreach ($pairs as $pair) {
-                                            [$name, $val] = $pair;
-                                            if (!$val) { continue; }
-                                            $specName = strtolower($name);
-                                            $normKey = $gk . '|' . $specName;
-                                            if (isset($seenKeys[$normKey])) { continue; }
-                                            $seenKeys[$normKey] = true;
-                                            $label = \App\Helpers\SpecHelper::labelFor($specName);
-                                            $groupedSpecs[$gk][] = [
-                                                'label' => $label,
-                                                'value' => \App\Helpers\SpecHelper::formatValue($val, null, $specName),
-                                                'important' => false,
-                                                'order' => 999,
-                                            ];
-                                        }
+                                foreach ($specGroups as $k => $rows) {
+                                    usort($rows, function($a,$b){ if($a['order']!==$b['order']) return $a['order']<=>$b['order']; return strcmp($a['label'],$b['label']); });
+                                    $specGroups[$k] = $rows;
+                                }
+                                // Consolidate to mega groups to reduce tabs
+                                $megaMap = [
+                                    'overview' => ['engine','transmission'],
+                                    'dimensions_capacity' => ['dimensions','capacity','seating'],
+                                    'performance_chassis' => ['performance','chassis','wheels','brake'],
+                                    'safety' => ['safety'],
+                                    'comfort_tech' => ['comfort','technology'],
+                                    // 'warranty' excluded from right tabs
+                                ];
+                                $megaLabels = [
+                                    'overview' => 'Tổng quan',
+                                    'dimensions_capacity' => 'Kích thước',
+                                    'performance_chassis' => 'Vận hành',
+                                    'safety' => 'An toàn',
+                                    'comfort_tech' => 'Tiện nghi',
+                                    'warranty' => 'Bảo hành',
+                                ];
+                                $megaGroups = [];
+                                foreach ($megaMap as $megaKey => $cats) {
+                                    $rows = [];
+                                    foreach ($cats as $c) {
+                                        if (!empty($specGroups[$c])) { $rows = array_merge($rows, $specGroups[$c]); }
                                     }
-                                    foreach ($groupedSpecs as $gk => $rows) {
-                                        usort($rows, function($a, $b) {
-                                            if ($a['important'] !== $b['important']) { return $a['important'] ? -1 : 1; }
-                                            if ($a['order'] !== $b['order']) { return $a['order'] <=> $b['order']; }
-                                            return strcmp($a['label'], $b['label']);
-                                        });
-                                        $groupedSpecs[$gk] = $rows;
+                                    if (!empty($rows)) { $megaGroups[$megaKey] = $rows; }
                                     }
                                 @endphp
-                                <div class="flex flex-wrap gap-2 mb-4">
-                                    @php
-                                        // Compose tab list: predefined order first, then any extra groups from seeder
-                                        $predefinedOrder = \App\Helpers\SpecHelper::groupOrder();
-                                        $groupIcons = \App\Helpers\SpecHelper::groupIcons();
-                                        $tabs = [];
-                                        // Add predefined groups
-                                        foreach ($predefinedOrder as $gk) { if (array_key_exists($gk, $groupedSpecs)) $tabs[] = $gk; }
-                                        // Add any remaining seeder-defined groups
-                                        foreach (array_keys($groupedSpecs) as $gk) { if (!in_array($gk, $tabs, true)) $tabs[] = $gk; }
-                                        // Determine active group: first with data
-                                        $activeGroup = null;
-                                        foreach ($tabs as $gk) { $rows = $groupedSpecs[$gk] ?? []; $cnt=0; foreach($rows as $r){ if(!empty($r['value'])) $cnt++; } if ($cnt>0){ $activeGroup=$gk; break; } }
-                                        if ($activeGroup === null) { $activeGroup = $tabs[0] ?? 'performance'; }
-                                    @endphp
-                                    @foreach($tabs as $groupKey)
-                                        @php $rows = $groupedSpecs[$groupKey] ?? []; $visibleCount = 0; foreach($rows as $r){ if(!empty($r['value'])) $visibleCount++; } @endphp
-                                        @if($visibleCount > 0)
-                                            @php $isActive = $activeGroup === $groupKey; $label = \App\Helpers\SpecHelper::labelForCategory($groupKey); $icon = $groupIcons[$groupKey] ?? 'fas fa-list'; @endphp
-                                            <button type="button" class="spec-tab-button px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2 {{ $isActive ? 'bg-indigo-600 text-white' : 'bg-gray-100 hover:bg-gray-200' }}" data-spec="{{ $groupKey }}">
-                                                <i class="{{ $icon }}"></i> {{ $label }}
-                                            </button>
-                                        @endif
+                            <div class="lg:col-span-1">
+                                @if(!empty($megaGroups))
+                                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                                        <div class="text-base font-semibold text-gray-900 mb-3">Thông số kỹ thuật</div>
+                                        <div class="mb-4 flex flex-wrap gap-2">
+                                            @foreach($megaGroups as $mKey => $_)
+                                                <button type="button" class="spec-tab px-3 py-1.5 rounded-full text-sm font-medium shadow-sm {{ $loop->first ? 'bg-indigo-600 text-white is-active' : 'bg-gray-100 text-gray-800' }}" data-spec-tab="{{ $mKey }}">{{ $megaLabels[$mKey] ?? Str::title(str_replace(['-','_'],' ', $mKey)) }}</button>
                                     @endforeach
                                 </div>
-                                @php
-                                    $blockedSpecNames = [
-                                        'engine_type','engine_size','engine_displacement','cylinders','power_output','transmission','fuel_type','consumption_combined','fuel_consumption','engine','công_suất','động_cơ','hộp_số','tiêu_thụ_nhiên_liệu'
-                                    ];
-                                @endphp
-                                @foreach($groupedSpecs as $groupKey => $rows)
-                                    @php $visibleCount = 0; foreach($rows as $r){ if(!empty($r['value'])) $visibleCount++; } @endphp
-                                    <div id="spec-{{ $groupKey }}" class="spec-group {{ $groupKey !== $activeGroup ? 'hidden' : '' }}">
-                                        <div class="grid grid-cols-1 gap-3 spec-rows">
-                                            @php $rowIndex=0; @endphp
+                                        @foreach($megaGroups as $mKey => $rows)
+                                            <div class="spec-tab-panel rounded-xl border border-gray-100 p-0 overflow-hidden text-sm {{ !$loop->first ? 'hidden' : '' }}" data-spec-panel="{{ $mKey }}">
+                                                <div class="grid grid-cols-1 sm:grid-cols-2">
                                             @foreach($rows as $row)
-                                                @php $value = $row['value'] ?? null; $labelKey = Str::of($row['label'] ?? '')->lower()->replace([' ','-'],'_'); @endphp
-                                                @if(!empty($value) && !in_array((string)$labelKey, $blockedSpecNames, true))
-                                                <div class="flex justify-between items-center py-3 border-b border-gray-100 spec-row {{ $rowIndex >= 4 ? 'hidden' : '' }}" data-row-index="{{ $rowIndex }}">
-                                                    <span class="text-gray-600 font-medium">{{ $row['label'] }}:</span>
-                                                    <span class="font-semibold text-gray-900">{{ $value }}</span>
+                                                @php
+                                                    $v = trim((string)$row['value']);
+                                                    if ($v === '1') $v = 'Có';
+                                                    if ($v === '0') $v = 'Không';
+                                @endphp
+                                                <div class="flex justify-between items-center px-4 py-3 border-b border-gray-100 odd:bg-gray-50/60">
+                                                    <span class="text-gray-600">{{ $row['label'] }}</span>
+                                                    <span class="font-semibold text-gray-900 text-right ml-4">{{ $v }}</span>
                                                 </div>
-                                                @php $rowIndex++; @endphp
-                                                @endif
                                             @endforeach
                                         </div>
-                                        @if($visibleCount > 4)
-                                        <button type="button" class="mt-2 inline-flex items-center text-indigo-700 font-semibold text-sm spec-toggle" data-target="spec-{{ $groupKey }}" data-collapsed="true">
-                                            Xem thêm
-                                        </button>
-                                        @endif
                                     </div>
                                 @endforeach
                             </div>
-                        </div>
-                    </div>
-                </div>
+                                        @else
+                                    <div class="text-gray-600">Chưa có thông số cho phiên bản này.</div>
+                                                @endif
+                                            </div>
+                                            </div>
+                                        </div>
+                                    </div>
 
                 
             </div>
@@ -807,7 +717,7 @@
             
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 @foreach($relatedVariants as $related)
-                    @include('components.variant-card', ['variant' => $related])
+                    @include('components.variant-card', ['variant' => $related, 'showCompare' => true])
             @endforeach
                 </div>
                     </div>
@@ -866,16 +776,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const thumbnails = document.querySelectorAll('.thumbnail-image');
     const mainImage = document.getElementById('main-image');
     
-    thumbnails.forEach(thumb => {
+    function bindThumbClicks(scope){
+        (scope || document).querySelectorAll('.thumbnail-image').forEach(thumb => {
         thumb.addEventListener('click', () => {
             const newSrc = thumb.getAttribute('data-image');
+                if (newSrc && mainImage) {
             mainImage.src = newSrc;
-            
-            // Update active thumbnail
-            thumbnails.forEach(t => t.classList.remove('ring-2', 'ring-blue-500'));
-            thumb.classList.add('ring-2', 'ring-blue-500');
+                    mainImage.setAttribute('data-lightbox-src', newSrc);
+                }
+                document.querySelectorAll('.thumbnail-image').forEach(t => t.classList.remove('ring-2','ring-blue-500'));
+                thumb.classList.add('ring-2','ring-blue-500');
         });
     });
+    }
+    bindThumbClicks(document);
 
     // Fallback: if main image fails or has no size, use first thumbnail image
     try {
@@ -942,36 +856,29 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Spec mini-tabs
-    const specTabs = document.querySelectorAll('.spec-tab-button');
-    const specGroups = document.querySelectorAll('.spec-group');
-    specTabs.forEach(function(btn){
-        btn.addEventListener('click', function(){
-            const key = btn.getAttribute('data-spec');
-            // active state
-            specTabs.forEach(function(b){ b.classList.remove('bg-indigo-600','text-white'); b.classList.add('bg-gray-100'); });
-            btn.classList.add('bg-indigo-600','text-white'); btn.classList.remove('bg-gray-100');
-            // toggle groups
-            specGroups.forEach(function(g){ g.classList.add('hidden'); });
-            const active = document.getElementById('spec-'+key);
+    // Tabs for specs (right column)
+    (function(){
+        const tabs = document.querySelectorAll('.spec-tab');
+        const panels = document.querySelectorAll('.spec-tab-panel');
+        if (!tabs.length) return;
+        // Ensure first tab looks active on initial load
+        const firstTab = tabs[0];
+        const firstPanel = panels[0];
+        if (firstTab) firstTab.classList.add('bg-indigo-600','text-white','is-active');
+        if (firstPanel) firstPanel.classList.remove('hidden');
+        tabs.forEach(function(tab){
+            tab.addEventListener('click', function(){
+                const key = tab.getAttribute('data-spec-tab');
+                tabs.forEach(function(t){ t.classList.remove('is-active','bg-indigo-600','text-white'); t.classList.add('bg-gray-100','text-gray-800'); });
+                tab.classList.add('is-active','bg-indigo-600','text-white'); tab.classList.remove('bg-gray-100');
+                panels.forEach(function(p){ p.classList.add('hidden'); });
+                const active = document.querySelector('.spec-tab-panel[data-spec-panel="'+key+'"]');
             if (active) active.classList.remove('hidden');
         });
     });
+    })();
 
-    // Spec expand/collapse per group
-    document.querySelectorAll('.spec-toggle').forEach(function(tg){
-        tg.addEventListener('click', function(){
-            const targetId = tg.getAttribute('data-target');
-            const container = document.getElementById(targetId);
-            if (!container) return;
-            const collapsed = tg.getAttribute('data-collapsed') === 'true';
-            container.querySelectorAll('.spec-row').forEach(function(row){
-                const idx = parseInt(row.getAttribute('data-row-index')||'0',10);
-                if (idx >= 4) row.classList.toggle('hidden');
-            });
-            tg.textContent = collapsed ? 'Thu gọn' : 'Xem thêm';
-            tg.setAttribute('data-collapsed', collapsed ? 'false' : 'true');
-        });
-    });
+    // Remove old accordion/see-more logic
     
     // Color selection
     const colorOptions = document.querySelectorAll('.js-color-option');
@@ -1005,18 +912,45 @@ document.addEventListener('DOMContentLoaded', function() {
             const selectedCheck = option.querySelector('.fa-check');
             if (selectedCheck) selectedCheck.classList.remove('hidden');
             
-            // Update hidden input
-            colorInput.value = colorId;
+            // Update hidden inputs for color across all add-to-cart forms
+            try {
+                document.querySelectorAll('input.js-selected-color-id[name="color_id"]').forEach(function(inp){ inp.value = colorId || ''; });
+                if (colorInput) colorInput.value = colorId || '';
+            } catch(_) {}
             // Update UI to show selected color
             if (selectedColorText) {
                 const dot = `<span class=\"inline-block w-3.5 h-3.5 rounded-full align-middle mr-2\" style=\"background:${colorHex}\"></span>`;
                 selectedColorText.innerHTML = `Màu đã chọn: ${dot}<span class=\"font-medium\">${colorName}</span>`;
             }
-            // If color has its own image, swap main image immediately
-            if (colorImg && mainImage) {
+            // Swap main image prioritizing images tied to this color
+            try {
+                const thumbsAll = Array.from(document.querySelectorAll('.thumbnail-image'));
+                // priority list: gallery(is_main) -> gallery -> exterior -> interior for this color
+                const priority = [
+                    (t) => t.dataset && t.dataset.type==='gallery' && t.dataset.colorId===colorId && t.dataset.isMain==='1',
+                    (t) => t.dataset && t.dataset.type==='gallery' && t.dataset.colorId===colorId,
+                    (t) => t.dataset && t.dataset.type==='exterior' && t.dataset.colorId===colorId,
+                    (t) => t.dataset && t.dataset.type==='interior' && t.dataset.colorId===colorId,
+                ];
+                let chosen = null;
+                for (const rule of priority) {
+                    chosen = thumbsAll.find(rule);
+                    if (chosen) break;
+                }
+                // fallback: provided color image
+                if (!chosen && colorImg) {
                 mainImage.src = colorImg;
                 mainImage.setAttribute('data-lightbox-src', colorImg);
-            }
+                } else if (chosen) {
+                    const src = chosen.getAttribute('data-image');
+                    if (src) {
+                        mainImage.src = src;
+                        mainImage.setAttribute('data-lightbox-src', src);
+                        document.querySelectorAll('.thumbnail-image').forEach(t => t.classList.remove('ring-2','ring-blue-500'));
+                        chosen.classList.add('ring-2','ring-blue-500');
+                    }
+                }
+            } catch(e) {}
             // Update price with color adjustment (client-side)
             if (priceEl) {
                 const baseCurrent = parseInt(priceEl.getAttribute('data-base-price') || '0', 10);
@@ -1062,13 +996,39 @@ document.addEventListener('DOMContentLoaded', function() {
         return ids;
     }
     document.querySelectorAll('form.add-to-cart-form').forEach(function(f){
+        // Ensure our sync runs before any other capture handlers build FormData
         f.addEventListener('submit', function(){
+            // Ensure color input synced just before submit (safe for capture order)
+            try {
+                const hiddenColor = f.querySelector('input.js-selected-color-id[name="color_id"]');
+                const activeColorBtn = document.querySelector('.js-color-option.border-blue-500');
+                const activeId = activeColorBtn ? activeColorBtn.getAttribute('data-color-id') : (colorInput ? colorInput.value : '');
+                if (hiddenColor) hiddenColor.value = activeId || '';
+            } catch(_){ }
+            // Since checkboxes live outside the form, clone checked feature_ids into this form
+            try {
+                // remove previous clones
+                f.querySelectorAll('input[type="hidden"][name="feature_ids[]"]').forEach(function(n){ n.remove(); });
             const feats = collectSelectedIds(featureCbs);
-            if (featHolder) featHolder.value = '';
-            if (featHolder2) featHolder2.value = '';
-            // Remove existing dynamic clones
-            f.querySelectorAll('input[name="feature_ids[]"]').forEach(function(n){ if(n.id && (n.id==='selected-features-holder'||n.id==='selected-features-holder-2')) return; n.remove(); });
-            feats.forEach(function(id){ const i=document.createElement('input'); i.type='hidden'; i.name='feature_ids[]'; i.value=String(id); f.appendChild(i); });
+                feats.forEach(function(id){
+                    const i = document.createElement('input');
+                    i.type = 'hidden';
+                    i.name = 'feature_ids[]';
+                    i.value = String(id);
+                    f.appendChild(i);
+                });
+            } catch(_){ }
+        }, true);
+
+        // Guaranteed inclusion regardless of who builds FormData
+        f.addEventListener('formdata', function(e){
+            try {
+                const feats = collectSelectedIds(featureCbs);
+                feats.forEach(function(id){ e.formData.append('feature_ids[]', String(id)); });
+                const activeColorBtn = document.querySelector('.js-color-option.border-blue-500');
+                const activeId = activeColorBtn ? activeColorBtn.getAttribute('data-color-id') : (colorInput ? colorInput.value : '');
+                if (activeId) { e.formData.set('color_id', String(activeId)); }
+            } catch(_){ }
         });
     });
 
@@ -1241,6 +1201,16 @@ document.addEventListener('DOMContentLoaded', function() {
   document.querySelectorAll('[data-bg-hex]').forEach(function(el){
     var hex = el.getAttribute('data-bg-hex');
     if (hex) { el.style.backgroundColor = hex; }
+    // Improve visibility for near-white colors: add darker ring
+    try {
+      var h = hex.replace('#','');
+      if (h.length === 3) h = h.split('').map(function(c){ return c+c; }).join('');
+      var r = parseInt(h.substring(0,2),16), g = parseInt(h.substring(2,4),16), b = parseInt(h.substring(4,6),16);
+      var luminance = (0.2126*r + 0.7152*g + 0.0722*b)/255;
+      if (luminance > 0.92) {
+        el.classList.add('ring-2','ring-gray-300');
+      }
+    } catch (e) {}
     var cname = el.getAttribute('data-color-name');
     if (cname && !el.getAttribute('title')) { el.setAttribute('title', cname); }
   });

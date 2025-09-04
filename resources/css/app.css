@@ -561,10 +561,16 @@ html {
 /* Simple Wishlist Button Styling */
 .js-wishlist-toggle {
     transition: color 0.2s ease;
+    transform: translateY(0) !important;
 }
 
 .js-wishlist-toggle i {
     transition: color 0.2s ease;
+}
+
+/* Freeze position on hover to avoid any inherited translate from parent hover states */
+.js-wishlist-toggle:hover {
+    transform: translateY(0) !important;
 }
 
 /* Gray outline heart (not in wishlist) */

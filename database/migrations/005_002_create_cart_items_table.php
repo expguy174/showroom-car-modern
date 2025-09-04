@@ -18,9 +18,12 @@ return new class extends Migration {
             // Optional color for car_variant items
             $table->foreignId('color_id')->nullable()->constrained('car_variant_colors')->onDelete('set null');
 
-            // Uniques cho user và guest tách biệt (khai báo sau khi có color_id)
-            $table->unique(['user_id', 'item_type', 'item_id', 'color_id'], 'uniq_user_cart_line');
-            $table->unique(['session_id', 'item_type', 'item_id', 'color_id'], 'uniq_session_cart_line');
+            // Options signature to distinguish lines with different selected features/options
+            $table->string('options_signature', 100)->nullable();
+
+            // Uniques cho user và guest tách biệt (bao gồm options_signature)
+            $table->unique(['user_id', 'item_type', 'item_id', 'color_id', 'options_signature'], 'uniq_user_cart_line');
+            $table->unique(['session_id', 'item_type', 'item_id', 'color_id', 'options_signature'], 'uniq_session_cart_line');
 
 			$table->unsignedInteger('quantity');
             $table->timestamps();

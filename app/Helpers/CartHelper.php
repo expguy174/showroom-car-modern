@@ -66,25 +66,42 @@ class CartHelper
     /**
      * Add item to cart and return updated count
      */
-    public static function addToCart($itemType, $itemId, $quantity = 1, $colorId = null)
+    public static function addToCart($itemType, $itemId, $quantity = 1, $colorId = null, $optionsSignature = null, $forceNewLine = false)
     {
         $userId = Auth::id();
         $sessionId = session()->getId();
 
         // Check if item already exists in cart
-        $existingItem = CartItem::where('item_type', $itemType)
-            ->where('item_id', $itemId)
-            ->when(!is_null($colorId), function($q) use ($colorId) {
-                $q->where('color_id', $colorId);
-            })
-            ->where(function($query) use ($userId, $sessionId) {
-                if ($userId) {
-                    $query->where('user_id', $userId);
-                } else {
-                    $query->where('session_id', $sessionId);
-                }
-            })
-            ->first();
+        $existingItem = null;
+        
+        if (!$forceNewLine) {
+            // If optionsSignature is provided, we need exact match including null values
+            $query = CartItem::where('item_type', $itemType)
+                ->where('item_id', $itemId)
+                ->where(function($query) use ($userId, $sessionId) {
+                    if ($userId) {
+                        $query->where('user_id', $userId);
+                    } else {
+                        $query->where('session_id', $sessionId);
+                    }
+                });
+
+            // For color_id: exact match (including null)
+            if (is_null($colorId)) {
+                $query->whereNull('color_id');
+            } else {
+                $query->where('color_id', $colorId);
+            }
+
+            // For options_signature: exact match (including null)
+            if (is_null($optionsSignature)) {
+                $query->whereNull('options_signature');
+            } else {
+                $query->where('options_signature', $optionsSignature);
+            }
+
+            $existingItem = $query->first();
+        }
 
         $cartItem = $existingItem;
         if ($existingItem) {
@@ -98,7 +115,8 @@ class CartHelper
                 'item_type' => $itemType,
                 'item_id' => $itemId,
                 'quantity' => $quantity,
-                'color_id' => $colorId
+                'color_id' => $colorId,
+                'options_signature' => $optionsSignature,
             ]);
         }
 
@@ -114,12 +132,41 @@ class CartHelper
             $itemTotal = $unit * $cartItem->quantity;
         }
 
+        // Load cart item with relationships for frontend display
+        if ($cartItem) {
+            if ($cartItem->item_type === 'car_variant') {
+                $cartItem->load([
+                    'item.carModel.carBrand', 
+                    'color', 
+                    'item.images', 
+                    'item.featuresRelation',
+                    'item.colors'
+                ]);
+            } else {
+                // For accessories, only load basic relationships
+                $cartItem->load([
+                    'item'
+                ]);
+            }
+        }
+        
+        // Render appropriate partial based on item type
+        $cartItemHtml = null;
+        if ($cartItem) {
+            if ($cartItem->item_type === 'car_variant') {
+                $cartItemHtml = view('user.cart.partials.car-item', ['item' => $cartItem])->render();
+            } elseif ($cartItem->item_type === 'accessory') {
+                $cartItemHtml = view('user.cart.partials.accessory-item', ['item' => $cartItem])->render();
+            }
+        }
+
         return [
             'success' => true,
             'message' => $existingItem ? 'Đã cập nhật số lượng trong giỏ hàng' : 'Đã thêm vào giỏ hàng thành công',
             'cart_count' => self::getCartCount(),
             'item_total' => $itemTotal,
             'cart_item_id' => $cartItem ? $cartItem->id : null,
+            'cart_item_html' => $cartItemHtml,
         ];
     }
 
