@@ -116,8 +116,8 @@ class CarBrandController extends Controller
                 $query->where('car_brand_id', $brandId);
             })->where('is_active', 1);
 
-            $minPrice = $variants->min('price');
-            $maxPrice = $variants->max('price');
+            $minPrice = $variants->min('current_price');
+            $maxPrice = $variants->max('current_price');
 
             return [
                 'min' => $minPrice ?? 0,

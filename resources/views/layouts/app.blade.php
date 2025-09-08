@@ -970,6 +970,74 @@
 
     <!-- Toast Notification Container -->
     <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+    
+    <!-- Global Toast System -->
+    <script>
+    // Global showMessage function for consistent toast notifications
+    window.showMessage = function(message, type = 'info') {
+        const toastContainer = document.getElementById('toast-container');
+        if (!toastContainer) {
+            console.error('Toast container not found');
+            return;
+        }
+        
+        // Remove existing toasts to prevent spam
+        const existingToasts = toastContainer.querySelectorAll('.toast-item');
+        existingToasts.forEach(toast => toast.remove());
+        
+        // Create toast element
+        const toast = document.createElement('div');
+        toast.className = 'toast-item';
+        
+        // Set colors based on type
+        const colors = {
+            success: 'bg-green-500',
+            error: 'bg-red-500', 
+            warning: 'bg-yellow-500',
+            info: 'bg-blue-500'
+        };
+        
+        const icons = {
+            success: 'fas fa-check-circle',
+            error: 'fas fa-exclamation-circle',
+            warning: 'fas fa-exclamation-triangle', 
+            info: 'fas fa-info-circle'
+        };
+        
+        const bgColor = colors[type] || colors.info;
+        const icon = icons[type] || icons.info;
+        
+        toast.className += ` ${bgColor} text-white px-6 py-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full max-w-sm`;
+        toast.innerHTML = `
+            <div class="flex items-center gap-3">
+                <i class="${icon} text-lg"></i>
+                <span class="flex-1">${message}</span>
+                <button onclick="this.closest('.toast-item').remove()" class="text-white hover:text-gray-200 ml-2">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+        
+        toastContainer.appendChild(toast);
+        
+        // Animate in
+        setTimeout(() => {
+            toast.classList.remove('translate-x-full');
+        }, 100);
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.classList.add('translate-x-full');
+                setTimeout(() => {
+                    if (toast.parentElement) {
+                        toast.remove();
+                    }
+                }, 300);
+            }
+        }, 5000);
+    };
+    </script>
 
     <!-- Message Container -->
     <div id="message-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
@@ -1061,6 +1129,37 @@
                     list.innerHTML = '<div class="p-4 text-sm text-gray-500">Không tải được thông báo</div>';
                 }
             }
+            async function fetchNotifsMobile() {
+                const list = document.getElementById('notif-menu-list-mobile');
+                if (!list) return;
+                try {
+                    var notifIndexUrl = "{{ route('notifications.index') }}";
+                    const res = await fetch(notifIndexUrl, {
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
+                    const data = await res.json();
+                    const items = (data && data.data && data.data.data) ? data.data.data : [];
+                    if (!items.length) {
+                        list.innerHTML = '<div class="p-4 text-sm text-gray-500">Chưa có thông báo</div>';
+                        return;
+                    }
+                    list.innerHTML = items.map(n => `
+              <div class="px-4 py-3 flex items-start gap-3 hover:bg-gray-50">
+                <div class="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center"><i class="${(n.icon || 'fas fa-bell')} ${n.color || 'text-amber-600'}"></i></div>
+                <div class="min-w-0 flex-1">
+                  <div class="text-sm font-semibold text-gray-800 truncate">${n.title || ''}</div>
+                  <div class="text-xs text-gray-500 truncate">${n.message || ''}</div>
+                  <div class="text-[11px] text-gray-400 mt-1">${(new Date(n.created_at)).toLocaleString('vi-VN')}</div>
+                </div>
+                ${n.is_read ? '' : '<span class="mt-1 inline-block w-2 h-2 rounded-full bg-amber-500"></span>'}
+              </div>
+            `).join('');
+                } catch (e) {
+                    list.innerHTML = '<div class="p-4 text-sm text-gray-500">Không tải được thông báo</div>';
+                }
+            }
             async function markAll() {
                 try {
                     var notifReadAllUrl = "{{ route('notifications.read-all') }}";
@@ -1079,7 +1178,7 @@
                 } catch {}
             }
             document.addEventListener('click', function(e) {
-                if (e.target && e.target.id === 'notif-mark-all') {
+                if (e.target && (e.target.id === 'notif-mark-all' || e.target.id === 'notif-mark-all-mobile')) {
                     e.preventDefault();
                     markAll();
                 }
@@ -1088,6 +1187,11 @@
             document.addEventListener('mouseover', function(e) {
                 const t = e.target.closest('[data-dropdown="notifications"]');
                 if (t) fetchNotifs();
+            });
+            // Lazy load when opening mobile dropdown
+            document.addEventListener('mouseover', function(e) {
+                const t = e.target.closest('[data-dropdown="notifications-mobile"]');
+                if (t) fetchNotifsMobile();
             });
         })();
     </script>
@@ -2099,17 +2203,35 @@
 
         // Accessibility System
         function initAccessibility() {
-            // Keyboard navigation for dropdowns
+            // Keyboard navigation and click events for dropdowns
             document.querySelectorAll('[data-dropdown]').forEach(dropdown => {
                 const trigger = dropdown.querySelector('[data-dropdown-trigger]');
                 const menu = dropdown.querySelector('[data-dropdown-menu]');
 
                 if (trigger && menu) {
+                    // Click event
+                    trigger.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleDropdown(dropdown);
+                    });
+
+                    // Keyboard navigation
                     trigger.addEventListener('keydown', (e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
                             toggleDropdown(dropdown);
                         }
+                    });
+                }
+            });
+
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('[data-dropdown]')) {
+                    document.querySelectorAll('[data-dropdown-menu]').forEach(menu => {
+                        menu.classList.add('opacity-0', 'invisible', 'scale-95');
+                        menu.classList.remove('opacity-100', 'visible', 'scale-100');
                     });
                 }
             });
@@ -2147,20 +2269,23 @@
 
         function toggleDropdown(dropdown) {
             const menu = dropdown.querySelector('[data-dropdown-menu]');
-            const isOpen = menu.classList.contains('hidden');
+            const isOpen = menu.classList.contains('opacity-100');
 
             // Close all other dropdowns
             document.querySelectorAll('[data-dropdown-menu]').forEach(otherMenu => {
                 if (otherMenu !== menu) {
-                    otherMenu.classList.add('hidden');
+                    otherMenu.classList.add('opacity-0', 'invisible', 'scale-95');
+                    otherMenu.classList.remove('opacity-100', 'visible', 'scale-100');
                 }
             });
 
             // Toggle current dropdown
             if (isOpen) {
-                menu.classList.remove('hidden');
+                menu.classList.add('opacity-0', 'invisible', 'scale-95');
+                menu.classList.remove('opacity-100', 'visible', 'scale-100');
             } else {
-                menu.classList.add('hidden');
+                menu.classList.remove('opacity-0', 'invisible', 'scale-95');
+                menu.classList.add('opacity-100', 'visible', 'scale-100');
             }
         }
 

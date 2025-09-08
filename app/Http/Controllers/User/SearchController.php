@@ -190,11 +190,11 @@ class SearchController extends Controller
         }
         
         if (!empty($filters['min_price'])) {
-            $query->where('price', '>=', $filters['min_price']);
+            $query->where('current_price', '>=', $filters['min_price']);
         }
         
         if (!empty($filters['max_price'])) {
-            $query->where('price', '<=', $filters['max_price']);
+            $query->where('current_price', '<=', $filters['max_price']);
         }
         
         if (!empty($filters['fuel_type'])) {

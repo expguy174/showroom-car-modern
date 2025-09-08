@@ -592,12 +592,18 @@ class CartManager {
         // Mark as processing
         this.processing.add(itemKey);
         
-        // Find the quantity input in the same cart item
-        const cartItem = button.closest('.cart-item-desktop, .cart-item-row');
-        const quantityInput = cartItem.find('.cart-qty-input, .js-cart-quantity');
+        // Find both desktop and mobile cart items
+        const desktopItem = $(`.cart-item-desktop[data-id="${cartItemId}"]`);
+        const mobileItem = $(`.cart-item-row[data-id="${cartItemId}"]`);
         
-        if (!quantityInput.length) return;
+        // Find quantity inputs in both layouts
+        const desktopInput = desktopItem.find('.cart-qty-input, .js-cart-quantity');
+        const mobileInput = mobileItem.find('.cart-qty-input, .js-cart-quantity');
         
+        if (!desktopInput.length && !mobileInput.length) return;
+        
+        // Get current quantity from the input that was clicked
+        const quantityInput = button.closest('.cart-item-desktop, .cart-item-row').find('.cart-qty-input, .js-cart-quantity');
         let currentQuantity = parseInt(quantityInput.val(), 10);
         if (!Number.isFinite(currentQuantity) || currentQuantity < 1) currentQuantity = 1;
         
@@ -614,17 +620,20 @@ class CartManager {
             currentQuantity = Math.max(1, currentQuantity - 1);
         }
         
-        // Update input value WITHOUT triggering change event
-        quantityInput.val(currentQuantity);
+        // Update input value for both layouts WITHOUT triggering change event
+        desktopInput.val(currentQuantity);
+        mobileInput.val(currentQuantity);
         
         // Store previous quantity as data attribute for comparison
-        quantityInput.attr('data-previous-quantity', previousQuantity);
+        desktopInput.attr('data-previous-quantity', previousQuantity);
+        mobileInput.attr('data-previous-quantity', previousQuantity);
         
         // Manually update the cart without the change event
         this.updateQuantityDirectly(cartItemId, currentQuantity, quantityInput);
         
-        // Update button states after quantity change
-        this.updateQuantityButtonStates(quantityInput);
+        // Update button states after quantity change for both layouts
+        this.updateQuantityButtonStates(desktopInput);
+        this.updateQuantityButtonStates(mobileInput);
         
         // Cleanup processing after a short delay
         setTimeout(() => {
@@ -682,25 +691,32 @@ class CartManager {
                 this.showMessage(`Đã ${action} số lượng thành công!`, 'success');
                 
                 // Update item total for both desktop and mobile layouts
-                const cartItem = inputElement.closest('.cart-item-desktop, .cart-item-row');
-                if (cartItem.length) {
-                    // Update item total
-                    const itemTotalElement = cartItem.find('.item-total');
-                    if (itemTotalElement.length && data.item_total !== undefined) {
-                        itemTotalElement.text(this.formatPrice(data.item_total));
+                const cartItemId = parseInt(inputElement.data('id') || inputElement.data('cart-item-id'), 10);
+                const desktopItem = $(`.cart-item-desktop[data-id="${cartItemId}"]`);
+                const mobileItem = $(`.cart-item-row[data-id="${cartItemId}"]`);
+                
+                if (desktopItem.length || mobileItem.length) {
+                    // Update item total for both layouts
+                    if (data.item_total !== undefined) {
+                        desktopItem.find('.item-total').text(this.formatPrice(data.item_total));
+                        mobileItem.find('.item-total').text(this.formatPrice(data.item_total));
                     }
-                    // Persist fresh baseline where available
+                    // Persist fresh baseline where available for both layouts
                     if (data.item_price !== undefined) {
-                        cartItem.attr('data-base-unit', Number(data.item_price) || 0);
+                        desktopItem.attr('data-base-unit', Number(data.item_price) || 0);
+                        mobileItem.attr('data-base-unit', Number(data.item_price) || 0);
                     }
                     if (data.original_price_before_discount !== undefined) {
-                        cartItem.attr('data-original-price', Number(data.original_price_before_discount) || 0);
+                        desktopItem.attr('data-original-price', Number(data.original_price_before_discount) || 0);
+                        mobileItem.attr('data-original-price', Number(data.original_price_before_discount) || 0);
                     }
                     if (data.current_price !== undefined) {
-                        cartItem.attr('data-current-price', Number(data.current_price) || 0);
+                        desktopItem.attr('data-current-price', Number(data.current_price) || 0);
+                        mobileItem.attr('data-current-price', Number(data.current_price) || 0);
                     }
-                    // Update price UI using new deterministic updater
-                    this.updateItemPriceUI(cartItem, data);
+                    // Update price UI using new deterministic updater for both layouts
+                    this.updateItemPriceUI(desktopItem, data);
+                    this.updateItemPriceUI(mobileItem, data);
                     
                     // Update cart totals
                     if (typeof window.updateCartTotals === 'function') {
@@ -711,8 +727,9 @@ class CartManager {
                 // Store current quantity for next comparison
                 inputElement.attr('data-previous-quantity', quantity);
                 
-                // Update button states after successful update
-                this.updateQuantityButtonStates(inputElement);
+                // Update button states after successful update for both layouts
+                this.updateQuantityButtonStates(desktopItem.find('.cart-qty-input, .js-cart-quantity'));
+                this.updateQuantityButtonStates(mobileItem.find('.cart-qty-input, .js-cart-quantity'));
             } else {
                 this.showMessage(data.message || 'Có lỗi xảy ra!', 'error');
             }
@@ -879,9 +896,9 @@ class CartManager {
             const hasColorSelected = !!name && name !== 'Chưa chọn';
             
             if (hasColorSelected && colorAdj >= 0) {
-                wrap.show();
-                wrap.find('.js-price-color-name').text(name);
-                wrap.find('.js-price-color-val').text(fmt(colorAdj));
+            wrap.show();
+            wrap.find('.js-price-color-name').text(name);
+            wrap.find('.js-price-color-val').text(fmt(colorAdj));
             } else {
                 wrap.hide();
             }
@@ -968,15 +985,56 @@ class CartManager {
         
         if (!cartItemId || !colorId || !updateUrl) return;
         
-        // Find the cart item
-        const cartItem = button.closest('.cart-item-desktop, .cart-item-row');
+        // Find both desktop and mobile cart items
+        const desktopItem = $(`.cart-item-desktop[data-id="${cartItemId}"]`);
+        const mobileItem = $(`.cart-item-row[data-id="${cartItemId}"]`);
         
-        // Update color selection UI
-        cartItem.find('.color-option').removeClass('border-blue-500 ring-2 ring-blue-200').addClass('border-gray-300');
-        button.removeClass('border-gray-300').addClass('border-blue-500 ring-2 ring-blue-200');
+        console.log('Color change - Desktop item:', desktopItem.length, 'Mobile item:', mobileItem.length);
+        console.log('Selected color ID:', colorId, 'Color name:', colorName);
         
-        // Update color name display
-        cartItem.find('.selected-color-name').text(colorName);
+        // Update color selection UI for both layouts - Simple and clean approach
+        // Reset all color options to default state
+        desktopItem.find('.color-option').each(function() {
+            const $this = $(this);
+            $this.removeClass('border-blue-500 ring-2 ring-blue-200').addClass('border-gray-300');
+            // Reset border color to gray
+            const currentStyle = $this.attr('style') || '';
+            const newStyle = currentStyle.replace(/border-color:[^;]*;?/g, '') + '; border-color: #d1d5db;';
+            $this.attr('style', newStyle);
+        });
+        
+        mobileItem.find('.color-option').each(function() {
+            const $this = $(this);
+            $this.removeClass('border-blue-500 ring-2 ring-blue-200').addClass('border-gray-300');
+            // Reset border color to gray
+            const currentStyle = $this.attr('style') || '';
+            const newStyle = currentStyle.replace(/border-color:[^;]*;?/g, '') + '; border-color: #d1d5db;';
+            $this.attr('style', newStyle);
+        });
+        
+        // Activate the selected color in both layouts
+        const selectedDesktopColor = desktopItem.find(`.color-option[data-color-id="${colorId}"]`);
+        const selectedMobileColor = mobileItem.find(`.color-option[data-color-id="${colorId}"]`);
+        
+        if (selectedDesktopColor.length) {
+            selectedDesktopColor.removeClass('border-gray-300').addClass('border-blue-500 ring-2 ring-blue-200');
+            selectedDesktopColor.attr('style', function(i, currentStyle) {
+                return currentStyle.replace(/border-color:[^;]*;?/g, '') + '; border-color: #3b82f6;';
+            });
+        }
+        
+        if (selectedMobileColor.length) {
+            selectedMobileColor.removeClass('border-gray-300').addClass('border-blue-500 ring-2 ring-blue-200');
+            selectedMobileColor.attr('style', function(i, currentStyle) {
+                return currentStyle.replace(/border-color:[^;]*;?/g, '') + '; border-color: #3b82f6;';
+            });
+        }
+        
+        // Update color name display for both layouts
+        desktopItem.find('.selected-color-name').text(colorName);
+        mobileItem.find('.selected-color-name').text(colorName);
+        
+        console.log('Updated color selection for both layouts');
         
         // Send update to server
         fetch(updateUrl, {
@@ -994,20 +1052,24 @@ class CartManager {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Update prices from server response
+                // Update prices from server response for both layouts
                 if (data.base_price !== undefined) {
-                    cartItem.attr('data-base-unit', data.base_price);
+                    desktopItem.attr('data-base-unit', data.base_price);
+                    mobileItem.attr('data-base-unit', data.base_price);
                 }
                 
-                // Update item price and total from server
+                // Update item price and total from server for both layouts
                 if (data.item_price !== undefined) {
-                    cartItem.find('.item-price').text(this.formatPrice(data.item_price));
+                    desktopItem.find('.item-price').text(this.formatPrice(data.item_price));
+                    mobileItem.find('.item-price').text(this.formatPrice(data.item_price));
                 }
                 if (data.item_total !== undefined) {
-                    cartItem.find('.item-total').text(this.formatPrice(data.item_total));
+                    desktopItem.find('.item-total').text(this.formatPrice(data.item_total));
+                    mobileItem.find('.item-total').text(this.formatPrice(data.item_total));
                 }
-                // Update scoped price breakdown
-                this.applyPriceHooks(cartItem, data);
+                // Update scoped price breakdown for both layouts
+                this.applyPriceHooks(desktopItem, data);
+                this.applyPriceHooks(mobileItem, data);
                 
                 // Update cart totals
                 if (typeof window.updateCartTotals === 'function') {
@@ -1017,14 +1079,16 @@ class CartManager {
                 this.showMessage(`Đã đổi màu sang ${colorName}!`, 'success');
             } else {
                 this.showMessage(data.message || 'Có lỗi xảy ra khi cập nhật màu!', 'error');
-                // Revert UI changes on error
-                this.revertColorSelection(cartItem, button);
+                // Revert UI changes on error for both layouts
+                this.revertColorSelection(desktopItem, button);
+                this.revertColorSelection(mobileItem, button);
             }
         })
         .catch(() => {
             this.showMessage('Có lỗi xảy ra khi cập nhật màu sắc!', 'error');
-            // Revert UI changes on error
-            this.revertColorSelection(cartItem, button);
+            // Revert UI changes on error for both layouts
+            this.revertColorSelection(desktopItem, button);
+            this.revertColorSelection(mobileItem, button);
         });
     }
 
@@ -1076,6 +1140,8 @@ class CartManager {
             if (existing) existing.remove();
             const wrapper = document.createElement('div');
             wrapper.className = 'fast-confirm-dialog fixed inset-0 z-[100000] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4';
+            // Ensure overlay is always on top of any accidental high z-index elements
+            wrapper.style.zIndex = '2147483647';
             wrapper.innerHTML = `
                 <div class="bg-white rounded-xl shadow-2xl max-w-md w-full transform transition-all duration-200 scale-95 opacity-0">
                     <div class="p-6">
@@ -1091,9 +1157,16 @@ class CartManager {
                     </div>
                 </div>`;
             document.body.appendChild(wrapper);
+            // Mark body as modal-open to dim interactive controls beneath
+            document.body.classList.add('modal-open');
             const panel = wrapper.firstElementChild;
+            panel.style.zIndex = '2147483647';
             requestAnimationFrame(()=>{ panel.classList.remove('scale-95','opacity-0'); panel.classList.add('scale-100','opacity-100'); });
-            const close = ()=> wrapper.remove();
+            const close = ()=> { 
+                // Delay removal slightly to ensure CSS reflow and pointer-events restore cleanly
+                document.body.classList.remove('modal-open');
+                setTimeout(()=> wrapper.remove(), 0);
+            };
             wrapper.addEventListener('click', (ev)=>{ if (ev.target === wrapper) close(); });
             wrapper.querySelector('.fast-cancel').addEventListener('click', close);
             wrapper.querySelector('.fast-confirm').addEventListener('click', ()=>{ close(); onConfirm && onConfirm(); });
@@ -1349,25 +1422,25 @@ class CartManager {
                 } else {
                     // Local has more items, server is source of truth - sync from server
                     console.log(`Local has more items than server (local: ${localCountNum}, server: ${serverCountNum}). Syncing from server...`);
-                    const success = await this.fetchAllCartFromServer();
-                    if (success) {
-                        this.updateCartCount(serverCountNum);
-                    } else {
-                        // If server fetch fails, keep local data
-                        console.log('Server fetch failed, keeping local data');
-                        this.updateCartCount(localCountNum);
-                    }
+                const success = await this.fetchAllCartFromServer();
+                if (success) {
+                    this.updateCartCount(serverCountNum);
+                } else {
+                    // If server fetch fails, keep local data
+                    console.log('Server fetch failed, keeping local data');
+                    this.updateCartCount(localCountNum);
                 }
+            }
             } else {
                 // Counts match, just refresh count normally
-                this.refreshCartCount();
+            this.refreshCartCount();
             }
         } catch (error) {
             console.warn('Failed to reconcile cart state:', error);
             // Fallback to normal refresh
             this.refreshCartCount();
         } finally {
-            this.reconciling = false;
+        this.reconciling = false;
         }
     }
 
@@ -1429,13 +1502,13 @@ class CartManager {
         const prev = parseInt(localStorage.getItem('cart_count') || '0', 10);
         if (prev === Number(count)) {
             if (window.paintBadge) { window.paintBadge(selectors, count); }
-        } else {
+                } else {
             if (window.paintBadge) { window.paintBadge(selectors, count); }
-        }
+                }
         
         // Store count in localStorage for cross-page/tab synchronization
         const countStr = count.toString();
-        try { 
+        try {
             localStorage.setItem('cart_count', countStr);
             localStorage.setItem('cart_last_action', String(Date.now()));
         } catch (error) {
@@ -1703,7 +1776,7 @@ window.CartCount = {
         // If a local action just happened, prefer local immediately and skip server-triggered loads
         if (window.cartManager && Number.isFinite(count)) {
             if (!lastAction || now - lastAction > this.guardWindowMs) {
-                window.cartManager.updateCartCount(count);
+            window.cartManager.updateCartCount(count);
             }
         }
     },
@@ -1714,7 +1787,7 @@ window.CartCount = {
         if (window.cartManager && Number.isFinite(n)) {
             window.cartManager.updateCartCount(n);
         } else {
-            this.load();
+        this.load();
         }
     },
     async reconcile() {
@@ -1726,7 +1799,7 @@ window.CartCount = {
                 const now = Date.now();
                 // If a local action just happened, avoid overwriting with stale server count
                 if (!lastAction || now - lastAction > this.guardWindowMs) {
-                    this.apply(data.cart_count);
+                this.apply(data.cart_count);
                 }
             }
         } catch (_) {}
@@ -1770,9 +1843,9 @@ $(window).on('pageshow', function(event) {
             if (now - lastReconcile > 1500) { // reconcile sớm hơn để tránh cảm giác lag
                 window.cartManager.lastReconcile = now;
                 // Delay reconciliation slightly to let UI settle, but check debounce
-                setTimeout(() => { 
+                setTimeout(() => {
                     if (Date.now() - window.cartManager.lastCountCheck > window.cartManager.countCheckDebounceMs) {
-                        window.cartManager.checkServerCountAndReconcile(); 
+                    window.cartManager.checkServerCountAndReconcile();
                     }
                 }, 60);
             }

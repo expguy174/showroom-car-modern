@@ -270,7 +270,7 @@ class CartController extends Controller
                     $originalPrice = (float) ($item->base_price ?? ($item->original_price ?? 0));
                     $currentPrice  = (float) ($item->current_price ?? ($item->price ?? 0));
 
-                    if ($cartItem->item_type === 'car_variant' && method_exists($item, 'getPriceWithColorAdjustment')) {
+                    if ($item instanceof \App\Models\CarVariant && method_exists($item, 'getPriceWithColorAdjustment')) {
                         $priceWithColor = (float) $item->getPriceWithColorAdjustment($cartItem->color_id);
                         $colorPriceAdjustment = max(0.0, $priceWithColor - $currentPrice);
                     }
@@ -449,6 +449,14 @@ class CartController extends Controller
             return redirect()->route('user.cart.index')->with('error', 'Giỏ hàng trống!');
         }
 
+        // Require color selection for all car variants before proceeding to checkout form
+        $missingColor = $cartItems->first(function($ci){
+            return $ci->item_type === 'car_variant' && empty($ci->color_id);
+        });
+        if ($missingColor) {
+            return redirect()->route('user.cart.index')->with('warning', 'Vui lòng chọn màu cho tất cả phiên bản trước khi thanh toán.');
+        }
+
         $total = $cartItems->sum(function($ci){
                 $model = $ci->item;
                 if ($ci->item_type === 'car_variant' && method_exists($model, 'getPriceWithColorAdjustment')) {
@@ -482,12 +490,24 @@ class CartController extends Controller
 
         $paymentMethods = PaymentMethod::where('is_active', true)->orderBy('id')->get();
 
-        return view('user.cart.checkout', compact('cartItems', 'total', 'user', 'addresses', 'paymentMethods'));
+        // Issue one-time checkout token to prevent duplicate submissions/back-resubmit
+        $checkoutToken = bin2hex(random_bytes(16));
+        session(['checkout_token' => $checkoutToken]);
+
+        return view('user.cart.checkout', compact('cartItems', 'total', 'user', 'addresses', 'paymentMethods', 'checkoutToken'));
     }
 
     public function processCheckout(Request $request)
     {
         try {
+            // Idempotency guard: verify one-time checkout token
+            $sessionToken = session('checkout_token');
+            $postedToken = (string) $request->input('checkout_token');
+            if (empty($sessionToken) || !hash_equals($sessionToken, $postedToken)) {
+                return redirect()->route('user.cart.index')->with('warning', 'Phiên đặt hàng đã được xử lý hoặc hết hạn. Vui lòng mở lại trang thanh toán.');
+            }
+            // Invalidate immediately to prevent back-resubmit
+            session()->forget('checkout_token');
             $user = Auth::user();
             $userId = $user ? $user->id : null;
             $sessionId = session()->getId();
@@ -524,16 +544,17 @@ class CartController extends Controller
                 'phone' => 'required|string|regex:/^[0-9+\-\s()]+$/|min:10|max:15',
                 'name' => 'required|string|max:255',
                 'email' => 'nullable|email|max:255',
-                'billing_address_id' => 'required|integer|exists:addresses,id',
+                'billing_address_id' => 'nullable|integer|exists:addresses,id',
+                'billing_address' => 'nullable|string|max:1000',
                 'shipping_different' => 'nullable|boolean',
                 'shipping_address_id' => 'nullable|integer|exists:addresses,id',
+                'shipping_address' => 'nullable|string|max:1000',
                 'shipping_method' => 'nullable|in:standard,express',
                 'note' => 'nullable|string|max:1000',
                 'payment_method_id' => 'required|exists:payment_methods,id',
                 'terms_accepted' => 'required|accepted',
             ], [
                 'phone.regex' => 'Số điện thoại không hợp lệ',
-                'billing_address_id.required' => 'Vui lòng chọn địa chỉ thanh toán',
                 'payment_method_id.required' => 'Vui lòng chọn phương thức thanh toán',
                 'terms_accepted.accepted' => 'Bạn phải đồng ý với điều khoản sử dụng',
             ]);
@@ -552,24 +573,57 @@ class CartController extends Controller
             $orderItems = [];
             
                 foreach ($cartItems as $item) {
-                if (!$item->item || !$item->item->is_active) {
+                if (!$item->item) {
+                    return redirect()->route('user.cart.index')->with('error', 'Một số sản phẩm không còn khả dụng');
+                }
+                // Only enforce is_active when the attribute exists on the model
+                if (isset($item->item->is_active) && !$item->item->is_active) {
                     return redirect()->route('user.cart.index')->with('error', 'Một số sản phẩm không còn khả dụng');
                 }
                 // Guard stock again at checkout
                 if ($item->item_type === 'car_variant') {
-                    if ($item->color_id) {
-                        $color = $item->item->colors()->where('id', $item->color_id)->first();
-                        if (!$color || ($color->stock_quantity ?? 0) <= 0) {
-                            return redirect()->route('user.cart.index')->with('error', 'Một số màu đã hết hàng');
+                    $variant = $item->item;
+                    $colorId = $item->color_id;
+                    $inventory = is_array($variant->color_inventory) ? $variant->color_inventory : (json_decode($variant->color_inventory ?? 'null', true) ?: null);
+                    if ($colorId) {
+                        // Ưu tiên kiểm tra theo color_inventory JSON nếu có
+                        if (is_array($inventory) && isset($inventory[$colorId])) {
+                            $available = (int) ($inventory[$colorId]['available'] ?? $inventory[$colorId]['quantity'] ?? 0);
+                            if ($available <= 0) {
+                                return redirect()->route('user.cart.index')->with('error', 'Một số màu đã hết hàng');
+                            }
+                        } else {
+                            // Fallback theo trạng thái của màu (availability) nếu được lưu
+                            $color = $variant->colors()->where('id', $colorId)->first();
+                            if ($color && isset($color->availability) && in_array($color->availability, ['out_of_stock','discontinued'], true)) {
+                                return redirect()->route('user.cart.index')->with('error', 'Một số màu đã hết hàng');
+                            }
                         }
-                    } else if (($item->item->stock_quantity ?? 0) <= 0) {
-                        return redirect()->route('user.cart.index')->with('error', 'Một số phiên bản đã hết hàng');
+                    } else {
+                        // Không chọn màu: nếu có inventory thì tổng available phải > 0; nếu không, fallback is_available
+                        if (is_array($inventory) && !empty($inventory)) {
+                            $sumAvailable = 0;
+                            foreach ($inventory as $inv) { $sumAvailable += (int) ($inv['available'] ?? $inv['quantity'] ?? 0); }
+                            if ($sumAvailable <= 0) {
+                                return redirect()->route('user.cart.index')->with('error', 'Một số phiên bản đã hết hàng');
+                            }
+                        } else if (isset($variant->is_available) && $variant->is_available === false) {
+                            return redirect()->route('user.cart.index')->with('error', 'Một số phiên bản đã hết hàng');
+                        }
+                    }
+                } else if ($item->item_type === 'accessory') {
+                    $acc = $item->item;
+                    if (isset($acc->stock_quantity) && $acc->stock_quantity !== null && (int)$acc->stock_quantity <= 0) {
+                        return redirect()->route('user.cart.index')->with('error', 'Một số phụ kiện đã hết hàng');
+                    }
+                    if (isset($acc->stock_status) && in_array($acc->stock_status, ['out_of_stock','discontinued'], true)) {
+                        return redirect()->route('user.cart.index')->with('error', 'Một số phụ kiện đã hết hàng');
                     }
                 }
 
                 $unitPrice = ($item->item_type === 'car_variant' && method_exists($item->item, 'getPriceWithColorAdjustment'))
                     ? $item->item->getPriceWithColorAdjustment($item->color_id)
-                    : ($item->item->price ?? 0);
+                    : ($item->item->current_price ?? 0);
                 // Include selected add-ons
                 $meta = session('cart_item_meta.' . $item->id, []);
                 $featIds = collect($meta['feature_ids'] ?? [])->filter()->map(fn($v)=> (int)$v)->unique()->all();
@@ -580,6 +634,16 @@ class CartController extends Controller
                 $itemTotal = $unitPrice * $item->quantity;
                 $total += $itemTotal;
                 
+                // Prepare metadata for features and options
+                $metadata = [
+                    'feature_ids' => $featIds,
+                    'option_ids' => $optIds,
+                    'feature_names' => !empty($featIds) ? \App\Models\CarVariantFeature::whereIn('id', $featIds)->pluck('feature_name')->toArray() : [],
+                    'option_names' => !empty($optIds) ? \App\Models\CarVariantOption::whereIn('id', $optIds)->pluck('option_name')->toArray() : [],
+                    'feature_total' => $featSum,
+                    'option_total' => $optSum,
+                ];
+                
                 $orderItems[] = [
                     'item_type' => $item->item_type,
                     'item_id' => $item->item_id,
@@ -587,6 +651,7 @@ class CartController extends Controller
                     'quantity' => $item->quantity,
                     'price' => $unitPrice,
                     'total' => $itemTotal,
+                    'item_metadata' => $metadata,
                 ];
             }
 
@@ -598,53 +663,99 @@ class CartController extends Controller
 
             \Log::info('Starting address resolution:', [
                 'billing_address_id' => $validated['billing_address_id'] ?? 'not_set',
+                'billing_address' => $validated['billing_address'] ?? 'not_set',
                 'user_exists' => $user ? 'yes' : 'no'
             ]);
 
-            // Billing from saved address
+            // Billing address resolution
             if (!empty($validated['billing_address_id']) && $user) {
-                \Log::info('Checking user access to billing address:', [
-                    'user_id' => $user->id,
-                    'billing_address_id' => $validated['billing_address_id']
-                ]);
-                
+                // Use saved address
                 $addr = $user->addresses()->where('id', $validated['billing_address_id'])->first();
                 if ($addr) {
                     $billingAddressId = $addr->id;
                     $billingAddressText = $addr->address;
-                    \Log::info('Billing address resolved:', ['id' => $billingAddressId, 'text' => $billingAddressText]);
+                    \Log::info('Billing address resolved from saved:', ['id' => $billingAddressId, 'text' => $billingAddressText]);
                 } else {
                     \Log::error('Billing address not found:', ['id' => $validated['billing_address_id']]);
                     return redirect()->route('user.cart.index')->with('error', 'Địa chỉ thanh toán không tồn tại');
                 }
+            } elseif (!empty($validated['billing_address']) && $user) {
+                // Ensure user has profile
+                if (!$user->userProfile) {
+                    $user->userProfile()->create([
+                        'profile_type' => 'customer',
+                        'name' => $validated['name'],
+                        'customer_type' => 'new',
+                    ]);
+                }
+                
+                // Create new address
+                $newAddr = $user->addresses()->create([
+                    'type' => 'billing',
+                    'contact_name' => $validated['name'],
+                    'phone' => $validated['phone'],
+                    'address' => $validated['billing_address'],
+                    'city' => 'Hồ Chí Minh', // Default city
+                    'state' => 'Hồ Chí Minh',
+                    'country' => 'Vietnam',
+                    'is_default' => $user->addresses()->count() === 0, // First address is default
+                ]);
+                $billingAddressId = $newAddr->id;
+                $billingAddressText = $newAddr->address;
+                \Log::info('Billing address created:', ['id' => $billingAddressId, 'text' => $billingAddressText]);
             } else {
                 \Log::error('Billing address resolution failed:', [
                     'billing_address_id' => $validated['billing_address_id'] ?? 'not_set',
+                    'billing_address' => $validated['billing_address'] ?? 'not_set',
                     'user_exists' => $user ? 'yes' : 'no',
                     'user_id' => $userId
                 ]);
-                return redirect()->route('user.cart.index')->with('error', 'Vui lòng chọn địa chỉ thanh toán');
+                // Stay on checkout and show a toast instead of redirecting to cart
+                return back()->with('error', 'Vui lòng chọn hoặc nhập địa chỉ thanh toán')->withInput();
             }
 
             // Shipping: same as billing by default
             if (!empty($validated['shipping_different'])) {
                 if (!empty($validated['shipping_address_id']) && $user) {
+                    // Use saved shipping address
                     $saddr = $user->addresses()->where('id', $validated['shipping_address_id'])->first();
                     if ($saddr) {
                         $shippingAddressId = $saddr->id;
                         $shippingAddressText = $saddr->address;
                     }
+                } elseif (!empty($validated['shipping_address']) && $user) {
+                    // Create new shipping address
+                    $newSAddr = $user->addresses()->create([
+                        'type' => 'shipping',
+                        'contact_name' => $validated['name'],
+                        'phone' => $validated['phone'],
+                        'address' => $validated['shipping_address'],
+                        'city' => 'Hồ Chí Minh', // Default city
+                        'state' => 'Hồ Chí Minh',
+                        'country' => 'Vietnam',
+                        'is_default' => false,
+                    ]);
+                    $shippingAddressId = $newSAddr->id;
+                    $shippingAddressText = $newSAddr->address;
                 }
             } else {
                 $shippingAddressId = $billingAddressId;
                 $shippingAddressText = $billingAddressText;
             }
 
-            // Shipping/tax totals
+            // Calculate tax and shipping
             $shippingFee = ($validated['shipping_method'] ?? 'standard') === 'express' ? 50000 : 30000;
-            $taxTotal = (int) round($total * 0.1);
-            $grandTotal = $total + $shippingFee + $taxTotal;
+            $taxTotal = (int) round($total * 0.10); // 10% VAT
+            $grandTotal = $total + $taxTotal + $shippingFee;
 
+            $methodCode = optional(\App\Models\PaymentMethod::find($validated['payment_method_id']))->code;
+            
+            // For VNPay and MoMo, create order after payment success
+            if (in_array($methodCode, ['vnpay', 'momo'])) {
+                return $this->processOnlinePayment($methodCode, $validated, $orderItems, $cartItems, $userId, $sessionId, $total, $taxTotal, $shippingFee, $grandTotal, $billingAddressId, $shippingAddressId, $billingAddressText, $shippingAddressText);
+            }
+            
+            // For COD and Bank Transfer, create order immediately
             $placeOrder = app(PlaceOrder::class);
             $order = $placeOrder->handle([
                 'user_id' => $userId,
@@ -669,21 +780,17 @@ class CartController extends Controller
                         'item_id' => $item['item_id'],
                         'color_id' => $item['color_id'],
                         'quantity' => $item['quantity'],
-                        'price' => ($item['price'] ?? ($itemModel->price ?? 0)),
+                        'price' => ($item['price'] ?? ($itemModel->current_price ?? 0)),
+                        'item_metadata' => $item['item_metadata'] ?? null,
                     ];
                 }, $orderItems),
             ]);
 
             // Notifications are handled by OrderCreated event listener
 
-            $methodCode = optional(\App\Models\PaymentMethod::find($validated['payment_method_id']))->code;
             switch ($methodCode) {
-                case 'vnpay':
-                    return $this->processVNPayPayment($order);
-                case 'momo':
-                    return $this->processMoMoPayment($order);
                 case 'bank_transfer':
-                    return $this->processBankTransfer($order);
+                    return $this->processBankTransfer($order, $cartItems, $userId, $sessionId);
                 case 'cod':
                 default:
                     return $this->processCODPayment($order, $cartItems, $userId, $sessionId);
@@ -695,73 +802,167 @@ class CartController extends Controller
             Log::error('Checkout error:', [
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
             
-            return back()->with('error', 'Có lỗi xảy ra khi xử lý đơn hàng. Vui lòng thử lại.');
+            return back()->with('error', 'Có lỗi xảy ra khi xử lý đơn hàng. Vui lòng thử lại.')->withInput();
         }
     }
 
-    private function processVNPayPayment($order)
+    private function processOnlinePayment($methodCode, $validated, $orderItems, $cartItems, $userId, $sessionId, $total, $taxTotal, $shippingFee, $grandTotal, $billingAddressId, $shippingAddressId, $billingAddressText, $shippingAddressText)
+    {
+        // Store order data in session for later creation
+        $orderData = [
+            'user_id' => $userId,
+            'phone' => $validated['phone'],
+            'name' => $validated['name'],
+            'email' => $validated['email'] ?? null,
+            'address' => $shippingAddressText ?: $billingAddressText,
+            'note' => $validated['note'] ?? null,
+            'payment_method_id' => $validated['payment_method_id'],
+            'billing_address_id' => $billingAddressId,
+            'shipping_address_id' => $shippingAddressId,
+            'subtotal' => $total,
+            'tax_total' => $taxTotal,
+            'shipping_fee' => $shippingFee,
+            'grand_total' => $grandTotal,
+            'items' => array_map(function ($item) use ($cartItems) {
+                $itemModel = $cartItems->firstWhere(function($cartItem) use ($item) {
+                    return $cartItem->item_id == $item['item_id'] && $cartItem->item_type == $item['item_type'];
+                })?->item;
+                return [
+                    'item_type' => $item['item_type'],
+                    'item_id' => $item['item_id'],
+                    'color_id' => $item['color_id'],
+                    'quantity' => $item['quantity'],
+                    'price' => ($item['price'] ?? ($itemModel->current_price ?? 0)),
+                    'item_metadata' => $item['item_metadata'] ?? null,
+                ];
+            }, $orderItems),
+        ];
+        
+        session(['pending_order_data' => $orderData]);
+        
+        $gatewayMode = env('PAYMENT_GATEWAY_MODE', 'sandbox');
+        if ($gatewayMode === 'mock') {
+            if ($methodCode === 'vnpay' || $methodCode === 'momo') {
+                // Create order immediately (mock success)
+                $placeOrder = app(PlaceOrder::class);
+                $order = $placeOrder->handle($orderData);
+                return $this->processMockOnlinePayment($order, $cartItems, $userId, $sessionId, strtoupper($methodCode));
+            }
+        } else {
+            // Use gateway factory for online payments
+            $gateway = \App\Services\Payments\PaymentGatewayFactory::make($methodCode);
+            return $gateway->createPayment($orderData);
+        }
+    }
+
+    private function processVNPayPayment($orderData)
     {
         $vnpUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
         $vnpReturnUrl = route('payment.vnpay.return');
-        $vnpTmnCode = env('VNPAY_TMN_CODE', '');
-        $vnpHashSecret = env('VNPAY_HASH_SECRET', '');
+        $vnpTmnCode = trim((string) env('VNPAY_TMN_CODE', '2QXUI4J4'));
+        $vnpHashSecret = trim((string) env('VNPAY_HASH_SECRET', 'RAOEXHYVSDDIIENYWSLDIIZALPXUTMQK'));
         
-        $vnpTxnRef = $order->order_number;
-        $vnpOrderInfo = "Thanh toan don hang " . $order->order_number;
+        // Generate temporary order number for VNPay: only alphanumeric (no special chars)
+        $tempOrderNumber = 'TEMP' . date('YmdHis') . strtoupper(substr(bin2hex(random_bytes(6)), 0, 6));
+        
+        $vnpTxnRef = $tempOrderNumber;
+        $vnpOrderInfo = "Thanh toan don hang " . $tempOrderNumber;
         $vnpOrderType = "other";
-        $vnpAmount = $order->total_price * 100;
+        $vnpAmount = $orderData['grand_total'] * 100;
         $vnpLocale = 'vn';
         $vnpCurrCode = 'VND';
         
-        $vnpParams = array();
-        $vnpParams['vnp_Version'] = '2.1.0';
-        $vnpParams['vnp_Command'] = 'pay';
-        $vnpParams['vnp_TmnCode'] = $vnpTmnCode;
-        $vnpParams['vnp_Amount'] = $vnpAmount;
-        $vnpParams['vnp_CurrCode'] = $vnpCurrCode;
-        $vnpParams['vnp_BankCode'] = '';
-        $vnpParams['vnp_TxnRef'] = $vnpTxnRef;
+        // Build params (exclude empty values per VNPay sample)
+        $vnpParams = [];
+        $vnpParams['vnp_Version']   = '2.1.0';
+        $vnpParams['vnp_Command']   = 'pay';
+        $vnpParams['vnp_TmnCode']   = $vnpTmnCode;
+        $vnpParams['vnp_Amount']    = (int) $vnpAmount; // ensure integer
+        $vnpParams['vnp_CurrCode']  = $vnpCurrCode;
+        // vnp_BankCode only if user picked one
+        $vnpParams['vnp_TxnRef']    = $vnpTxnRef;
         $vnpParams['vnp_OrderInfo'] = $vnpOrderInfo;
         $vnpParams['vnp_OrderType'] = $vnpOrderType;
-        $vnpParams['vnp_Locale'] = $vnpLocale;
+        $vnpParams['vnp_Locale']    = $vnpLocale;
         $vnpParams['vnp_ReturnUrl'] = $vnpReturnUrl;
-        $vnpParams['vnp_IpAddr'] = request()->ip();
-        $vnpParams['vnp_CreateDate'] = date('YmdHis');
-        
+        $vnpParams['vnp_IpAddr']    = request()->ip() ?: '127.0.0.1';
+        $vnpParams['vnp_CreateDate']= date('YmdHis');
+        $vnpParams['vnp_ExpireDate']= date('YmdHis', strtotime('+15 minutes'));
+
+        // Remove empty entries
+        $vnpParams = array_filter($vnpParams, function($v){ return $v !== null && $v !== ''; });
+
         ksort($vnpParams);
-        $query = "";
+        $query = '';
+        $hashdata = '';
         $i = 0;
-        $hashdata = "";
         foreach ($vnpParams as $key => $value) {
+            // VNPay PHP sample: hash over URL-encoded key/value pairs
             if ($i == 1) {
-                $hashdata .= '&' . urlencode($key) . "=" . urlencode($value);
+                $hashdata .= '&' . urlencode($key) . '=' . urlencode((string)$value);
             } else {
-                $hashdata .= urlencode($key) . "=" . urlencode($value);
+                $hashdata .= urlencode($key) . '=' . urlencode((string)$value);
                 $i = 1;
             }
-            $query .= urlencode($key) . "=" . urlencode($value) . '&';
+            // Query string uses urlencoded values
+            $query .= urlencode($key) . '=' . urlencode((string)$value) . '&';
         }
-        
-        $vnpUrl = $vnpUrl . "?" . $query;
-        if (isset($vnpHashSecret)) {
+
+        if (!empty($vnpHashSecret)) {
             $vnpSecureHash = hash_hmac('sha512', $hashdata, $vnpHashSecret);
-            $vnpUrl .= 'vnp_SecureHash=' . $vnpSecureHash;
+            // Do not send vnp_SecureHashType; VNPay can infer from HMAC length
+            $vnpUrl = $vnpUrl . '?' . rtrim($query, '&') . '&vnp_SecureHash=' . $vnpSecureHash;
+        } else {
+            $vnpUrl = $vnpUrl . '?' . rtrim($query, '&');
         }
         
+        // Debug: Log the VNPay URL
+        \Log::info('VNPay URL generated:', [
+            'url' => $vnpUrl,
+            'hashdata' => $hashdata,
+            'secure_hash' => $vnpSecureHash ?? 'N/A'
+        ]);
+        // Optional: return JSON instead of redirect when debug enabled via request or env
+        if (request()->boolean('debug') || (bool) env('PAYMENT_DEBUG', false)) {
+            return response()->json([
+                'gateway' => 'vnpay',
+                'signed_url' => $vnpUrl,
+                'hashdata' => $hashdata,
+                'vnp_SecureHash' => $vnpSecureHash ?? null,
+                'params' => $vnpParams,
+            ]);
+        }
+
         return redirect($vnpUrl);
     }
 
-    private function processMoMoPayment($order)
+    private function processMoMoPayment($orderData)
     {
-        return redirect()->route('payment.momo.process', ['order_id' => $order->id]);
+        // Store order data in session for MoMo processing
+        session(['pending_order_data' => $orderData]);
+        
+        // Generate temporary order number for MoMo
+        $tempOrderNumber = 'TEMP-' . date('Ymd') . '-' . strtoupper(uniqid());
+        
+        return redirect()->route('payment.momo.process', ['order_id' => $tempOrderNumber]);
     }
 
-    private function processBankTransfer($order)
+    private function processBankTransfer($order, $cartItems, $userId, $sessionId)
     {
-        // Giữ trạng thái đơn theo luồng: chỉ cập nhật payment_status qua webhook/ngoại tuyến
-        return view('payment.bank-transfer', compact('order'))->with('success', 'Đơn hàng đã được tạo. Vui lòng chuyển khoản theo hướng dẫn.');
+        // Clear cart items to prevent duplicate orders
+        CartItem::where(function ($q) use ($userId, $sessionId) {
+            if ($userId) $q->where('user_id', $userId);
+            else $q->where('session_id', $sessionId);
+        })->delete();
+
+        // Email + notifications for bank transfer are already triggered by OrderCreated listener
+
+        return redirect()->route('user.order.success', ['order' => $order->id])
+            ->with('success', 'Đơn hàng đã được tạo. Vui lòng chuyển khoản theo hướng dẫn.')
+            ->with('payment_method', 'bank_transfer');
     }
 
     private function processCODPayment($order, $cartItems, $userId, $sessionId)
@@ -773,8 +974,25 @@ class CartController extends Controller
 
         // Email + notifications for COD are already triggered by OrderCreated listener
 
-        return redirect()->route('order.success', ['order' => $order->id])
+        return redirect()->route('user.order.success', ['order' => $order->id])
             ->with('success', 'Đặt hàng thành công! Chúng tôi sẽ liên hệ với bạn sớm nhất.');
+    }
+
+    private function processMockOnlinePayment($order, $cartItems, $userId, $sessionId, string $gateway)
+    {
+        // Clear cart items
+        CartItem::where(function ($q) use ($userId, $sessionId) {
+            if ($userId) $q->where('user_id', $userId);
+            else $q->where('session_id', $sessionId);
+        })->delete();
+
+        \Log::info('Mock online payment success', [
+            'gateway' => $gateway,
+            'order_id' => $order->id,
+        ]);
+
+        return redirect()->route('user.order.success', ['order' => $order->id])
+            ->with('success', 'Thanh toán (MOCK ' . $gateway . ') thành công!');
     }
 
     public function orderSuccess(Request $request, Order $order)

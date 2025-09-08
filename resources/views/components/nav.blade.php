@@ -153,13 +153,30 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                     <span class="sr-only">Giỏ hàng</span>
                 </a>
 
-                {{-- Notifications (mobile simple link) --}}
+                {{-- Notifications (mobile dropdown) --}}
                 @auth
-                <a href="{{ route('notifications.index') }}" class="lg:hidden relative inline-flex items-center justify-center w-10 h-10 rounded-full text-gray-600 hover:text-amber-600 hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500">
-                    <i class="fas fa-bell"></i>
-                    <span id="notif-count-badge-mobile" class="absolute -top-1 -right-1 w-5 h-5 text-[10px] rounded-full bg-amber-500 text-white items-center justify-center {{ $navUnreadNotifCount ? 'flex' : 'hidden' }}">{{ $navUnreadNotifCount > 99 ? '99+' : $navUnreadNotifCount }}</span>
-                    <span class="sr-only">Thông báo</span>
-                </a>
+                <div class="dropdown-group lg:hidden" data-dropdown="notifications-mobile">
+                    <button class="relative inline-flex items-center justify-center w-10 h-10 rounded-full text-gray-600 hover:text-amber-600 hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500" data-dropdown-trigger>
+                        <i class="fas fa-bell"></i>
+                        <span id="notif-count-badge-mobile" class="absolute -top-1 -right-1 w-5 h-5 text-[10px] rounded-full bg-amber-500 text-white items-center justify-center {{ $navUnreadNotifCount ? 'flex' : 'hidden' }}">{{ $navUnreadNotifCount > 99 ? '99+' : $navUnreadNotifCount }}</span>
+                        <span class="sr-only">Thông báo</span>
+                    </button>
+                    <div class="dropdown-bridge"></div>
+                    <div class="dropdown-menu absolute right-0 mt-2 w-[320px] max-w-[90vw] z-50 opacity-0 invisible scale-95 transition-all duration-200 transform origin-top-right" data-dropdown-menu>
+                        <div class="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+                            <div class="px-4 py-3 flex items-center justify-between border-b">
+                                <div class="text-sm font-semibold text-gray-800">Thông báo</div>
+                                <button id="notif-mark-all-mobile" class="text-xs text-amber-700 hover:text-white hover:bg-amber-600 border border-amber-200 px-2 py-1 rounded">Đánh dấu đã đọc</button>
+                            </div>
+                            <div id="notif-menu-list-mobile" class="max-h-[50vh] overflow-auto divide-y">
+                                <div class="p-4 text-sm text-gray-500 flex items-center gap-2"><i class="fas fa-spinner fa-spin"></i><span>Đang tải...</span></div>
+                            </div>
+                            <div class="px-4 py-3 border-t bg-gray-50 text-right">
+                                <a href="{{ route('notifications.index') }}" class="text-sm text-amber-700 hover:underline">Xem tất cả</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 @endauth
 
                 {{-- Mobile: Open Drawer button (to the right of cart) --}}
@@ -196,15 +213,41 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
 
                 {{-- Profile / Auth --}}
                 <div class="profile-dropdown-wrapper dropdown-group hidden lg:block">
-                    <button class="px-2.5 py-2 rounded-lg border border-gray-200 text-sm text-gray-700 hover:text-white hover:bg-gray-900 inline-flex items-center gap-2">
-                        <i class="fas fa-user-circle"></i>
-                        <span class="nav-label">@auth {{ \Illuminate\Support\Str::limit(optional(auth()->user()->userProfile)->name ?? 'Tài khoản', 14) }} @else Tài khoản @endauth</span>
-                        <i class="fas fa-chevron-down text-xs"></i>
+                    <button class="px-2.5 py-2 rounded-lg border border-gray-200 text-sm text-gray-700 hover:text-white hover:bg-gray-900 inline-flex items-center gap-2" data-dropdown-trigger>
+                        @auth
+                            @php $avatar = optional(auth()->user()->userProfile)->avatar_path; @endphp
+                            @if($avatar)
+                                <img src="{{ $avatar }}" alt="avatar" class="w-8 h-8 rounded-full object-cover" />
+                            @else
+                                <i class="fas fa-user-circle text-xl"></i>
+                            @endif
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        @else
+                            <i class="fas fa-user-circle"></i>
+                            <span class="nav-label">Tài khoản</span>
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        @endauth
                     </button>
                     <div class="dropdown-bridge"></div>
                     <div class="dropdown-menu profile-dropdown-menu absolute right-0 mt-2 min-w-[240px] z-50">
                         <div class="p-2">
                             @auth
+                            <div class="px-3 py-3 rounded-lg bg-gray-50 border border-gray-100 mb-2">
+                                @php 
+                                    $profile = optional(auth()->user()->userProfile);
+                                    $name = $profile->name ?? 'Tài khoản';
+                                    $isVip = (bool) $profile->is_vip;
+                                    $customerType = $profile->customer_type ?? 'member';
+                                @endphp
+                                <div class="text-sm font-semibold text-gray-900 truncate">Xin chào, {{ $name }}</div>
+                                <div class="mt-1 text-[11px] inline-flex items-center gap-1 {{ $isVip ? 'text-amber-600' : 'text-indigo-600' }}">
+                                    @if($isVip)
+                                        <i class="fas fa-crown"></i> VIP
+                                    @else
+                                        <i class="fas fa-user"></i> {{ Str::of($customerType)->headline() }}
+                                    @endif
+                                </div>
+                            </div>
                             <a href="{{ route('user.profile.edit') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white"><i class="fas fa-user-cog text-gray-400"></i><span>Tài khoản</span></a>
                             <a href="{{ route('user.customer-profiles.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white"><i class="fas fa-id-badge text-gray-400"></i><span>Hồ sơ</span></a>
                             <a href="{{ route('user.customer-profiles.orders') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white"><i class="fas fa-file-invoice-dollar text-gray-400"></i><span>Đơn hàng</span></a>

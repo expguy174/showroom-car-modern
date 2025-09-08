@@ -40,7 +40,7 @@
 @endphp
 
 <!-- Desktop Table Layout - HIDDEN on mobile via CSS -->
-<tr class="cart-item-desktop desktop-only" data-id="{{ $item->id }}" data-base-unit="{{ (int) $baseUnit }}" data-original-price="{{ (int) $originalPriceBeforeDiscount }}" data-current-price="{{ (int) $currentPrice }}">
+<tr class="cart-item-desktop desktop-only" data-id="{{ $item->id }}" data-item-type="{{ $item->item_type }}" data-color-id="{{ $item->color_id }}" data-base-unit="{{ (int) $baseUnit }}" data-original-price="{{ (int) $originalPriceBeforeDiscount }}" data-current-price="{{ (int) $currentPrice }}">
     <td class="align-middle text-center" data-label="Ảnh" style="vertical-align: middle;">
         <a href="{{ route('car-variants.show', $item->item->slug ?? $item->item->id) }}" class="inline-block w-24 h-20 rounded-lg overflow-hidden bg-gray-100 border mx-auto">
             <img src="{{ $imageUrl }}" class="w-full h-full object-cover" alt="{{ $item->item->name }}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='https://via.placeholder.com/800x600?text=No+Image';">
@@ -137,7 +137,6 @@
     </td>
 
     <td class="text-right align-middle hidden md:table-cell mobile-hide" data-label="Giá" style="vertical-align: middle;">
-        <div class="text-gray-900 font-bold whitespace-nowrap text-sm sm:text-base"><span class="item-total whitespace-nowrap" data-id="{{ $item->id }}">{{ number_format($itemTotal,0,',','.') }}</span> đ</div>
         <div class="text-[11px] text-gray-400 line-through js-price-original" @if(!($originalPriceBeforeDiscount>0)) style="display:none" @endif>
             Gốc: <span class="js-price-original-val">{{ number_format($originalPriceBeforeDiscount,0,',','.') }}</span> đ
         </div>
@@ -167,10 +166,13 @@
                 @endforeach
             @endif
         </div>
+        <div class="border-t border-gray-300 pt-2 mt-2">
+            <div class="text-gray-900 font-bold whitespace-nowrap text-sm sm:text-base"><span class="item-total whitespace-nowrap" data-id="{{ $item->id }}">{{ number_format($itemTotal,0,',','.') }}</span> đ</div>
+        </div>
     </td>
     <td class="text-center align-middle hidden md:table-cell mobile-hide" data-label="Thao tác" style="vertical-align: middle;">
         <div class="flex items-center justify-center gap-2">
-            <button type="button" aria-label="Thêm cấu hình khác" title="Thêm cấu hình khác" class="duplicate-item-btn w-8 h-8 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center js-duplicate-line" style="transition: all 0.2s ease; position: relative; overflow: hidden;" data-add-url="{{ route('user.cart.add') }}" data-variant-id="{{ $item->item->id }}" data-item-type="{{ $item->item_type }}">
+            <button type="button" aria-label="Thêm cấu hình khác" title="Thêm cấu hình khác" class="duplicate-item-btn w-8 h-8 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center js-duplicate-line" style="transition: all 0.2s ease; position: relative; overflow: hidden; z-index: 1;" data-add-url="{{ route('user.cart.add') }}" data-variant-id="{{ $item->item->id }}" data-item-type="{{ $item->item_type }}">
                 <i class="fas fa-plus text-sm" style="position: relative; z-index: 1;"></i>
             </button>
             <style>
@@ -202,7 +204,7 @@
 </tr>
 
 <!-- Mobile Card Layout - ONLY visible on mobile -->
-<tr class="cart-item-row mobile-only" data-id="{{ $item->id }}" data-base-unit="{{ (int) $baseUnit }}" data-original-price="{{ (int) $originalPriceBeforeDiscount }}" data-current-price="{{ (int) $currentPrice }}">
+<tr class="cart-item-row mobile-only" data-id="{{ $item->id }}" data-item-type="{{ $item->item_type }}" data-color-id="{{ $item->color_id }}" data-base-unit="{{ (int) $baseUnit }}" data-original-price="{{ (int) $originalPriceBeforeDiscount }}" data-current-price="{{ (int) $currentPrice }}">
     <td colspan="5" class="p-0">
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 mx-4 mb-4 overflow-hidden">
             <!-- Product Header -->
@@ -232,7 +234,7 @@
                         @endif
                     </div>
                     <div class="flex items-center justify-center gap-4">
-                        <button type="button" aria-label="Thêm cấu hình khác" title="Thêm cấu hình khác" class="duplicate-item-btn w-10 h-10 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center js-duplicate-line" style="transition: all 0.2s ease; position: relative; overflow: hidden;" data-add-url="{{ route('user.cart.add') }}" data-variant-id="{{ $item->item->id }}" data-item-type="{{ $item->item_type }}">
+                        <button type="button" aria-label="Thêm cấu hình khác" title="Thêm cấu hình khác" class="duplicate-item-btn w-10 h-10 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center js-duplicate-line" style="transition: all 0.2s ease; position: relative; overflow: hidden; z-index: 1;" data-add-url="{{ route('user.cart.add') }}" data-variant-id="{{ $item->item->id }}" data-item-type="{{ $item->item_type }}">
                             <i class="fas fa-plus text-base" style="position: relative; z-index: 1;"></i>
                         </button>
                         <button type="button" aria-label="Xóa" title="Xóa" class="remove-item-btn w-10 h-10 rounded-full bg-red-50 text-red-500 flex items-center justify-center" data-id="{{ $item->id }}" data-url="{{ route('user.cart.remove', $item->id) }}" data-csrf="{{ csrf_token() }}">
@@ -335,24 +337,42 @@
                         </div>
                         
                         <!-- Total Price Info -->
-                        <div class="text-right">
-                        <div class="text-lg font-bold text-blue-600">Giá: <span class="item-total" data-id="{{ $item->id }}">{{ number_format($itemTotal,0,',','.') }}</span> đ</div>
-                        <div class="text-[11px] text-gray-400 line-through js-price-original" @if(!($originalPriceBeforeDiscount>0)) style="display:none" @endif>
-                            <span class="js-price-original-val">{{ number_format($originalPriceBeforeDiscount,0,',','.') }}</span> đ
+                        <div class="text-right min-w-0 flex-1">
+                            <div class="space-y-1">
+                                <div class="text-[11px] text-gray-400 line-through js-price-original" @if(!($originalPriceBeforeDiscount>0)) style="display:none" @endif>
+                                    Gốc: <span class="js-price-original-val">{{ number_format($originalPriceBeforeDiscount,0,',','.') }}</span> đ
+                                </div>
+                                <div class="text-[11px] text-red-600 js-price-discount" @if(!($discountPercentage > 0)) style="display:none" @endif>
+                                    Giảm giá: -<span class="js-price-discount-percent">{{ number_format($discountPercentage,0) }}</span>% (<span class="js-price-discount-amount">{{ number_format($discountAmount,0,',','.') }}</span> đ)
+                                </div>
+                                <div class="text-[11px] text-gray-700 js-price-current" @if(!($currentPrice>0)) style="display:none" @endif>
+                                    Hiện tại: <span class="js-price-current-val">{{ number_format($currentPrice,0,',','.') }}</span> đ
+                                </div>
+                                <div class="text-[11px] text-blue-600 js-price-color" @if(!$item->color_id) style="display:none" @endif>
+                                    Màu <span class="js-price-color-name">{{ $item->color->color_name ?? '' }}</span>: +<span class="js-price-color-val">{{ number_format($colorPriceAdjustment,0,',','.') }}</span> đ
+                                </div>
+                                <div class="text-[11px] text-indigo-700 js-price-addon" style="display:none"></div>
+                                @php $hasPaidOption = false; @endphp
+                                @if($selectedFeatures->count() > 0)
+                                    @foreach($selectedFeatures as $sf)
+                                        @php $fee=(float)($sf->price ?? 0); if($fee>0){ $hasPaidOption=true; } @endphp
+                                    @endforeach
+                                @endif
+                                <div class="js-price-options" @if(!$hasPaidOption) style="display:none" @endif>
+                                    @if($hasPaidOption)
+                                        @foreach($selectedFeatures as $sf)
+                                            @php $fee=(float)($sf->price ?? 0); @endphp
+                                            @if($fee > 0)
+                                                <div class="text-[11px] text-emerald-700">{{ $sf->feature_name }}: +{{ number_format($fee,0,',','.') }} đ</div>
+                                            @endif
+                                        @endforeach
+                                    @endif
+                                </div>
+                                <div class="pt-2 mt-2">
+                                    <div class="text-lg font-bold text-blue-600">Giá: <span class="item-total" data-id="{{ $item->id }}">{{ number_format($itemTotal,0,',','.') }}</span> đ</div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="text-[11px] text-red-600 js-price-discount" @if(!($discountPercentage > 0)) style="display:none" @endif>
-                            -<span class="js-price-discount-percent">{{ number_format($discountPercentage,0) }}</span>% (<span class="js-price-discount-amount">{{ number_format($discountAmount,0,',','.') }}</span> đ)
-                        </div>
-                        <div class="text-[11px] text-gray-700 js-price-current" @if(!($currentPrice>0)) style="display:none" @endif>
-                            Hiện tại: <span class="js-price-current-val">{{ number_format($currentPrice,0,',','.') }}</span> đ
-                        </div>
-                        <div class="text-[11px] text-blue-600 js-price-color" @if(!$item->color_id) style="display:none" @endif>
-                            Màu <span class="js-price-color-name">{{ $item->color->color_name ?? '' }}</span>: +<span class="js-price-color-val">{{ number_format($colorPriceAdjustment,0,',','.') }}</span> đ
-                        </div>
-                        <div class="text-[11px] text-indigo-700 js-price-addon" @if(!($addonSum>0)) style="display:none" @endif>
-                            + Phụ kiện: <span class="js-price-addon-val">{{ number_format($addonSum,0,',','.') }}</span> đ
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>

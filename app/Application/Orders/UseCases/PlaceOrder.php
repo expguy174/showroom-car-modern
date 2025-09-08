@@ -68,11 +68,17 @@ class PlaceOrder
                 if ($type === 'car_variant' && method_exists($model, 'getPriceWithColorAdjustment')) {
                     $unitPrice = (float) $model->getPriceWithColorAdjustment($colorId);
                 } else {
-                    $unitPrice = (float) ($model->price ?? 0);
+                    $unitPrice = (float) ($model->current_price ?? 0);
                 }
             }
             $lineTotal = $unitPrice * $quantity;
             $orderTotal += $lineTotal;
+
+            // Use provided metadata or build default metadata
+            $itemMetadata = Arr::get($item, 'item_metadata');
+            if (empty($itemMetadata)) {
+                $itemMetadata = $this->buildItemMetadata($type, $model);
+            }
 
             $resolvedItems[] = [
                 'item_type' => $type,
@@ -80,7 +86,7 @@ class PlaceOrder
                 'color_id' => $colorId,
                 'item_name' => $model->name ?? 'Item',
                 'item_sku' => $model->sku ?? null,
-                'item_metadata' => $this->buildItemMetadata($type, $model),
+                'item_metadata' => $itemMetadata,
                 'quantity' => $quantity,
                 'price' => $unitPrice,
                 'tax_amount' => 0,
@@ -110,25 +116,73 @@ class PlaceOrder
             foreach ($resolvedItems as $itemData) {
                 if ($itemData['item_type'] === 'car_variant') {
                     /** @var CarVariant $variant */
-                    $variant = CarVariant::find($itemData['item_id']);
+                    $variant = CarVariant::lockForUpdate()->find($itemData['item_id']);
                     if (!$variant) {
                         throw new \RuntimeException('Variant not found for stock update');
                     }
                     $qty = (int) $itemData['quantity'];
                     $colorId = $itemData['color_id'] ?? null;
+                    
                     if ($colorId) {
-                        $color = $variant->colors()->lockForUpdate()->find($colorId);
-                        if (!$color || ($color->stock_quantity ?? 0) < $qty) {
-                            throw new \RuntimeException('Insufficient color stock');
+                        // Check color-specific stock from color_inventory JSON
+                        $inventory = $variant->color_inventory ?? [];
+                        if (is_array($inventory) && isset($inventory[$colorId])) {
+                            $available = (int) ($inventory[$colorId]['available'] ?? $inventory[$colorId]['quantity'] ?? 0);
+                            if ($available < $qty) {
+                                throw new \RuntimeException('Insufficient color stock');
+                            }
+                            
+                            // Update the color_inventory JSON
+                            $inventory[$colorId]['available'] = max(0, $available - $qty);
+                            $variant->color_inventory = $inventory;
+                            $variant->save();
+                        } else {
+                            // If no color inventory data, check if color exists and is active
+                            $color = $variant->colors()->find($colorId);
+                            if (!$color || !$color->is_active) {
+                                throw new \RuntimeException('Color not available');
+                            }
+                            // For colors without inventory data, we'll allow the order but log a warning
+                            Log::warning('Color inventory data missing for variant', [
+                                'variant_id' => $variant->id,
+                                'color_id' => $colorId
+                            ]);
                         }
-                        $color->decrement('stock_quantity', $qty);
                     } else {
-                        $variant->refresh();
-                        $current = (int) ($variant->stock_quantity ?? 0);
-                        if ($current < $qty) {
-                            throw new \RuntimeException('Insufficient variant stock');
+                        // Check total variant stock from color_inventory
+                        $inventory = $variant->color_inventory ?? [];
+                        if (is_array($inventory) && !empty($inventory)) {
+                            $totalAvailable = 0;
+                            foreach ($inventory as $colorData) {
+                                $totalAvailable += (int) ($colorData['available'] ?? $colorData['quantity'] ?? 0);
+                            }
+                            if ($totalAvailable < $qty) {
+                                throw new \RuntimeException('Insufficient variant stock');
+                            }
+                            
+                            // Distribute the quantity across available colors
+                            $remaining = $qty;
+                            foreach ($inventory as $colorId => $colorData) {
+                                if ($remaining <= 0) break;
+                                $available = (int) ($colorData['available'] ?? $colorData['quantity'] ?? 0);
+                                $toDeduct = min($remaining, $available);
+                                if ($toDeduct > 0) {
+                                    $inventory[$colorId]['available'] = max(0, $available - $toDeduct);
+                                    $remaining -= $toDeduct;
+                                }
+                            }
+                            $variant->color_inventory = $inventory;
+                            $variant->save();
+                        } else {
+                            // If no inventory data, check variant availability
+                            if (!$variant->is_available) {
+                                throw new \RuntimeException('Variant not available');
+                            }
+                            // For variants without inventory data, we'll allow the order but log a warning
+                            Log::warning('Variant inventory data missing', [
+                                'variant_id' => $variant->id
+                            ]);
                         }
-                        $variant->decrement('stock_quantity', $qty);
                     }
                 }
             }

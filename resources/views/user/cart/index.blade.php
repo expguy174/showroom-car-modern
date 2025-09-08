@@ -52,12 +52,7 @@
         </div>
 
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        @if(session('success'))
-            <div class="mb-6 bg-green-50 border border-green-200 rounded-xl p-4 flex items-center">
-                <i class="fas fa-check-circle text-green-500 mr-3"></i>
-                <span class="text-green-800 font-medium">{{ session('success') }}</span>
-            </div>
-        @endif
+        {{-- Removed inline alert boxes; rely on global toast system --}}
         
         @if($cartItems->isEmpty())
             <!-- Empty Cart State -->
@@ -176,63 +171,106 @@
                     <div class="sticky top-8">
                         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                             <div class="bg-gradient-to-r from-gray-50 to-slate-50 px-6 py-4 border-b border-gray-100">
-                                <h3 class="text-xl font-bold text-gray-900">Tóm tắt đơn hàng</h3>
+                                <h3 class="text-lg font-bold text-gray-900">Tóm tắt đơn hàng</h3>
                             </div>
                             <div class="p-6 space-y-6">
+                                @php
+                                    $subtotal = 0.0;
+                                    $discountTotal = 0.0;
+                                    foreach ($cartItems as $ci) {
+                                        $unit = 0.0;
+                                        if ($ci->item_type === 'car_variant') {
+                                            $base = method_exists($ci->item, 'getPriceWithColorAdjustment')
+                                                ? (float) $ci->item->getPriceWithColorAdjustment($ci->color_id)
+                                                : (float) ($ci->item->current_price ?? 0);
+                                            $meta = session('cart_item_meta.' . $ci->id, []);
+                                            $featIds = collect($meta['feature_ids'] ?? [])->filter()->map(fn($v)=> (int)$v)->unique()->all();
+                                            $featSum = !empty($featIds) ? (float) \App\Models\CarVariantFeature::whereIn('id', $featIds)->sum('price') : 0.0;
+                                            $unit = max(0.0, $base + $featSum);
+                                            $orig = (float) ($ci->item->base_price ?? ($ci->item->original_price ?? 0));
+                                            $curr = (float) ($ci->item->current_price ?? 0);
+                                            if ($orig > 0 && $curr > 0 && $curr < $orig) {
+                                                $discountTotal += ($orig - $curr) * (int) $ci->quantity;
+                                            }
+                                        } else {
+                                            $curr = (float) ($ci->item->current_price ?? 0);
+                                            $orig = (float) ($ci->item->base_price ?? ($ci->item->original_price ?? 0));
+                                            if ($orig > 0 && $curr > 0 && $curr < $orig) {
+                                                $discountTotal += ($orig - $curr) * (int) $ci->quantity;
+                                            }
+                                            $unit = $curr;
+                                        }
+                                        $subtotal += $unit * (int) $ci->quantity;
+                                    }
+                                    $taxTotal = (int) round($subtotal * 0.10);
+                                    $grandTotal = $subtotal + $taxTotal; // shipping free
+                                @endphp
+
                                 <!-- Summary Items -->
-                                <div class="space-y-3">
-                                    <div class="flex justify-between text-gray-600">
+                                <div class="space-y-3 text-sm">
+                                    <!-- Individual Products -->
+                                    @foreach($cartItems->sortBy(function($item) { return $item->item_type === 'car_variant' ? 0 : 1; }) as $ci)
+                                        @php
+                                            $unit = 0.0;
+                                            $itemName = '';
+                                            if ($ci->item_type === 'car_variant') {
+                                                $base = method_exists($ci->item, 'getPriceWithColorAdjustment')
+                                                    ? (float) $ci->item->getPriceWithColorAdjustment($ci->color_id)
+                                                    : (float) ($ci->item->current_price ?? 0);
+                                                $meta = session('cart_item_meta.' . $ci->id, []);
+                                                $featIds = collect($meta['feature_ids'] ?? [])->filter()->map(fn($v)=> (int)$v)->unique()->all();
+                                                $featSum = !empty($featIds) ? (float) \App\Models\CarVariantFeature::whereIn('id', $featIds)->sum('price') : 0.0;
+                                                $unit = max(0.0, $base + $featSum);
+                                                $itemName = $ci->item->name ?? 'Xe hơi';
+                                            } else {
+                                                $unit = (float) ($ci->item->current_price ?? 0);
+                                                $itemName = $ci->item->name ?? 'Phụ kiện';
+                                            }
+                                            $itemTotal = $unit * (int) $ci->quantity;
+                                        @endphp
+                                        <div class="flex justify-between text-gray-600 text-sm product-summary-item">
+                                            <span class="truncate">{{ $itemName }} x{{ $ci->quantity }}</span>
+                                            <span class="font-semibold text-gray-900">{{ number_format($itemTotal, 0, ',', '.') }} đ</span>
+                                        </div>
+                                    @endforeach
+                                    
+                                    <!-- Separator -->
+                                    <div class="border-t border-gray-200 my-3"></div>
+                                    
+                                    <!-- Subtotal -->
+                                    <div class="flex justify-between text-gray-600 text-sm">
                                         <span>Tạm tính</span>
-                                        <span class="font-semibold text-gray-900">
-                                            <span id="subtotal">{{ number_format($cartItems->sum(function($ci){ 
-                                                $u = ($ci->item_type==='car_variant' && method_exists($ci->item,'getPriceWithColorAdjustment')) 
-                                                    ? $ci->item->getPriceWithColorAdjustment($ci->color_id) 
-                                                    : ($ci->item->current_price ?? 0); 
-                                                return $u * $ci->quantity; 
-                                            }), 0, ',', '.') }}</span> đ
-                                        </span>
+                                        <span class="font-semibold text-gray-900"><span id="subtotal">{{ number_format($subtotal, 0, ',', '.') }}</span> đ</span>
                                     </div>
-                                    <div class="flex justify-between text-gray-600">
+                                    
+                                    <!-- Tax -->
+                                    <div class="flex justify-between text-gray-600 text-sm">
+                                        <span>Thuế VAT (10%)</span>
+                                        <span class="font-semibold text-gray-900"><span id="tax-total">{{ number_format($taxTotal, 0, ',', '.') }}</span> đ</span>
+                                    </div>
+                                    
+                                    <!-- Shipping -->
+                                    <div class="flex justify-between text-gray-600 text-sm">
                                         <span>Phí vận chuyển</span>
-                                        <span class="text-green-600 font-semibold">Miễn phí</span>
-                                    </div>
-                                    <div class="flex justify-between text-gray-600">
-                                        <span>Thuế VAT</span>
-                                        <span class="font-semibold text-gray-900">
-                                            <span id="tax">{{ number_format($cartItems->sum(function($ci){ 
-                                                $u = ($ci->item_type==='car_variant' && method_exists($ci->item,'getPriceWithColorAdjustment')) 
-                                                    ? $ci->item->getPriceWithColorAdjustment($ci->color_id) 
-                                                    : ($ci->item->current_price ?? 0); 
-                                                return $u * $ci->quantity * 0.1; 
-                                            }), 0, ',', '.') }}</span> đ
-                                        </span>
+                                        <span class="font-semibold text-emerald-600">Miễn phí</span>
                                     </div>
                                 </div>
 
                                 <!-- Total -->
                                 <div class="border-t border-gray-200 pt-4">
                                     <div class="flex justify-between items-center">
-                                        <span class="text-xl font-bold text-gray-900">Tổng:</span>
-                                        <span class="text-2xl font-bold text-blue-600">
-                                            <span id="cart-total">{{ number_format($cartItems->sum(function($ci){ 
-                                                $u = ($ci->item_type==='car_variant' && method_exists($ci->item,'getPriceWithColorAdjustment')) 
-                                                    ? $ci->item->getPriceWithColorAdjustment($ci->color_id) 
-                                                    : ($ci->item->current_price ?? 0); 
-                                                return $u * $ci->quantity * 1.1; 
-                                            }), 0, ',', '.') }}</span> đ
-                                        </span>
+                                        <span class="text-lg font-bold text-gray-900">Tổng cộng:</span>
+                                        <span class="text-xl font-bold text-blue-600"><span id="cart-total">{{ number_format($subtotal + $taxTotal, 0, ',', '.') }}</span> đ</span>
                                     </div>
-                                    <p class="text-sm text-gray-500 mt-1">Đã bao gồm VAT</p>
                                 </div>
 
                                 <!-- Checkout Button -->
-                                <form action="{{ route('user.cart.checkout.form') }}" method="GET">
-                                    <button type="submit" 
-                                            class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-4 rounded-xl font-semibold transition duration-300 transform hover:scale-105 shadow-lg text-lg flex items-center justify-center space-x-3">
+                                <a href="{{ route('user.cart.checkout.form') }}" class="block w-full">
+                                    <span class="w-full inline-flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-4 rounded-xl font-semibold transition duration-300 transform hover:scale-105 shadow-lg text-base gap-3">
                                         <i class="fas fa-credit-card"></i>
-                                        <span>Tiến hành thanh toán</span>
-                                    </button>
-                                </form>
+                                        <span>Thanh toán</span>
+                                    </span>
+                                </a>
 
                             </div>
                         </div>
@@ -295,23 +333,94 @@
      let tax = 0;
      let cartTotal = 0;
      
-     // Calculate from all cart items
-     document.querySelectorAll('.cart-item-row').forEach(function(row) {
-       const totalEl = document.querySelector('.item-total[data-id="' + row.dataset.id + '"]');
+     const nf = new Intl.NumberFormat('vi-VN');
+     
+     // Update individual product items in summary
+     const summaryContainer = document.querySelector('.space-y-3.text-sm');
+     if (summaryContainer) {
+       // Clear existing product items (keep only subtotal, tax, shipping)
+       const productItems = summaryContainer.querySelectorAll('.product-summary-item');
+       productItems.forEach(item => item.remove());
+       
+       // Get all cart items (only desktop to avoid duplicates)
+       const allCartItems = [];
+       const processedIds = new Set();
+       
+       document.querySelectorAll('.cart-item-desktop').forEach(function(row) {
+         const itemId = row.dataset.id;
+         const itemType = row.dataset.itemType;
+         
+         if (processedIds.has(itemId)) return; // Skip if already processed
+         processedIds.add(itemId);
+         
+         const quantity = row.querySelector('.cart-qty-input, .js-cart-quantity')?.value || 1;
+         const totalEl = document.querySelector('.item-total[data-id="' + itemId + '"]');
+         
        if (totalEl) {
          const total = parseInt(totalEl.textContent.replace(/[^\d]/g, ''));
-         if (!isNaN(total)) subtotal += total;
-       }
-     });
+           if (!isNaN(total)) {
+             // Get item name
+             let itemName = 'Sản phẩm';
+             if (itemType === 'car_variant') {
+               const nameEl = row.querySelector('.font-bold.text-gray-900 a, .font-bold.text-gray-900');
+               if (nameEl) {
+                 itemName = nameEl.textContent.trim();
+               } else {
+                 itemName = 'Xe hơi';
+               }
+             } else {
+               const nameEl = row.querySelector('.font-bold.text-gray-900 a, .font-bold.text-gray-900');
+               if (nameEl) {
+                 itemName = nameEl.textContent.trim();
+               } else {
+                 itemName = 'Phụ kiện';
+               }
+             }
+             
+             allCartItems.push({
+               id: itemId,
+               type: itemType,
+               name: itemName,
+               quantity: parseInt(quantity),
+               total: total
+             });
+             
+             subtotal += total;
+           }
+         }
+       });
+       
+       // Sort: car_variant first, then accessory
+       allCartItems.sort((a, b) => {
+         if (a.type === 'car_variant' && b.type !== 'car_variant') return -1;
+         if (a.type !== 'car_variant' && b.type === 'car_variant') return 1;
+         return 0;
+       });
+       
+       // Insert product items before separator
+       const separator = summaryContainer.querySelector('.border-t.border-gray-200.my-3');
+       allCartItems.forEach(function(item, index) {
+         const productDiv = document.createElement('div');
+         productDiv.className = 'flex justify-between text-gray-600 text-sm product-summary-item';
+         productDiv.innerHTML = `
+           <span class="truncate">${item.name} x${item.quantity}</span>
+           <span class="font-semibold text-gray-900">${nf.format(item.total)} đ</span>
+         `;
+         
+         if (separator) {
+           summaryContainer.insertBefore(productDiv, separator);
+         } else {
+           summaryContainer.appendChild(productDiv);
+         }
+       });
+     }
      
      tax = Math.round(subtotal * 0.1);
      cartTotal = subtotal + tax;
      
-     const nf = new Intl.NumberFormat('vi-VN');
-     
      // Update summary display
      const subtotalEl = document.getElementById('subtotal');
-     const taxEl = document.getElementById('tax');
+     const taxEl = document.getElementById('tax-total');
      const cartTotalEl = document.getElementById('cart-total');
      
      if (subtotalEl) subtotalEl.textContent = nf.format(subtotal);
@@ -325,14 +434,98 @@
   // Wait for DOM to be ready
   document.addEventListener('DOMContentLoaded', function() {
     console.log('Cart page JavaScript loaded');
+    
+    // Handle color selection
+    document.addEventListener('click', async function(e) {
+      const colorBtn = e.target.closest('.color-option');
+      if (!colorBtn) return;
+      
+      e.preventDefault();
+      
+      const itemId = colorBtn.getAttribute('data-item-id');
+      const colorId = colorBtn.getAttribute('data-color-id');
+      const colorName = colorBtn.getAttribute('data-color-name');
+      const updateUrl = colorBtn.getAttribute('data-update-url');
+      const csrfToken = colorBtn.getAttribute('data-csrf');
+      
+      if (!itemId || !colorId || !updateUrl) {
+        console.error('Missing required attributes for color selection');
+        return;
+      }
+      
+      console.log('Color selected:', colorName, 'for item:', itemId);
+      
+      try {
+        const formData = new FormData();
+        formData.append('color_id', colorId);
+        formData.append('_token', csrfToken);
+        
+        const response = await fetch(updateUrl, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          // Update visual selection
+          const allColorBtns = document.querySelectorAll(`.color-option[data-item-id="${itemId}"]`);
+          allColorBtns.forEach(btn => {
+            btn.classList.remove('border-blue-500', 'ring-2', 'ring-blue-200');
+            btn.classList.add('border-gray-300');
+          });
+          
+          colorBtn.classList.remove('border-gray-300');
+          colorBtn.classList.add('border-blue-500', 'ring-2', 'ring-blue-200');
+          
+          // Update color name display
+          const colorNameElements = document.querySelectorAll(`[data-item-id="${itemId}"] .selected-color-name`);
+          colorNameElements.forEach(el => {
+            el.textContent = colorName;
+          });
+          
+          // Update data-color-id attribute on the row
+          const cartRow = colorBtn.closest('.cart-item-desktop, .cart-item-row');
+          if (cartRow) {
+            cartRow.setAttribute('data-color-id', colorId);
+          }
+          
+          console.log('Color updated successfully');
+        } else {
+          console.error('Failed to update color:', data.message);
+          if (typeof window.showMessage === 'function') {
+            window.showMessage('Không thể cập nhật màu sắc', 'error');
+          }
+        }
+      } catch (error) {
+        console.error('Error updating color:', error);
+        if (typeof window.showMessage === 'function') {
+          window.showMessage('Có lỗi xảy ra khi cập nhật màu sắc', 'error');
+        }
+      }
+    });
   });
   
   document.addEventListener('click', async function(e){
+    // Block duplicate action if confirm modal is open (same guard as delete behavior expectation)
+    if (document.body.classList.contains('modal-open')) {
+      const blocked = e.target.closest('.js-duplicate-line');
+      if (blocked) { e.preventDefault(); e.stopPropagation(); return; }
+    }
     const btn = e.target.closest('.js-duplicate-line');
     if (!btn) return;
     e.preventDefault();
     
     console.log('Duplicate button clicked', btn);
+    
+    // Add loading state
+    const originalContent = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    btn.disabled = true;
+    btn.classList.add('opacity-50', 'cursor-not-allowed');
     
     try {
       const itemType = btn.getAttribute('data-item-type') || 'car_variant';
@@ -414,6 +607,11 @@
       if (typeof showMessage === 'function') {
         showMessage('Không thể thêm cấu hình mới', 'error');
       }
+    } finally {
+      // Restore button state
+      btn.innerHTML = originalContent;
+      btn.disabled = false;
+      btn.classList.remove('opacity-50', 'cursor-not-allowed');
     }
   });
   
@@ -460,6 +658,63 @@
   
   
 
+})();
+</script>
+<script>
+(function(){
+  function showToast(message, type) {
+    const existing = document.getElementById('cart-toast');
+    if (existing) existing.remove();
+    const bg = type === 'error' ? 'bg-red-600' : (type === 'success' ? 'bg-emerald-600' : 'bg-amber-600');
+    const toast = document.createElement('div');
+    toast.id = 'cart-toast';
+    toast.className = `${bg} text-white fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-3 rounded-lg shadow-lg flex items-center gap-3`;
+    toast.innerHTML = `<i class=\"fas fa-info-circle\"></i><span>${message}</span>`;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+  }
+
+  function hasVariantWithoutColor() {
+    // Only check desktop rows to avoid duplicates
+    const desktopRows = document.querySelectorAll('.cart-item-desktop');
+    
+    for (const row of desktopRows) {
+      const type = row.getAttribute('data-item-type');
+      const colorId = row.getAttribute('data-color-id');
+      
+      // Only check car variants
+      if (type === 'car_variant') {
+        const hasNoColor = !colorId || colorId === '' || colorId === 'null' || colorId === 'undefined' || colorId === null;
+        
+        if (hasNoColor) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    const checkoutLink = document.querySelector('a[href="{{ route('user.cart.checkout.form') }}"]');
+    if (!checkoutLink) return;
+    
+    // Remove any existing event listeners first
+    const newCheckoutLink = checkoutLink.cloneNode(true);
+    checkoutLink.parentNode.replaceChild(newCheckoutLink, checkoutLink);
+    
+    newCheckoutLink.addEventListener('click', function(e){
+      if (hasVariantWithoutColor()) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof window.showMessage === 'function') {
+          window.showMessage('Vui lòng chọn màu cho tất cả phiên bản trước khi thanh toán!', 'warning');
+        } else {
+          showToast('Vui lòng chọn màu cho tất cả phiên bản trước khi thanh toán', 'warning');
+        }
+        return false;
+      }
+    });
+  });
 })();
 </script>
 @endpush

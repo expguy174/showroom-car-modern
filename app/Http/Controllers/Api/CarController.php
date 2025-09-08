@@ -127,11 +127,11 @@ class CarController extends Controller
         }
 
         if ($request->has('min_price')) {
-            $query->where('price', '>=', $request->min_price);
+            $query->where('current_price', '>=', $request->min_price);
         }
 
         if ($request->has('max_price')) {
-            $query->where('price', '<=', $request->max_price);
+            $query->where('current_price', '<=', $request->max_price);
         }
 
         if ($request->has('fuel_type')) {

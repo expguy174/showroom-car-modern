@@ -589,6 +589,7 @@ html {
     max-width: 400px;
     min-width: 200px;
     width: auto;
+    box-sizing: border-box;
     transform: translateX(100%);
 }
 
@@ -612,9 +613,10 @@ html {
 /* Responsive toast for mobile */
 @media (max-width: 640px) {
     .toast-notification {
-        @apply right-2 left-2;
-        max-width: none;
-        min-width: auto;
+        right: 0.5rem; /* 2 */
+        left: auto;    /* keep top-right placement */
+        max-width: min(92vw, 360px);
+        min-width: 0;
         width: auto;
     }
 }

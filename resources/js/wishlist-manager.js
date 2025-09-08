@@ -82,15 +82,15 @@
         }
         
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); } catch(_) {}
-
+        
         // Force update count in localStorage immediately and push to global badge helper
         const currentCount = count();
         try { localStorage.setItem(COUNT_KEY, String(currentCount)); } catch(_) {}
         try { window.WishlistCount && window.WishlistCount.apply(currentCount); } catch(_) {}
-
+        
         // Update count badges immediately - but only if not already updating
         if (!state.updatingCount) {
-            updateCountBadges();
+        updateCountBadges();
         }
     }
 
@@ -118,38 +118,38 @@
         state.lastCountUpdate = now;
         
         try {
-            const c = count();
-            
+        const c = count();
+        
             // Always update localStorage to ensure consistency
-            try { 
-                localStorage.setItem(COUNT_KEY, String(c)); 
-                localStorage.setItem(STORAGE_KEY, c === 0 ? '[]' : JSON.stringify(Array.from(state.items.entries()).flatMap(([type, ids]) => 
-                    Array.from(ids).map(id => ({ t: type, i: id }))
-                )));
-            } catch(_) {}
-            
-            // Update DOM directly with all possible selectors
+        try { 
+            localStorage.setItem(COUNT_KEY, String(c)); 
+            localStorage.setItem(STORAGE_KEY, c === 0 ? '[]' : JSON.stringify(Array.from(state.items.entries()).flatMap(([type, ids]) => 
+                Array.from(ids).map(id => ({ t: type, i: id }))
+            )));
+        } catch(_) {}
+        
+        // Update DOM directly with all possible selectors
             if (window.paintBadge) { window.paintBadge(SELECTORS, c); }
-            
-            // Also update any other count elements that might exist
-            document.querySelectorAll('[class*="wishlist"][class*="count"], [id*="wishlist"][id*="count"]').forEach(el => {
-                if (el.textContent && !isNaN(parseInt(el.textContent))) {
-                    const currentText = el.textContent;
-                    const newText = c > 99 ? '99+' : String(c);
-                    
+        
+        // Also update any other count elements that might exist
+        document.querySelectorAll('[class*="wishlist"][class*="count"], [id*="wishlist"][id*="count"]').forEach(el => {
+            if (el.textContent && !isNaN(parseInt(el.textContent))) {
+                const currentText = el.textContent;
+                const newText = c > 99 ? '99+' : String(c);
+                
                     // Always update to ensure consistency
                     el.textContent = newText;
-                    
-                    if (c > 0) {
-                        el.classList.remove('hidden');
-                        el.style.display = '';
-                    } else {
-                        el.classList.add('hidden');
-                        el.style.display = 'none';
-                    }
+                
+                if (c > 0) {
+                    el.classList.remove('hidden');
+                    el.style.display = '';
+                } else {
+                    el.classList.add('hidden');
+                    el.style.display = 'none';
                 }
-            });
-            
+            }
+        });
+        
             // Guard: if any badge still shows 0 while c>0, force repaint textContent
             if (c > 0) {
                 const all = document.querySelectorAll('[data-wishlist-count], .wishlist-count, #wishlist-count-badge, #wishlist-count-badge-mobile, .wishlist-count-badge');
@@ -162,7 +162,7 @@
                     }
                 });
             }
-            console.log(`Updated wishlist count to ${c} across all badges`);
+        console.log(`Updated wishlist count to ${c} across all badges`);
         } finally {
             state.updatingCount = false;
         }
@@ -225,7 +225,7 @@
         });
         // Update count badges - but only if not already updating
         if (!state.updatingCount) {
-            updateCountBadges();
+        updateCountBadges();
         }
     }
 
@@ -674,7 +674,7 @@
                                 // Whole wishlist empty
                                 const filteredNode = document.getElementById('filtered-empty-state');
                                 if (filteredNode) { filteredNode.style.display = 'none'; }
-                                showWishlistEmptyState();
+                            showWishlistEmptyState();
                             }
                         } else {
                             showFilteredTypeEmptyIfNeeded();
@@ -739,7 +739,7 @@
                         reconcileWishlistState();
                     }
                 }).finally(()=>{
-                    state.processing.delete(key(t,id));
+                state.processing.delete(key(t,id));
                 });
             })
             .catch((error)=>{
@@ -1181,7 +1181,7 @@
             return;
         }
         markRecent(t, id);
-
+        
         // Optimistic update
         if (currently) {
             setOut(t, id);
@@ -1270,9 +1270,9 @@
                 if (now - lastReconcile > 1500) { // reconcile sớm hơn để tránh lag cảm giác
                     state.lastReconcile = now;
                     // Delay reconciliation slightly to let UI settle, but check debounce
-                    setTimeout(() => { 
+                    setTimeout(() => {
                         if (Date.now() - state.lastCountUpdate > state.countUpdateDebounceMs) {
-                            reconcileWishlistState(); 
+                        reconcileWishlistState();
                         }
                     }, 60);
                 }
@@ -1312,7 +1312,7 @@
                 loadFromStorage();
                 // Only update count if not recently updated
                 if (Date.now() - state.lastCountUpdate > state.countUpdateDebounceMs) {
-                    updateCountBadges();
+                updateCountBadges();
                 }
                 applyStateToButtons();
             }
@@ -1324,7 +1324,7 @@
             loadFromStorage();
             // Only update count if not recently updated
             if (Date.now() - state.lastCountUpdate > state.countUpdateDebounceMs) {
-                updateCountBadges();
+            updateCountBadges();
             }
             applyStateToButtons();
         });
@@ -1388,7 +1388,7 @@ window.WishlistCount = {
         const now = Date.now();
         if (window.wishlistManager && Number.isFinite(count)) {
             if (!lastAction || now - lastAction > this.guardWindowMs) {
-                try { window.wishlistManager.updateCount(count); } catch(_) {}
+            try { window.wishlistManager.updateCount(count); } catch(_) {}
             }
         } else {
             // Fallback update: touch all known selectors
@@ -1408,7 +1408,7 @@ window.WishlistCount = {
         if (window.wishlistManager && Number.isFinite(n)) {
             try { window.wishlistManager.updateCount(n); } catch(_) { this.load(); }
         } else {
-            this.load();
+        this.load();
         }
     },
     async reconcile() {
@@ -1419,7 +1419,7 @@ window.WishlistCount = {
                 const lastAction = parseInt(localStorage.getItem('wishlist_last_action') || '0', 10);
                 const now = Date.now();
                 if (!lastAction || now - lastAction > this.guardWindowMs) {
-                    this.apply(data.wishlist_count);
+                this.apply(data.wishlist_count);
                 }
             }
         } catch (_) {}

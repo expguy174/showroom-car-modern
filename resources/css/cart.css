@@ -133,6 +133,74 @@
     opacity: 0.7 !important;
 }
 
+/* Dim and disable interactions when confirm overlay is open */
+body.modal-open .duplicate-item-btn,
+body.modal-open .remove-item-btn,
+body.modal-open .quantity-control,
+body.modal-open .cart-qty-input,
+body.modal-open .color-option,
+body.modal-open #clear-cart-btn,
+body.modal-open .js-duplicate-line {
+    opacity: 0.4 !important;
+    pointer-events: none !important;
+    filter: grayscale(1) saturate(0) brightness(0.85) !important;
+    z-index: 0 !important;
+}
+
+/* Ensure the plus button and its ripple don't draw attention under modal */
+body.modal-open .duplicate-item-btn::before,
+body.modal-open .remove-item-btn::before {
+    content: none !important; /* completely remove ripple layer */
+    transform: none !important;
+    opacity: 0 !important;
+}
+/* Also neutralize any hover rules that might recreate the ripple */
+body.modal-open .duplicate-item-btn:hover::before,
+body.modal-open .remove-item-btn:hover::before {
+    content: none !important;
+    transform: none !important;
+    opacity: 0 !important;
+}
+
+/* Hide Font Awesome plus icon pseudo-element under confirm modal */
+body.modal-open i.fas.fa-plus::before,
+body.modal-open i.fas.fa-plus:before,
+body.modal-open .duplicate-item-btn i::before,
+body.modal-open .duplicate-item-btn i:before {
+    content: '' !important; /* remove glyph */
+    opacity: 0.2 !important;
+}
+body.modal-open .duplicate-item-btn i,
+body.modal-open .remove-item-btn i {
+    opacity: 0.5 !important;
+    pointer-events: none !important;
+}
+/* Hard-disable all pointer events on duplicate button and descendants under modal */
+body.modal-open .duplicate-item-btn,
+body.modal-open .js-duplicate-line,
+body.modal-open .duplicate-item-btn * {
+    pointer-events: none !important;
+}
+/* Make duplicate button adopt the same neutral look as delete during modal */
+body.modal-open .duplicate-item-btn {
+    background-color: #f3f4f6 !important; /* gray-100 */
+    color: #9ca3af !important;            /* gray-400 */
+    border-color: #e5e7eb !important;     /* gray-200 */
+}
+body.modal-open .duplicate-item-btn::before {
+    background-color: #e5e7eb !important; /* gray-200 ripple */
+}
+/* Dim the entire cart page content under confirm modal */
+body.modal-open .min-h-screen {
+    filter: grayscale(1) saturate(0) brightness(0.6) !important;
+    pointer-events: none !important;
+}
+/* Keep the modal interactive and undimmed */
+body.modal-open .fast-confirm-dialog {
+    filter: none !important;
+    pointer-events: auto !important;
+}
+
 /* Clear cart button */
 #clear-cart-btn {
     transition: all 0.3s ease;

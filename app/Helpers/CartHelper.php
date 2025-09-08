@@ -125,16 +125,16 @@ class CartHelper
         // Compute item total for the updated/created item (best-effort)
         $itemTotal = 0;
         if ($cartItem && $cartItem->item) {
-            $unit = $cartItem->item->price ?? 0;
-            if ($cartItem->item_type === 'car_variant' && method_exists($cartItem->item, 'getPriceWithColorAdjustment')) {
-                $unit = $cartItem->item->getPriceWithColorAdjustment($cartItem->color_id);
+            $unit = (float) ($cartItem->item->current_price ?? ($cartItem->item->price ?? 0));
+            if ($cartItem->item instanceof \App\Models\CarVariant && method_exists($cartItem->item, 'getPriceWithColorAdjustment')) {
+                $unit = (float) $cartItem->item->getPriceWithColorAdjustment($cartItem->color_id);
             }
-            $itemTotal = $unit * $cartItem->quantity;
+            $itemTotal = $unit * (int) $cartItem->quantity;
         }
 
         // Load cart item with relationships for frontend display
         if ($cartItem) {
-            if ($cartItem->item_type === 'car_variant') {
+            if ($cartItem->item instanceof \App\Models\CarVariant) {
                 $cartItem->load([
                     'item.carModel.carBrand', 
                     'color', 
@@ -153,7 +153,7 @@ class CartHelper
         // Render appropriate partial based on item type
         $cartItemHtml = null;
         if ($cartItem) {
-            if ($cartItem->item_type === 'car_variant') {
+            if ($cartItem->item instanceof \App\Models\CarVariant) {
                 $cartItemHtml = view('user.cart.partials.car-item', ['item' => $cartItem])->render();
             } elseif ($cartItem->item_type === 'accessory') {
                 $cartItemHtml = view('user.cart.partials.accessory-item', ['item' => $cartItem])->render();
@@ -251,8 +251,8 @@ class CartHelper
         self::clearCartCountCache();
         
         // Recompute item total with possible color adjustment
-        $unit = $cartItem->item->price ?? 0;
-        if ($cartItem->item_type === 'car_variant' && method_exists($cartItem->item, 'getPriceWithColorAdjustment')) {
+        $unit = (float) ($cartItem->item->current_price ?? ($cartItem->item->price ?? 0));
+        if ($cartItem->item instanceof \App\Models\CarVariant && method_exists($cartItem->item, 'getPriceWithColorAdjustment')) {
             $unit = $cartItem->item->getPriceWithColorAdjustment($cartItem->color_id);
         }
 
