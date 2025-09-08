@@ -322,6 +322,44 @@
             box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
         }
 
+        /* Override for notification dropdown buttons: keep icon color, only light orange bg, no movement */
+        .notif-dropdown button:hover,
+        .notif-dropdown:hover button,
+        .notif-dropdown button:focus,
+        .notif-dropdown button:active {
+            background: rgba(245, 158, 11, 0.12) !important; /* amber-500 tint */
+            background-image: none !important;
+            color: #4b5563 !important; /* gray-600 */
+            transform: none !important;
+            box-shadow: none !important;
+            border-color: transparent !important;
+        }
+
+        /* Bell icon color behavior: default gray, hover amber */
+        .notif-dropdown button i {
+            color: #4b5563 !important; /* gray-600 */
+        }
+        .notif-dropdown button:hover i,
+        .notif-dropdown:hover button i,
+        .notif-dropdown button:focus i,
+        .notif-dropdown button:active i {
+            color: #d97706 !important; /* amber-600, similar to wishlist/cart emphasis */
+        }
+
+        /* Extra specificity for mobile (some utility classes may override) */
+        @media (max-width: 1023.98px) {
+            #main-nav .notif-dropdown [data-dropdown-trigger]:hover i,
+            #main-nav .notif-dropdown:hover [data-dropdown-trigger] i,
+            #main-nav .notif-dropdown [data-dropdown-trigger]:active i,
+            #main-nav .notif-dropdown [data-dropdown-trigger]:focus i {
+                color: #d97706 !important; /* amber-600 on hover/focus/active for mobile */
+            }
+            #main-nav .notif-dropdown [data-dropdown-trigger],
+            #main-nav .notif-dropdown:hover [data-dropdown-trigger] {
+                color: #4b5563 !important;
+            }
+        }
+
         /* Modern Dropdown Menu */
         .dropdown-menu {
             background: rgba(255, 255, 255, 0.85);

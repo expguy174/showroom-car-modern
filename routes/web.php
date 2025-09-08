@@ -120,7 +120,8 @@ Route::post('/contact', [\App\Http\Controllers\User\ContactController::class, 's
 
 // --- Profile cá nhân --- (moved under /user)
 Route::middleware('auth')->prefix('user')->name('user.')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
+    Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });

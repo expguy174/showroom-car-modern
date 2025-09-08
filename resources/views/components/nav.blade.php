@@ -155,8 +155,8 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
 
                 {{-- Notifications (mobile dropdown) --}}
                 @auth
-                <div class="dropdown-group lg:hidden" data-dropdown="notifications-mobile">
-                    <button class="relative inline-flex items-center justify-center w-10 h-10 rounded-full text-gray-600 hover:text-amber-600 hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500" data-dropdown-trigger>
+                <div class="dropdown-group notif-dropdown lg:hidden" data-dropdown="notifications-mobile">
+                    <button class="relative inline-flex items-center justify-center w-10 h-10 rounded-full text-gray-600 hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500" data-dropdown-trigger>
                         <i class="fas fa-bell"></i>
                         <span id="notif-count-badge-mobile" class="absolute -top-1 -right-1 w-5 h-5 text-[10px] rounded-full bg-amber-500 text-white items-center justify-center {{ $navUnreadNotifCount ? 'flex' : 'hidden' }}">{{ $navUnreadNotifCount > 99 ? '99+' : $navUnreadNotifCount }}</span>
                         <span class="sr-only">Thông báo</span>
@@ -187,8 +187,8 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
 
                 {{-- Notifications (auth only) --}}
                 @auth
-                <div class="dropdown-group hidden lg:block" data-dropdown="notifications">
-                    <button class="relative inline-flex items-center justify-center w-10 h-10 rounded-full text-gray-600 hover:text-amber-600 hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500" data-dropdown-trigger>
+                <div class="dropdown-group notif-dropdown hidden lg:block" data-dropdown="notifications">
+                    <button class="relative inline-flex items-center justify-center w-10 h-10 rounded-full text-gray-600 hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500" data-dropdown-trigger>
                         <i class="fas fa-bell"></i>
                         <span id="notif-count-badge" class="absolute -top-1 -right-1 w-5 h-5 text-[10px] rounded-full bg-amber-500 text-white items-center justify-center {{ $navUnreadNotifCount ? 'flex' : 'hidden' }}">{{ $navUnreadNotifCount > 99 ? '99+' : $navUnreadNotifCount }}</span>
                         <span class="sr-only">Thông báo</span>
@@ -232,23 +232,32 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                     <div class="dropdown-menu profile-dropdown-menu absolute right-0 mt-2 min-w-[240px] z-50">
                         <div class="p-2">
                             @auth
-                            <div class="px-3 py-3 rounded-lg bg-gray-50 border border-gray-100 mb-2">
+                            <div class="px-3 py-2">
                                 @php 
                                     $profile = optional(auth()->user()->userProfile);
                                     $name = $profile->name ?? 'Tài khoản';
-                                    $isVip = (bool) $profile->is_vip;
-                                    $customerType = $profile->customer_type ?? 'member';
+                                    $customerType = in_array($profile->customer_type, ['new','returning','vip','prospect']) ? $profile->customer_type : 'new';
+                                    $profileType = in_array($profile->profile_type, ['customer','employee']) ? $profile->profile_type : 'customer';
+                                    $isVip = ($customerType === 'vip');
                                 @endphp
-                                <div class="text-sm font-semibold text-gray-900 truncate">Xin chào, {{ $name }}</div>
-                                <div class="mt-1 text-[11px] inline-flex items-center gap-1 {{ $isVip ? 'text-amber-600' : 'text-indigo-600' }}">
-                                    @if($isVip)
-                                        <i class="fas fa-crown"></i> VIP
-                                    @else
-                                        <i class="fas fa-user"></i> {{ Str::of($customerType)->headline() }}
-                                    @endif
+                                <div>
+                                    <div class="text-[11px] inline-flex items-center gap-1 text-indigo-600">
+                                        @php
+                                            $customerTypeLabel = match($customerType) {
+                                                'new' => 'Tài khoản mới',
+                                                'returning' => 'Tài khoản quay lại',
+                                                'vip' => 'VIP',
+                                                'prospect' => 'Tài khoản tiềm năng',
+                                                default => 'Tài khoản mới',
+                                            };
+                                        @endphp
+                                        <i class="fas fa-user"></i> {{ $customerTypeLabel }}
+                                    </div>
+                                    <div class="mt-1 text-sm font-semibold text-gray-900 truncate">Xin chào, {{ $name }}</div>
+                                    <div class="mt-3 border-t border-gray-100"></div>
                                 </div>
                             </div>
-                            <a href="{{ route('user.profile.edit') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white"><i class="fas fa-user-cog text-gray-400"></i><span>Tài khoản</span></a>
+                            <a href="{{ route('user.profile.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white"><i class="fas fa-user-cog text-gray-400"></i><span>Tài khoản</span></a>
                             <a href="{{ route('user.customer-profiles.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white"><i class="fas fa-id-badge text-gray-400"></i><span>Hồ sơ</span></a>
                             <a href="{{ route('user.customer-profiles.orders') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white"><i class="fas fa-file-invoice-dollar text-gray-400"></i><span>Đơn hàng</span></a>
                             <a href="{{ route('user.service-appointments.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white"><i class="fas fa-calendar-check text-gray-400"></i><span>Bảo dưỡng</span></a>
@@ -394,7 +403,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                 <div class="pt-4 mt-2 border-t">
                     @auth
                     <div class="px-4 pb-2 text-sm text-gray-600">Xin chào, <span class="font-semibold text-gray-900">{{ optional(auth()->user()->userProfile)->name ?? 'Khách' }}</span></div>
-                    <a href="{{ route('user.profile.edit') }}" class="block px-4 py-3 rounded-lg hover:bg-gray-50"><i class="fas fa-user-cog mr-3 text-gray-400"></i>Tài khoản</a>
+                    <a href="{{ route('user.profile.index') }}" class="block px-4 py-3 rounded-lg hover:bg-gray-50"><i class="fas fa-user-cog mr-3 text-gray-400"></i>Tài khoản</a>
                     <a href="{{ route('user.customer-profiles.index') }}" class="block px-4 py-3 rounded-lg hover:bg-gray-50"><i class="fas fa-id-badge mr-3 text-gray-400"></i>Hồ sơ khách hàng</a>
                     <a href="{{ route('user.customer-profiles.orders') }}" class="block px-4 py-3 rounded-lg hover:bg-gray-50"><i class="fas fa-file-invoice-dollar mr-3 text-gray-400"></i>Đơn hàng</a>
                     <a href="{{ route('user.service-appointments.index') }}" class="block px-4 py-3 rounded-lg hover:bg-gray-50"><i class="fas fa-calendar-check mr-3 text-gray-400"></i>Lịch hẹn</a>

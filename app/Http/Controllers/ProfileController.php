@@ -10,9 +10,45 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
 use Illuminate\Support\Str;
+use App\Models\UserProfile as CustomerProfile;
+use App\Models\Order;
+use App\Models\TestDrive;
 
 class ProfileController extends Controller
 {
+    /**
+     * Account Hub - two tabs: account + customer profile
+     */
+    public function index(Request $request): View
+    {
+        $user = $request->user()->loadMissing(['userProfile', 'addresses' => function($q){ $q->orderByDesc('is_default'); }]);
+        $orders = $user->orders()->with(['items', 'items.color', 'paymentMethod'])->orderByDesc('created_at')->get();
+
+        // Load customer profile + aggregates same as user.customer-profiles.index
+        $customerProfile = CustomerProfile::where('user_id', $user->id)
+            ->with(['user'])
+            ->first();
+
+        $recentOrders = Order::where('user_id', $user->id)
+            ->with(['items.item'])
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get();
+
+        $testDrives = TestDrive::where('user_id', $user->id)
+            ->with(['carVariant.carModel.carBrand'])
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get();
+
+        return view('user.profile.index', [
+            'user' => $user,
+            'orders' => $orders,
+            'customerProfile' => $customerProfile,
+            'recentOrders' => $recentOrders,
+            'testDrives' => $testDrives,
+        ]);
+    }
     /**
      * Display the user's profile form.
      */
@@ -38,17 +74,19 @@ class ProfileController extends Controller
         // Sync user core fields
         $user->fill(collect($data)->only(['email'])->toArray());
 
-        // Handle avatar upload
+        // Handle avatar upload (store on user_profiles.avatar_path)
         if ($request->hasFile('avatar') && $request->file('avatar')->isValid()) {
             $file = $request->file('avatar');
             $path = $file->store('avatars', 'public');
-            // Optionally delete old file if exists and stored locally
+            // Optionally delete old file if exists and stored locally (from profile)
             try {
-                if ($user->avatar_path && !str_starts_with($user->avatar_path, 'http')) {
-                    @unlink(storage_path('app/public/'.$user->avatar_path));
+                $oldAvatar = optional($user->userProfile)->avatar_path;
+                if ($oldAvatar && !str_starts_with($oldAvatar, 'http')) {
+                    @unlink(storage_path('app/public/'.$oldAvatar));
                 }
             } catch (\Throwable $e) {}
-            $user->avatar_path = $path;
+            // Ensure profile exists and update avatar_path
+            $user->userProfile()->updateOrCreate([], ['avatar_path' => $path]);
         }
 
         if ($user->isDirty('email')) {
@@ -72,7 +110,7 @@ class ProfileController extends Controller
         }
 
         if ($request->expectsJson() || $request->wantsJson() || $request->ajax()) {
-            $avatarPath = $user->avatar_path;
+            $avatarPath = optional($user->userProfile)->avatar_path;
             $avatarUrl = null;
             if ($avatarPath) {
                 $avatarUrl = Str::startsWith($avatarPath, ['http://', 'https://']) ? $avatarPath : asset('storage/' . $avatarPath);

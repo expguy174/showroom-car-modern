@@ -54,12 +54,12 @@ class CartController extends Controller
 
             // Additional validation based on item type
             if ($basicValidated['item_type'] === 'car_variant') {
-                $validated = $request->validate([
-                    'item_type' => 'required|in:car_variant,accessory',
-                    'item_id' => 'required|integer|min:1',
-                    'quantity' => 'integer|min:1|max:10',
-                    'color_id' => 'nullable|integer|exists:car_variant_colors,id',
-                    'feature_ids' => 'nullable|array',
+            $validated = $request->validate([
+                'item_type' => 'required|in:car_variant,accessory',
+                'item_id' => 'required|integer|min:1',
+                'quantity' => 'integer|min:1|max:10',
+                'color_id' => 'nullable|integer|exists:car_variant_colors,id',
+                'feature_ids' => 'nullable|array',
                     'feature_ids.*' => 'integer',
                     'options_signature' => 'nullable|string',
                 ]);
@@ -590,8 +590,8 @@ class CartController extends Controller
                         if (is_array($inventory) && isset($inventory[$colorId])) {
                             $available = (int) ($inventory[$colorId]['available'] ?? $inventory[$colorId]['quantity'] ?? 0);
                             if ($available <= 0) {
-                                return redirect()->route('user.cart.index')->with('error', 'Một số màu đã hết hàng');
-                            }
+                            return redirect()->route('user.cart.index')->with('error', 'Một số màu đã hết hàng');
+                        }
                         } else {
                             // Fallback theo trạng thái của màu (availability) nếu được lưu
                             $color = $variant->colors()->where('id', $colorId)->first();
@@ -605,7 +605,7 @@ class CartController extends Controller
                             $sumAvailable = 0;
                             foreach ($inventory as $inv) { $sumAvailable += (int) ($inv['available'] ?? $inv['quantity'] ?? 0); }
                             if ($sumAvailable <= 0) {
-                                return redirect()->route('user.cart.index')->with('error', 'Một số phiên bản đã hết hàng');
+                        return redirect()->route('user.cart.index')->with('error', 'Một số phiên bản đã hết hàng');
                             }
                         } else if (isset($variant->is_available) && $variant->is_available === false) {
                             return redirect()->route('user.cart.index')->with('error', 'Một số phiên bản đã hết hàng');
@@ -894,7 +894,7 @@ class CartController extends Controller
 
         // Remove empty entries
         $vnpParams = array_filter($vnpParams, function($v){ return $v !== null && $v !== ''; });
-
+        
         ksort($vnpParams);
         $query = '';
         $hashdata = '';
@@ -910,7 +910,7 @@ class CartController extends Controller
             // Query string uses urlencoded values
             $query .= urlencode($key) . '=' . urlencode((string)$value) . '&';
         }
-
+        
         if (!empty($vnpHashSecret)) {
             $vnpSecureHash = hash_hmac('sha512', $hashdata, $vnpHashSecret);
             // Do not send vnp_SecureHashType; VNPay can infer from HMAC length
@@ -935,7 +935,7 @@ class CartController extends Controller
                 'params' => $vnpParams,
             ]);
         }
-
+        
         return redirect($vnpUrl);
     }
 

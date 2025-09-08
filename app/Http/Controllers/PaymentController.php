@@ -37,8 +37,8 @@ class PaymentController extends Controller
         $mode = env('PAYMENT_GATEWAY_MODE', 'sandbox');
         // Mock mode: simulate success and return immediately
         if ($mode === 'mock') {
-            $orderId = $request->get('order_id');
-            if (!$orderId) return redirect()->route('home')->with('error', 'Thiếu mã đơn hàng để thanh toán MoMo');
+        $orderId = $request->get('order_id');
+        if (!$orderId) return redirect()->route('home')->with('error', 'Thiếu mã đơn hàng để thanh toán MoMo');
             return redirect()->route('payment.momo.return', ['orderId' => $orderId, 'resultCode' => '0']);
         }
 

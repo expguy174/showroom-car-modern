@@ -201,13 +201,13 @@
                                 <div class="min-w-0 flex-1">
                                     <div class="text-sm font-medium text-gray-900" title="{{ $model?->name }}" style="display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{{ $model?->name }}</div>
                                     @if($ci->item_type === 'car_variant')
-                                        @php 
-                                            $meta = session('cart_item_meta.' . $ci->id, []);
-                                            $featIds = collect($meta['feature_ids'] ?? [])->filter()->map(fn($v)=> (int)$v)->unique()->all();
-                                            $selFeats = !empty($featIds) ? \App\Models\CarVariantFeature::whereIn('id', $featIds)->get() : collect();
+                                    @php 
+                                        $meta = session('cart_item_meta.' . $ci->id, []);
+                                        $featIds = collect($meta['feature_ids'] ?? [])->filter()->map(fn($v)=> (int)$v)->unique()->all();
+                                        $selFeats = !empty($featIds) ? \App\Models\CarVariantFeature::whereIn('id', $featIds)->get() : collect();
                                             $colorName = $ci->color?->color_name;
                                             $colorHex = $colorName ? \App\Helpers\ColorHelper::getColorHex($colorName) : null;
-                                        @endphp
+                                    @endphp
                                         <div class="mt-0.5 flex items-center gap-2 text-[11px] text-gray-500 whitespace-normal break-words">
                                             <span>SL: {{ $ci->quantity }}</span>
                                             <span>•</span>
@@ -223,8 +223,8 @@
                                                 @endif
                                             </span>
                                         </div>
-                                        @if($selFeats->count() > 0)
-                                            <div class="mt-1 space-y-1">
+                                    @if($selFeats->count() > 0)
+                                        <div class="mt-1 space-y-1">
                                                 <div class="text-[11px] text-gray-600">Tùy chọn:
                                                     @foreach($selFeats as $sf)
                                                         <span class="inline-flex items-center gap-1 mr-2">{{ $sf->feature_name }}</span>
@@ -247,7 +247,7 @@
                             </div>
                         @endforeach
                     </div>
-                    @php
+                    @php 
                         // Calculate subtotal without discount
                         $subtotal = 0.0;
                         foreach ($cartItems as $ci) {
@@ -255,7 +255,7 @@
                             if ($ci->item_type === 'car_variant') {
                                 $base = method_exists($ci->item,'getPriceWithColorAdjustment') ? (float) $ci->item->getPriceWithColorAdjustment($ci->color_id) : (float) ($ci->item->current_price ?? 0);
                                 $meta = session('cart_item_meta.' . $ci->id, []);
-                                $featIds = collect($meta['feature_ids'] ?? [])->filter()->map(fn($v)=> (int)$v)->unique()->all();
+                            $featIds = collect($meta['feature_ids'] ?? [])->filter()->map(fn($v)=> (int)$v)->unique()->all();
                                 $featSum = !empty($featIds) ? (float) \App\Models\CarVariantFeature::whereIn('id', $featIds)->sum('price') : 0.0;
                                 $unit = max(0.0, $base + $featSum);
                             } else {
