@@ -134,6 +134,140 @@ class ProfileController extends Controller
         return Redirect::route('user.profile.edit')->with('status', 'profile-updated');
     }
 
+    // --- Granular AJAX updates ---
+    public function updateGeneral(Request $request): JsonResponse
+    {
+        $user = $request->user()->loadMissing('userProfile');
+        $data = $request->validate([
+            'name' => ['nullable','string','max:255'],
+            'birth_date' => ['nullable','date'],
+            'gender' => ['nullable','in:male,female,other'],
+            'purchase_purpose' => ['nullable','string','max:255'],
+            'budget_min' => ['nullable','numeric'],
+            'budget_max' => ['nullable','numeric'],
+            'employee_salary' => ['nullable','numeric'],
+            'employee_skills' => ['nullable','string'],
+        ]);
+
+        $profile = $user->userProfile()->firstOrCreate([]);
+        $profile->fill(collect($data)->only([
+            'name','birth_date','gender','purchase_purpose','budget_min','budget_max','employee_salary','employee_skills'
+        ])->toArray());
+        $profile->save();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'name' => $profile->name,
+                'birth_date' => optional($profile->birth_date)->format('Y-m-d'),
+                'gender' => $profile->gender,
+                'purchase_purpose' => $profile->purchase_purpose,
+                'budget_min' => $profile->budget_min,
+                'budget_max' => $profile->budget_max,
+                'employee_salary' => $profile->employee_salary,
+                'employee_skills' => $profile->employee_skills,
+            ]
+        ]);
+    }
+
+    public function updateLicense(Request $request): JsonResponse
+    {
+        $user = $request->user()->loadMissing('userProfile');
+        $data = $request->validate([
+            'driver_license_number' => ['nullable','string','max:255'],
+            'driver_license_issue_date' => ['nullable','date'],
+            'driver_license_expiry_date' => ['nullable','date'],
+            'driver_license_class' => ['nullable','string','max:255'],
+            'driving_experience_years' => ['nullable','integer','min:0'],
+        ]);
+
+        $profile = $user->userProfile()->firstOrCreate([]);
+        $profile->fill(collect($data)->only([
+            'driver_license_number','driver_license_issue_date','driver_license_expiry_date','driver_license_class','driving_experience_years'
+        ])->toArray());
+        $profile->save();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'driver_license_number' => $profile->driver_license_number,
+                'driver_license_issue_date' => optional($profile->driver_license_issue_date)->format('Y-m-d'),
+                'driver_license_expiry_date' => optional($profile->driver_license_expiry_date)->format('Y-m-d'),
+                'driver_license_class' => $profile->driver_license_class,
+                'driving_experience_years' => $profile->driving_experience_years,
+            ]
+        ]);
+    }
+
+    public function updatePreferences(Request $request): JsonResponse
+    {
+        $user = $request->user()->loadMissing('userProfile');
+        $data = $request->validate([
+            'preferred_car_types' => ['nullable'],
+            'preferred_brands' => ['nullable'],
+            'preferred_colors' => ['nullable'],
+            'budget_min' => ['nullable','numeric'],
+            'budget_max' => ['nullable','numeric'],
+        ]);
+
+        // Normalize arrays (can come as JSON string or array of strings)
+        $normalize = function($value) {
+            if (is_array($value)) return array_values($value);
+            if (is_string($value)) {
+                $decoded = json_decode($value, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) return array_values($decoded);
+            }
+            return null;
+        };
+
+        $profile = $user->userProfile()->firstOrCreate([]);
+        $profile->preferred_car_types = $normalize($data['preferred_car_types'] ?? null);
+        $profile->preferred_brands = $normalize($data['preferred_brands'] ?? null);
+        $profile->preferred_colors = $normalize($data['preferred_colors'] ?? null);
+        if (array_key_exists('budget_min', $data)) $profile->budget_min = $data['budget_min'];
+        if (array_key_exists('budget_max', $data)) $profile->budget_max = $data['budget_max'];
+        $profile->save();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'preferred_car_types' => $profile->preferred_car_types,
+                'preferred_brands' => $profile->preferred_brands,
+                'preferred_colors' => $profile->preferred_colors,
+                'budget_min' => $profile->budget_min,
+                'budget_max' => $profile->budget_max,
+            ]
+        ]);
+    }
+
+    public function updateAvatar(Request $request): JsonResponse
+    {
+        $request->validate([
+            'avatar' => ['required','image','max:2048'],
+        ]);
+        $user = $request->user()->loadMissing('userProfile');
+
+        $file = $request->file('avatar');
+        $path = $file->store('avatars', 'public');
+
+        // Delete old if local and exists
+        try {
+            $old = optional($user->userProfile)->avatar_path;
+            if ($old && !str_starts_with($old, 'http')) {
+                @unlink(storage_path('app/public/'.$old));
+            }
+        } catch (\Throwable $e) {}
+
+        $user->userProfile()->updateOrCreate([], ['avatar_path' => $path]);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'avatar_url' => asset('storage/'.$path),
+            ]
+        ]);
+    }
+
     /**
      * Delete the user's account.
      */

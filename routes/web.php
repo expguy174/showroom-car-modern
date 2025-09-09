@@ -124,6 +124,12 @@ Route::middleware('auth')->prefix('user')->name('user.')->group(function () {
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Granular profile updates (AJAX)
+    Route::patch('/profile/general', [ProfileController::class, 'updateGeneral'])->name('profile.general.update');
+    Route::patch('/profile/license', [ProfileController::class, 'updateLicense'])->name('profile.license.update');
+    Route::patch('/profile/preferences', [ProfileController::class, 'updatePreferences'])->name('profile.preferences.update');
+    Route::patch('/profile/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar.update');
 });
 
 // Payment routes (return + webhook)
@@ -275,17 +281,6 @@ Route::middleware(['auth', IsAdmin::class])->prefix('admin')->name('admin.')->gr
         Route::put('/{paymentMethod}', [PaymentMethodController::class, 'update'])->name('update');
         Route::delete('/{paymentMethod}', [PaymentMethodController::class, 'destroy'])->name('destroy');
         Route::post('/{paymentMethod}/toggle-status', [PaymentMethodController::class, 'toggleStatus'])->name('toggle-status');
-    });
-
-    // User Profiles
-    Route::prefix('customer-profiles')->name('customer-profiles.')->group(function () {
-        Route::get('/', [UserProfileController::class, 'index'])->name('index');
-        Route::get('/{customerProfile}', [UserProfileController::class, 'show'])->name('show');
-        Route::get('/{customerProfile}/edit', [UserProfileController::class, 'edit'])->name('edit');
-        Route::put('/{customerProfile}', [UserProfileController::class, 'update'])->name('update');
-        Route::delete('/{customerProfile}', [UserProfileController::class, 'destroy'])->name('destroy');
-        Route::post('/{customerProfile}/toggle-vip', [UserProfileController::class, 'toggleVip'])->name('toggle-vip');
-        Route::get('/export', [UserProfileController::class, 'export'])->name('export');
     });
 
     // Service Appointments

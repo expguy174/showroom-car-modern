@@ -33,7 +33,7 @@ return new class extends Migration {
 			$table->softDeletes();
             
             // Indexes
-			            $table->index('email_verified_at');
+			$table->index('email_verified_at');
             $table->index(['role', 'is_active']);
             $table->index(['department', 'is_active']);
             $table->index('created_at');

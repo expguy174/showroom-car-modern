@@ -12,7 +12,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
     <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <div class="h-16 flex items-center justify-between gap-2">
             {{-- Left: Brand / Home --}}
-            <div class="flex items-center gap-3 min-w-[140px]">
+            <div class="flex items-center gap-3 min-w-[140px] h-16">
                 <a href="{{ route('home') }}" class="group inline-flex items-center gap-2">
                     <span class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-blue-700 to-indigo-700 shadow-md">
                         <i class="fas fa-car text-white"></i>
@@ -25,11 +25,11 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
             </div>
 
             {{-- Center: Primary Navigation (Desktop) --}}
-            <div class="center-menu hidden lg:flex items-center justify-center gap-1 text-[13px] flex-1 min-w-0">
+            <div class="center-menu hidden lg:flex items-center justify-center gap-1 text-[13px] flex-1 min-w-0 h-16">
                 {{-- Hãng (giữ nguyên) --}}
                 <div class="dropdown-group car-dropdown-wrapper" data-dropdown="brands">
                     <button class="px-2 py-2 rounded-lg text-sm text-gray-700 hover:text-white hover:bg-indigo-600 inline-flex items-center gap-2 transition-colors duration-200" data-dropdown-trigger>
-                        <i class="fas fa-flag-checkered text-[15px]"></i>
+                        <i class="fas fa-tags text-[15px]"></i>
                         <span class="nav-label">Hãng</span>
                         <i class="fas fa-chevron-down text-xs transition-transform duration-200"></i>
                     </button>
@@ -115,15 +115,17 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
             </div>
 
             {{-- Right: Search + Actions --}}
-            <div id="nav-actions" class="flex items-center gap-2 shrink-0">
+            <div id="nav-actions" class="flex items-center gap-2 shrink-0 h-16">
                 {{-- Search (Desktop) --}}
-                <form action="{{ route('products.index') }}" method="GET" class="relative hidden lg:block self-center">
-                    <div class="relative h-10 flex items-center">
-                        <input id="desktop-search-input" name="q" type="search" class="search-input h-10 w-56 xl:w-72 rounded-lg border border-gray-200 pl-10 pr-10 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Tìm kiếm" autocomplete="off" />
-                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                        <button type="submit" class="absolute right-1 top-1/2 -translate-y-1/2 px-2 py-1 text-indigo-600 hover:text-indigo-800">
-                            <i class="fas fa-arrow-right"></i>
-                        </button>
+                <form action="{{ route('products.index') }}" method="GET" class="hidden lg:flex items-center self-center h-16 m-0 mb-0">
+                    <div class="relative h-full flex items-center">
+                        <div class="flex items-center h-10 my-auto rounded-lg border border-gray-200 bg-white leading-none">
+                            <span class="pl-3 pr-2 text-gray-400 flex items-center leading-none"><i class="fas fa-search"></i></span>
+                            <input id="desktop-search-input" name="q" type="search" class="search-input h-10 w-56 xl:w-72 bg-transparent border-0 outline-none focus:ring-0 text-sm leading-none mb-0" placeholder="Tìm kiếm" autocomplete="off" />
+                            <button type="submit" class="px-2 py-0.5 text-indigo-600 hover:text-indigo-800 leading-none">
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </div>
                         <div class="search-suggestions absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg hidden z-50">
                             <div class="search-suggestions-list p-2 space-y-1"></div>
                             <div class="px-2 py-1 text-xs text-gray-500 border-t"><a href="{{ route('search.advanced') }}" class="hover:underline">Tìm kiếm nâng cao</a></div>
@@ -215,12 +217,14 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                 <div class="profile-dropdown-wrapper dropdown-group hidden lg:block">
                     <button class="px-2.5 py-2 rounded-lg border border-gray-200 text-sm text-gray-700 hover:text-white hover:bg-gray-900 inline-flex items-center gap-2" data-dropdown-trigger>
                         @auth
-                            @php $avatar = optional(auth()->user()->userProfile)->avatar_path; @endphp
-                            @if($avatar)
-                                <img src="{{ $avatar }}" alt="avatar" class="w-8 h-8 rounded-full object-cover" />
-                            @else
-                                <i class="fas fa-user-circle text-xl"></i>
-                            @endif
+                            @php 
+                                $profile = optional(auth()->user()->userProfile);
+                                $raw = $profile->avatar_path;
+                                $isAbs = function($p){ return preg_match('/^https?:\/\//i', (string)$p) === 1; };
+                                $fallback = 'https://ui-avatars.com/api/?name='.urlencode($profile->name ?? (auth()->user()->email ?? 'User')).'&background=4f46e5&color=fff&size=64';
+                                $avatar = $raw ? ($isAbs($raw) ? $raw : asset('storage/'.ltrim($raw,'/'))) : $fallback;
+                            @endphp
+                            <img src="{{ $avatar }}" alt="avatar" class="w-8 h-8 rounded-full object-cover" onerror="this.onerror=null;this.src='{{ $fallback }}';" />
                             <i class="fas fa-chevron-down text-xs"></i>
                         @else
                             <i class="fas fa-user-circle"></i>
@@ -257,18 +261,32 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                                     <div class="mt-3 border-t border-gray-100"></div>
                                 </div>
                             </div>
-                            <a href="{{ route('user.profile.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white"><i class="fas fa-user-cog text-gray-400"></i><span>Tài khoản</span></a>
-                            <a href="{{ route('user.customer-profiles.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white"><i class="fas fa-id-badge text-gray-400"></i><span>Hồ sơ</span></a>
-                            <a href="{{ route('user.customer-profiles.orders') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white"><i class="fas fa-file-invoice-dollar text-gray-400"></i><span>Đơn hàng</span></a>
-                            <a href="{{ route('user.service-appointments.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white"><i class="fas fa-calendar-check text-gray-400"></i><span>Bảo dưỡng</span></a>
-                            <a href="{{ route('test-drives.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white"><i class="fas fa-car text-gray-400"></i><span>Lái thử</span></a>
+                            <a href="{{ route('user.profile.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white">
+                                <span class="inline-flex items-center justify-center w-5"><i class="fas fa-user text-gray-500 text-[14px]"></i></span>
+                                <span class="flex-1">Tài khoản</span>
+                            </a>
+                            <a href="{{ route('user.customer-profiles.orders') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white">
+                                <span class="inline-flex items-center justify-center w-5"><i class="fas fa-file-invoice text-gray-500 text-[14px]"></i></span>
+                                <span class="flex-1">Đơn hàng</span>
+                            </a>
+                            <a href="{{ route('user.service-appointments.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white">
+                                <span class="inline-flex items-center justify-center w-5"><i class="fas fa-tools text-gray-500 text-[14px]"></i></span>
+                                <span class="flex-1">Bảo dưỡng</span>
+                            </a>
+                            <a href="{{ route('test-drives.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white">
+                                <span class="inline-flex items-center justify-center w-5"><i class="fas fa-car-side text-gray-500 text-[14px]"></i></span>
+                                <span class="flex-1">Lái thử</span>
+                            </a>
                             @if(auth()->user()->role === 'admin')
-                            <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white"><i class="fas fa-tachometer-alt text-gray-400"></i><span>Admin Dashboard</span></a>
+                            <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white">
+                                <span class="inline-flex items-center justify-center w-5"><i class="fas fa-tachometer-alt text-gray-500 text-[14px]"></i></span>
+                                <span class="flex-1">Admin Dashboard</span>
+                            </a>
                             @endif
                             <form method="POST" action="{{ route('logout') }}" class="mt-1">
                                 @csrf
                                 <button type="submit" class="w-full text-left flex items-center gap-2 px-3 py-2 rounded-md hover:bg-red-50 text-red-600">
-                                    <i class="fas fa-sign-out-alt"></i><span>Đăng xuất</span>
+                                    <span class="inline-flex items-center justify-center w-5"><i class="fas fa-sign-out-alt text-[14px]"></i></span><span class="flex-1">Đăng xuất</span>
                                 </button>
                             </form>
                             @else
@@ -317,7 +335,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                 {{-- Mobile menu items (đồng bộ desktop) --}}
                 <div>
                     <button type="button" class="mobile-dropdown-btn w-full text-left px-4 py-3 rounded-lg hover:bg-gray-50 flex items-center justify-between">
-                        <span><i class="fas fa-flag-checkered mr-3 text-gray-400"></i>Hãng</span>
+                        <span><i class="fas fa-tags mr-3 text-gray-400"></i>Hãng</span>
                         <i class="fas fa-chevron-down text-xs text-gray-500"></i>
                     </button>
                     <div class="mobile-dropdown-content pl-2">
@@ -349,7 +367,6 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                     </div>
                 </div>
 
-                <a href="{{ route('test-drives.index') }}" class="block px-4 py-3 rounded-lg hover:bg-gray-50 flex items-center gap-2"><i class="fas fa-road mr-3 text-gray-400"></i><span>Lái thử</span></a>
 
                 <div>
                     <button type="button" class="mobile-dropdown-btn w-full text-left px-4 py-3 rounded-lg hover:bg-gray-50 flex items-center justify-between">
@@ -403,28 +420,38 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                 <div class="pt-4 mt-2 border-t">
                     @auth
                     <div class="px-4 pb-2 text-sm text-gray-600">Xin chào, <span class="font-semibold text-gray-900">{{ optional(auth()->user()->userProfile)->name ?? 'Khách' }}</span></div>
-                    <a href="{{ route('user.profile.index') }}" class="block px-4 py-3 rounded-lg hover:bg-gray-50"><i class="fas fa-user-cog mr-3 text-gray-400"></i>Tài khoản</a>
-                    <a href="{{ route('user.customer-profiles.index') }}" class="block px-4 py-3 rounded-lg hover:bg-gray-50"><i class="fas fa-id-badge mr-3 text-gray-400"></i>Hồ sơ khách hàng</a>
-                    <a href="{{ route('user.customer-profiles.orders') }}" class="block px-4 py-3 rounded-lg hover:bg-gray-50"><i class="fas fa-file-invoice-dollar mr-3 text-gray-400"></i>Đơn hàng</a>
-                    <a href="{{ route('user.service-appointments.index') }}" class="block px-4 py-3 rounded-lg hover:bg-gray-50"><i class="fas fa-calendar-check mr-3 text-gray-400"></i>Lịch hẹn</a>
-                    @if(auth()->user()->role === 'admin')
-                    <a href="{{ route('admin.dashboard') }}" class="block px-4 py-3 rounded-lg hover:bg-gray-50"><i class="fas fa-tachometer-alt mr-3 text-gray-400"></i>Admin</a>
-                    @endif
-                    <form method="POST" action="{{ route('logout') }}" class="px-4 pt-2">
+                    <a href="{{ route('user.profile.index') }}" class="block px-4 py-3 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                        <span class="inline-flex items-center justify-center w-5"><i class="fas fa-user text-gray-500 text-[14px]"></i></span>
+                        <span class="flex-1">Tài khoản</span>
+                    </a>
+                    <a href="{{ route('user.customer-profiles.orders') }}" class="block px-4 py-3 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                        <span class="inline-flex items-center justify-center w-5"><i class="fas fa-file-invoice text-gray-500 text-[14px]"></i></span>
+                        <span class="flex-1">Đơn hàng</span>
+                    </a>
+                    <a href="{{ route('user.service-appointments.index') }}" class="block px-4 py-3 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                        <span class="inline-flex items-center justify-center w-5"><i class="fas fa-tools text-gray-500 text-[14px]"></i></span>
+                        <span class="flex-1">Bảo dưỡng</span>
+                    </a>
+                    <a href="{{ route('test-drives.index') }}" class="block px-4 py-3 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                        <span class="inline-flex items-center justify-center w-5"><i class="fas fa-car-side text-gray-500 text-[14px]"></i></span>
+                        <span class="flex-1">Lái thử</span>
+                    </a>
+                    <form method="POST" action="{{ route('logout') }}" class="block">
                         @csrf
-                        <button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-red-600 text-white hover:bg-red-700">
-                            <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                        <button type="submit" class="w-full text-left px-4 py-3 rounded-lg hover:bg-red-50 text-red-600 flex items-center gap-2">
+                            <span class="inline-flex items-center justify-center w-5"><i class="fas fa-sign-out-alt text-[14px]" style="color: #dc2626 !important;"></i></span>
+                            <span class="flex-1">Đăng xuất</span>
                         </button>
                     </form>
                     @else
-                    <div class="grid grid-cols-2 gap-2">
-                        <a href="{{ route('login', ['redirect' => request()->fullUrl()]) }}" class="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg border hover:bg-gray-50">
-                            <i class="fas fa-sign-in-alt"></i> Đăng nhập
-                        </a>
-                        <a href="{{ route('register') }}" class="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-gray-900 text-white hover:bg-gray-800">
-                            <i class="fas fa-user-plus"></i> Đăng ký
-                        </a>
-                    </div>
+                    <a href="{{ route('login', ['redirect' => request()->fullUrl()]) }}" class="block px-4 py-3 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                        <span class="inline-flex items-center justify-center w-5"><i class="fas fa-sign-in-alt text-gray-500 text-[14px]"></i></span>
+                        <span class="flex-1">Đăng nhập</span>
+                    </a>
+                    <a href="{{ route('register') }}" class="block px-4 py-3 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                        <span class="inline-flex items-center justify-center w-5"><i class="fas fa-user-plus text-gray-500 text-[14px]"></i></span>
+                        <span class="flex-1">Đăng ký</span>
+                    </a>
                     @endauth
                 </div>
             </div>

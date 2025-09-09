@@ -18,10 +18,9 @@ class UniqueAddress implements Rule
     public function passes($attribute, $value)
     {
         $query = Address::where('user_id', Auth::id())
-            ->where('line1', request('line1'))
-            ->where('ward', request('ward'))
-            ->where('district', request('district'))
-            ->where('province', request('province'));
+            ->where('address', request('address'))
+            ->where('state', request('state'))
+            ->where('city', request('city'));
 
         if ($this->excludeId) {
             $query->where('id', '!=', $this->excludeId);
