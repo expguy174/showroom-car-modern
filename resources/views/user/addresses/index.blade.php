@@ -68,16 +68,16 @@
                                 
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Họ tên liên hệ *</label>
-                                        <input name="contact_name" type="text" class="w-full px-3.5 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 @error('contact_name') border-red-500 focus:border-red-500 focus:ring-red-200 @enderror" required value="{{ old('contact_name', optional($user->userProfile)->name) }}" placeholder="Nhập họ tên liên hệ"/>
+                                        <label for="contact_name" class="block text-sm font-medium text-gray-700 mb-1">Họ tên liên hệ *</label>
+                                        <input id="contact_name" name="contact_name" type="text" autocomplete="name" class="w-full px-3.5 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 @error('contact_name') border-red-500 focus:border-red-500 focus:ring-red-200 @enderror" required value="{{ old('contact_name', optional($user->userProfile)->name) }}" placeholder="Nhập họ tên liên hệ"/>
                                         @error('contact_name')
                                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                                         @enderror
                                     </div>
                                     
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
-                                        <input name="phone" type="tel" class="w-full px-3.5 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 @error('phone') border-red-500 focus:border-red-500 focus:ring-red-200 @enderror" value="{{ old('phone', optional($user->addresses->firstWhere('is_default', true) ?: $user->addresses->first())->phone ?? null) }}" placeholder="Nhập số điện thoại" required/>
+                                        <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
+                                        <input id="phone" name="phone" type="tel" autocomplete="tel" class="w-full px-3.5 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 @error('phone') border-red-500 focus:border-red-500 focus:ring-red-200 @enderror" value="{{ old('phone', optional($user->userProfile)->phone ?? (optional($user->addresses->firstWhere('is_default', true) ?: $user->addresses->first())->phone ?? null)) }}" placeholder="Nhập số điện thoại" required/>
                                         @error('phone')
                                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                                         @enderror
@@ -93,32 +93,32 @@
                                 </h3>
                                 
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Địa chỉ *</label>
-                                    <textarea name="address" rows="3" class="w-full px-3.5 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 @error('address') border-red-500 focus:border-red-500 focus:ring-red-200 @enderror" placeholder="Số nhà, tên đường, tòa nhà/căn hộ (nếu có)" required>{{ old('address') }}</textarea>
+                                    <label for="address" class="block text-sm font-medium text-gray-700 mb-1">Địa chỉ *</label>
+                                    <textarea id="address" name="address" rows="3" autocomplete="street-address" class="w-full px-3.5 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 @error('address') border-red-500 focus:border-red-500 focus:ring-red-200 @enderror" placeholder="Số nhà, tên đường, tòa nhà/căn hộ (nếu có)" required>{{ old('address') }}</textarea>
                                     @error('address')
                                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                                     @enderror
                                 </div>
                                 
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Tỉnh/Thành phố *</label>
-                                        <input name="city" type="text" class="w-full px-3.5 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 @error('city') border-red-500 focus:border-red-500 focus:ring-red-200 @enderror" placeholder="VD: Hà Nội" value="{{ old('city') }}" required/>
-                                        @error('city')
-                                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                                    @enderror
-                                </div>
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Quận/Huyện</label>
-                                        <input name="state" type="text" class="w-full px-3.5 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 @error('state') border-red-500 focus:border-red-500 focus:ring-red-200 @enderror" placeholder="VD: Hoàn Kiếm" value="{{ old('state') }}"/>
+                                        <label for="state" class="block text-sm font-medium text-gray-700 mb-1">Quận/Huyện</label>
+                                        <input id="state" name="state" type="text" autocomplete="address-level2" class="w-full px-3.5 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 @error('state') border-red-500 focus:border-red-500 focus:ring-red-200 @enderror" placeholder="VD: Hoàn Kiếm" value="{{ old('state') }}"/>
                                         @error('state')
+                                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                    <div>
+                                        <label for="city" class="block text-sm font-medium text-gray-700 mb-1">Tỉnh/Thành phố *</label>
+                                        <input id="city" name="city" type="text" autocomplete="address-level1" class="w-full px-3.5 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 @error('city') border-red-500 focus:border-red-500 focus:ring-red-200 @enderror" placeholder="VD: Hà Nội" value="{{ old('city') }}" required/>
+                                        @error('city')
                                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                                         @enderror
                                     </div>
                                 </div>
                                 <div class="mt-3">
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Mã bưu chính</label>
-                                    <input name="postal_code" type="text" class="w-full px-3.5 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 @error('postal_code') border-red-500 focus:border-red-500 focus:ring-red-200 @enderror" placeholder="VD: 100000" value="{{ old('postal_code') }}"/>
+                                    <label for="postal_code" class="block text-sm font-medium text-gray-700 mb-1">Mã bưu chính</label>
+                                    <input id="postal_code" name="postal_code" type="text" autocomplete="postal-code" class="w-full px-3.5 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 @error('postal_code') border-red-500 focus:border-red-500 focus:ring-red-200 @enderror" placeholder="VD: 100000" value="{{ old('postal_code') }}"/>
                                     @error('postal_code')
                                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                                         @enderror
@@ -126,16 +126,16 @@
                                     
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Quốc gia</label>
-                                        <input name="country" type="text" class="w-full px-3.5 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 @error('country') border-red-500 focus:border-red-500 focus:ring-red-200 @enderror" placeholder="Ví dụ: Việt Nam" value="{{ old('country', 'Việt Nam') }}"/>
+                                        <label for="country" class="block text-sm font-medium text-gray-700 mb-1">Quốc gia</label>
+                                        <input id="country" name="country" type="text" autocomplete="country-name" class="w-full px-3.5 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 @error('country') border-red-500 focus:border-red-500 focus:ring-red-200 @enderror" placeholder="Ví dụ: Việt Nam" value="{{ old('country', 'Việt Nam') }}"/>
                                         @error('country')
                                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                                         @enderror
                                     </div>
                                     
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Loại địa chỉ</label>
-                                        <select name="type" class="w-full px-3.5 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 @error('type') border-red-500 focus:border-red-500 focus:ring-red-200 @enderror">
+                                        <label for="address_type" class="block text-sm font-medium text-gray-700 mb-1">Loại địa chỉ</label>
+                                        <select id="address_type" name="type" class="w-full px-3.5 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 @error('type') border-red-500 focus:border-red-500 focus:ring-red-200 @enderror">
                                             @php $__typeOld = old('type','home'); @endphp
                                             <option value="home" {{ $__typeOld==='home' ? 'selected' : '' }}>Nhà riêng</option>
                                             <option value="work" {{ $__typeOld==='work' ? 'selected' : '' }}>Cơ quan</option>
@@ -153,15 +153,15 @@
                             <!-- Notes & Default -->
                             <div class="space-y-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Ghi chú</label>
-                                    <textarea name="notes" rows="2" class="w-full px-3.5 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 @error('notes') border-red-500 focus:border-red-500 focus:ring-red-200 @enderror" placeholder="Ví dụ: Giao giờ hành chính">{{ old('notes') }}</textarea>
+                                    <label for="notes" class="block text-sm font-medium text-gray-700 mb-1">Ghi chú</label>
+                                    <textarea id="notes" name="notes" rows="2" class="w-full px-3.5 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 @error('notes') border-red-500 focus:border-red-500 focus:ring-red-200 @enderror" placeholder="Ví dụ: Giao giờ hành chính">{{ old('notes') }}</textarea>
                                     @error('notes')
                                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                                     @enderror
                                 </div>
                                 
-                                <div class="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100">
-                                    <input type="checkbox" name="is_default" value="1" id="is_default" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" {{ old('is_default') ? 'checked' : '' }}/>
+                                <div id="default-checkbox-wrap" class="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 {{ ($addresses->count() ?? 0) === 0 ? 'hidden' : '' }}">
+                                    <input type="checkbox" name="is_default" value="1" id="is_default" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" {{ old('is_default') ? 'checked' : '' }} aria-label="Đặt làm địa chỉ mặc định"/>
                                     <label for="is_default" class="text-sm font-medium text-gray-700">Đặt làm địa chỉ mặc định</label>
                                     @error('is_default')
                                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -170,7 +170,7 @@
                             </div>
                             
                             <div class="flex gap-3">
-                                <button type="submit" id="address-submit-btn" class="flex-1 inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+                                <button type="submit" id="address-submit-btn" class="flex-1 inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 {{ (!empty($addressLimitReached) && $addressLimitReached) ? 'opacity-60 cursor-not-allowed' : '' }}" {{ (!empty($addressLimitReached) && $addressLimitReached) ? 'disabled' : '' }}>
                                     <i class="fas fa-plus"></i>
                                     <span class="js-submit-text">Thêm địa chỉ</span>
                                 </button>
@@ -180,6 +180,11 @@
                             </div>
                             <input type="hidden" name="_method" value="POST" class="js-method-field"/>
                             <input type="hidden" name="editing_id" value="" class="js-editing-id"/>
+                            @if(!empty($addressLimitReached) && $addressLimitReached)
+                                <div class="text-[13px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                                    Bạn đã đạt giới hạn {{ $maxAddresses ?? 20 }} địa chỉ. Vui lòng xóa bớt địa chỉ cũ để thêm địa chỉ mới.
+                                </div>
+                            @endif
                         </form>
                     </div>
                 </div>
@@ -193,8 +198,11 @@
                                     <i class="fas fa-address-book text-blue-600"></i>
                                     Địa chỉ của tôi
                                 </h2>
-                                <div class="text-sm text-gray-500">
-                                    {{ $addresses->count() }} địa chỉ
+                                <div class="text-sm text-gray-500 flex items-center gap-2">
+                                    <span>{{ isset($addressCount) ? $addressCount : $addresses->count() }} / {{ $maxAddresses ?? 20 }} địa chỉ</span>
+                                    @if(!empty($addressLimitReached) && $addressLimitReached)
+                                        <span class="px-2 py-0.5 text-[11px] rounded-full bg-amber-100 text-amber-800 border border-amber-200">Đã đạt giới hạn</span>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -214,7 +222,7 @@
                                                     <div class="text-xs text-gray-500">Liên hệ</div>
                                                 </div>
                                             </div>
-                                            <div class="addr-action shrink-0">
+                                            <div class="addr-action shrink-0 flex items-center">
                                             @if($addr->is_default)
                                             <span class="addr-default-badge px-3 py-1 text-xs rounded-full bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-700 font-medium border border-emerald-200">
                                                 <i class="fas fa-star mr-1"></i>Mặc định
@@ -323,18 +331,14 @@
     // Sort default first
     cards.sort((a,b)=> (parseInt(b.getAttribute('data-is-default')||'0') - parseInt(a.getAttribute('data-is-default')||'0')));
     cards.forEach(c=>grid.appendChild(c));
-    // Normalize action area in each card
+    // Normalize action area in each card strictly by is_default flag
     const token = document.querySelector('meta[name="csrf-token"]').content;
-    let hasDefault = false;
-    cards.forEach(c=>{ if (c.getAttribute('data-is-default') === '1') hasDefault = true; });
-    cards.forEach((c, idx)=>{
+    cards.forEach((c)=>{
       const isDefault = (c.getAttribute('data-is-default') === '1');
       const actionArea = c.querySelector('.addr-action');
       if (!actionArea) return;
       actionArea.innerHTML = '';
-      if (isDefault || (!hasDefault && idx === 0)){
-        // If none marked default from server, mark the first one visually
-        if (!isDefault && idx === 0) c.setAttribute('data-is-default','1');
+      if (isDefault){
         const badge = document.createElement('span');
         badge.className = 'addr-default-badge px-3 py-1 text-xs rounded-full bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-700 font-medium border border-emerald-200';
         badge.innerHTML = '<i class="fas fa-star mr-1"></i>Mặc định';
@@ -384,6 +388,7 @@
     const defaultCreateAction = form.getAttribute('action');
     const submitBtn = document.getElementById('address-submit-btn');
     const titleEl = document.getElementById('address-form-title');
+    let prevWasDefault = false;
 
     // Reset to create mode
     function switchToCreateMode(){
@@ -399,6 +404,8 @@
       const countryInput = form.querySelector('[name="country"]');
       if (countryInput && !countryInput.value) countryInput.value = 'Việt Nam';
     }
+    // Expose for external callers (e.g., after deleting a card)
+    try { window.__addressFormResetCreate = switchToCreateMode; } catch(_) {}
 
     cancelBtn && cancelBtn.addEventListener('click', function(){ switchToCreateMode(); });
 
@@ -410,6 +417,8 @@
       if (e.target.closest('.js-delete-form') || e.target.closest('.js-delete-btn') || e.target.closest('.js-set-default-form')) return;
       const updateUrl = card.getAttribute('data-update-action');
       if (!updateUrl) return;
+      // Track previous default state
+      prevWasDefault = (card.getAttribute('data-is-default') === '1');
       // Fill form
       const setVal = (name, val)=>{ const el = form.querySelector(`[name="${name}"]`); if (el) el.value = val || ''; };
       setVal('contact_name', card.getAttribute('data-contact-name'));
@@ -440,7 +449,9 @@
       ev.preventDefault();
       // Client-side validation (Vietnamese)
       const contactName = (form.querySelector('[name="contact_name"]').value || '').trim();
-      const phone = (form.querySelector('[name="phone"]').value || '').trim();
+      const phoneEl = form.querySelector('[name="phone"]');
+      if (phoneEl) { try { phoneEl.setCustomValidity(''); } catch(_) {} }
+      const phone = (phoneEl?.value || '').trim();
       const addressVal = (form.querySelector('[name="address"]').value || '').trim();
       const city = (form.querySelector('[name="city"]').value || '').trim();
       const state = (form.querySelector('[name="state"]').value || '').trim();
@@ -448,11 +459,19 @@
       const isDefaultChecked = !!form.querySelector('[name="is_default"]') && form.querySelector('[name="is_default"]').checked;
       const allowedTypes = ['home','work','billing','shipping','other'];
       const errors = [];
-      if (!contactName) errors.push('Họ tên liên hệ là bắt buộc.');
-      if (!addressVal) errors.push('Địa chỉ không được để trống.');
-      if (!city) errors.push('Tỉnh/Thành phố là bắt buộc.');
+      // Order: Họ tên, Số điện thoại, Địa chỉ, Quận/Huyện, Tỉnh/Thành phố
+      if (!contactName) { errors.push('Họ tên liên hệ là bắt buộc.'); }
+      if (!phone) { errors.push('Số điện thoại là bắt buộc.'); }
+      if (!addressVal) { errors.push('Địa chỉ là bắt buộc.'); }
+      if (!state) { errors.push('Quận/Huyện là bắt buộc.'); }
+      if (!city) { errors.push('Tỉnh/Thành phố là bắt buộc.'); }
       if (type && !allowedTypes.includes(type)) errors.push('Loại địa chỉ không hợp lệ.');
-      if (phone && phone.length > 20) errors.push('Số điện thoại không được vượt quá 20 ký tự.');
+      const phoneRegex = /^[0-9+\-\s()]+$/;
+      if (phone) {
+        if (!phoneRegex.test(phone)) errors.splice(1, 0, 'Số điện thoại không hợp lệ.');
+        if (phone.length < 10) errors.splice(1, 0, 'Số điện thoại phải có ít nhất 10 ký tự.');
+        if (phone.length > 15) errors.splice(1, 0, 'Số điện thoại không được vượt quá 15 ký tự.');
+      }
       if (errors.length) { __notify(errors.join('\n'), 'error'); return; }
       const submitBtn = form.querySelector('button[type="submit"]');
       if (submitBtn){ submitBtn.disabled = true; submitBtn.classList.add('opacity-60'); submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Đang xử lý...'; }
@@ -553,8 +572,10 @@
             }
           }
           if (grid) {
+            const preCount = (grid.querySelectorAll('[data-address-card]') || []).length;
             const a = data.address;
-            if (!isUpdate && isDefaultChecked && !a.is_default) { a.is_default = true; }
+            if (!isUpdate && preCount === 0) { a.is_default = true; }
+            else if (!isUpdate && isDefaultChecked && !a.is_default) { a.is_default = true; }
             // If user checked default in form but server didn't echo flag, enforce client-side for UX
             if (isUpdate && isDefaultChecked && !a.is_default) { a.is_default = true; }
             const typeKey = (a.type || '').toLowerCase();
@@ -576,7 +597,7 @@
                     <div class=\"text-xs text-gray-500\">Liên hệ</div> 
                   </div> 
                 </div> 
-                <div class=\"addr-action shrink-0\"></div> 
+                <div class=\"addr-action shrink-0 flex items-center\"></div> 
               </div>
               <div class=\"space-y-3 mb-4\"> 
                 <div class=\"text-sm text-gray-700 leading-relaxed flex items-start gap-2\"> 
@@ -652,7 +673,68 @@
               card.setAttribute('data-type', a.type || 'home');
               card.setAttribute('data-notes', a.notes || '');
               card.innerHTML = cardHtml;
+              // If grid is currently empty, mark this new card as default and inject badge BEFORE appending
+              try {
+                const gridWasEmpty = !grid.querySelector('[data-address-card]');
+                if (gridWasEmpty) {
+                  console.debug('[Addresses] Pre-append: grid empty, forcing first card as default');
+                  card.setAttribute('data-is-default','1');
+                  const act0 = card.querySelector('.addr-action');
+                  if (act0) {
+                    act0.innerHTML = '<span class="addr-default-badge px-3 py-1 text-xs rounded-full bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-700 font-medium border border-emerald-200" style="display:inline-flex;align-items:center;gap:4px;z-index:1;position:relative;"><i class="fas fa-star mr-1"></i>Mặc định</span>';
+                    console.debug('[Addresses] Pre-append: badge injected into .addr-action');
+                  } else {
+                    console.debug('[Addresses] Pre-append: .addr-action not found on card');
+                  }
+                  const wrap0 = document.getElementById('default-checkbox-wrap');
+                  if (wrap0) { wrap0.classList.remove('hidden'); console.debug('[Addresses] Pre-append: default checkbox shown'); }
+                }
+              } catch(_) {}
               grid.appendChild(card);
+              // Fallback: if this is the very first card, force badge and mark default immediately
+              try {
+                const currentCards = grid.querySelectorAll('[data-address-card]');
+                if (currentCards.length === 1) {
+                  console.debug('[Addresses] Post-append: only one card, forcing default');
+                  const firstCard = currentCards[0];
+                  firstCard.setAttribute('data-is-default','1');
+                  const actionBox = firstCard.querySelector('.addr-action');
+                  if (actionBox) {
+                     try { actionBox.style.display = 'flex'; actionBox.style.alignItems = 'center'; } catch(_) {}
+                    while (actionBox.firstChild) actionBox.removeChild(actionBox.firstChild);
+                    const badge2 = document.createElement('span');
+                    badge2.className = 'addr-default-badge px-3 py-1 text-xs rounded-full bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-700 font-medium border border-emerald-200';
+                    badge2.style.display = 'inline-flex';
+                    badge2.style.alignItems = 'center';
+                    badge2.style.gap = '4px';
+                    const icon2 = document.createElement('i');
+                    icon2.className = 'fas fa-star mr-1';
+                    badge2.appendChild(icon2);
+                    badge2.appendChild(document.createTextNode('Mặc định'));
+                    actionBox.appendChild(badge2);
+                    // Schedule a re-check in case another script wipes the action area
+                    setTimeout(function(){
+                      const actCheck = firstCard.querySelector('.addr-action');
+                      if (actCheck && !actCheck.querySelector('.addr-default-badge')) {
+                        while (actCheck.firstChild) actCheck.removeChild(actCheck.firstChild);
+                        const b = document.createElement('span');
+                        b.className = 'addr-default-badge px-3 py-1 text-xs rounded-full bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-700 font-medium border border-emerald-200';
+                        b.style.display = 'inline-flex'; b.style.alignItems = 'center'; b.style.gap = '4px';
+                        const ic = document.createElement('i'); ic.className = 'fas fa-star mr-1'; b.appendChild(ic);
+                        b.appendChild(document.createTextNode('Mặc định'));
+                        actCheck.appendChild(b);
+                      }
+                    }, 50);
+                  } else {
+                    console.debug('[Addresses] Post-append: .addr-action missing on first card');
+                  }
+                  try { firstCard.scrollIntoView({behavior:'smooth', block:'nearest'}); } catch(_) {}
+                  const wrap = document.getElementById('default-checkbox-wrap');
+                  if (wrap) { wrap.classList.remove('hidden'); }
+                } else {
+                  console.debug('[Addresses] Post-append: total cards =', currentCards.length);
+                }
+              } catch (e) { }
             }
 
             // Populate action area for the affected card (new or updated)
@@ -662,9 +744,13 @@
               targetCard.setAttribute('data-is-default', a.is_default ? '1' : '0');
               const actionArea = targetCard.querySelector('.addr-action');
               if (actionArea) {
+                try { actionArea.style.display = 'flex'; actionArea.style.alignItems = 'center'; } catch(_) {}
                 actionArea.innerHTML = '';
                 if (a.is_default) {
-                  actionArea.innerHTML = '<span class="addr-default-badge px-3 py-1 text-xs rounded-full bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-700 font-medium border border-emerald-200"><i class="fas fa-star mr-1"></i>Mặc định</span>';
+                  const badge = document.createElement('span');
+                  badge.className = 'addr-default-badge px-3 py-1 text-xs rounded-full bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-700 font-medium border border-emerald-200';
+                  badge.innerHTML = '<i class="fas fa-star mr-1"></i>Mặc định';
+                  actionArea.appendChild(badge);
                 } else {
                   const f = document.createElement('form');
                   f.className = 'js-set-default-form inline';
@@ -676,41 +762,24 @@
                     </button>';
                   actionArea.appendChild(f);
                 }
-                // Final safeguard: if this was an update and user checked default, force badge
-                if (isUpdate && isDefaultChecked) {
-                  targetCard.setAttribute('data-is-default','1');
-                  actionArea.innerHTML = '<span class="addr-default-badge px-3 py-1 text-xs rounded-full bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-700 font-medium border border-emerald-200"><i class="fas fa-star mr-1"></i>Mặc định</span>';
-                  // Also demote other cards' action to buttons
-                  const gridEl = document.getElementById('addresses-grid') || targetCard.parentElement;
-                  const token2 = document.querySelector('meta[name="csrf-token"]').content;
-                  const baseUrl = (data.urls?.set_default || targetCard.getAttribute('data-set-default-action') || '');
-                  const cards = Array.from((gridEl || document).querySelectorAll('[data-address-card]'));
-                  cards.forEach(c => {
-                    if (c === targetCard) return;
-                    c.setAttribute('data-is-default','0');
-                    const act = c.querySelector('.addr-action');
-                    if (!act) return;
-                    act.innerHTML = '';
-                    let actionUrl = baseUrl;
-                    const currMatch = baseUrl.match(/\/(\d+)\/default$/);
-                    const currId = currMatch ? currMatch[1] : null;
-                    const otherId = c.getAttribute('data-address-id');
-                    if (currId && otherId && baseUrl.endsWith('/'+currId+'/default')) {
-                      actionUrl = baseUrl.slice(0, -(''+currId).length - 8) + otherId + '/default';
-                    }
-                    const nf = document.createElement('form');
-                    nf.className = 'js-set-default-form inline';
-                    nf.method = 'POST';
-                    nf.action = actionUrl;
-                    nf.innerHTML = '<input type="hidden" name="_token" value="'+token2+'">\
-                      <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1 text-xs rounded-full border border-gray-300 text-gray-700 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 transition-all duration-300">\
-                        <i class="fas fa-check-circle text-emerald-600"></i>Đặt mặc định\
-                      </button>';
-                    act.appendChild(nf);
-                  });
-                }
               }
             }
+            // Force-default for the very first address (no reload). Ensure badge + checkbox update immediately.
+            try {
+              const gridEl = document.getElementById('addresses-grid') || (targetCard ? targetCard.parentElement : null);
+              const totalCards = gridEl ? gridEl.querySelectorAll('[data-address-card]').length : 0;
+              if (!isUpdate && totalCards === 1 && targetCard) {
+                a.is_default = true; // so downstream logic also treats it as default
+                targetCard.setAttribute('data-is-default','1');
+                const actForce = targetCard.querySelector('.addr-action');
+                if (actForce) {
+                  actForce.innerHTML = '<span class="addr-default-badge px-3 py-1 text-xs rounded-full bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-700 font-medium border border-emerald-200"><i class="fas fa-star mr-1"></i>Mặc định</span>';
+                }
+                if (gridEl && gridEl.firstElementChild) gridEl.insertBefore(targetCard, gridEl.firstElementChild);
+                const wrap = document.getElementById('default-checkbox-wrap');
+                if (wrap) wrap.classList.remove('hidden');
+              }
+            } catch (_) {}
 
             // If it is default, move to top and update other cards' action areas
             const cards = Array.from(document.querySelectorAll('[data-address-card]'));
@@ -1014,6 +1083,44 @@
               const currentCount = parseInt((countElement.textContent || '0').replace(/\D/g,'')) || 1;
               countElement.textContent = `${Math.max(0, currentCount - 1)} địa chỉ`;
               }
+              // If one card remains, force it as default and show badge immediately
+              const gridAfter = document.getElementById('addresses-grid');
+              if (gridAfter) {
+                const remainingCards = gridAfter.querySelectorAll('[data-address-card]');
+                if (remainingCards.length === 1) {
+                  const onlyCard = remainingCards[0];
+                  onlyCard.setAttribute('data-is-default','1');
+                  const actionArea = onlyCard.querySelector('.addr-action');
+                  if (actionArea) {
+                    actionArea.innerHTML = '<span class="addr-default-badge px-3 py-1 text-xs rounded-full bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-700 font-medium border border-emerald-200"><i class="fas fa-star mr-1"></i>Mặc định</span>';
+                  }
+                }
+              }
+              // If form is currently in edit mode for this card, switch back to create mode
+              try {
+                const editingId = document.querySelector('.js-editing-id')?.value || '';
+                if (editingId && card.getAttribute('data-address-id') === editingId) {
+                  window.__addressFormResetCreate && window.__addressFormResetCreate();
+                }
+              } catch(_) {}
+              // If no cards remain, render empty state
+              const grid = document.getElementById('addresses-grid');
+              if (grid && grid.querySelectorAll('[data-address-card]').length === 0) {
+                const panel = grid.parentElement;
+                if (panel) {
+                  panel.innerHTML = `
+                    <div class="text-center py-12">
+                      <div class="w-20 h-20 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full mx-auto mb-6 flex items-center justify-center">
+                        <i class="fas fa-map-marker-alt text-blue-500 text-2xl"></i>
+                      </div>
+                      <div class="text-gray-600 mb-2 font-medium">Chưa có địa chỉ nào</div>
+                      <div class="text-gray-500 mb-6 text-sm">Thêm địa chỉ đầu tiên để dễ dàng mua sắm</div>
+                    </div>`;
+                }
+                // Hide default checkbox on form when list becomes empty
+                const wrap = document.getElementById('default-checkbox-wrap');
+                if (wrap) wrap.classList.add('hidden');
+              }
             }, 300);
         }
         __notify('Đã xóa địa chỉ thành công!', 'success');
@@ -1032,6 +1139,10 @@
 @if(session('success'))
   <div id="flash-success-msg" data-msg='@json(session('success'))'></div>
   <script>window.addEventListener('DOMContentLoaded', function(){ try{ var el=document.getElementById('flash-success-msg'); if(el){ var m=JSON.parse(el.getAttribute('data-msg')); __notify(m,'success'); el.remove(); } }catch(_){ } });</script>
+@endif
+@if(session('warning'))
+  <div id="flash-warning-msg" data-msg='@json(session('warning'))'></div>
+  <script>window.addEventListener('DOMContentLoaded', function(){ try{ var el=document.getElementById('flash-warning-msg'); if(el){ var m=JSON.parse(el.getAttribute('data-msg')); __notify(m,'warning'); el.remove(); } }catch(_){ } });</script>
 @endif
 @if($errors->any())
   <div id="flash-error-msg" data-msg='@json(implode("\n", $errors->all()))'></div>

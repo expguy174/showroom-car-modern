@@ -50,7 +50,7 @@
                         <option value="">Tất cả trạng thái</option>
                         <option value="pending">Chờ xử lý</option>
                         <option value="confirmed">Đã xác nhận</option>
-                        <option value="shipped">Đang vận chuyển</option>
+                        <option value="shipping">Đang vận chuyển</option>
                         <option value="delivered">Đã giao</option>
                         <option value="cancelled">Đã hủy</option>
                     </select>
@@ -117,18 +117,22 @@
                                         $statusColors = [
                                             'pending' => 'amber',
                                             'confirmed' => 'blue',
-                                            'shipped' => 'indigo',
+                                            'shipping' => 'indigo',
                                             'delivered' => 'emerald',
                                             'cancelled' => 'red'
                                         ];
                                         $paymentColors = [
                                             'pending' => 'amber',
-                                            'paid' => 'emerald',
-                                            'failed' => 'red'
+                                            'processing' => 'blue',
+                                            'completed' => 'emerald',
+                                            'failed' => 'red',
+                                            'cancelled' => 'gray',
+                                            'partial' => 'amber',
+                                            'refunded' => 'gray'
                                         ];
                                         $statusColor = $statusColors[$order->status] ?? 'gray';
                                         $paymentColor = $paymentColors[$order->payment_status] ?? 'gray';
-          @endphp
+            @endphp
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-{{ $statusColor }}-50 text-{{ $statusColor }}-700">
                                         <i class="fas fa-box mr-1"></i>
                                         {{ $order->status_display ?? 'Chưa xác định' }}
@@ -196,8 +200,15 @@
                             <div class="flex items-center justify-between">
                                 <div class="text-sm text-gray-600">
                                     @php
-                                        $ship = $order->shippingAddress; $bill = $order->billingAddress;
-                                        $shipText = $ship ? $ship->line1 : ($bill->line1 ?? '');
+                                        $addr = $order->shippingAddress ?: $order->billingAddress;
+                                        if ($addr) {
+                                            $parts = array_filter([trim($addr->address ?? ''), trim($addr->city ?? ''), trim($addr->state ?? '')]);
+                                            $shipText = implode(', ', $parts);
+                                        } elseif (!empty($order->delivery_address)) {
+                                            $shipText = $order->delivery_address;
+                                        } else {
+                                            $shipText = '';
+                                        }
                                     @endphp
                                     <div class="flex items-center gap-2">
                                         <i class="fas fa-map-marker-alt text-gray-400"></i>
@@ -206,11 +217,15 @@
                                 </div>
                                 <div class="flex items-center gap-4">
                                     <div class="text-right">
+                                        <div class="text-sm text-gray-500">Thanh toán</div>
+                                        <div class="text-sm font-medium text-gray-800">{{ $order->paymentMethod->name ?? '—' }}</div>
+                                    </div>
+                                    <div class="text-right">
                                         <div class="text-sm text-gray-500">Tổng cộng</div>
                                         <div class="text-xl font-bold text-gray-900">{{ number_format($order->grand_total ?? $order->total_price) }} đ</div>
                                     </div>
                                     <div class="flex items-center gap-2">
-                                        <a href="{{ route('user.customer-profiles.show-order', $order->id) }}" 
+                                        <a href="{{ route('user.orders.show', $order->id) }}" 
                                            class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
                                             <i class="fas fa-eye"></i>
                                             Chi tiết
@@ -221,12 +236,13 @@
                                                 Hủy đơn
                                             </button>
                                         @endif
-            </div>
-          </div>
-          </div>
-          </div>
-        </div>
-      @endforeach
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
     </div>
 
             <!-- Pagination -->

@@ -143,7 +143,11 @@ Route::prefix('payment')->group(function(){
     Route::post('/momo/webhook', [\App\Http\Controllers\PaymentController::class, 'momoWebhook'])->name('payment.momo.webhook');
 });
 
-Route::post('/order', [UserOrderController::class, 'store'])->middleware('auth')->name('order.store');
+Route::middleware('auth')->group(function(){
+    Route::get('/user/orders', [UserOrderController::class, 'index'])->name('user.order.index');
+    Route::get('/user/orders/{order}', [UserOrderController::class, 'show'])->name('user.orders.show');
+    Route::post('/order', [UserOrderController::class, 'store'])->name('order.store');
+});
 
 // Cart (moved under /user)
 Route::prefix('user/cart')->name('user.cart.')->group(function () {

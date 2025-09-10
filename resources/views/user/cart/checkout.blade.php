@@ -53,16 +53,7 @@
 
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-    {{-- Removed inline alert boxes; rely on global toast system --}}
-    @if ($errors->any())
-        <div class="mb-4 p-3 rounded-lg bg-rose-50 text-rose-700 border border-rose-200">
-            <ul class="list-disc list-inside text-sm">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
+    {{-- Use only global toast system for errors; no inline alert box here --}}
 
     <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
         <div class="lg:col-span-3 space-y-6">
@@ -85,7 +76,7 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Số điện thoại</label>
-                                <input type="text" name="phone" value="{{ old('phone', optional(($addresses ?? collect())->firstWhere('is_default', true) ?: ($addresses ?? collect())->first())->phone) }}" required class="mt-1 block w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" />
+                                <input type="text" name="phone" value="{{ old('phone', optional(($addresses ?? collect())->firstWhere('is_default', true) ?: ($addresses ?? collect())->first())->phone ?? optional($user?->userProfile)->phone) }}" required class="mt-1 block w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" />
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Email</label>
@@ -360,6 +351,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('checkout-form');
     if (form) {
         form.addEventListener('submit', function(e){
+            // 0) Validate phone locally to avoid native tooltip
+            const phoneEl = form.querySelector('input[name="phone"]');
+            if (phoneEl) { try { phoneEl.setCustomValidity(''); } catch(_) {} }
+            const phoneVal = (phoneEl?.value || '').trim();
+            const phoneRegex = /^[0-9+\-\s()]+$/;
+            if (!phoneVal || phoneVal.length < 10 || phoneVal.length > 15 || !phoneRegex.test(phoneVal)) {
+                e.preventDefault();
+                if (typeof window.showMessage === 'function') {
+                    const msg = !phoneVal ? 'Vui lòng nhập số điện thoại.'
+                        : (!phoneRegex.test(phoneVal) ? 'Số điện thoại không hợp lệ.'
+                        : (phoneVal.length < 10 ? 'Số điện thoại phải có ít nhất 10 ký tự.' : 'Số điện thoại không được vượt quá 15 ký tự.'));
+                    window.showMessage(msg, 'error');
+                } else { alert('Số điện thoại không hợp lệ.'); }
+                return false;
+            }
             // 1) Validate billing address (either selected saved address or entered new address)
             const billingSelect = document.querySelector('select[name="billing_address_id"]');
             const billingTextarea = document.querySelector('textarea[name="billing_address"]');

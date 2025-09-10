@@ -482,7 +482,7 @@ class CartController extends Controller
             $defaultAddress = $addresses->firstWhere('is_default', true);
             if (!$defaultAddress) {
                 return redirect()->route('user.addresses.index')
-                    ->with('warning', 'Vui lòng thêm và đặt một địa chỉ mặc định trước khi thanh toán.');
+                    ->with('warning', 'Vui lòng thêm một địa chỉ trước khi thanh toán.');
             }
         } else {
             return redirect()->route('login')->with('warning', 'Vui lòng đăng nhập để thanh toán.');
@@ -554,7 +554,10 @@ class CartController extends Controller
                 'payment_method_id' => 'required|exists:payment_methods,id',
                 'terms_accepted' => 'required|accepted',
             ], [
-                'phone.regex' => 'Số điện thoại không hợp lệ',
+                'phone.required' => 'Vui lòng nhập số điện thoại.',
+                'phone.regex' => 'Số điện thoại không hợp lệ.',
+                'phone.min' => 'Số điện thoại phải có ít nhất 10 ký tự.',
+                'phone.max' => 'Số điện thoại không được vượt quá 15 ký tự.',
                 'payment_method_id.required' => 'Vui lòng chọn phương thức thanh toán',
                 'terms_accepted.accepted' => 'Bạn phải đồng ý với điều khoản sử dụng',
             ]);
@@ -689,16 +692,22 @@ class CartController extends Controller
                     ]);
                 }
                 
-                // Create new address
+                // Enforce address cap (6)
+                $addrCount = $user->addresses()->count();
+                if ($addrCount >= 6) {
+                    return back()->with('warning', 'Bạn đã đạt giới hạn 6 địa chỉ. Vui lòng chọn địa chỉ đã lưu hoặc xóa bớt địa chỉ cũ.')->withInput();
+                }
+
+                // Create new billing address
                 $newAddr = $user->addresses()->create([
                     'type' => 'billing',
                     'contact_name' => $validated['name'],
                     'phone' => $validated['phone'],
                     'address' => $validated['billing_address'],
-                    'city' => 'Hồ Chí Minh', // Default city
-                    'state' => 'Hồ Chí Minh',
+                    'city' => null,
+                    'state' => null,
                     'country' => 'Vietnam',
-                    'is_default' => $user->addresses()->count() === 0, // First address is default
+                    'is_default' => $addrCount === 0, // First address is default
                 ]);
                 $billingAddressId = $newAddr->id;
                 $billingAddressText = $newAddr->address;
@@ -724,14 +733,20 @@ class CartController extends Controller
                         $shippingAddressText = $saddr->address;
                     }
                 } elseif (!empty($validated['shipping_address']) && $user) {
+                    // Enforce address cap (6)
+                    $addrCount = $user->addresses()->count();
+                    if ($addrCount >= 6) {
+                        return back()->with('warning', 'Bạn đã đạt giới hạn 6 địa chỉ. Vui lòng chọn địa chỉ đã lưu hoặc xóa bớt địa chỉ cũ.')->withInput();
+                    }
+
                     // Create new shipping address
                     $newSAddr = $user->addresses()->create([
                         'type' => 'shipping',
                         'contact_name' => $validated['name'],
                         'phone' => $validated['phone'],
                         'address' => $validated['shipping_address'],
-                        'city' => 'Hồ Chí Minh', // Default city
-                        'state' => 'Hồ Chí Minh',
+                        'city' => null,
+                        'state' => null,
                         'country' => 'Vietnam',
                         'is_default' => false,
                     ]);

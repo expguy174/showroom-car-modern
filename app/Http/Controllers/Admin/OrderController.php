@@ -26,7 +26,6 @@ class OrderController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('order_number', 'like', "%{$search}%")
                     ->orWhere('tracking_number', 'like', "%{$search}%")
-                    ->orWhere('referrer', 'like', "%{$search}%")
                     ->orWhereHas('user', function ($uq) use ($search) {
                         $uq->where('email', 'like', "%{$search}%");
                     });

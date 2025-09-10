@@ -18,6 +18,7 @@ return new class extends Migration
             
             // Thông tin cá nhân cơ bản
             $table->string('name');
+            $table->string('phone', 32)->nullable();
             $table->string('avatar_path', 2048)->nullable();
             $table->date('birth_date')->nullable();
             $table->enum('gender', ['male', 'female', 'other'])->nullable();

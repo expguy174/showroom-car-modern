@@ -33,6 +33,29 @@ class LoginRequest extends FormRequest
     }
 
     /**
+     * Get custom messages for validator errors (Vietnamese).
+     */
+    public function messages(): array
+    {
+        return [
+            'email.required' => 'Vui lòng nhập email.',
+            'email.email' => 'Email không hợp lệ.',
+            'password.required' => 'Vui lòng nhập mật khẩu.',
+        ];
+    }
+
+    /**
+     * Get custom attributes for validator errors (Vietnamese field names).
+     */
+    public function attributes(): array
+    {
+        return [
+            'email' => 'email',
+            'password' => 'mật khẩu',
+        ];
+    }
+
+    /**
      * Attempt to authenticate the request's credentials.
      *
      * @throws \Illuminate\Validation\ValidationException

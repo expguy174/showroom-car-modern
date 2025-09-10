@@ -7,7 +7,7 @@
     <!-- Session Status -->
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
-    <form x-data="{ show: false }" @submit="showButtonLoading($event.target.querySelector('button[type=submit]'), 'Đang đăng nhập...')" method="POST" action="{{ route('login') }}" class="space-y-5">
+    <form x-data="{ show: false }" @submit="showButtonLoading($event.target.querySelector('button[type=submit]'), 'Đang đăng nhập...')" method="POST" action="{{ route('login') }}" class="space-y-5" novalidate>
         @csrf
 
         <!-- Email Address -->
@@ -54,6 +54,19 @@
             <i class="fas fa-sign-in-alt"></i>
             Đăng nhập
         </button>
+        <script>
+            (function(){
+                const form = document.currentScript.closest('form');
+                if (!form) return;
+                const setMsg = (el, msg) => { if (el) { el.setCustomValidity(msg || ''); } };
+                const email = form.querySelector('#email');
+                const pass = form.querySelector('#password');
+                if (email) email.addEventListener('invalid', ()=> setMsg(email, 'Vui lòng nhập email hợp lệ.'));
+                if (email) email.addEventListener('input', ()=> setMsg(email, ''));
+                if (pass) pass.addEventListener('invalid', ()=> setMsg(pass, 'Vui lòng nhập mật khẩu.'));
+                if (pass) pass.addEventListener('input', ()=> setMsg(pass, ''));
+            })();
+        </script>
     </form>
 
     

@@ -30,35 +30,8 @@ class Order extends Model
         'order_number',
         'tracking_number',
         'estimated_delivery',
-        'customer_notes',
-        'internal_notes',
-        'source',
-        'ip_address',
-        'user_agent',
-        'referrer',
-        'created_by',
-        'updated_by',
-        'cancelled_by',
-        'cancelled_at',
-        'cancellation_reason',
-        'sales_person_id',
-        'showroom_id',
-        'delivery_date',
-        'delivery_address',
-        'delivery_notes',
         'billing_address_id',
         'shipping_address_id',
-        'has_trade_in',
-        'trade_in_brand',
-        'trade_in_model',
-        'trade_in_year',
-        'trade_in_value',
-        'trade_in_condition',
-        'finance_option_id',
-        'down_payment_amount',
-        'monthly_payment_amount',
-        'loan_term_months',
-        'interest_rate',
     ];
 
     protected $casts = [
@@ -70,15 +43,6 @@ class Order extends Model
         'grand_total' => 'decimal:2',
         'paid_at' => 'datetime',
         'estimated_delivery' => 'date',
-        'cancelled_at' => 'datetime',
-        'delivery_date' => 'date',
-        'has_trade_in' => 'boolean',
-        'trade_in_value' => 'decimal:2',
-        'down_payment_amount' => 'decimal:2',
-        'monthly_payment_amount' => 'decimal:2',
-        'interest_rate' => 'decimal:2',
-        'trade_in_year' => 'integer',
-        'loan_term_months' => 'integer',
     ];
 
     public function user()
@@ -129,36 +93,7 @@ class Order extends Model
         return $this->belongsTo(Address::class, 'shipping_address_id');
     }
 
-    // Staff relationships
-    public function creator()
-    {
-        return $this->belongsTo(User::class, 'created_by');
-    }
-
-    public function updater()
-    {
-        return $this->belongsTo(User::class, 'updated_by');
-    }
-
-    public function canceller()
-    {
-        return $this->belongsTo(User::class, 'cancelled_by');
-    }
-
-    public function salesPerson()
-    {
-        return $this->belongsTo(User::class, 'sales_person_id');
-    }
-
-    public function showroom()
-    {
-        return $this->belongsTo(Showroom::class);
-    }
-
-    public function financeOption()
-    {
-        return $this->belongsTo(FinanceOption::class);
-    }
+    // Removed staff/trade-in/finance relationships per simplified schema
 
     public function getStatusDisplayAttribute()
     {

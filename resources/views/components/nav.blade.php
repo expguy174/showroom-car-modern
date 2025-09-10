@@ -265,7 +265,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                                 <span class="inline-flex items-center justify-center w-5"><i class="fas fa-user text-gray-500 text-[14px]"></i></span>
                                 <span class="flex-1">Tài khoản</span>
                             </a>
-                            <a href="{{ route('user.customer-profiles.orders') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white">
+                            <a href="{{ route('user.order.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white">
                                 <span class="inline-flex items-center justify-center w-5"><i class="fas fa-file-invoice text-gray-500 text-[14px]"></i></span>
                                 <span class="flex-1">Đơn hàng</span>
                             </a>
@@ -424,7 +424,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                         <span class="inline-flex items-center justify-center w-5"><i class="fas fa-user text-gray-500 text-[14px]"></i></span>
                         <span class="flex-1">Tài khoản</span>
                     </a>
-                    <a href="{{ route('user.customer-profiles.orders') }}" class="block px-4 py-3 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                    <a href="{{ route('user.order.index') }}" class="block px-4 py-3 rounded-lg hover:bg-gray-50 flex items-center gap-2">
                         <span class="inline-flex items-center justify-center w-5"><i class="fas fa-file-invoice text-gray-500 text-[14px]"></i></span>
                         <span class="flex-1">Đơn hàng</span>
                     </a>

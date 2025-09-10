@@ -10,16 +10,36 @@ use App\Rules\UniqueAddress;
 
 class AddressController extends Controller
 {
+    private int $maxAddressesPerUser = 6;
+
     public function index()
     {
         $user = Auth::user();
+        // Eager load profile and addresses to ensure blade sees latest values
+        $user->load(['userProfile', 'addresses']);
         $addresses = Address::where('user_id', $user->id)->orderByDesc('is_default')->latest()->get();
-        return view('user.addresses.index', compact('addresses', 'user'));
+        $addressCount = $addresses->count();
+        $maxAddresses = $this->maxAddressesPerUser;
+        $addressLimitReached = $addressCount >= $maxAddresses;
+        return view('user.addresses.index', compact('addresses', 'user', 'addressCount', 'maxAddresses', 'addressLimitReached'));
     }
 
     public function store(Request $request)
     {
         $user = Auth::user();
+
+        // Enforce per-user address limit
+        $currentCount = Address::where('user_id', $user->id)->count();
+        if ($currentCount >= $this->maxAddressesPerUser) {
+            $message = 'Bạn đã đạt giới hạn ' . $this->maxAddressesPerUser . ' địa chỉ. Vui lòng xóa bớt trước khi thêm mới.';
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $message,
+                ], 422);
+            }
+            return redirect()->back()->withErrors(['limit' => $message])->withInput();
+        }
 
         // Coalesce contact_name from name for compatibility
         if (!$request->filled('contact_name') && $request->filled('name')) {
@@ -28,11 +48,11 @@ class AddressController extends Controller
         
         $request->validate([
             'contact_name' => 'required|string|max:255',
-            'phone' => 'nullable|string|max:20',
+            'phone' => 'required|string|regex:/^[0-9+\-\s()]+$/|min:10|max:15',
             'email' => 'nullable|email|max:255',
             'address' => ['required', 'string', 'max:1000', new UniqueAddress()],
             'city' => 'required|string|max:255',
-            'state' => 'nullable|string|max:255',
+            'state' => 'required|string|max:255',
             'postal_code' => 'nullable|string|max:20',
             'country' => 'nullable|string|max:255',
             'type' => 'nullable|in:' . implode(',', \App\Models\Address::TYPES),
@@ -43,13 +63,15 @@ class AddressController extends Controller
             'contact_name.string' => 'Họ tên liên hệ phải là chuỗi ký tự.',
             'contact_name.max' => 'Họ tên liên hệ không được vượt quá :max ký tự.',
 
-            'phone.string' => 'Số điện thoại phải là chuỗi ký tự.',
-            'phone.max' => 'Số điện thoại không được vượt quá :max ký tự.',
+            'phone.required' => 'Số điện thoại là bắt buộc.',
+            'phone.regex' => 'Số điện thoại không hợp lệ.',
+            'phone.min' => 'Số điện thoại phải có ít nhất 10 ký tự.',
+            'phone.max' => 'Số điện thoại không được vượt quá 15 ký tự.',
 
             'email.email' => 'Email không đúng định dạng.',
             'email.max' => 'Email không được vượt quá :max ký tự.',
 
-            'address.required' => 'Địa chỉ không được để trống.',
+            'address.required' => 'Địa chỉ là bắt buộc.',
             'address.string' => 'Địa chỉ phải là chuỗi ký tự.',
             'address.max' => 'Địa chỉ không được vượt quá :max ký tự.',
 
@@ -57,6 +79,7 @@ class AddressController extends Controller
             'city.string' => 'Tỉnh/Thành phố phải là chuỗi ký tự.',
             'city.max' => 'Tỉnh/Thành phố không được vượt quá :max ký tự.',
 
+            'state.required' => 'Quận/Huyện là bắt buộc.',
             'state.string' => 'Quận/Huyện phải là chuỗi ký tự.',
             'state.max' => 'Quận/Huyện không được vượt quá :max ký tự.',
 
@@ -97,8 +120,11 @@ class AddressController extends Controller
         $address->country = $request->country ?: 'Vietnam';
         $address->type = $request->type ?: 'home';
         $address->notes = $request->notes;
-        $address->is_default = (bool) $request->boolean('is_default');
+        // Auto set default when user currently has no addresses
+        $address->is_default = $currentCount === 0 ? true : (bool) $request->boolean('is_default');
         $address->save();
+
+        // No automatic sync to user profile phone per requirement
 
         if ($address->is_default) {
             Address::where('user_id', $user->id)->where('id', '!=', $address->id)->update(['is_default' => false]);
@@ -144,11 +170,11 @@ class AddressController extends Controller
 
         $request->validate([
             'contact_name' => 'required|string|max:255',
-            'phone' => 'nullable|string|max:20',
+            'phone' => 'required|string|regex:/^[0-9+\-\s()]+$/|min:10|max:15',
             'email' => 'nullable|email|max:255',
             'address' => ['required', 'string', 'max:1000', new UniqueAddress($address->id)],
             'city' => 'required|string|max:255',
-            'state' => 'nullable|string|max:255',
+            'state' => 'required|string|max:255',
             'postal_code' => 'nullable|string|max:20',
             'country' => 'nullable|string|max:255',
             'type' => 'nullable|in:' . implode(',', \App\Models\Address::TYPES),
@@ -159,13 +185,15 @@ class AddressController extends Controller
             'contact_name.string' => 'Họ tên liên hệ phải là chuỗi ký tự.',
             'contact_name.max' => 'Họ tên liên hệ không được vượt quá :max ký tự.',
 
-            'phone.string' => 'Số điện thoại phải là chuỗi ký tự.',
-            'phone.max' => 'Số điện thoại không được vượt quá :max ký tự.',
+            'phone.required' => 'Số điện thoại là bắt buộc.',
+            'phone.regex' => 'Số điện thoại không hợp lệ.',
+            'phone.min' => 'Số điện thoại phải có ít nhất 10 ký tự.',
+            'phone.max' => 'Số điện thoại không được vượt quá 15 ký tự.',
 
             'email.email' => 'Email không đúng định dạng.',
             'email.max' => 'Email không được vượt quá :max ký tự.',
 
-            'address.required' => 'Địa chỉ không được để trống.',
+            'address.required' => 'Địa chỉ là bắt buộc.',
             'address.string' => 'Địa chỉ phải là chuỗi ký tự.',
             'address.max' => 'Địa chỉ không được vượt quá :max ký tự.',
 
@@ -173,6 +201,7 @@ class AddressController extends Controller
             'city.string' => 'Tỉnh/Thành phố phải là chuỗi ký tự.',
             'city.max' => 'Tỉnh/Thành phố không được vượt quá :max ký tự.',
 
+            'state.required' => 'Quận/Huyện là bắt buộc.',
             'state.string' => 'Quận/Huyện phải là chuỗi ký tự.',
             'state.max' => 'Quận/Huyện không được vượt quá :max ký tự.',
 
@@ -214,6 +243,8 @@ class AddressController extends Controller
         $address->is_default = (bool) $request->boolean('is_default');
         $address->save();
 
+        // No automatic sync to user profile phone per requirement
+
         if ($address->is_default) {
             // Unset default for other addresses of the user
             Address::where('user_id', $address->user_id)->where('id', '!=', $address->id)->update(['is_default' => false]);
@@ -251,7 +282,18 @@ class AddressController extends Controller
     public function destroy(Address $address)
     {
         abort_unless($address->user_id === Auth::id(), 403);
+        $userId = $address->user_id;
         $address->delete();
+        // If only one address remains, force it as default
+        $remaining = Address::where('user_id', $userId)->get();
+        if ($remaining->count() === 1) {
+            $only = $remaining->first();
+            if ($only && !$only->is_default) {
+                Address::where('user_id', $userId)->update(['is_default' => false]);
+                $only->is_default = true;
+                $only->save();
+            }
+        }
         
         if (request()->ajax()) {
             return response()->json(['success' => true, 'message' => 'Đã xóa địa chỉ']);
