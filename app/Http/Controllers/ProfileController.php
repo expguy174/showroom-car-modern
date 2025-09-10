@@ -140,6 +140,7 @@ class ProfileController extends Controller
         $user = $request->user()->loadMissing('userProfile');
         $data = $request->validate([
             'name' => ['nullable','string','max:255'],
+            'phone' => ['nullable','string','max:32'],
             'birth_date' => ['nullable','date'],
             'gender' => ['nullable','in:male,female,other'],
             'purchase_purpose' => ['nullable','string','max:255'],
@@ -151,7 +152,7 @@ class ProfileController extends Controller
 
         $profile = $user->userProfile()->firstOrCreate([]);
         $profile->fill(collect($data)->only([
-            'name','birth_date','gender','purchase_purpose','budget_min','budget_max','employee_salary','employee_skills'
+            'name','phone','birth_date','gender','purchase_purpose','budget_min','budget_max','employee_salary','employee_skills'
         ])->toArray());
         $profile->save();
 
@@ -159,6 +160,7 @@ class ProfileController extends Controller
             'success' => true,
             'data' => [
                 'name' => $profile->name,
+                'phone' => $profile->phone,
                 'birth_date' => optional($profile->birth_date)->format('Y-m-d'),
                 'gender' => $profile->gender,
                 'purchase_purpose' => $profile->purchase_purpose,

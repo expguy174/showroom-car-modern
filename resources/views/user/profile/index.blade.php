@@ -66,7 +66,8 @@
                             <!-- User Info with cleaner layout -->
                             <div class="flex-1 min-w-0 text-center lg:text-left">
                                 <h2 class="text-2xl sm:text-3xl font-bold text-white mb-1 sm:mb-2 truncate" data-field="profile_name">{{ optional($user->userProfile)->name ?? 'Khách' }}</h2>
-                                <p class="text-indigo-100 text-sm sm:text-base truncate">{{ $user->email }}</p>
+                                <p class="text-indigo-100 text-sm sm:text-base truncate" data-field="profile_phone">{{ $user->phone ?? optional($user->userProfile)->phone ?? 'Chưa cập nhật số điện thoại' }}</p>
+                                <p class="text-indigo-200 text-xs sm:text-sm truncate mt-1">{{ $user->email }}</p>
                                         </div>
                             
                             <!-- Quick Actions with improved responsive design -->
@@ -429,6 +430,20 @@
                                         <div class="text-sm font-medium text-gray-900">{{ $__ctLabel }}</div>
                                     </div>
                                 </div>
+                                <div class="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
+                                    <div class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center"><i class="fas fa-user"></i></div>
+                                    <div>
+                                        <div class="text-xs text-gray-500">Họ tên</div>
+                                        <div class="text-sm font-medium text-gray-900" data-field="profile_name">{{ optional($user->userProfile)->name ?? 'Chưa cập nhật' }}</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
+                                    <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center"><i class="fas fa-phone"></i></div>
+                                    <div>
+                                        <div class="text-xs text-gray-500">Số điện thoại</div>
+                                        <div class="text-sm font-medium text-gray-900" data-field="profile_phone">{{ $user->phone ?? optional($user->userProfile)->phone ?? 'Chưa cập nhật' }}</div>
+                                    </div>
+                                </div>
                                 @if($customerProfile->birth_date)
                                 <div class="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
                                     <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center"><i class="fas fa-birthday-cake"></i></div>
@@ -613,7 +628,7 @@
                                     </div>
                                     <div class="p-3 rounded-xl bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200">
                                         <div class="text-sm font-semibold text-gray-900" data-field="preferences_budget">
-                                            {{ number_format($customerProfile->budget_min) }} - {{ number_format($customerProfile->budget_max) }} VNĐ
+                                            {{ number_format($customerProfile->budget_min, 0, ',', '.') }} - {{ number_format($customerProfile->budget_max, 0, ',', '.') }} VNĐ
                                         </div>
                                     </div>
                                 </div>
@@ -847,13 +862,22 @@
 
   // Update profile info display without reload
   function updateProfileInfoDisplay(data) {
-    // Update name
+    // Update name in header and profile info section
     if (data.name) {
-      const nameElement = document.querySelector('[data-field="profile_name"]');
-      if (nameElement) {
-        nameElement.textContent = data.name;
-      }
+      const nameElements = document.querySelectorAll('[data-field="profile_name"]');
+      nameElements.forEach(element => {
+        element.textContent = data.name;
+      });
     }
+    
+    // Update phone number in header and profile info section
+    if (data.phone) {
+      const phoneElements = document.querySelectorAll('[data-field="profile_phone"]');
+      phoneElements.forEach(element => {
+        element.textContent = data.phone;
+      });
+    }
+    
     // Update birth date
     if (data.birth_date) {
       const birthDateElement = document.querySelector('[data-field="birth_date"]');
@@ -877,14 +901,6 @@
       const purposeElement = document.querySelector('[data-field="purchase_purpose"]');
       if (purposeElement) {
         purposeElement.textContent = data.purchase_purpose;
-      }
-    }
-    
-    // Update budget
-    if (data.budget_min && data.budget_max) {
-      const budgetElement = document.querySelector('[data-field="budget"]');
-      if (budgetElement) {
-        budgetElement.textContent = `${new Intl.NumberFormat('vi-VN').format(data.budget_min)} - ${new Intl.NumberFormat('vi-VN').format(data.budget_max)} VNĐ`;
       }
     }
   }
@@ -954,7 +970,15 @@
     if (data.budget_min && data.budget_max) {
       const budgetElement = document.querySelector('[data-field="preferences_budget"]');
       if (budgetElement) {
-        budgetElement.textContent = `${new Intl.NumberFormat('vi-VN').format(data.budget_min)} - ${new Intl.NumberFormat('vi-VN').format(data.budget_max)} VNĐ`;
+        // Format Vietnamese currency: use dots instead of commas, remove .00
+        const formatVND = (amount) => {
+          const formatted = new Intl.NumberFormat('vi-VN', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+          }).format(amount);
+          return formatted.replace(/,/g, '.');
+        };
+        budgetElement.textContent = `${formatVND(data.budget_min)} - ${formatVND(data.budget_max)} VNĐ`;
       }
     }
   }
@@ -1082,6 +1106,10 @@
                     <label class="block text-sm font-medium text-gray-700 mb-2">Họ tên <span class="text-red-500">*</span></label>
                     <input class="form-input" name="name" type="text" value="{{ old('name', optional($user->userProfile)->name ?? '') }}" required>
                 </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Số điện thoại <span class="text-red-500">*</span></label>
+                    <input class="form-input" name="phone" type="tel" value="{{ old('phone', $user->phone ?? optional($user->userProfile)->phone ?? '') }}" placeholder="Ví dụ: +84 90 123 4567" required>
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Ngày sinh</label>
@@ -1101,17 +1129,6 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Mục đích mua</label>
                     <textarea class="form-input" name="purchase_purpose" rows="3" placeholder="Mô tả mục đích mua xe của bạn...">{{ old('purchase_purpose', $customerProfile->purchase_purpose ?? '') }}</textarea>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Ngân sách tối thiểu (VNĐ)</label>
-                        <input class="form-input" name="budget_min" type="number" value="{{ old('budget_min', $customerProfile->budget_min ?? '') }}" placeholder="Ví dụ: 500000000">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Ngân sách tối đa (VNĐ)</label>
-                        <input class="form-input" name="budget_max" type="number" value="{{ old('budget_max', $customerProfile->budget_max ?? '') }}" placeholder="Ví dụ: 1000000000">
-                    </div>
                 </div>
 
                 @if(($customerProfile->profile_type ?? 'customer') === 'employee')
@@ -1236,11 +1253,11 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Ngân sách tối thiểu (VNĐ)</label>
-                        <input class="form-input" name="budget_min" type="number" value="{{ old('budget_min', $customerProfile->budget_min ?? '') }}" placeholder="Ví dụ: 500000000">
+                        <input class="form-input" name="budget_min" type="number" value="{{ old('budget_min', $customerProfile->budget_min ? (int)$customerProfile->budget_min : '') }}" placeholder="Ví dụ: 500000000">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Ngân sách tối đa (VNĐ)</label>
-                        <input class="form-input" name="budget_max" type="number" value="{{ old('budget_max', $customerProfile->budget_max ?? '') }}" placeholder="Ví dụ: 1000000000">
+                        <input class="form-input" name="budget_max" type="number" value="{{ old('budget_max', $customerProfile->budget_max ? (int)$customerProfile->budget_max : '') }}" placeholder="Ví dụ: 1000000000">
                     </div>
                 </div>
             </div>
