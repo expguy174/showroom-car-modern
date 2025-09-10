@@ -8,9 +8,21 @@
     <div class="card-header py-3 d-flex flex-column flex-md-row justify-content-between align-items-center">
         <h6 class="m-0 font-weight-bold text-primary">Danh sách đơn hàng</h6>
         <form method="GET" action="{{ route('admin.orders.index') }}" class="form-inline mt-2 mt-md-0">
-            <input type="text" name="search" value="{{ request('search') }}"
-                   class="form-control mr-2" placeholder="Tìm đơn hàng...">
-            <button type="submit" class="btn btn-primary">Tìm</button>
+            <input type="text" name="search" value="{{ request('search') }}" class="form-control mr-2" placeholder="Tìm đơn hàng...">
+            <select name="status" class="form-control mr-2">
+                <option value="">Trạng thái</option>
+                @foreach(\App\Models\Order::STATUSES as $st)
+                    <option value="{{ $st }}" @selected(request('status')===$st)>{{ ucfirst($st) }}</option>
+                @endforeach
+            </select>
+            <select name="payment_status" class="form-control mr-2">
+                <option value="">TT thanh toán</option>
+                @php($__adminPaymentStatuses=['pending','processing','completed','failed','cancelled'])
+                @foreach($__adminPaymentStatuses as $pst)
+                    <option value="{{ $pst }}" @selected(request('payment_status')===$pst)>{{ (new \App\Models\Order(['payment_status'=>$pst]))->payment_status_display }}</option>
+                @endforeach
+            </select>
+            <button type="submit" class="btn btn-primary">Lọc</button>
         </form>
     </div>
 
@@ -25,6 +37,7 @@
                         <th>SĐT</th>
                         <th>Tổng tiền</th>
                         <th>Trạng thái</th>
+                        <th>TT thanh toán</th>
                         <th>Ngày tạo</th>
                         <th width="250">Hành động</th>
                     </tr>
@@ -48,6 +61,20 @@
                                 @endphp
                                 <span class="badge badge-{{ $colors[$order->status] ?? 'secondary' }}">
                                     {{ ucfirst($order->status) }}
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                @php
+                                    $payColors = [
+                                        'pending' => 'secondary',
+                                        'processing' => 'info',
+                                        'completed' => 'success',
+                                        'failed' => 'danger',
+                                        'cancelled' => 'dark',
+                                    ];
+                                @endphp
+                                <span class="badge badge-{{ $payColors[$order->payment_status] ?? 'light' }}">
+                                    {{ (new \App\Models\Order(['payment_status'=>$order->payment_status]))->payment_status_display }}
                                 </span>
                             </td>
                             <td class="text-center">{{ $order->created_at->format('d/m/Y H:i') }}</td>

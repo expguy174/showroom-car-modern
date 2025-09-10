@@ -146,6 +146,7 @@ Route::prefix('payment')->group(function(){
 Route::middleware('auth')->group(function(){
     Route::get('/user/orders', [UserOrderController::class, 'index'])->name('user.order.index');
     Route::get('/user/orders/{order}', [UserOrderController::class, 'show'])->name('user.orders.show');
+    Route::post('/user/orders/{order}/cancel', [UserOrderController::class, 'cancel'])->name('user.orders.cancel');
     Route::post('/order', [UserOrderController::class, 'store'])->name('order.store');
 });
 

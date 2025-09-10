@@ -55,6 +55,20 @@
                         {{ ucfirst($order->status) }}
                     </span>
                 </p>
+                <p><strong>TT thanh toán:</strong>
+                    @php
+                        $payColors = [
+                            'pending' => 'badge-secondary',
+                            'processing' => 'badge-info',
+                            'completed' => 'badge-success',
+                            'failed' => 'badge-danger',
+                            'cancelled' => 'badge-dark',
+                        ];
+                    @endphp
+                    <span class="badge {{ $payColors[$order->payment_status] ?? 'badge-light' }}">
+                        {{ (new \App\Models\Order(['payment_status'=>$order->payment_status]))->payment_status_display }}
+                    </span>
+                </p>
                 @if ($order->note)
                     <p><strong>Ghi chú:</strong> {{ $order->note }}</p>
                 @endif

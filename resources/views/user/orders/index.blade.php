@@ -3,290 +3,319 @@
 @section('title', 'Đơn hàng của tôi')
 
 @section('content')
-<div class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-    <!-- Header Section -->
-    <div class="bg-white shadow-sm border-b border-gray-100">
-        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-4">
-                    <div class="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
-                        <i class="fas fa-clipboard-list text-white text-xl"></i>
-                    </div>
-                    <div>
-                        <h1 class="text-2xl font-bold text-gray-900">Đơn hàng của tôi</h1>
-                        <p class="text-gray-600">Quản lý và theo dõi đơn hàng</p>
-                    </div>
-                </div>
-                <div class="hidden md:flex items-center space-x-4">
-                    <a href="{{ route('user.customer-profiles.index') }}" class="flex items-center text-blue-600 hover:text-blue-700 font-medium">
-                        <i class="fas fa-user mr-2"></i>
-                        Hồ sơ của tôi
-                    </a>
-                    <a href="{{ route('home') }}" class="flex items-center text-blue-600 hover:text-blue-700 font-medium">
-                        <i class="fas fa-home mr-2"></i>
-                        Trang chủ
-                    </a>
-                </div>
-            </div>
+<div class="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8">
+    <div class="flex items-center justify-between mb-4 sm:mb-6">
+        <div>
+            <h1 class="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight">Đơn hàng của tôi</h1>
+            <p class="text-sm sm:text-base text-gray-500 mt-1">Xem lịch sử đặt hàng và trạng thái xử lý</p>
+        </div>
+        <div class="hidden sm:flex items-center gap-2">
+            <a href="{{ route('products.index') }}" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 text-sm font-semibold">
+                <i class="fas fa-shopping-bag"></i> Mua thêm
+            </a>
         </div>
     </div>
 
-    <!-- Filter Section -->
-    <div class="bg-white border-b border-gray-100">
-        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div class="flex flex-col sm:flex-row gap-4 items-center justify-between">
-                <div class="flex items-center gap-3 w-full sm:w-auto">
-                    <div class="relative flex-1 sm:w-64">
-                        <input type="text" placeholder="Tìm kiếm theo mã đơn, tên sản phẩm..." 
-                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+    <form id="orders-filter-form" action="{{ route('user.order.index') }}" method="get" class="mb-4 sm:mb-6">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm</label>
+                    <div class="relative">
+                        <input type="text" name="q" value="{{ $q ?? request('q') }}" placeholder="Mã đơn, mã vận đơn..." class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 pr-10">
+                        <span class="absolute inset-y-0 right-3 flex items-center text-gray-400"><i class="fas fa-search"></i></span>
                     </div>
-                    <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                        <i class="fas fa-search"></i>
-                    </button>
                 </div>
-                <div class="flex items-center gap-3">
-                    <select class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                        <option value="">Tất cả trạng thái</option>
-                        <option value="pending">Chờ xử lý</option>
-                        <option value="confirmed">Đã xác nhận</option>
-                        <option value="shipping">Đang vận chuyển</option>
-                        <option value="delivered">Đã giao</option>
-                        <option value="cancelled">Đã hủy</option>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Trạng thái đơn hàng</label>
+                    <select name="status" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                        <option value="">Tất cả</option>
+                        @foreach(\App\Models\Order::STATUSES as $st)
+                            <option value="{{ $st }}" @selected(($status ?? request('status')) === $st)>{{ (new \App\Models\Order(['status'=>$st]))->status_display }}</option>
+                        @endforeach
                     </select>
-                    <select class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                        <option value="">Sắp xếp theo</option>
-                        <option value="newest">Mới nhất</option>
-                        <option value="oldest">Cũ nhất</option>
-                        <option value="highest">Giá cao nhất</option>
-                        <option value="lowest">Giá thấp nhất</option>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Trạng thái thanh toán</label>
+                    <select name="payment_status" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                        <option value="">Tất cả</option>
+                        @php($__allowedPaymentStatuses = ['pending','processing','completed','failed','cancelled'])
+                        @foreach($__allowedPaymentStatuses as $pst)
+                            <option value="{{ $pst }}" @selected(($payment_status ?? request('payment_status')) === $pst)>{{ (new \App\Models\Order(['payment_status'=>$pst]))->payment_status_display }}</option>
+                        @endforeach
                     </select>
                 </div>
             </div>
+            <div class="mt-3 flex items-center justify-end gap-2"></div>
         </div>
-  </div>
-
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
-  @if($orders->isEmpty())
-            <!-- Empty State -->
-            <div class="text-center py-16">
-                <div class="w-32 h-32 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full mx-auto mb-8 flex items-center justify-center">
-                    <i class="fas fa-clipboard-list text-blue-500 text-5xl"></i>
-                </div>
-                <h3 class="text-3xl font-bold text-gray-800 mb-4">Chưa có đơn hàng nào</h3>
-                <p class="text-gray-600 mb-8 max-w-md mx-auto text-lg">
-                    Bạn chưa có đơn hàng nào. Hãy khám phá các sản phẩm tuyệt vời của chúng tôi!
-                </p>
-                <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                    <a href="{{ route('products.index') }}" 
-                       class="inline-flex items-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition duration-300 transform hover:scale-105 shadow-lg">
-                        <i class="fas fa-car mr-3"></i>
-                        Xem xe hơi
-                    </a>
-                    <a href="{{ route('accessories.index') }}" 
-                       class="inline-flex items-center bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-emerald-700 hover:to-teal-700 transition duration-300 transform hover:scale-105 shadow-lg">
-                        <i class="fas fa-tools mr-3"></i>
-                        Xem phụ kiện
-                    </a>
-                </div>
-            </div>
-  @else
-            <!-- Orders List -->
-            <div class="space-y-6">
-      @foreach($orders as $order)
-                    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
-                        <!-- Order Header -->
-                        <div class="px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-b border-gray-200">
-          <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
-                                        <i class="fas fa-receipt"></i>
-                                    </div>
-                                    <div>
-                                        <div class="text-lg font-semibold text-gray-900">
-                                            #{{ $order->order_number ?? $order->id }}
-                                        </div>
-                                        <div class="text-sm text-gray-500">
-                                            {{ $order->created_at->format('d/m/Y H:i') }}
-                                        </div>
-                                    </div>
-          </div>
-                                <div class="flex items-center gap-3">
-                                    @php
-                                        $statusColors = [
-                                            'pending' => 'amber',
-                                            'confirmed' => 'blue',
-                                            'shipping' => 'indigo',
-                                            'delivered' => 'emerald',
-                                            'cancelled' => 'red'
-                                        ];
-                                        $paymentColors = [
-                                            'pending' => 'amber',
-                                            'processing' => 'blue',
-                                            'completed' => 'emerald',
-                                            'failed' => 'red',
-                                            'cancelled' => 'gray',
-                                            'partial' => 'amber',
-                                            'refunded' => 'gray'
-                                        ];
-                                        $statusColor = $statusColors[$order->status] ?? 'gray';
-                                        $paymentColor = $paymentColors[$order->payment_status] ?? 'gray';
-            @endphp
-                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-{{ $statusColor }}-50 text-{{ $statusColor }}-700">
-                                        <i class="fas fa-box mr-1"></i>
-                                        {{ $order->status_display ?? 'Chưa xác định' }}
-                                    </span>
-                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-{{ $paymentColor }}-50 text-{{ $paymentColor }}-700">
-                                        <i class="fas fa-credit-card mr-1"></i>
-                                        {{ $order->payment_status_display ?? 'Chưa xác định' }}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Order Items Preview -->
-                        <div class="px-6 py-4">
-                            <div class="space-y-3">
-                                @foreach($order->items->take(2) as $item)
-                                    @php
-                                        $model = $item->item;
-                                        $img = null;
-                                        if ($item->item_type === 'car_variant' && $model?->images?->isNotEmpty()) {
-                                            $f = $model->images->first();
-                                            $img = $f->image_url ?: ($f->image_path ? asset('storage/'.$f->image_path) : null);
-                                        } elseif ($item->item_type === 'accessory') {
-                                            $img = $model?->image_url ? (filter_var($model->image_url, FILTER_VALIDATE_URL) ? $model->image_url : asset('storage/'.$model->image_url)) : null;
-                                        }
-            @endphp
-                                    <div class="flex items-center gap-4">
-                                        <div class="w-16 h-14 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
-                                            @if($img)
-                                                <img src="{{ $img }}" class="w-full h-full object-cover" alt="{{ $model?->name ?? $item->item_name }}" />
-                                            @else
-                                                <div class="w-full h-full flex items-center justify-center text-gray-400">
-                                                    <i class="fas fa-image"></i>
-                                                </div>
-            @endif
-          </div>
-                  <div class="min-w-0 flex-1">
-                                            <div class="font-medium text-gray-900">{{ $model?->name ?? $item->item_name }}</div>
-                                            <div class="text-sm text-gray-500">
-                                                Số lượng: {{ $item->quantity }}
-                                                @if($item->color)
-                                                    • Màu: {{ $item->color->color_name }}
-                                                @endif
-                  </div>
-                  </div>
-                  <div class="text-right">
-                                            <div class="font-semibold text-gray-900">{{ number_format($item->price) }} đ</div>
-                                            <div class="text-sm text-gray-500">x{{ $item->quantity }}</div>
-                  </div>
-                </div>
-              @endforeach
-                                @if($order->items->count() > 2)
-                                    <div class="text-center py-2">
-                                        <span class="text-sm text-gray-500">
-                                            <i class="fas fa-ellipsis-h mr-1"></i>
-                                            và {{ $order->items->count() - 2 }} sản phẩm khác
-                                        </span>
-                                    </div>
-                                @endif
-                            </div>
-                        </div>
-
-                        <!-- Order Summary & Actions -->
-                        <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
-                            <div class="flex items-center justify-between">
-                                <div class="text-sm text-gray-600">
-                                    @php
-                                        $addr = $order->shippingAddress ?: $order->billingAddress;
-                                        if ($addr) {
-                                            $parts = array_filter([trim($addr->address ?? ''), trim($addr->city ?? ''), trim($addr->state ?? '')]);
-                                            $shipText = implode(', ', $parts);
-                                        } elseif (!empty($order->delivery_address)) {
-                                            $shipText = $order->delivery_address;
-                                        } else {
-                                            $shipText = '';
-                                        }
-                                    @endphp
-                                    <div class="flex items-center gap-2">
-                                        <i class="fas fa-map-marker-alt text-gray-400"></i>
-                                        <span>{{ Str::limit($shipText, 40) }}</span>
-                                    </div>
-                                </div>
-                                <div class="flex items-center gap-4">
-                                    <div class="text-right">
-                                        <div class="text-sm text-gray-500">Thanh toán</div>
-                                        <div class="text-sm font-medium text-gray-800">{{ $order->paymentMethod->name ?? '—' }}</div>
-                                    </div>
-                                    <div class="text-right">
-                                        <div class="text-sm text-gray-500">Tổng cộng</div>
-                                        <div class="text-xl font-bold text-gray-900">{{ number_format($order->grand_total ?? $order->total_price) }} đ</div>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <a href="{{ route('user.orders.show', $order->id) }}" 
-                                           class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
-                                            <i class="fas fa-eye"></i>
-                                            Chi tiết
-                                        </a>
-                                        @if(in_array($order->status, ['pending', 'confirmed']))
-                                            <button class="inline-flex items-center gap-2 px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium">
-                                                <i class="fas fa-times"></i>
-                                                Hủy đơn
-                                            </button>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            @endforeach
+    </form>
+    <div class="flex items-center justify-between text-sm text-gray-600 mb-3">
+        <div>Tổng: <span class="font-semibold">{{ number_format($orders->total()) }}</span> đơn hàng</div>
+        <div>
+            @php($from=$orders->firstItem() ?? 0)
+            @php($to=$orders->lastItem() ?? 0)
+            Hiển thị: <span class="font-semibold">{{ $from }}</span>–<span class="font-semibold">{{ $to }}</span>
+        </div>
+    </div>
+    <div id="orders-list-wrapper">
+        @include('user.orders.partials.list', ['orders' => $orders])
     </div>
 
-            <!-- Pagination -->
-            @if($orders->hasPages())
-                <div class="mt-8 flex items-center justify-center">
-                    <nav class="bg-white rounded-2xl shadow-sm border border-gray-200 px-6 py-4">
-                        <div class="flex items-center gap-2">
-                            <!-- Previous -->
-                            @if($orders->onFirstPage())
-                                <span class="inline-flex items-center justify-center w-10 h-10 rounded-lg text-gray-400 cursor-not-allowed">
-                                    <i class="fas fa-chevron-left"></i>
-                                </span>
-                            @else
-                                <a href="{{ $orders->previousPageUrl() }}" class="inline-flex items-center justify-center w-10 h-10 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
-                                    <i class="fas fa-chevron-left"></i>
-                                </a>
-        @endif
-
-                            <!-- Page Numbers -->
-                            @foreach($orders->getUrlRange(1, $orders->lastPage()) as $page => $url)
-                                @if($page == $orders->currentPage())
-                                    <span class="inline-flex items-center justify-center min-w-[40px] h-10 px-3 rounded-lg bg-blue-600 text-white font-semibold">{{ $page }}</span>
-          @else
-                                    <a href="{{ $url }}" class="inline-flex items-center justify-center min-w-[40px] h-10 px-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors">{{ $page }}</a>
-          @endif
-                            @endforeach
-
-                            <!-- Next -->
-                            @if($orders->hasMorePages())
-                                <a href="{{ $orders->nextPageUrl() }}" class="inline-flex items-center justify-center w-10 h-10 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
-                                    <i class="fas fa-chevron-right"></i>
-                                </a>
-                            @else
-                                <span class="inline-flex items-center justify-center w-10 h-10 rounded-lg text-gray-400 cursor-not-allowed">
-                                    <i class="fas fa-chevron-right"></i>
-                                </span>
-          @endif
-                        </div>
-    </nav>
-                </div>
-    @endif
-  @endif
+    <div id="orders-pagination" class="mt-6">
+        @include('components.pagination-modern', ['paginator' => $orders->withQueryString()])
     </div>
+
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    (function(){
+        const form = document.getElementById('orders-filter-form');
+        const wrapper = document.getElementById('orders-list-wrapper');
+        const pagination = document.getElementById('orders-pagination');
+        const pageRoot = document.getElementById('orders-filter-form') || document.getElementById('orders-list-wrapper');
+
+        function scrollToTop(){
+            try {
+                const nav = document.getElementById('main-nav');
+                const headerOffset = (nav && typeof nav.offsetHeight === 'number') ? (nav.offsetHeight + 12) : 80;
+                const target = pageRoot || document.body;
+                const y = (target.getBoundingClientRect().top + window.scrollY) - headerOffset;
+                window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+            } catch {}
+        }
+
+        function submitAjax(url){
+            const params = new URLSearchParams(new FormData(form));
+            const fetchUrl = url || (form.getAttribute('action') + '?' + params.toString());
+            wrapper.innerHTML = '<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-center text-gray-500"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>';
+            fetch(fetchUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' }})
+                .then(r => r.json())
+                .then(res => {
+                    if (res && res.html !== undefined) {
+                        wrapper.innerHTML = res.html || '';
+                        if (pagination) pagination.innerHTML = res.pagination || '';
+                        bindPagination();
+                        scrollToTop();
+                    } else {
+                        wrapper.innerHTML = '<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-center text-gray-500">Không tải được dữ liệu</div>';
+                    }
+                })
+                .catch(() => {
+                    wrapper.innerHTML = '<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-center text-gray-500">Có lỗi xảy ra</div>';
+                });
+        }
+
+        function bindPagination(){
+            if (!pagination) return;
+            pagination.querySelectorAll('a').forEach(a => {
+                a.addEventListener('click', function(e){
+                    e.preventDefault();
+                    const url = this.getAttribute('href');
+                    if (url) submitAjax(url);
+                });
+            });
+        }
+
+        // Handle cancel order forms with confirm dialog like wishlist
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('form[action*="/cancel"]')) {
+                e.preventDefault();
+                const form = e.target.closest('form');
+                const button = form.querySelector('button[type="submit"]');
+                const canCancel = !button.disabled;
+                
+                if (canCancel) {
+                    const orderNumber = form.closest('.bg-white').querySelector('a[href*="/orders/"]').textContent;
+                    
+                    // Use confirm dialog like wishlist
+                    showConfirmDialog(
+                        'Hủy đơn hàng?',
+                        `Bạn có chắc chắn muốn hủy đơn hàng ${orderNumber}? Hành động này không thể hoàn tác.`,
+                        'Hủy đơn',
+                        'Hủy bỏ',
+                        () => {
+                            // Show loading state
+                            button.disabled = true;
+                            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Đang hủy...';
+                            
+                            // Submit the form and reload page after success
+                            fetch(form.action, {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                    'X-Requested-With': 'XMLHttpRequest',
+                                    'Accept': 'application/json'
+                                }
+                            })
+                            .then(response => {
+                                if (response.ok) {
+                                    // Parse JSON response
+                                    return response.json().then(data => {
+                                        if (data.success) {
+                                            // Show success message
+                                            if (typeof window.showMessage === 'function') {
+                                                window.showMessage(data.message || 'Đã hủy đơn hàng thành công', 'success');
+                                            }
+                                            
+                                            // Update UI without reload
+                                            updateOrderStatusAfterCancel(form, orderNumber);
+                                        } else {
+                                            throw new Error(data.message || 'Failed to cancel order');
+                                        }
+                                    });
+                                } else {
+                                    // Handle different error status codes
+                                    if (response.status === 403) {
+                                        throw new Error('Bạn không có quyền hủy đơn hàng này');
+                                    } else if (response.status === 422) {
+                                        return response.json().then(data => {
+                                            throw new Error(data.message || 'Đơn hàng không thể hủy ở trạng thái hiện tại');
+                                        });
+                                    } else {
+                                        throw new Error('Có lỗi xảy ra khi hủy đơn hàng');
+                                    }
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                if (typeof window.showMessage === 'function') {
+                                    window.showMessage(error.message || 'Có lỗi xảy ra khi hủy đơn hàng', 'error');
+                                } else {
+                                    alert(error.message || 'Có lỗi xảy ra khi hủy đơn hàng');
+                                }
+                                // Reset button state
+                                button.disabled = false;
+                                button.innerHTML = '<i class="fas fa-ban mr-1"></i> Hủy đơn';
+                            });
+                        }
+                    );
+                }
+            }
+        });
+
+        // Update order status after cancellation
+        function updateOrderStatusAfterCancel(form, orderNumber) {
+            const orderCard = form.closest('.bg-white');
+            const button = form.querySelector('button[type="submit"]');
+            
+            // Disable the cancel button
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-ban mr-1"></i> Đã hủy';
+            button.classList.remove('bg-red-500', 'hover:bg-red-600');
+            button.classList.add('bg-gray-400', 'cursor-not-allowed');
+            
+            // Update order status badge
+            const statusBadge = orderCard.querySelector('.bg-yellow-50, .bg-blue-50, .bg-indigo-50, .bg-emerald-50, .bg-rose-50');
+            if (statusBadge) {
+                statusBadge.className = 'inline-flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200';
+                statusBadge.innerHTML = '<i class="fas fa-ban mr-1"></i> Đã hủy';
+            }
+            
+            // Add visual feedback
+            orderCard.style.opacity = '0.7';
+            orderCard.style.transition = 'opacity 0.3s ease';
+            
+            // Optional: Add a small "Cancelled" indicator
+            const statusContainer = orderCard.querySelector('.flex.flex-wrap.items-center.gap-2');
+            if (statusContainer && !statusContainer.querySelector('.cancelled-indicator')) {
+                const cancelledIndicator = document.createElement('span');
+                cancelledIndicator.className = 'cancelled-indicator inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-600 border border-gray-200';
+                cancelledIndicator.innerHTML = '<i class="fas fa-times mr-1"></i> Đã hủy';
+                statusContainer.appendChild(cancelledIndicator);
+            }
+        }
+
+        // Confirm dialog function (same as wishlist)
+        function showConfirmDialog(title, message, confirmText, cancelText, onConfirm){
+            const existing = document.querySelector('.fast-confirm-dialog');
+            if (existing) existing.remove();
+            const wrapper = document.createElement('div');
+            wrapper.className = 'fast-confirm-dialog fixed inset-0 z-[100000] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4';
+            wrapper.innerHTML = `
+                <div class="bg-white rounded-xl shadow-2xl max-w-md w-full transform transition-all duration-200 scale-95 opacity-0">
+                    <div class="p-6">
+                        <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
+                            <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900 text-center mb-2">${title}</h3>
+                        <p class="text-gray-600 text-center mb-6">${message}</p>
+                        <div class="flex space-x-3">
+                            <button class="fast-cancel flex-1 px-4 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors duration-200">${cancelText}</button>
+                            <button class="fast-confirm flex-1 px-4 py-2.5 text-white bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-colors duration-200">${confirmText}</button>
+                        </div>
+                    </div>
+                </div>`;
+            document.body.appendChild(wrapper);
+            const panel = wrapper.firstElementChild;
+            
+            // Animate in
+            requestAnimationFrame(() => {
+                panel.style.transform = 'scale(1)';
+                panel.style.opacity = '1';
+            });
+            
+            // Handle clicks
+            wrapper.querySelector('.fast-cancel').addEventListener('click', () => {
+                panel.style.transform = 'scale(0.95)';
+                panel.style.opacity = '0';
+                setTimeout(() => wrapper.remove(), 200);
+            });
+            
+            wrapper.querySelector('.fast-confirm').addEventListener('click', () => {
+                panel.style.transform = 'scale(0.95)';
+                panel.style.opacity = '0';
+                setTimeout(() => {
+                    wrapper.remove();
+                    onConfirm();
+                }, 200);
+            });
+            
+            // Close on backdrop click
+            wrapper.addEventListener('click', (e) => {
+                if (e.target === wrapper) {
+                    panel.style.transform = 'scale(0.95)';
+                    panel.style.opacity = '0';
+                    setTimeout(() => wrapper.remove(), 200);
+                }
+            });
+        }
+
+        form.addEventListener('submit', function(e){
+            e.preventDefault();
+            submitAjax();
+        });
+
+        // Show success message if order was cancelled
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof window.showMessage === 'function') {
+                const status = '{{ session("status") }}';
+                if (status) {
+                    window.showMessage(status, 'success');
+                }
+            }
+        });
+        form.querySelectorAll('select').forEach(s => s.addEventListener('change', function(){ submitAjax(); }));
+
+        // Debounce helper
+        function debounce(fn, wait){
+            let t; return function(){
+                const args = arguments, ctx = this;
+                clearTimeout(t);
+                t = setTimeout(function(){ fn.apply(ctx, args); }, wait);
+            };
+        }
+        // Auto filter on typing in search input (300ms)
+        const searchInput = form.querySelector('input[name="q"]');
+        if (searchInput){
+            const debounced = debounce(function(){ submitAjax(); }, 300);
+            searchInput.addEventListener('input', debounced);
+        }
+
+        bindPagination();
+    })();
+</script>
+@endpush
 
 
