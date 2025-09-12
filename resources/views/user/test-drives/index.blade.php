@@ -1,200 +1,220 @@
 @extends('layouts.app')
-@section('title', 'Đặt lịch lái thử - AutoLux')
+@section('title', 'Lịch lái thử của tôi')
 @section('content')
 
-<section class="relative overflow-hidden">
-  <div class="absolute inset-0 bg-gradient-to-br from-indigo-50 via-white to-purple-50"></div>
-  <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-14">
-    <!-- Hero -->
-    <div class="text-center mb-10 lg:mb-12">
-      <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900">Đặt lịch lái thử</h1>
-      <p class="mt-3 text-gray-600 text-base sm:text-lg max-w-2xl mx-auto">Trải nghiệm thực tế mẫu xe bạn quan tâm cùng chuyên viên tư vấn của AutoLux.</p>
-    </div>
+<div class="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 pt-6 sm:pt-8 pb-6">
+	<div class="flex items-center justify-between mb-4 sm:mb-6">
+		<div>
+			<h1 class="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight">Lịch lái thử của tôi</h1>
+			<p class="text-sm sm:text-base text-gray-500 mt-1">Quản lý tất cả các lịch lái thử đã đặt</p>
+		</div>
+		<div class="hidden sm:flex items-center gap-2">
+			<a href="{{ route('products.index') }}" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 text-sm font-semibold">
+				<i class="fas fa-shopping-bag"></i> Khám phá xe
+			</a>
+			<a href="{{ route('test-drives.create') }}" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 text-sm font-semibold">
+				<i class="fas fa-plus"></i> Đặt lịch mới
+			</a>
+		</div>
+	</div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
-      <!-- Booking Card -->
-      <div class="lg:col-span-7">
-        <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-5 sm:p-6 lg:p-8">
-          <div class="flex items-center justify-between mb-5">
-            <h2 class="text-xl sm:text-2xl font-bold text-gray-900">Thông tin đặt lịch</h2>
-            <span class="text-xs sm:text-sm text-gray-500">Chỉ mất ~1 phút</span>
-          </div>
-          <form id="testDriveForm" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <input type="hidden" name="car_variant_id" id="car_variant_id" value="{{ request('car_variant_id') }}">
-            <div class="sm:col-span-2">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Bạn đang quan tâm mẫu xe nào?</label>
-              <select class="w-full border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" onchange="document.getElementById('car_variant_id').value=this.value">
-                <option value="" {{ empty(request('car_variant_id')) ? 'selected' : '' }}>— Chọn mẫu xe —</option>
-                @foreach(($variants ?? collect()) as $v)
-                  @php 
-                    $brand = optional(optional($v->carModel)->carBrand)->name; 
-                    $model = optional($v->carModel)->name; 
-                    $selected = (string) $v->id === (string) request('car_variant_id');
-                  @endphp
-                  <option value="{{ $v->id }}" {{ $selected ? 'selected' : '' }}>{{ trim(($brand ? $brand.' • ' : '').($model ? $model.' • ' : '').($v->name ?? '')) }}</option>
-                @endforeach
-              </select>
-            </div>
+	<form action="{{ route('test-drives.index') }}" method="get" class="mb-4 sm:mb-6">
+		<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+			<div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+				<div class="md:col-span-2">
+					<label class="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm</label>
+					<div class="relative">
+						<input type="text" name="q" value="{{ $q ?? request('q') }}" placeholder="Mã lịch, tên mẫu xe..." class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 pr-10">
+						<span class="absolute inset-y-0 right-3 flex items-center text-gray-400"><i class="fas fa-search"></i></span>
+					</div>
+				</div>
+				<div>
+					<label class="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
+					<select name="status" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+						<option value="">Tất cả</option>
+						@foreach(\App\Models\TestDrive::STATUSES as $st)
+							<option value="{{ $st }}" @selected(($status ?? request('status')) === $st)>{{ (new \App\Models\TestDrive(['status'=>$st]))->status_text }}</option>
+						@endforeach
+					</select>
+				</div>
+			</div>
+		</div>
+	</form>
+	<div class="flex items-center justify-between text-sm text-gray-600 mb-3">
+		<div>Tổng: <span class="font-semibold">{{ number_format($testDrives->total()) }}</span> lịch</div>
+		<div class="flex items-center gap-3">
+			@php($counts = $statusCounts ?? collect())
+			<span class="hidden sm:inline">Chờ xác nhận: <span class="font-semibold">{{ (int)($counts['pending'] ?? 0) }}</span></span>
+			<span class="hidden sm:inline">Đã xác nhận: <span class="font-semibold">{{ (int)($counts['confirmed'] ?? 0) }}</span></span>
+			<span class="hidden sm:inline">Hoàn thành: <span class="font-semibold">{{ (int)($counts['completed'] ?? 0) }}</span></span>
+		</div>
+	</div>
 
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Họ và tên</label>
-              <input type="text" name="name" required autocomplete="name" class="w-full border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" value="{{ optional(auth()->user()?->userProfile)->name ?? '' }}">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
-              <input type="tel" name="phone" required autocomplete="tel" class="w-full border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" value="{{ auth()->user()->phone ?? '' }}">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <input type="email" name="email" autocomplete="email" class="w-full border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" value="{{ auth()->user()->email ?? '' }}">
-            </div>
-            <div class="grid grid-cols-2 gap-3 sm:col-span-2">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Ngày mong muốn</label>
-                <input type="date" name="preferred_date" id="preferred_date" required class="w-full border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Giờ mong muốn</label>
-                <input type="time" name="preferred_time" required class="w-full border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-              </div>
-            </div>
-
-            <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Số GPLX (tuỳ chọn)</label>
-                <input type="text" name="driver_license" class="w-full border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="VD: 0792xxxxxxx">
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">CMND/CCCD (tuỳ chọn)</label>
-                <input type="text" name="id_card" class="w-full border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="VD: 0792xxxxxxx">
-              </div>
-            </div>
-
-            <div class="sm:col-span-2">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Ghi chú</label>
-              <textarea name="notes" rows="3" class="w-full border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Yêu cầu về địa điểm, khung giờ linh hoạt..."></textarea>
-            </div>
-
-            <div class="sm:col-span-2">
-              <button type="submit" class="w-full inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-3 rounded-xl transition">
-                <i class="fas fa-steering-wheel"></i> Xác nhận đặt lịch lái thử
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <!-- Side Info -->
-      <div class="lg:col-span-5 space-y-6">
-        <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
-          <h3 class="text-lg font-bold text-gray-900 mb-4">Vì sao nên lái thử tại AutoLux?</h3>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div class="flex items-start gap-3">
-              <div class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center"><i class="fas fa-user-check"></i></div>
-              <div><div class="font-semibold">Tư vấn cá nhân hoá</div><div class="text-sm text-gray-600">Chuyên viên giàu kinh nghiệm đồng hành suốt buổi lái thử.</div></div>
-            </div>
-            <div class="flex items-start gap-3">
-              <div class="w-9 h-9 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center"><i class="fas fa-shield-alt"></i></div>
-              <div><div class="font-semibold">An toàn & bảo hiểm</div><div class="text-sm text-gray-600">Xe luôn được kiểm tra kỹ thuật và có bảo hiểm.</div></div>
-            </div>
-            <div class="flex items-start gap-3">
-              <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center"><i class="fas fa-clock"></i></div>
-              <div><div class="font-semibold">Linh hoạt thời gian</div><div class="text-sm text-gray-600">Chọn khung giờ thuận tiện nhất cho bạn.</div></div>
-            </div>
-            <div class="flex items-start gap-3">
-              <div class="w-9 h-9 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center"><i class="fas fa-dollar-sign"></i></div>
-              <div><div class="font-semibold">Hoàn toàn miễn phí</div><div class="text-sm text-gray-600">Không phát sinh chi phí đặt lịch.</div></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
-          <h3 class="text-lg font-bold text-gray-900 mb-4">Lịch đã đặt của bạn</h3>
-          @if(($testDrives->count() ?? 0) === 0)
-            <div class="text-sm text-gray-600">Bạn chưa có lịch lái thử nào.</div>
-          @else
-            <div id="bookings-list" class="space-y-3">
-            @foreach($testDrives as $td)
-              <div class="p-4 border rounded-xl flex items-start gap-4">
-                <div class="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center"><i class="fas fa-car"></i></div>
-                <div class="flex-1 min-w-0">
-                  <div class="flex flex-wrap items-center gap-2">
-                    <a href="{{ route('car-variants.show', $td->car_variant_id) }}" class="font-semibold text-gray-900 hover:text-indigo-700 truncate">#{{ $td->test_drive_number ?? $td->id }} • {{ optional(optional($td->carVariant)->carModel)->name }} {{ $td->carVariant->name ?? '' }}</a>
-                    <span class="px-2 py-0.5 rounded-full text-xs {{ $td->status_badge }}">{{ $td->status_text }}</span>
-                  </div>
-                  <div class="text-sm text-gray-600 mt-1">Ngày {{ optional($td->preferred_date)->format('d/m/Y') }} • Giờ {{ 
-                  is_string($td->preferred_time) ? $td->preferred_time : optional($td->preferred_time)->format('H:i') }}</div>
-                </div>
-              </div>
-            @endforeach
-            </div>
-            <div class="mt-3">{{ $testDrives->links() }}</div>
-          @endif
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
+	<div id="testdrives-list-wrapper">
+		@if(($testDrives->count() ?? 0) === 0)
+			<div class="text-center py-10">
+				<div class="mx-auto w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3"><i class="fas fa-car-side"></i></div>
+				<div class="text-base font-semibold text-gray-900">Bạn chưa có lịch lái thử nào</div>
+				<p class="text-sm text-gray-600 mt-1">Hãy đặt lịch mới để trải nghiệm các mẫu xe yêu thích.</p>
+				<a href="{{ route('test-drives.create') }}" class="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 text-sm font-semibold">
+					<i class="fas fa-plus"></i> Đặt lịch mới
+				</a>
+			</div>
+		@else
+			@include('user.test-drives.partials.list', ['testDrives' => $testDrives->withQueryString()])
+		@endif
+	</div>
+</div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function(){
-  // Set min date = tomorrow
-  const dateEl = document.getElementById('preferred_date');
-  if (dateEl){
-    const t = new Date(); t.setDate(t.getDate()+1);
-    const yyyy = t.getFullYear(); const mm = String(t.getMonth()+1).padStart(2,'0'); const dd = String(t.getDate()).padStart(2,'0');
-    dateEl.min = `${yyyy}-${mm}-${dd}`;
-  }
+function debounce(fn, delay){ let t; return function(...args){ clearTimeout(t); t=setTimeout(()=>fn.apply(this,args), delay); }; }
 
-  const form = document.getElementById('testDriveForm');
-  if (!form) return;
-  form.addEventListener('submit', async function(e){
-    e.preventDefault();
-    const fd = new FormData(form);
-    const carId = (fd.get('car_variant_id')||'').toString().trim();
-    if (!carId){ if (typeof showMessage==='function') showMessage('Vui lòng chọn phiên bản xe (Car Variant)', 'warning'); return; }
-    const btn = form.querySelector('button[type="submit"]');
-    const old = btn ? btn.innerHTML : '';
-    if (btn){ btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi...'; }
-    try {
-      const res = await fetch(`{{ route('test-drives.book') }}`, {
-        method: 'POST',
-        headers: { 'X-Requested-With':'XMLHttpRequest', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
-        body: fd
-      });
-      const ct = res.headers.get('content-type')||'';
-      if (!ct.includes('application/json')){ window.location.href = `{{ route('login') }}`; return; }
-      const data = await res.json();
-      if (res.ok && data && data.success){
-        if (typeof showMessage==='function') showMessage(data.message || 'Đặt lịch lái thử thành công!', 'success');
-        form.reset();
-        // Append new booking (optimistic)
-        const list = document.getElementById('bookings-list');
-        if (list){
-          const now = new Date(fd.get('preferred_date')+ 'T' + (fd.get('preferred_time')||'00:00'));
-          const d = String(now.getDate()).padStart(2,'0') + '/' + String(now.getMonth()+1).padStart(2,'0') + '/' + now.getFullYear();
-          const t = (fd.get('preferred_time')||'').toString();
-          const num = (data.test_drive && (data.test_drive.test_drive_number || data.test_drive.id)) ? (data.test_drive.test_drive_number || ('#'+data.test_drive.id)) : '#Mới';
-          const item = document.createElement('div');
-          item.className = 'p-4 border rounded-xl flex items-start gap-4';
-          item.innerHTML = '<div class="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center"><i class="fas fa-car"></i></div>'+
-            '<div class="flex-1 min-w-0">'+
-            `<div class="flex flex-wrap items-center gap-2"><span class="font-semibold text-gray-900">${num}</span>`+
-            '<span class="px-2 py-0.5 rounded-full text-xs bg-yellow-100 text-yellow-800">Chờ xác nhận</span></div>'+
-            `<div class="text-sm text-gray-600 mt-1">Ngày ${d} • Giờ ${t || '—'}</div>`+
-            '</div>';
-          list.prepend(item);
-        }
-      } else {
-        const msg = (data && data.message) ? data.message : 'Không thể đặt lịch. Vui lòng kiểm tra thông tin.';
-        if (typeof showMessage==='function') showMessage(msg, 'error');
-      }
-    } catch (e) {
-      if (typeof showMessage==='function') showMessage('Không thể kết nối máy chủ. Vui lòng thử lại.', 'error');
-    } finally {
-      if (btn){ btn.disabled = false; btn.innerHTML = old; }
-    }
-  });
+// Ajax refresh of list (no full reload)
+async function refreshList(){
+	const form = document.querySelector(`form[action='{{ route('test-drives.index') }}']`);
+	const url = new URL(form.action, window.location.origin);
+	const params = new URLSearchParams(new FormData(form));
+	url.search = params.toString();
+	showListLoading();
+	window.scrollTo({ top: 0, behavior: 'smooth' });
+	const res = await fetch(url, { headers: { 'X-Requested-With':'XMLHttpRequest' } });
+	const data = await res.json().catch(()=>({}));
+	if (res.ok && data && data.html){
+		const target = document.getElementById('testdrives-list-wrapper');
+		if (target){ target.innerHTML = data.html; bindPagination(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+	}
+	hideListLoading();
+}
+
+(function(){
+	const form = document.querySelector(`form[action='{{ route('test-drives.index') }}']`);
+	if (!form) return;
+	const inputs = form.querySelectorAll('input[name="q"], select[name="status"]');
+	const handler = debounce(refreshList, 300);
+	inputs.forEach(i=>{ i.addEventListener('input', handler); i.addEventListener('change', handler); });
+})();
+
+function showListLoading(){
+	const target = document.getElementById('testdrives-list-wrapper');
+	if (!target) return;
+	const loader = '<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-center text-gray-500"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>';
+	target.innerHTML = loader;
+}
+
+function hideListLoading(){ /* no-op: content replaces skeleton */ }
+
+// Ajax pagination: intercept clicks on pagination-modern
+function bindPagination(){
+	// No-op: we now use delegated handler below
+}
+
+// Delegated click handler to intercept pagination links anywhere in the wrapper
+document.addEventListener('click', function(e){
+	const anchor = e.target.closest('#testdrives-list-wrapper nav[aria-label="Pagination Navigation"] a');
+	if (!anchor) return;
+	e.preventDefault();
+	const href = anchor.getAttribute('href');
+	if (!href) return;
+	showListLoading();
+	window.scrollTo({ top: 0, behavior: 'smooth' });
+	fetch(href, { headers: { 'X-Requested-With':'XMLHttpRequest' } })
+		.then(r=>r.json())
+		.then(data=>{
+			if (data && data.html){
+				const target = document.getElementById('testdrives-list-wrapper');
+				if (target){
+					target.innerHTML = data.html;
+					window.scrollTo({ top: 0, behavior: 'smooth' });
+					// Push URL without the page param (preserve other params)
+					try{
+						const u = new URL(href, window.location.origin);
+						u.searchParams.delete('page');
+						const clean = u.pathname + (u.searchParams.toString() ? ('?' + u.searchParams.toString()) : '');
+						history.pushState({}, '', clean);
+					}catch{
+						// Fallback: keep current path
+					}
+				}
+			}
+		}).catch(()=>{});
+});
+
+// Initial bind on first load
+bindPagination();
+
+// Cancel action with confirm
+function showConfirmDialog(title, message, confirmText, cancelText, onConfirm){
+	const existing = document.querySelector('.fast-confirm-dialog');
+	if (existing) existing.remove();
+	const wrapper = document.createElement('div');
+	wrapper.className = 'fast-confirm-dialog fixed inset-0 z-[100000] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4';
+	wrapper.innerHTML = `
+		<div class="bg-white rounded-xl shadow-2xl max-w-md w-full transform transition-all duration-200 scale-95 opacity-0">
+			<div class="p-6">
+				<div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4"><i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i></div>
+				<h3 class="text-lg font-semibold text-gray-900 text-center mb-2">${title}</h3>
+				<p class="text-gray-600 text-center mb-6">${message}</p>
+				<div class="flex space-x-3">
+					<button class="fast-cancel flex-1 px-4 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors duration-200">${cancelText}</button>
+					<button class="fast-confirm flex-1 px-4 py-2.5 text-white bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-colors duration-200">${confirmText}</button>
+				</div>
+			</div>
+		</div>`;
+	document.body.appendChild(wrapper);
+	const panel = wrapper.firstElementChild;
+	requestAnimationFrame(()=>{ panel.style.transform='scale(1)'; panel.style.opacity='1'; });
+	wrapper.addEventListener('click', (ev)=>{ if (ev.target === wrapper) wrapper.remove(); });
+	wrapper.querySelector('.fast-cancel').addEventListener('click', ()=> wrapper.remove());
+	wrapper.querySelector('.fast-confirm').addEventListener('click', ()=>{ wrapper.remove(); onConfirm && onConfirm(); });
+}
+
+document.addEventListener('click', async function(e){
+	const cancelBtn = e.target.closest('.js-cancel');
+	if (cancelBtn){
+		e.preventDefault();
+		const id = cancelBtn.getAttribute('data-id');
+		showConfirmDialog('Hủy lịch lái thử?', 'Bạn có chắc chắn muốn hủy lịch này? Hành động không thể hoàn tác.', 'Hủy lịch', 'Hủy bỏ', async ()=>{
+			const originalHtml = cancelBtn.innerHTML;
+			cancelBtn.disabled = true;
+			cancelBtn.classList.remove('bg-rose-500','hover:bg-rose-600','text-white');
+			cancelBtn.classList.add('bg-gray-100','text-gray-400');
+			cancelBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang hủy…';
+			try{
+				const url = `{{ url('/test-drives') }}/${id}/cancel`;
+				const res = await fetch(url, { method:'POST', headers:{ 'X-Requested-With':'XMLHttpRequest','X-CSRF-TOKEN': '{{ csrf_token() }}','Accept':'application/json' } });
+				const data = await res.json().catch(()=>({}));
+				if (res.ok && data.success){
+					const card = cancelBtn.closest('.booking-card');
+					if (card){
+						// Keep card visual unchanged; only update badge and button state
+						const badge = card.querySelector('[data-role="status-badge"]');
+						if (badge){
+							badge.className = 'px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-800 whitespace-nowrap inline-flex items-center';
+							badge.textContent = 'Đã hủy';
+						}
+						// Restore original cancel button icon+label but keep disabled & gray
+						cancelBtn.innerHTML = originalHtml;
+						cancelBtn.setAttribute('disabled','disabled');
+					}
+					if (typeof showMessage==='function') showMessage(data.message,'success');
+					// Update notifications UI instantly
+					if (window.refreshNotifBadge) window.refreshNotifBadge();
+					if (window.prependNotifItem) window.prependNotifItem('Đã hủy lịch lái thử', `Bạn đã hủy lịch lái thử #${id}.`);
+				}else{
+					cancelBtn.disabled = false;
+					cancelBtn.classList.remove('bg-gray-100','text-gray-400');
+					cancelBtn.classList.add('bg-rose-500','hover:bg-rose-600','text-white');
+					cancelBtn.innerHTML = originalHtml;
+					if (typeof showMessage==='function') showMessage(data.message || 'Không thể hủy lịch','error');
+				}
+			}catch{
+				cancelBtn.disabled = false;
+				cancelBtn.classList.remove('bg-gray-100','text-gray-400');
+				cancelBtn.classList.add('bg-rose-500','hover:bg-rose-600','text-white');
+				cancelBtn.innerHTML = originalHtml;
+			}
+		});
+	}
 });
 </script>
 

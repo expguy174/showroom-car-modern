@@ -57,23 +57,23 @@
         @if($cartItems->isEmpty())
             <!-- Empty Cart State -->
             <div class="text-center py-16">
-                <div class="w-32 h-32 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full mx-auto mb-8 flex items-center justify-center">
-                    <i class="fas fa-car text-blue-500 text-5xl"></i>
+                <div class="w-32 h-32 bg-gradient-to-br from-indigo-100 to-slate-100 rounded-2xl mx-auto mb-8 flex items-center justify-center shadow-sm">
+                    <i class="fas fa-box-open text-indigo-500 text-5xl"></i>
                 </div>
-                <h3 class="text-3xl font-bold text-gray-800 mb-4">Giỏ hàng trống</h3>
-                <p class="text-gray-600 mb-8 max-w-md mx-auto text-lg">
-                    Bạn chưa có sản phẩm nào trong giỏ hàng. Hãy khám phá các xe hơi và phụ kiện chất lượng cao!
+                <h3 class="text-3xl font-bold text-gray-800 mb-3">Giỏ hàng của bạn đang trống</h3>
+                <p class="text-gray-600 mb-8 max-w-md mx-auto text-base sm:text-lg">
+                    Hãy khám phá các mẫu xe và phụ kiện để thêm vào giỏ hàng.
                 </p>
                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
                     <a href="{{ route('products.index', ['type' => 'car']) }}" 
-                       class="inline-flex items-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition duration-300 transform hover:scale-105 shadow-lg">
-                        <i class="fas fa-car mr-3"></i>
-                        Xem xe hơi
+                       class="inline-flex items-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition duration-300 transform hover:scale-[1.02] shadow-lg">
+                        <i class="fas fa-car-side mr-2.5"></i>
+                        <span>Khám phá xe hơi</span>
                     </a>
                     <a href="{{ route('products.index', ['type' => 'accessory']) }}" 
-                       class="inline-flex items-center bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-emerald-700 hover:to-teal-700 transition duration-300 transform hover:scale-105 shadow-lg">
-                        <i class="fas fa-tools mr-3"></i>
-                        Xem phụ kiện
+                       class="inline-flex items-center bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-semibold hover:from-emerald-700 hover:to-teal-700 transition duration-300 transform hover:scale-[1.02] shadow-lg">
+                        <i class="fas fa-screwdriver-wrench mr-2.5"></i>
+                        <span>Khám phá phụ kiện</span>
                     </a>
                 </div>
             </div>
@@ -695,7 +695,7 @@
   }
 
   document.addEventListener('DOMContentLoaded', function(){
-    const checkoutLink = document.querySelector('a[href="{{ route('user.cart.checkout.form') }}"]');
+    const checkoutLink = document.querySelector(`a[href='{{ route('user.cart.checkout.form') }}']`);
     if (!checkoutLink) return;
     
     // Remove any existing event listeners first

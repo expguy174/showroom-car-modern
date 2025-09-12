@@ -4,12 +4,13 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use App\Models\ServiceAppointment;
+use App\Services\NotificationService;
 use App\Models\Showroom;
 use App\Models\CarVariant;
 use Carbon\Carbon;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
@@ -272,6 +273,17 @@ class ServiceAppointmentController extends Controller
             'cancelled_at' => now()
         ]);
 
+        // Notify user about cancellation
+        try {
+            app(NotificationService::class)->send(
+                $appointment->user_id,
+                'service_appointment',
+                'Đã hủy lịch bảo dưỡng',
+                'Bạn đã hủy lịch bảo dưỡng #' . $appointment->id . '.',
+                ['appointment_id' => $appointment->id]
+            );
+        } catch (\Throwable $e) {}
+
         return redirect()->route('user.service-appointments.index')
             ->with('success', 'Đã hủy lịch bảo dưỡng thành công!');
     }
@@ -288,7 +300,7 @@ class ServiceAppointmentController extends Controller
             'appointment_time' => 'required|string',
         ]);
 
-        $normalizedTime = preg_match('/^\\d{2}:\\d{2}:\\d{2}$/', (string) $request->appointment_time)
+        $normalizedTime = preg_match('/^\d{2}:\d{2}:\d{2}$/', (string) $request->appointment_time)
             ? $request->appointment_time
             : ($request->appointment_time . ':00');
 
@@ -297,6 +309,17 @@ class ServiceAppointmentController extends Controller
             'appointment_time' => $normalizedTime,
             'status' => 'scheduled',
         ]);
+
+        // Notify user about reschedule
+        try {
+            app(NotificationService::class)->send(
+                $appointment->user_id,
+                'service_appointment',
+                'Đã đổi lịch bảo dưỡng',
+                'Lịch bảo dưỡng #' . $appointment->id . ' đã được cập nhật.',
+                ['appointment_id' => $appointment->id]
+            );
+        } catch (\Throwable $e) {}
 
         return redirect()->route('user.service-appointments.show', $appointment->id)
             ->with('success', 'Đã yêu cầu đổi lịch thành công! Chúng tôi sẽ xác nhận trong thời gian sớm nhất.');

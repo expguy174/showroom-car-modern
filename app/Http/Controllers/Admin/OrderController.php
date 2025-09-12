@@ -10,6 +10,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Arr;
+use App\Services\NotificationService;
 
 class OrderController extends Controller
 {
@@ -69,22 +70,25 @@ class OrderController extends Controller
             'note' => 'nullable|string',
             'status' => 'required|in:' . implode(',', \App\Models\Order::STATUSES),
             'payment_method_id' => 'nullable|exists:payment_methods,id',
+            'tracking_number' => 'nullable|string|max:100',
         ]);
 
         $before = [
             'status' => $order->status,
             'payment_status' => $order->payment_status,
             'payment_method_id' => $order->payment_method_id,
+            'tracking_number' => $order->tracking_number,
         ];
 
         // Only persist columns that actually exist on orders table
-        $data = Arr::only($validated, ['user_id', 'note', 'status', 'payment_method_id']);
+        $data = Arr::only($validated, ['user_id', 'note', 'status', 'payment_method_id', 'tracking_number']);
         $order->update($data);
 
         $after = [
             'status' => $order->status,
             'payment_status' => $order->payment_status,
             'payment_method_id' => $order->payment_method_id,
+            'tracking_number' => $order->tracking_number,
         ];
 
         OrderLog::create([
@@ -98,6 +102,37 @@ class OrderController extends Controller
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
         ]);
+
+        // Send notification to user for status/track changes
+        try {
+            if ($order->user_id) {
+                if ($before['status'] !== $after['status']) {
+                    $title = match($order->status){
+                        'confirmed' => 'Đơn hàng đã xác nhận',
+                        'shipping' => 'Đơn hàng đang giao',
+                        'delivered' => 'Đơn hàng đã giao',
+                        'cancelled' => 'Đơn hàng đã hủy',
+                        default => 'Cập nhật đơn hàng',
+                    };
+                    app(NotificationService::class)->send(
+                        $order->user_id,
+                        'order_status',
+                        $title,
+                        'Đơn ' . ($order->order_number ?? ('#'.$order->id)) . ' đã chuyển sang trạng thái ' . $order->status . '.',
+                        ['order_id' => $order->id]
+                    );
+                }
+                if (($before['tracking_number'] ?? null) !== ($after['tracking_number'] ?? null) && $order->tracking_number){
+                    app(NotificationService::class)->send(
+                        $order->user_id,
+                        'order_status',
+                        'Cập nhật mã vận đơn',
+                        'Đơn ' . ($order->order_number ?? ('#'.$order->id)) . ' có mã vận đơn mới: ' . $order->tracking_number . '.',
+                        ['order_id' => $order->id]
+                    );
+                }
+            }
+        } catch (\Throwable $e) {}
 
         return redirect('/admin/orders')->with('success', 'Cập nhật đơn hàng thành công!');
     }

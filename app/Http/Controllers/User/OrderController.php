@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Order;
 use App\Models\OrderLog;
+use App\Services\NotificationService;
 
 class OrderController extends Controller
 {
@@ -103,6 +104,17 @@ class OrderController extends Controller
                 'ip_address' => $request->ip(),
                 'user_agent' => (string) $request->userAgent(),
             ]);
+        } catch (\Throwable $e) {}
+
+        // Notify user
+        try {
+            app(NotificationService::class)->send(
+                $order->user_id,
+                'order_status',
+                'Đơn hàng đã hủy',
+                'Đơn hàng ' . ($order->order_number ?? ('#'.$order->id)) . ' đã được hủy theo yêu cầu của bạn.',
+                ['order_id' => $order->id]
+            );
         } catch (\Throwable $e) {}
 
         $message = 'Đã hủy đơn hàng thành công.';

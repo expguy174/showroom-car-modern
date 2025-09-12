@@ -65,6 +65,16 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch(e) { console.warn('App.js: WishlistCount init failed:', e); }
     
     console.log('App.js: Initialization complete');
+
+    // Fire toast from payload span if present (server-side redirect payload)
+    try {
+        const payload = document.getElementById('toast-payload');
+        if (payload && typeof window.showMessage === 'function') {
+            const kind = payload.getAttribute('data-kind') || 'info';
+            const msg = payload.getAttribute('data-msg') || '';
+            if (msg) window.showMessage(msg, kind);
+        }
+    } catch {}
 });
 
 // Show loading overlay

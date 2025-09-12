@@ -516,4 +516,79 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
             content.classList.toggle('show');
         });
     })();
+
+    // Notification UI helpers
+    window.refreshNotifBadge = async function(){
+        try{
+            const res = await fetch(`{{ route('notifications.unread-count') }}`, { headers: { 'X-Requested-With':'XMLHttpRequest' } });
+            const data = await res.json().catch(()=>({}));
+            if (res.ok && data && data.data){
+                const count = data.data.unread_count || 0;
+                const desktop = document.getElementById('notif-count-badge');
+                const mobile = document.getElementById('notif-count-badge-mobile');
+                [desktop, mobile].forEach(el => {
+                    if (!el) return;
+                    el.textContent = (count > 99) ? '99+' : count;
+                    el.classList.toggle('flex', count > 0);
+                    el.classList.toggle('hidden', !(count > 0));
+                });
+            }
+        }catch{}
+    };
+
+    window.prependNotifItem = function(title, message){
+        const html = `<div class="p-3 text-sm">
+            <div class="font-semibold text-gray-800">${title}</div>
+            <div class="text-gray-600 mt-0.5">${message}</div>
+        </div>`;
+        const desktopList = document.getElementById('notif-menu-list');
+        const mobileList = document.getElementById('notif-menu-list-mobile');
+        [desktopList, mobileList].forEach(list => {
+            if (!list) return;
+            // Remove loading row if present
+            const first = list.firstElementChild;
+            if (first && first.querySelector('.fa-spinner')){
+                list.innerHTML = '';
+            }
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = html;
+            list.prepend(wrapper.firstElementChild);
+        });
+    };
+
+    // Fetch and render latest notifications (top 5)
+    window.refreshNotifList = async function(){
+        try{
+            const res = await fetch(`{{ route('notifications.index') }}`, { headers: { 'X-Requested-With':'XMLHttpRequest' } });
+            const data = await res.json().catch(()=>({}));
+            const items = (data && data.data && (data.data.data || data.data)) ? (data.data.data || data.data) : [];
+            const render = (listEl)=>{
+                if (!listEl) return;
+                listEl.innerHTML = '';
+                if (!items.length){
+                    listEl.innerHTML = '<div class="p-4 text-sm text-gray-500">Chưa có thông báo</div>';
+                    return;
+                }
+                items.slice(0,5).forEach(n => {
+                    const row = document.createElement('div');
+                    row.className = 'p-3 text-sm';
+                    row.innerHTML = `<div class="font-semibold text-gray-800">${n.title || 'Thông báo'}</div><div class="text-gray-600 mt-0.5">${n.message || ''}</div>`;
+                    listEl.appendChild(row);
+                });
+            };
+            render(document.getElementById('notif-menu-list'));
+            render(document.getElementById('notif-menu-list-mobile'));
+        }catch{}
+    };
+
+    // Poll badge every 30s
+    setInterval(function(){ if (window.refreshNotifBadge) window.refreshNotifBadge(); }, 30000);
+
+    // Load list when user opens notification dropdown
+    document.addEventListener('click', function(e){
+        const btn = e.target.closest('.notif-dropdown [data-dropdown-trigger]');
+        if (!btn) return;
+        if (window.refreshNotifList) window.refreshNotifList();
+        if (window.refreshNotifBadge) window.refreshNotifBadge();
+    });
 </script>

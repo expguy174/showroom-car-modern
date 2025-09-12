@@ -65,8 +65,14 @@ Route::prefix('reviews')->name('reviews.')->group(function () {
 // Test Drives (require auth)
 Route::middleware('auth')->prefix('test-drives')->name('test-drives.')->group(function () {
     Route::post('/book', [UserTestDriveController::class, 'store'])->name('book');
+    Route::get('/create', [UserTestDriveController::class, 'create'])->name('create');
     Route::get('/', [UserTestDriveController::class, 'index'])->name('index');
     Route::get('/{testDrive}', [UserTestDriveController::class, 'show'])->name('show');
+    Route::get('/{testDrive}/edit', [UserTestDriveController::class, 'edit'])->name('edit');
+    Route::put('/{testDrive}', [UserTestDriveController::class, 'update'])->name('update');
+    Route::post('/{testDrive}/cancel', [UserTestDriveController::class, 'cancel'])->name('cancel');
+    Route::post('/{testDrive}/reschedule', [UserTestDriveController::class, 'reschedule'])->name('reschedule');
+    Route::post('/{testDrive}/rate', [UserTestDriveController::class, 'rate'])->name('rate');
 });
 
 // Search

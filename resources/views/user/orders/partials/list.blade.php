@@ -9,7 +9,7 @@
 @else
     <div class="space-y-3 sm:space-y-4">
         @foreach($orders as $order)
-            <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow order-card" data-id="{{ $order->id }}">
                 <div class="p-3 sm:p-5 flex flex-col h-full">
                     <div class="flex-1 flex flex-col gap-3 sm:gap-4">
                         <div class="flex items-start sm:items-center justify-between gap-2">
@@ -19,7 +19,7 @@
                                     <span class="hidden xs:inline text-gray-400">•</span>
                                     <span class="text-gray-500 text-xs sm:text-sm">{{ $order->created_at?->format('d/m/Y H:i') }}</span>
                                 </div>
-                                <div class="text-xs sm:text-sm text-gray-500 mt-1 truncate">{{ $order->items->count() }} sản phẩm</div>
+                                <div class="text-xs sm:text-sm text-gray-500 mt-1 truncate" data-role="order-meta">{{ $order->items->count() }} sản phẩm</div>
                             </div>
                             @php($canCancel = in_array($order->status, ['pending','confirmed']) && $order->payment_status !== 'completed')
                             <div class="text-right shrink-0 ml-2">
@@ -39,7 +39,7 @@
                     </div>
                     @endif
                     <div class="mt-3 sm:mt-4 flex items-center justify-between">
-                        <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+                        <div class="flex flex-wrap items-center gap-2 sm:gap-3" data-role="status-container">
                             <span class="inline-flex items-center py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold
                                 @class([
                                     'bg-yellow-50 text-yellow-700 border border-yellow-200' => $order->status === 'pending',
@@ -47,11 +47,11 @@
                                     'bg-indigo-50 text-indigo-700 border border-indigo-200' => $order->status === 'shipping',
                                     'bg-emerald-50 text-emerald-700 border border-emerald-200' => $order->status === 'delivered',
                                     'bg-rose-50 text-rose-700 border border-rose-200' => $order->status === 'cancelled',
-                                ])">
+                                ])" data-role="status-badge">
                                 <i class="fas 
                                     @if($order->status === 'pending') fa-clock
                                     @elseif($order->status === 'confirmed') fa-check-circle
-                                    @elseif($order->status === 'shipping') fa-truck-fast
+                                    @elseif($order->status === 'shipping') fa-shipping-fast
                                     @elseif($order->status === 'delivered') fa-check-double
                                     @elseif($order->status === 'cancelled') fa-ban
                                     @else fa-box
@@ -76,7 +76,7 @@
                             </span>
                         </div>
                         <div class="flex items-center gap-2">
-                            <a href="{{ route('user.orders.show', $order) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 text-xs">Chi tiết</a>
+                            <a href="{{ route('user.orders.show', $order) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 text-xs"><i class="fas fa-eye"></i> Chi tiết</a>
                             <form action="{{ route('user.orders.cancel', $order) }}" method="post" title="{{ $canCancel ? 'Hủy đơn' : 'Không thể hủy ở trạng thái hiện tại' }}">
                                 @csrf
                                 <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-500 text-white hover:bg-rose-600 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed" {{ $canCancel ? '' : 'disabled' }}>

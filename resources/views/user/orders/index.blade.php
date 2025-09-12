@@ -89,6 +89,8 @@
         function submitAjax(url){
             const params = new URLSearchParams(new FormData(form));
             const fetchUrl = url || (form.getAttribute('action') + '?' + params.toString());
+            // Scroll immediately so user sees the loading text
+            scrollToTop();
             wrapper.innerHTML = '<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-center text-gray-500"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>';
             fetch(fetchUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' }})
                 .then(r => r.json())
@@ -158,9 +160,13 @@
                                             if (typeof window.showMessage === 'function') {
                                                 window.showMessage(data.message || 'Đã hủy đơn hàng thành công', 'success');
                                             }
-                                            
+
                                             // Update UI without reload
                                             updateOrderStatusAfterCancel(form, orderNumber);
+
+                                            // Refresh notifications UI (badge + list)
+                                            if (window.refreshNotifBadge) window.refreshNotifBadge();
+                                            if (window.prependNotifItem) window.prependNotifItem('Đơn hàng đã hủy', `Đơn ${orderNumber} đã được hủy.`);
                                         } else {
                                             throw new Error(data.message || 'Failed to cancel order');
                                         }
@@ -197,34 +203,25 @@
 
         // Update order status after cancellation
         function updateOrderStatusAfterCancel(form, orderNumber) {
-            const orderCard = form.closest('.bg-white');
+            const orderCard = form.closest('.order-card') || form.closest('.bg-white');
             const button = form.querySelector('button[type="submit"]');
-            
-            // Disable the cancel button
-            button.disabled = true;
-            button.innerHTML = '<i class="fas fa-ban mr-1"></i> Đã hủy';
-            button.classList.remove('bg-red-500', 'hover:bg-red-600');
-            button.classList.add('bg-gray-400', 'cursor-not-allowed');
-            
-            // Update order status badge
-            const statusBadge = orderCard.querySelector('.bg-yellow-50, .bg-blue-50, .bg-indigo-50, .bg-emerald-50, .bg-rose-50');
-            if (statusBadge) {
-                statusBadge.className = 'inline-flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200';
+
+            // Disable the cancel button but show original label/icon
+            if (button){
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-ban"></i> Hủy đơn';
+                button.classList.remove('bg-rose-500', 'hover:bg-rose-600');
+                button.classList.add('bg-gray-100', 'text-gray-400', 'cursor-not-allowed');
+            }
+
+            // Simple, effective: only change the ORDER status badge content to cancelled (keep all classes as-is)
+            const statusBadge = orderCard?.querySelector('[data-role="status-badge"]');
+            if (statusBadge){
+                statusBadge.classList.add('font-semibold');
                 statusBadge.innerHTML = '<i class="fas fa-ban mr-1"></i> Đã hủy';
             }
-            
-            // Add visual feedback
-            orderCard.style.opacity = '0.7';
-            orderCard.style.transition = 'opacity 0.3s ease';
-            
-            // Optional: Add a small "Cancelled" indicator
-            const statusContainer = orderCard.querySelector('.flex.flex-wrap.items-center.gap-2');
-            if (statusContainer && !statusContainer.querySelector('.cancelled-indicator')) {
-                const cancelledIndicator = document.createElement('span');
-                cancelledIndicator.className = 'cancelled-indicator inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-600 border border-gray-200';
-                cancelledIndicator.innerHTML = '<i class="fas fa-times mr-1"></i> Đã hủy';
-                statusContainer.appendChild(cancelledIndicator);
-            }
+
+            // Leave payment status badge and meta line unchanged
         }
 
         // Confirm dialog function (same as wishlist)

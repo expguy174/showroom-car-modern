@@ -14,7 +14,6 @@ return new class extends Migration {
             $table->foreignId('car_variant_id')->constrained('car_variants')->onDelete('cascade');
             $table->foreignId('showroom_id')->nullable()->constrained('showrooms')->onDelete('set null');
             
-            // Thông tin lịch hẹn - không trùng lặp với users table
             $table->date('preferred_date');
             $table->time('preferred_time');
             $table->integer('duration_minutes')->nullable();
@@ -33,7 +32,6 @@ return new class extends Migration {
             $table->timestamps();
             $table->softDeletes();
             
-            // Indexes tối ưu hóa
             $table->index(['user_id', 'status']);
             $table->index(['showroom_id', 'status']);
             $table->index(['car_variant_id', 'status']);

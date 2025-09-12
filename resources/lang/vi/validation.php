@@ -99,6 +99,18 @@ return [
         'name' => 'họ và tên',
         'phone' => 'số điện thoại',
         'terms' => 'điều khoản sử dụng',
+        // Test drive fields
+        'car_variant_id' => 'mẫu xe',
+        'showroom_id' => 'showroom',
+        'preferred_date' => 'ngày mong muốn',
+        'preferred_time' => 'giờ mong muốn',
+        'duration_minutes' => 'thời lượng',
+        'location' => 'địa điểm',
+        'notes' => 'ghi chú',
+        'special_requirements' => 'yêu cầu đặc biệt',
+        'has_experience' => 'kinh nghiệm',
+        'experience_level' => 'mức kinh nghiệm',
+        'test_drive_type' => 'loại lịch',
     ],
 ];
 
