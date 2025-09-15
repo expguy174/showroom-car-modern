@@ -228,7 +228,6 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                             <i class="fas fa-chevron-down text-xs"></i>
                         @else
                             <i class="fas fa-user-circle"></i>
-                            <span class="nav-label">Tài khoản</span>
                             <i class="fas fa-chevron-down text-xs"></i>
                         @endauth
                     </button>
