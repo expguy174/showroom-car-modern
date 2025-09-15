@@ -2,7 +2,7 @@
 @section('title', 'Lịch lái thử của tôi')
 @section('content')
 
-<div class="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 pt-6 sm:pt-8 pb-6">
+<div class="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 pt-6 sm:pt-8 pb-6">
 	<div class="flex items-center justify-between mb-4 sm:mb-6">
 		<div>
 			<h1 class="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight">Lịch lái thử của tôi</h1>

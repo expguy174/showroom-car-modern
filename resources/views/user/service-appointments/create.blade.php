@@ -3,7 +3,7 @@
 @section('title', 'Đặt lịch bảo dưỡng')
 
 @section('content')
-<div class="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8">
+<div class="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8">
     <div class="flex items-start sm:items-center justify-between gap-3 mb-4 sm:mb-6">
         <div class="min-w-0">
             <div class="flex items-center gap-2 flex-wrap">

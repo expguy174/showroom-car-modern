@@ -3,7 +3,7 @@
 @section('title', 'Chi tiết đơn hàng')
 
 @section('content')
-<div class="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8">
+<div class="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8">
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-4 sm:mb-6">
         <div class="px-4 sm:px-6 py-4 border-b bg-gradient-to-r from-indigo-50 to-white">
             <div class="flex items-center justify-between">
@@ -190,7 +190,7 @@
                                             <span>Màu:</span>
                                             @if($colorName)
                                                 <span class="inline-flex items-center gap-1">
-                                                    <span class="inline-block w-3 h-3 rounded-full border border-gray-200" style="background-color: {{ $colorHex ?? '#e5e7eb' }}"></span>
+                                                    <span class="inline-block w-3 h-3 rounded-full border border-gray-200 bg-gray-200"></span>
                                                     <span class="text-gray-700">{{ $colorName }}</span>
                                                 </span>
                                             @else
