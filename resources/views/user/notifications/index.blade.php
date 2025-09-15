@@ -2,23 +2,23 @@
 @section('title', 'Thông báo')
 @section('content')
 
-<div class="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8">
-	<div class="flex items-center justify-between mb-4 sm:mb-6">
+<div class="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8">
+	<div class="flex items-start sm:items-center justify-between gap-3 mb-4 sm:mb-6">
 		<div>
 			<h1 class="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight">Thông báo</h1>
 			<p class="text-sm sm:text-base text-gray-500 mt-1">Tất cả cập nhật liên quan đến tài khoản và giao dịch của bạn</p>
 		</div>
-		<div class="flex items-center gap-2">
-			<button id="btn-mark-all" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-amber-200 text-amber-700 hover:bg-amber-50 text-sm font-semibold"><i class="fas fa-check-double"></i> Đánh dấu đã đọc</button>
-			<button id="btn-refresh" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm font-semibold"><i class="fas fa-sync"></i> Làm mới</button>
-			<button id="btn-delete-all" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-rose-200 text-rose-700 hover:bg-rose-50 text-sm font-semibold"><i class="fas fa-trash"></i> Xóa tất cả</button>
+		<div class="flex flex-wrap items-center justify-end gap-2">
+			<button id="btn-mark-all" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-amber-200 text-amber-700 hover:bg-amber-50 text-xs sm:text-sm font-semibold"><i class="fas fa-check-double"></i> Đánh dấu đã đọc</button>
+			<button id="btn-refresh" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 text-xs sm:text-sm font-semibold"><i class="fas fa-sync"></i> Làm mới</button>
+			<button id="btn-delete-all" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-rose-200 text-rose-700 hover:bg-rose-50 text-xs sm:text-sm font-semibold"><i class="fas fa-trash"></i> Xóa tất cả</button>
 		</div>
 	</div>
 
 	<div id="notif-list" class="bg-white rounded-2xl shadow-sm border border-gray-100 divide-y" data-initial-has-more="{{ $notifications->hasMorePages() ? '1' : '0' }}" data-initial-count="{{ $notifications->count() }}">
 		@if($notifications->count() > 0)
 			@foreach($notifications as $notification)
-				<div class="p-4 sm:p-5 hover:bg-gray-50 transition-colors" data-notif-id="{{ $notification->id }}">
+				<div class="p-3 sm:p-5 hover:bg-gray-50 transition-colors" data-notif-id="{{ $notification->id }}">
 					<div class="flex items-start gap-3">
 						<div class="w-10 h-10 rounded-full flex items-center justify-center {{ $notification->is_read ? 'bg-gray-100 text-gray-400' : 'bg-amber-50 text-amber-600' }}">
 							<i class="fas {{ $notification->type === 'order_status' ? 'fa-file-invoice' : ($notification->type === 'payment' ? 'fa-credit-card' : ($notification->type === 'test_drive' ? 'fa-car-side' : ($notification->type === 'service_appointment' ? 'fa-tools' : 'fa-bell'))) }}"></i>
