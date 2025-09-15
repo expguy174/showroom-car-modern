@@ -50,8 +50,7 @@ class SendOrderCreatedNotifications
                         $order->user_id,
                         'order_status',
                         'Đơn hàng đã tạo',
-                        'Đơn hàng ' . $order->order_number . ' đã được tạo, chờ thanh toán/xác nhận.',
-                        ['order_id' => $order->id]
+                        'Đơn hàng ' . $order->order_number . ' đã được tạo, chờ thanh toán/xác nhận.'
                     );
                 } else {
                     Log::info('Duplicate notification prevented', [

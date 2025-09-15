@@ -40,6 +40,7 @@ class OrderController extends Controller
             return response()->json([
                 'html' => view('user.orders.partials.list', [ 'orders' => $orders ])->render(),
                 'pagination' => view('components.pagination-modern', ['paginator' => $orders->withQueryString()])->render(),
+                'summary' => view('user.orders.partials.summary', ['paginator' => $orders->withQueryString()])->render(),
             ]);
         }
 
@@ -112,8 +113,7 @@ class OrderController extends Controller
                 $order->user_id,
                 'order_status',
                 'Đơn hàng đã hủy',
-                'Đơn hàng ' . ($order->order_number ?? ('#'.$order->id)) . ' đã được hủy theo yêu cầu của bạn.',
-                ['order_id' => $order->id]
+                'Đơn hàng ' . ($order->order_number ?? ('#'.$order->id)) . ' đã được hủy theo yêu cầu của bạn.'
             );
         } catch (\Throwable $e) {}
 

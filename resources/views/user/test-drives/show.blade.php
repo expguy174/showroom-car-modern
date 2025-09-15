@@ -15,7 +15,7 @@
 			<div class="mt-1 text-sm text-gray-500">Tạo lúc {{ $testDrive->created_at?->format('d/m/Y H:i') }}</div>
 		</div>
 		<div class="flex items-center gap-2">
-			<span class="px-3 py-1 rounded-full text-sm {{ $testDrive->status_badge }} whitespace-nowrap">{{ $testDrive->status_text }}</span>
+			<span data-role="header-status-badge" class="px-3 py-1 rounded-full text-sm {{ $testDrive->status_badge }} whitespace-nowrap">{{ $testDrive->status_text }}</span>
 			<a href="{{ route('test-drives.index') }}" class="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm font-semibold"><i class="fas fa-arrow-left"></i> Quay lại</a>
 		</div>
 	</div>
@@ -63,28 +63,11 @@
 					@endif
 				</div>
 			</div>
-
-			<!-- Actions -->
-			<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
-				<div class="flex flex-wrap items-center gap-2">
-					<a href="{{ route('test-drives.index') }}" class="px-3 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm">Quay lại danh sách</a>
-					@if(in_array($testDrive->status, ['pending','confirmed']))
-						<a href="{{ route('test-drives.edit', $testDrive) }}" class="px-3 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm">Sửa</a>
-						<button type="button" class="px-3 py-2 rounded-lg bg-rose-500 text-white hover:bg-rose-600 text-sm js-cancel-one" data-id="{{ $testDrive->id }}">Hủy lịch</button>
-					@else
-						<button type="button" class="px-3 py-2 rounded-lg bg-gray-100 text-gray-400 text-sm cursor-not-allowed" disabled>Không thể sửa/hủy</button>
-					@endif
-				</div>
-    </div>
-  </div>
-
-		<!-- Right: meta -->
-		<div class="space-y-4 sm:space-y-6">
 			<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
 				<h3 class="text-base font-bold mb-3">Tóm tắt</h3>
 				<dl class="grid grid-cols-1 gap-3 text-sm">
 					<div class="flex items-center justify-between"><dt class="text-gray-500">Mã lịch</dt><dd class="font-medium text-gray-900">{{ $testDrive->test_drive_number ?? ('TD-'.($testDrive->id)) }}</dd></div>
-					<div class="flex items-center justify-between"><dt class="text-gray-500">Trạng thái</dt><dd><span class="px-2 py-0.5 rounded-full text-xs {{ $testDrive->status_badge }} whitespace-nowrap">{{ $testDrive->status_text }}</span></dd></div>
+					<div class="flex items-center justify-between"><dt class="text-gray-500">Trạng thái</dt><dd><span data-role="summary-status-badge" class="px-2 py-0.5 rounded-full text-xs {{ $testDrive->status_badge }} whitespace-nowrap">{{ $testDrive->status_text }}</span></dd></div>
 					<div class="flex items-center justify-between"><dt class="text-gray-500">Thời lượng</dt><dd class="font-medium text-gray-900">{{ $testDrive->duration_minutes ? ($testDrive->duration_minutes.' phút') : '—' }}</dd></div>
 					<div class="flex items-center justify-between"><dt class="text-gray-500">Địa điểm</dt><dd class="font-medium text-gray-900">{{ $testDrive->location ?: '—' }}</dd></div>
 					<div class="flex items-center justify-between"><dt class="text-gray-500">Loại lịch</dt><dd class="font-medium text-gray-900">
@@ -101,6 +84,21 @@
 						<div class="flex items-center justify-between"><dt class="text-gray-500">Hoàn thành lúc</dt><dd class="font-medium text-gray-900">{{ optional($testDrive->completed_at)->format('d/m/Y H:i') }}</dd></div>
 					@endif
 				</dl>
+			</div>
+	  </div>
+
+		<!-- Right: meta -->
+		<div class="space-y-4 sm:space-y-6">
+			<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
+				<h3 class="text-base font-bold mb-3">Hành động</h3>
+				@if(in_array($testDrive->status, ['pending','confirmed']))
+					<div class="flex flex-col gap-2">
+						<a href="{{ route('test-drives.edit', $testDrive) }}" class="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-600 font-semibold text-sm"><i class="fas fa-edit"></i> Sửa</a>
+						<button type="button" class="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-rose-600 text-white hover:bg-rose-700 font-semibold text-sm js-cancel-one" data-id="{{ $testDrive->id }}" data-cancel-url="{{ url('/test-drives/'.$testDrive->id.'/cancel') }}"><i class="fas fa-times"></i> Hủy lịch</button>
+					</div>
+				@else
+					<div class="text-sm text-gray-600">Lịch hẹn đã ở trạng thái {{ $testDrive->status_text }}.</div>
+				@endif
 			</div>
 			@if($testDrive->status === 'completed')
 			<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
@@ -165,6 +163,94 @@
 			else { if (typeof showMessage==='function') showMessage(data.message || 'Không thể lưu đánh giá','error'); }
 		} catch {} finally {
 			form.dataset.submitting='';
+		}
+	});
+})();
+</script>
+<script>
+(function(){
+	document.addEventListener('click', async function(e){
+		const btn = e.target.closest('.js-cancel-one');
+		if (!btn) return;
+		e.preventDefault();
+		// Modern dialog like index page
+		const confirmDialog = () => new Promise(resolve => {
+			const existing = document.querySelector('.fast-confirm-dialog');
+			if (existing) existing.remove();
+			const wrapper = document.createElement('div');
+			wrapper.className = 'fast-confirm-dialog fixed inset-0 z-[100000] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4';
+			wrapper.innerHTML = `
+				<div class="bg-white rounded-xl shadow-2xl max-w-md w-full transform transition-all duration-200 scale-95 opacity-0">
+					<div class="p-6">
+						<div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4"><i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i></div>
+						<h3 class="text-lg font-semibold text-gray-900 text-center mb-2">Hủy lịch lái thử?</h3>
+						<p class="text-gray-600 text-center mb-6">Bạn có chắc chắn muốn hủy lịch này? Hành động không thể hoàn tác.</p>
+						<div class="flex space-x-3">
+							<button class="fast-cancel flex-1 px-4 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors duration-200">Hủy bỏ</button>
+							<button class="fast-confirm flex-1 px-4 py-2.5 text-white bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-colors duration-200">Hủy lịch</button>
+						</div>
+					</div>
+				</div>`;
+			document.body.appendChild(wrapper);
+			const panel = wrapper.firstElementChild;
+			requestAnimationFrame(()=>{ panel.style.transform='scale(1)'; panel.style.opacity='1'; });
+			wrapper.addEventListener('click', (ev)=>{ if (ev.target === wrapper){ wrapper.remove(); resolve(false); } });
+			wrapper.querySelector('.fast-cancel').addEventListener('click', ()=>{ wrapper.remove(); resolve(false); });
+			wrapper.querySelector('.fast-confirm').addEventListener('click', ()=>{ wrapper.remove(); resolve(true); });
+		});
+		const ok = await confirmDialog();
+		if (!ok) return;
+		const originalHtml = btn.innerHTML;
+		btn.disabled = true;
+		btn.classList.remove('hover:bg-rose-600');
+		btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang hủy...';
+		const url = btn.getAttribute('data-cancel-url');
+		try{
+			const res = await fetch(url, { method:'POST', headers:{ 'X-Requested-With':'XMLHttpRequest','X-CSRF-TOKEN':'{{ csrf_token() }}','Accept':'application/json' } });
+			const data = await res.json().catch(()=>({}));
+			if (res.ok && data && data.success){
+				// Update status badges (header and summary) to exact cancelled style as initially rendered
+				const topBadge = document.querySelector('[data-role="header-status-badge"]');
+				if (topBadge){
+					topBadge.className = 'px-3 py-1 rounded-full text-sm bg-red-100 text-red-800 whitespace-nowrap';
+					topBadge.textContent = 'Đã hủy';
+				}
+				const summaryBadge = document.querySelector('[data-role="summary-status-badge"]');
+				if (summaryBadge){
+					summaryBadge.className = 'px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-800 whitespace-nowrap';
+					summaryBadge.textContent = 'Đã hủy';
+				}
+				// After success: disable button and remove edit
+				const actions = btn.closest('.flex.flex-col.gap-2');
+				if (actions){
+					const editLink = actions.querySelector('a[href$="/edit"]');
+					if (editLink) editLink.remove();
+				}
+				btn.disabled = true;
+				btn.innerHTML = '<i class="fas fa-ban"></i> Đã hủy';
+				btn.classList.remove('hover:bg-rose-700');
+				// Replace Actions card content with state text
+				const actionsCard = btn.closest('.bg-white');
+				if (actionsCard){
+					const title = actionsCard.querySelector('h3');
+					let node = title ? title.nextSibling : null;
+					while (node){ const next = node.nextSibling; actionsCard.removeChild(node); node = next; }
+					const msg = document.createElement('div');
+					msg.className = 'text-sm text-gray-600';
+					msg.textContent = 'Lịch hẹn đã ở trạng thái Đã hủy.';
+					actionsCard.appendChild(msg);
+				}
+				if (window.showMessage) window.showMessage(data.message || 'Đã hủy lịch lái thử', 'success');
+				if (window.refreshNotifBadge) window.refreshNotifBadge();
+				if (window.prependNotifItem) window.prependNotifItem('Đã hủy lịch lái thử', 'Bạn đã hủy một lịch lái thử.');
+			} else {
+				throw new Error((data && data.message) ? data.message : 'Hủy lịch thất bại');
+			}
+		} catch(err){
+			if (window.showMessage) window.showMessage(err.message || 'Hủy lịch thất bại', 'error');
+			btn.disabled = false;
+			btn.innerHTML = originalHtml;
+			btn.classList.add('hover:bg-rose-600');
 		}
 	});
 })();

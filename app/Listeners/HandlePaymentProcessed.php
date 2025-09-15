@@ -34,8 +34,7 @@ class HandlePaymentProcessed implements ShouldQueue
                         $order->user_id,
                         'payment',
                         $transaction->status === 'completed' ? 'Thanh toán thành công' : 'Thanh toán thất bại',
-                        'Giao dịch ' . $transaction->transaction_number . ' cho đơn ' . ($order->order_number ?? $order->id) . ' đã ' . ($transaction->status === 'completed' ? 'thành công' : 'thất bại'),
-                        ['order_id' => $order->id, 'transaction_id' => $transaction->id]
+                        'Giao dịch ' . $transaction->transaction_number . ' cho đơn ' . ($order->order_number ?? $order->id) . ' đã ' . ($transaction->status === 'completed' ? 'thành công' : 'thất bại')
                     );
                 }
 

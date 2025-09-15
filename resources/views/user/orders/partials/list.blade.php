@@ -1,10 +1,11 @@
 @if($orders->count() === 0)
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-center">
-        <div class="w-14 h-14 mx-auto rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3">
-            <i class="fas fa-box"></i>
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-10 sm:p-14 text-center">
+        <div class="w-16 h-16 mx-auto mb-5 bg-gray-100 rounded-full flex items-center justify-center">
+            <i class="fas fa-box text-2xl text-gray-400"></i>
         </div>
-        <div class="font-semibold text-gray-800">Không tìm thấy đơn hàng phù hợp</div>
-        <p class="text-gray-500 text-sm mt-1">Hãy thử thay đổi từ khóa hoặc bộ lọc.</p>
+        <div class="text-lg sm:text-xl font-semibold text-gray-700 mb-2">Chưa có đơn hàng</div>
+        <p class="text-sm sm:text-base text-gray-500 max-w-xl mx-auto">Bạn chưa có đơn hàng nào. Khám phá sản phẩm và đặt hàng ngay hôm nay.</p>
+        
     </div>
 @else
     <div class="space-y-3 sm:space-y-4">

@@ -31,6 +31,44 @@ class PaymentController extends Controller
         $calc = hash_hmac('sha512', $data, $secret);
         return hash_equals(strtolower($received), strtolower($calc));
     }
+
+    /**
+     * Verify MoMo return signature using provided secret.
+     */
+    private function verifyMoMoSignature(Request $request, string $orderId, string $resultCode, string $signature): bool
+    {
+        $accessKey = env('MOMO_ACCESS_KEY');
+        $secretKey = env('MOMO_SECRET_KEY');
+        
+        if (!$accessKey || !$secretKey) {
+            return true; // Skip verification if keys not available
+        }
+        
+        $fields = [
+            'accessKey'   => $accessKey,
+            'amount'      => $request->get('amount'),
+            'extraData'   => $request->get('extraData'),
+            'message'     => $request->get('message'),
+            'orderId'     => $orderId,
+            'orderInfo'   => $request->get('orderInfo'),
+            'orderType'   => $request->get('orderType'),
+            'partnerCode' => $request->get('partnerCode'),
+            'payType'     => $request->get('payType'),
+            'requestId'   => $request->get('requestId'),
+            'responseTime'=> $request->get('responseTime'),
+            'resultCode'  => $resultCode,
+            'transId'     => $request->get('transId'),
+        ];
+        
+        $raw = [];
+        foreach ($fields as $k => $v) { 
+            if ($v !== null && $v !== '') $raw[] = $k.'='.$v; 
+        }
+        $rawStr = implode('&', $raw);
+        $expectedSig = hash_hmac('sha256', $rawStr, $secretKey);
+        
+        return hash_equals($expectedSig, $signature);
+    }
     // Initiate MoMo
     public function momoProcess(Request $request)
     {
@@ -107,8 +145,9 @@ class PaymentController extends Controller
         $createDate   = $request->get('vnp_CreateDate');
         $expireDate   = $request->get('vnp_ExpireDate');
 
-        // Verify signature
-        $isSignatureValid = $this->verifyVnpaySignature($request->all(), env('VNPAY_HASH_SECRET'));
+        // Skip signature verification in mock mode
+        $mode = env('PAYMENT_GATEWAY_MODE', 'sandbox');
+        $isSignatureValid = ($mode === 'mock') ? true : $this->verifyVnpaySignature($request->all(), env('VNPAY_HASH_SECRET'));
         Log::info('VNPAY return verification', [
             'order_ref' => $orderNumber,
             'response_code' => $responseCode,
@@ -140,6 +179,13 @@ class PaymentController extends Controller
                 return redirect()->route('user.order.success', ['order' => $order->id])
                     ->with('success', 'Thanh toán VNPay thành công!');
             }
+            
+            // In mock mode, show success even without session data
+            if ($mode === 'mock') {
+                return redirect()->route('user.cart.checkout')
+                    ->with('success', 'Mock VNPay payment successful!');
+            }
+            
             Log::warning('VNPAY success but no pending_order_data in session', ['order_ref' => $orderNumber]);
         }
 
@@ -209,32 +255,9 @@ class PaymentController extends Controller
         $resultCode = (string) $request->get('resultCode');
         $signature = (string) $request->get('signature');
 
-        // Verify MoMo signature when keys available
-        $accessKey = env('MOMO_ACCESS_KEY');
-        $secretKey = env('MOMO_SECRET_KEY');
-        $expectedSig = null;
-        if ($accessKey && $secretKey) {
-            $fields = [
-                'accessKey'   => $accessKey,
-                'amount'      => $request->get('amount'),
-                'extraData'   => $request->get('extraData'),
-                'message'     => $request->get('message'),
-                'orderId'     => $orderId,
-                'orderInfo'   => $request->get('orderInfo'),
-                'orderType'   => $request->get('orderType'),
-                'partnerCode' => $request->get('partnerCode'),
-                'payType'     => $request->get('payType'),
-                'requestId'   => $request->get('requestId'),
-                'responseTime'=> $request->get('responseTime'),
-                'resultCode'  => $resultCode,
-                'transId'     => $request->get('transId'),
-            ];
-            $raw = [];
-            foreach ($fields as $k => $v) { if ($v !== null && $v !== '') $raw[] = $k.'='.$v; }
-            $rawStr = implode('&', $raw);
-            $expectedSig = hash_hmac('sha256', $rawStr, $secretKey);
-        }
-        $signatureValid = !$expectedSig || hash_equals($expectedSig, $signature);
+        // Skip signature verification in mock mode
+        $mode = env('PAYMENT_GATEWAY_MODE', 'sandbox');
+        $signatureValid = ($mode === 'mock') ? true : $this->verifyMoMoSignature($request, $orderId, $resultCode, $signature);
         Log::info('MoMo return verification', ['orderId'=>$orderId,'resultCode'=>$resultCode,'signature_valid'=>$signatureValid?'yes':'no']);
 
         if ($request->boolean('debug')) {
@@ -256,6 +279,13 @@ class PaymentController extends Controller
                 return redirect()->route('user.order.success', ['order' => $order->id])
                     ->with('success', 'Thanh toán MoMo thành công!');
             }
+            
+            // In mock mode, show success even without session data
+            if ($mode === 'mock') {
+                return redirect()->route('user.cart.checkout')
+                    ->with('success', 'Mock MoMo payment successful!');
+            }
+            
             Log::warning('MoMo success but no pending_order_data in session', ['orderId' => $orderId]);
         }
 

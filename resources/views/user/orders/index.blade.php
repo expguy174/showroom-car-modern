@@ -49,13 +49,8 @@
             <div class="mt-3 flex items-center justify-end gap-2"></div>
         </div>
     </form>
-    <div class="flex items-center justify-between text-sm text-gray-600 mb-3">
-        <div>Tổng: <span class="font-semibold">{{ number_format($orders->total()) }}</span> đơn hàng</div>
-        <div>
-            @php($from=$orders->firstItem() ?? 0)
-            @php($to=$orders->lastItem() ?? 0)
-            Hiển thị: <span class="font-semibold">{{ $from }}</span>–<span class="font-semibold">{{ $to }}</span>
-        </div>
+    <div id="orders-summary-host">
+        @include('user.orders.partials.summary', ['paginator' => $orders->withQueryString()])
     </div>
     <div id="orders-list-wrapper">
         @include('user.orders.partials.list', ['orders' => $orders])
@@ -98,6 +93,13 @@
                     if (res && res.html !== undefined) {
                         wrapper.innerHTML = res.html || '';
                         if (pagination) pagination.innerHTML = res.pagination || '';
+                        try{
+                            const summaryHtml = res.summary || '';
+                            if (summaryHtml){
+                                const host = document.getElementById('orders-summary-host');
+                                if (host){ host.innerHTML = summaryHtml; }
+                            }
+                        }catch{}
                         bindPagination();
                         scrollToTop();
                     } else {

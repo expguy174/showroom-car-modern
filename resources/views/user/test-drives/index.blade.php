@@ -9,9 +9,6 @@
 			<p class="text-sm sm:text-base text-gray-500 mt-1">Quản lý tất cả các lịch lái thử đã đặt</p>
 		</div>
 		<div class="hidden sm:flex items-center gap-2">
-			<a href="{{ route('products.index') }}" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 text-sm font-semibold">
-				<i class="fas fa-shopping-bag"></i> Khám phá xe
-			</a>
 			<a href="{{ route('test-drives.create') }}" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 text-sm font-semibold">
 				<i class="fas fa-plus"></i> Đặt lịch mới
 			</a>
@@ -40,25 +37,18 @@
 			</div>
 		</div>
 	</form>
-	<div class="flex items-center justify-between text-sm text-gray-600 mb-3">
-		<div>Tổng: <span class="font-semibold">{{ number_format($testDrives->total()) }}</span> lịch</div>
-		<div class="flex items-center gap-3">
-			@php($counts = $statusCounts ?? collect())
-			<span class="hidden sm:inline">Chờ xác nhận: <span class="font-semibold">{{ (int)($counts['pending'] ?? 0) }}</span></span>
-			<span class="hidden sm:inline">Đã xác nhận: <span class="font-semibold">{{ (int)($counts['confirmed'] ?? 0) }}</span></span>
-			<span class="hidden sm:inline">Hoàn thành: <span class="font-semibold">{{ (int)($counts['completed'] ?? 0) }}</span></span>
-		</div>
+	<div id="summary-host">
+		@include('user.test-drives.partials.summary', ['paginator' => $testDrives->withQueryString()])
 	</div>
 
 	<div id="testdrives-list-wrapper">
 		@if(($testDrives->count() ?? 0) === 0)
-			<div class="text-center py-10">
-				<div class="mx-auto w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3"><i class="fas fa-car-side"></i></div>
-				<div class="text-base font-semibold text-gray-900">Bạn chưa có lịch lái thử nào</div>
-				<p class="text-sm text-gray-600 mt-1">Hãy đặt lịch mới để trải nghiệm các mẫu xe yêu thích.</p>
-				<a href="{{ route('test-drives.create') }}" class="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 text-sm font-semibold">
-					<i class="fas fa-plus"></i> Đặt lịch mới
-				</a>
+			<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-10 sm:p-14 text-center">
+				<div class="w-16 h-16 mx-auto mb-5 bg-gray-100 rounded-full flex items-center justify-center">
+					<i class="fas fa-car-side text-2xl text-gray-400"></i>
+				</div>
+				<div class="text-lg sm:text-xl font-semibold text-gray-700 mb-2">Chưa có lịch lái thử</div>
+				<p class="text-sm sm:text-base text-gray-500 max-w-xl mx-auto">Bạn chưa có lịch lái thử nào. Hãy đặt lịch để trải nghiệm mẫu xe bạn quan tâm.</p>
 			</div>
 		@else
 			@include('user.test-drives.partials.list', ['testDrives' => $testDrives->withQueryString()])
@@ -82,6 +72,14 @@ async function refreshList(){
 	if (res.ok && data && data.html){
 		const target = document.getElementById('testdrives-list-wrapper');
 		if (target){ target.innerHTML = data.html; bindPagination(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+		// Update summary (1–10 and total) based on filtered paginator
+		try{
+			const summaryHtml = data.summary || '';
+			if (summaryHtml){
+				const summaryHost = document.getElementById('summary-host');
+				if (summaryHost){ summaryHost.innerHTML = summaryHtml; }
+			}
+		}catch{}
 	}
 	hideListLoading();
 }

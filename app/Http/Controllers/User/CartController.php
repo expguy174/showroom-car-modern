@@ -765,6 +765,9 @@ class CartController extends Controller
 
             $methodCode = optional(\App\Models\PaymentMethod::find($validated['payment_method_id']))->code;
             
+            // Store payment method in session for mock gateway
+            session(['selected_payment_method' => $methodCode]);
+            
             // For VNPay and MoMo, create order after payment success
             if (in_array($methodCode, ['vnpay', 'momo'])) {
                 return $this->processOnlinePayment($methodCode, $validated, $orderItems, $cartItems, $userId, $sessionId, $total, $taxTotal, $shippingFee, $grandTotal, $billingAddressId, $shippingAddressId, $billingAddressText, $shippingAddressText);
@@ -873,86 +876,6 @@ class CartController extends Controller
         }
     }
 
-    private function processVNPayPayment($orderData)
-    {
-        $vnpUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
-        $vnpReturnUrl = route('payment.vnpay.return');
-        $vnpTmnCode = trim((string) env('VNPAY_TMN_CODE', '2QXUI4J4'));
-        $vnpHashSecret = trim((string) env('VNPAY_HASH_SECRET', 'RAOEXHYVSDDIIENYWSLDIIZALPXUTMQK'));
-        
-        // Generate temporary order number for VNPay: only alphanumeric (no special chars)
-        $tempOrderNumber = 'TEMP' . date('YmdHis') . strtoupper(substr(bin2hex(random_bytes(6)), 0, 6));
-        
-        $vnpTxnRef = $tempOrderNumber;
-        $vnpOrderInfo = "Thanh toan don hang " . $tempOrderNumber;
-        $vnpOrderType = "other";
-        $vnpAmount = $orderData['grand_total'] * 100;
-        $vnpLocale = 'vn';
-        $vnpCurrCode = 'VND';
-        
-        // Build params (exclude empty values per VNPay sample)
-        $vnpParams = [];
-        $vnpParams['vnp_Version']   = '2.1.0';
-        $vnpParams['vnp_Command']   = 'pay';
-        $vnpParams['vnp_TmnCode']   = $vnpTmnCode;
-        $vnpParams['vnp_Amount']    = (int) $vnpAmount; // ensure integer
-        $vnpParams['vnp_CurrCode']  = $vnpCurrCode;
-        // vnp_BankCode only if user picked one
-        $vnpParams['vnp_TxnRef']    = $vnpTxnRef;
-        $vnpParams['vnp_OrderInfo'] = $vnpOrderInfo;
-        $vnpParams['vnp_OrderType'] = $vnpOrderType;
-        $vnpParams['vnp_Locale']    = $vnpLocale;
-        $vnpParams['vnp_ReturnUrl'] = $vnpReturnUrl;
-        $vnpParams['vnp_IpAddr']    = request()->ip() ?: '127.0.0.1';
-        $vnpParams['vnp_CreateDate']= date('YmdHis');
-        $vnpParams['vnp_ExpireDate']= date('YmdHis', strtotime('+15 minutes'));
-
-        // Remove empty entries
-        $vnpParams = array_filter($vnpParams, function($v){ return $v !== null && $v !== ''; });
-        
-        ksort($vnpParams);
-        $query = '';
-        $hashdata = '';
-        $i = 0;
-        foreach ($vnpParams as $key => $value) {
-            // VNPay PHP sample: hash over URL-encoded key/value pairs
-            if ($i == 1) {
-                $hashdata .= '&' . urlencode($key) . '=' . urlencode((string)$value);
-            } else {
-                $hashdata .= urlencode($key) . '=' . urlencode((string)$value);
-                $i = 1;
-            }
-            // Query string uses urlencoded values
-            $query .= urlencode($key) . '=' . urlencode((string)$value) . '&';
-        }
-        
-        if (!empty($vnpHashSecret)) {
-            $vnpSecureHash = hash_hmac('sha512', $hashdata, $vnpHashSecret);
-            // Do not send vnp_SecureHashType; VNPay can infer from HMAC length
-            $vnpUrl = $vnpUrl . '?' . rtrim($query, '&') . '&vnp_SecureHash=' . $vnpSecureHash;
-        } else {
-            $vnpUrl = $vnpUrl . '?' . rtrim($query, '&');
-        }
-        
-        // Debug: Log the VNPay URL
-        \Log::info('VNPay URL generated:', [
-            'url' => $vnpUrl,
-            'hashdata' => $hashdata,
-            'secure_hash' => $vnpSecureHash ?? 'N/A'
-        ]);
-        // Optional: return JSON instead of redirect when debug enabled via request or env
-        if (request()->boolean('debug') || (bool) env('PAYMENT_DEBUG', false)) {
-            return response()->json([
-                'gateway' => 'vnpay',
-                'signed_url' => $vnpUrl,
-                'hashdata' => $hashdata,
-                'vnp_SecureHash' => $vnpSecureHash ?? null,
-                'params' => $vnpParams,
-            ]);
-        }
-        
-        return redirect($vnpUrl);
-    }
 
     private function processMoMoPayment($orderData)
     {

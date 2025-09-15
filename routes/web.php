@@ -332,6 +332,8 @@ Route::permanentRedirect('/car_models/{id}', '/car-models/{id}');
 
 // Notification routes
 Route::middleware(['auth'])->group(function () {
+    // Notifications bulk delete (simpler & faster)
+    Route::delete('/notifications', [\App\Http\Controllers\NotificationController::class, 'deleteAll'])->name('notifications.delete-all');
     Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::post('/notifications/read-all', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
@@ -378,6 +380,7 @@ Route::prefix('service-appointments')->name('user.service-appointments.')->middl
     Route::get('/history', [App\Http\Controllers\User\ServiceAppointmentController::class, 'getServiceHistory'])->name('history');
     Route::get('/upcoming', [App\Http\Controllers\User\ServiceAppointmentController::class, 'getUpcomingAppointments'])->name('upcoming');
     Route::post('/check-availability', [App\Http\Controllers\User\ServiceAppointmentController::class, 'checkAvailability'])->name('check-availability');
+    Route::post('/{appointment}/rate', [App\Http\Controllers\User\ServiceAppointmentController::class, 'rate'])->whereNumber('appointment')->name('rate');
 
     // Wildcard routes with numeric constraint
     Route::get('/{appointment}', [App\Http\Controllers\User\ServiceAppointmentController::class, 'show'])->whereNumber('appointment')->name('show');
@@ -430,4 +433,6 @@ Route::prefix('wishlist')->name('wishlist.')->group(function () {
     Route::get('/items', [WishlistController::class, 'getItems'])->name('items'); // Lấy tất cả items wishlist
     Route::post('/migrate-session', [WishlistController::class, 'migrateSessionWishlist'])->name('migrate-session');
 });
+
+
 

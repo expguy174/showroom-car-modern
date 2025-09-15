@@ -148,8 +148,7 @@ class TestDriveController extends Controller
                 Auth::id(),
                 'test_drive',
                 'Đặt lịch lái thử thành công',
-                'Bạn đã đặt lịch lái thử #' . ($testDrive->test_drive_number ?? $testDrive->id) . '.',
-                ['test_drive_id' => $testDrive->id]
+                'Bạn đã đặt lịch lái thử #' . ($testDrive->test_drive_number ?? $testDrive->id) . '.'
             );
         } catch (\Throwable $e) {}
 
@@ -205,6 +204,7 @@ class TestDriveController extends Controller
             return response()->json([
                 'html' => view('user.test-drives.partials.list', ['testDrives' => $testDrives])->render(),
                 'pagination' => view('components.pagination-modern', ['paginator' => $testDrives->withQueryString()])->render(),
+                'summary' => view('user.test-drives.partials.summary', ['paginator' => $testDrives->withQueryString()])->render(),
             ]);
         }
 
@@ -244,8 +244,7 @@ class TestDriveController extends Controller
                 $testDrive->user_id,
                 'test_drive',
                 'Đã hủy lịch lái thử',
-                'Bạn đã hủy lịch lái thử #' . ($testDrive->test_drive_number ?? $testDrive->id) . '.',
-                ['test_drive_id' => $testDrive->id]
+                'Bạn đã hủy lịch lái thử #' . ($testDrive->test_drive_number ?? $testDrive->id) . '.'
             );
         } catch (\Throwable $e) {}
         return $request->ajax()
@@ -293,8 +292,7 @@ class TestDriveController extends Controller
                 $testDrive->user_id,
                 'test_drive',
                 'Đã đổi lịch lái thử',
-                'Lịch lái thử #' . ($testDrive->test_drive_number ?? $testDrive->id) . ' đã được cập nhật.',
-                ['test_drive_id' => $testDrive->id]
+                'Lịch lái thử #' . ($testDrive->test_drive_number ?? $testDrive->id) . ' đã được cập nhật.'
             );
         } catch (\Throwable $e) {}
         return $request->ajax()

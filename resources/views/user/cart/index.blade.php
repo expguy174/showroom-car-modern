@@ -53,6 +53,30 @@
 
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {{-- Removed inline alert boxes; rely on global toast system --}}
+        <!-- Base empty state template for instant client-side rendering -->
+        <template id="cart-empty-template">
+            <div class="text-center py-16">
+                <div class="w-32 h-32 bg-gradient-to-br from-indigo-100 to-slate-100 rounded-2xl mx-auto mb-8 flex items-center justify-center shadow-sm">
+                    <i class="fas fa-box-open text-indigo-500 text-5xl"></i>
+                </div>
+                <h3 class="text-3xl font-bold text-gray-800 mb-3">Giỏ hàng của bạn đang trống</h3>
+                <p class="text-gray-600 mb-8 max-w-md mx-auto text-base sm:text-lg">
+                    Hãy khám phá các mẫu xe và phụ kiện để thêm vào giỏ hàng.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <a href="{{ route('products.index', ['type' => 'car']) }}" 
+                       class="inline-flex items-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition duration-300 transform hover:scale-[1.02] shadow-lg">
+                        <i class="fas fa-car-side mr-2.5"></i>
+                        <span>Khám phá xe hơi</span>
+                    </a>
+                    <a href="{{ route('products.index', ['type' => 'accessory']) }}" 
+                       class="inline-flex items-center bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-semibold hover:from-emerald-700 hover:to-teal-700 transition duration-300 transform hover:scale-[1.02] shadow-lg">
+                        <i class="fas fa-screwdriver-wrench mr-2.5"></i>
+                        <span>Khám phá phụ kiện</span>
+                    </a>
+                </div>
+            </div>
+        </template>
         
         @if($cartItems->isEmpty())
             <!-- Empty Cart State -->
@@ -167,7 +191,7 @@
                 </div>
 
                 <!-- Order Summary -->
-                <div class="lg:col-span-4 xl:col-span-3">
+                <div id="order-summary" class="lg:col-span-4 xl:col-span-3">
                     <div class="sticky top-8">
                         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                             <div class="bg-gradient-to-r from-gray-50 to-slate-50 px-6 py-4 border-b border-gray-100">

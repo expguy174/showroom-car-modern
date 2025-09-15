@@ -12,8 +12,7 @@ class ServiceAppointment extends Model
     public const STATUSES = ['scheduled','confirmed','in_progress','completed','cancelled','no_show','rescheduled'];
     public const APPOINTMENT_TYPES = ['maintenance','repair','inspection','warranty_work','recall_service','emergency','other'];
     public const PRIORITIES = ['low','medium','high','urgent'];
-    public const PAYMENT_METHODS = ['cash','card','bank_transfer','installment'];
-    public const PAYMENT_STATUSES = ['pending','paid','partial'];
+    // Removed payment constants due to simplified schema
 
     protected $fillable = [
         'user_id',
@@ -66,6 +65,8 @@ class ServiceAppointment extends Model
         'notes',
         'documents',
         'tags',
+        'satisfaction_rating',
+        'feedback',
     ];
 
     protected $casts = [
@@ -89,6 +90,7 @@ class ServiceAppointment extends Model
         'customer_notified' => 'boolean',
         'customer_recommend' => 'boolean',
         'documents' => 'json',
+        'satisfaction_rating' => 'integer',
         // Time columns are stored as TIME in DB, cast to string (HH:MM:SS)
         'appointment_time' => 'string',
         'actual_start_time' => 'string',

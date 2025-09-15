@@ -11,9 +11,12 @@ class PaymentGatewayFactory
     public static function make(string $methodCode): PaymentGateway
     {
         $mode = env('PAYMENT_GATEWAY_MODE', 'sandbox');
-        if ($mode === 'mock') {
+        
+        // Always use mock in development/testing
+        if ($mode === 'mock' || app()->environment('local', 'testing')) {
             return app(MockGateway::class);
         }
+        
         return match ($methodCode) {
             'vnpay' => app(VNPayGateway::class),
             'momo'  => app(MoMoGateway::class),

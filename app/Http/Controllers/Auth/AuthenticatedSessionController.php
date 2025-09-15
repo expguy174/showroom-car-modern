@@ -80,10 +80,10 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerate();
 
         if (Auth::user() && Auth::user()->role === 'admin') {
-            return redirect()->intended('/admin/dashboard');
+            return redirect()->intended('/admin/dashboard')->with('success', 'Đăng nhập thành công! Chào mừng quay trở lại.');
         }
 
-        return redirect()->intended('/dashboard');
+        return redirect()->intended('/dashboard')->with('success', 'Đăng nhập thành công! Chào mừng quay trở lại.');
     }
 
     /**

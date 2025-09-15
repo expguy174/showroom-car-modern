@@ -376,16 +376,21 @@ class CartManager {
                 // Check if cart is now empty and show empty state
                 const remainingItems = $('.cart-item-desktop, .cart-item-row').length;
                 if (remainingItems === 0) {
-                    // Hide sections and clear button
-                    $('#car-section, #accessory-section').fadeOut(150);
-                    $('#clear-cart-btn').closest('.bg-white').fadeOut(150);
-                    
-                    // Show empty state after sections are hidden
-                    setTimeout(() => {
-                        if (window.cartManager && typeof window.cartManager.showEmptyCartState === 'function') {
-                            window.cartManager.showEmptyCartState();
-                        }
-                    }, 200);
+                    // Hide sections and clear button instantly
+                    $('#car-section, #accessory-section').remove();
+                    const clearBtnCard = $('#clear-cart-btn').closest('.bg-white');
+                    if (clearBtnCard.length) clearBtnCard.remove();
+
+                    // Hide order summary immediately
+                    const summary = document.getElementById('order-summary');
+                    if (summary) summary.remove();
+
+                    // Render base empty state instantly from template
+                    const tpl = document.getElementById('cart-empty-template');
+                    const container = document.querySelector('.container.mx-auto.px-4.sm\\:px-6.lg\\:px-8.py-8');
+                    if (tpl && container) {
+                        container.innerHTML = tpl.innerHTML.trim();
+                    }
                 }
             });
         }
@@ -1269,10 +1274,19 @@ class CartManager {
         // Hide clear button
         $('#clear-cart-btn').closest('.bg-white').fadeOut(150);
         
-        // Show empty state after sections are hidden
-        setTimeout(() => {
-            this.showEmptyCartState();
-        }, 200);
+        // Hide order summary and sections instantly
+        const summary = document.getElementById('order-summary');
+        if (summary) summary.remove();
+        $('#car-section, #accessory-section').remove();
+        const clearBtnCard = $('#clear-cart-btn').closest('.bg-white');
+        if (clearBtnCard.length) clearBtnCard.remove();
+
+        // Inject base empty state markup from template immediately
+        const tpl = document.getElementById('cart-empty-template');
+        const container = document.querySelector('.container.mx-auto.px-4.sm\\:px-6.lg\\:px-8.py-8');
+        if (tpl && container) {
+            container.innerHTML = tpl.innerHTML.trim();
+        }
         
         // Update cart count to 0 and ensure localStorage is updated
         this.updateCartCount(0);
@@ -1285,39 +1299,18 @@ class CartManager {
     }
 
     showEmptyCartState() {
-        // Create empty state HTML that matches the default template exactly
-        const emptyStateHTML = `
-            <div class="text-center py-16">
-                <div class="w-32 h-32 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full mx-auto mb-8 flex items-center justify-center">
-                    <i class="fas fa-car text-blue-500 text-5xl"></i>
-                </div>
-                <h3 class="text-3xl font-bold text-gray-800 mb-4">Giỏ hàng trống</h3>
-                <p class="text-gray-600 mb-8 max-w-md mx-auto text-lg">
-                    Bạn chưa có sản phẩm nào trong giỏ hàng. Hãy khám phá các xe hơi và phụ kiện chất lượng cao!
-                </p>
-                <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                    <a href="/products?type=car" 
-                       class="inline-flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition duration-300 transform hover:scale-105 shadow-lg w-full sm:w-auto min-w-[200px]">
-                        <i class="fas fa-car mr-2 sm:mr-3"></i>
-                        <span class="text-sm sm:text-base">Xem xe hơi</span>
-                    </a>
-                    <a href="/products?type=accessory" 
-                       class="inline-flex items-center justify-center bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold hover:from-emerald-700 hover:to-teal-700 transition duration-300 transform hover:scale-105 shadow-lg w-full sm:w-auto min-w-[200px]">
-                        <i class="fas fa-tools mr-2 sm:mr-3"></i>
-                        <span class="text-sm sm:text-base">Xem phụ kiện</span>
-                    </a>
-                </div>
-            </div>
-        `;
-        
-        // Replace only the cart content area, not the entire container
-        const cartContainer = $('.container.mx-auto.px-4.sm\\:px-6.lg\\:px-8.py-8');
-        if (cartContainer.length) {
-            cartContainer.html(emptyStateHTML);
-        } else {
-            // Fallback: find the py-8 container
-            $('.py-8').html(emptyStateHTML);
+        // Render base empty state instantly from the hidden template
+        const tpl = document.getElementById('cart-empty-template');
+        const container = document.querySelector('.container.mx-auto.px-4.sm\\:px-6.lg\\:px-8.py-8');
+        if (tpl && container) {
+            container.innerHTML = tpl.innerHTML.trim();
         }
+        // Hide any leftover summary and sections safely
+        const summary = document.getElementById('order-summary');
+        if (summary) summary.remove();
+        $('#car-section, #accessory-section').remove();
+        const clearBtnCard = $('#clear-cart-btn').closest('.bg-white');
+        if (clearBtnCard.length) clearBtnCard.remove();
     }
 
     async getServerCount() {

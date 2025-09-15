@@ -7,7 +7,7 @@
     <!-- Session Status -->
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
-    <form x-data="{ show: false }" @submit="showButtonLoading($event.target.querySelector('button[type=submit]'), 'Đang đăng nhập...')" method="POST" action="{{ route('login') }}" class="space-y-5" novalidate>
+    <form x-data="{ show: false }" @submit="handleLoginSubmit($event)" method="POST" action="{{ route('login') }}" class="space-y-5" novalidate>
         @csrf
 
         <!-- Email Address -->
@@ -58,14 +58,99 @@
             (function(){
                 const form = document.currentScript.closest('form');
                 if (!form) return;
-                const setMsg = (el, msg) => { if (el) { el.setCustomValidity(msg || ''); } };
+                
+                // Enhanced validation with better UX
+                const setMsg = (el, msg) => { 
+                    if (el) { 
+                        el.setCustomValidity(msg || ''); 
+                        // Show custom error message
+                        if (msg) {
+                            el.classList.add('border-red-500', 'focus:border-red-500', 'focus:ring-red-500');
+                            el.classList.remove('border-gray-300', 'focus:border-indigo-500', 'focus:ring-indigo-500');
+                        } else {
+                            el.classList.remove('border-red-500', 'focus:border-red-500', 'focus:ring-red-500');
+                            el.classList.add('border-gray-300', 'focus:border-indigo-500', 'focus:ring-indigo-500');
+                        }
+                    } 
+                };
+                
                 const email = form.querySelector('#email');
                 const pass = form.querySelector('#password');
-                if (email) email.addEventListener('invalid', ()=> setMsg(email, 'Vui lòng nhập email hợp lệ.'));
-                if (email) email.addEventListener('input', ()=> setMsg(email, ''));
-                if (pass) pass.addEventListener('invalid', ()=> setMsg(pass, 'Vui lòng nhập mật khẩu.'));
-                if (pass) pass.addEventListener('input', ()=> setMsg(pass, ''));
+                
+                // Email validation
+                if (email) {
+                    email.addEventListener('invalid', ()=> {
+                        if (email.validity.valueMissing) {
+                            setMsg(email, 'Vui lòng nhập email.');
+                        } else if (email.validity.typeMismatch) {
+                            setMsg(email, 'Email không đúng định dạng.');
+                        }
+                    });
+                    email.addEventListener('input', ()=> {
+                        setMsg(email, '');
+                        // Real-time email format check
+                        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                        if (email.value && !emailRegex.test(email.value)) {
+                            setMsg(email, 'Email không đúng định dạng.');
+                        }
+                    });
+                }
+                
+                // Password validation
+                if (pass) {
+                    pass.addEventListener('invalid', ()=> {
+                        if (pass.validity.valueMissing) {
+                            setMsg(pass, 'Vui lòng nhập mật khẩu.');
+                        }
+                    });
+                    pass.addEventListener('input', ()=> setMsg(pass, ''));
+                }
+                
+                // Form submission with better error handling
+                form.addEventListener('submit', function(e) {
+                    // Clear previous errors
+                    [email, pass].forEach(el => {
+                        if (el) {
+                            el.classList.remove('border-red-500', 'focus:border-red-500', 'focus:ring-red-500');
+                            el.classList.add('border-gray-300', 'focus:border-indigo-500', 'focus:ring-indigo-500');
+                        }
+                    });
+                    
+                    // Check if form is valid
+                    if (!form.checkValidity()) {
+                        e.preventDefault();
+                        // Focus first invalid field
+                        const firstInvalid = form.querySelector(':invalid');
+                        if (firstInvalid) {
+                            firstInvalid.focus();
+                            firstInvalid.dispatchEvent(new Event('invalid'));
+                        }
+                        return false;
+                    }
+                });
             })();
+            
+            // Handle login form submission with loading state
+            function handleLoginSubmit(event) {
+                const form = event.target;
+                const submitBtn = form.querySelector('button[type="submit"]');
+                
+                // Show loading state
+                if (submitBtn) {
+                    const originalText = submitBtn.innerHTML;
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang đăng nhập...';
+                    
+                    // Reset after 10 seconds as fallback
+                    setTimeout(() => {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalText;
+                    }, 10000);
+                }
+                
+                // Let form submit normally
+                return true;
+            }
         </script>
     </form>
 

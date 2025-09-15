@@ -118,8 +118,7 @@ class OrderController extends Controller
                         $order->user_id,
                         'order_status',
                         $title,
-                        'Đơn ' . ($order->order_number ?? ('#'.$order->id)) . ' đã chuyển sang trạng thái ' . $order->status . '.',
-                        ['order_id' => $order->id]
+                        'Đơn ' . ($order->order_number ?? ('#'.$order->id)) . ' đã chuyển sang trạng thái ' . $order->status . '.'
                     );
                 }
                 if (($before['tracking_number'] ?? null) !== ($after['tracking_number'] ?? null) && $order->tracking_number){
@@ -127,8 +126,7 @@ class OrderController extends Controller
                         $order->user_id,
                         'order_status',
                         'Cập nhật mã vận đơn',
-                        'Đơn ' . ($order->order_number ?? ('#'.$order->id)) . ' có mã vận đơn mới: ' . $order->tracking_number . '.',
-                        ['order_id' => $order->id]
+                        'Đơn ' . ($order->order_number ?? ('#'.$order->id)) . ' có mã vận đơn mới: ' . $order->tracking_number . '.'
                     );
                 }
             }

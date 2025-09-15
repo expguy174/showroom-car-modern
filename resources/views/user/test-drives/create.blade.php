@@ -85,6 +85,17 @@
 			</form>
 		</div>
 		<div class="space-y-4 sm:space-y-6">
+			<!-- Quy định đặt lịch -->
+			<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
+				<h3 class="text-base font-bold mb-3">Quy định đặt lịch</h3>
+				<ul class="text-sm text-gray-600 list-disc pl-5 space-y-1">
+					<li><span class="font-medium">Ngày mong muốn</span> phải <span class="font-medium">sau hôm nay</span> và trong vòng <span class="font-medium">60 ngày</span>.</li>
+					<li>Không nhận lịch vào <span class="font-medium">Chủ nhật</span>.</li>
+					<li><span class="font-medium">Giờ làm việc</span>: từ <span class="font-medium">08:00</span> đến <span class="font-medium">20:00</span>.</li>
+				</ul>
+			</div>
+
+			<!-- Lưu ý -->
 			<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
 				<h3 class="text-base font-bold mb-3">Lưu ý</h3>
 				<ul class="text-sm text-gray-600 list-disc pl-5 space-y-1">
@@ -148,11 +159,18 @@
 		const original = submitBtn ? submitBtn.innerHTML : '';
 		const v = validateVN();
 		if ((v.missing && v.missing.length) || (v.others && v.others.length)){
-			let parts = [];
-			if (v.missing.length){ parts.push('Vui lòng nhập: ' + v.missing.join(', ')); }
-			if (v.others.length){ parts = parts.concat(v.others.map(s => '• ' + s)); }
-			const msg = parts.join('\n');
-			if (typeof window.showMessage === 'function') window.showMessage(msg, 'error'); else alert(msg);
+			// Highlight required fields
+			['car_variant_id','preferred_date','preferred_time'].forEach(function(name){
+				const el = form.querySelector(`[name="${name}"]`);
+				if (el){ el.classList.remove('border-gray-300'); el.classList.add('border-red-500','focus:border-red-500','focus:ring-red-500'); }
+			});
+			// Build concise, friendly message
+			let msgParts = [];
+			if (v.missing.length){ msgParts.push('Thiếu: ' + v.missing.join(', ')); }
+			if (v.others.length){ msgParts = msgParts.concat(v.others); }
+			const summary = msgParts.join('. ');
+			const msg = summary ? ('Vui lòng kiểm tra: ' + summary + '.') : 'Vui lòng kiểm tra lại thông tin.';
+			if (typeof window.showMessage === 'function') window.showMessage(msg, 'warning'); else alert(msg);
 			return;
 		}
 		if (submitBtn){
@@ -169,21 +187,41 @@
 			if (res.status === 422){
 				const data = await res.json().catch(()=>({ errors:{} }));
 				const messages = [];
+				// Clear old highlighting
+				form.querySelectorAll('input, select, textarea').forEach(el=>{
+					el.classList.remove('border-red-500','focus:border-red-500','focus:ring-red-500');
+				});
 				if (data && data.errors){
 					Object.keys(data.errors).forEach(function(field){
 						const label = fieldLabels[field] || field;
 						const arr = Array.isArray(data.errors[field]) ? data.errors[field] : [String(data.errors[field])];
-						arr.forEach(msg => messages.push(`${label}: ${msg}`));
+						// Highlight field with error
+						const el = form.querySelector(`[name="${field}"]`);
+						if (el){ el.classList.add('border-red-500','focus:border-red-500','focus:ring-red-500'); }
+						arr.forEach(m => messages.push(`${label}: ${m}`));
 					});
 				}
-				const fullMsg = messages.length ? messages.join('\n') : 'Dữ liệu chưa hợp lệ, vui lòng kiểm tra lại.';
-				if (typeof window.showMessage === 'function') window.showMessage(fullMsg, 'error'); else alert(fullMsg);
+				// Fallback messages if backend didn’t provide details
+				if (messages.length === 0){
+					const miss = [];
+					['car_variant_id','preferred_date','preferred_time'].forEach(n=>{
+						const el = form.querySelector(`[name="${n}"]`);
+						if (el && !el.value) miss.push(fieldLabels[n]);
+					});
+					if (miss.length) messages.push('Thiếu: ' + miss.join(', '));
+					messages.push('Ngày phải sau hôm nay và trong 60 ngày; giờ trong 08:00–20:00');
+				}
+				// Build concise message: join first 2 issues, then add more-count
+				let display = messages.slice(0, 2).join('. ');
+				if (messages.length > 2) display += `. (+${messages.length - 2} lỗi khác)`;
+				const fullMsg = display ? ('Vui lòng kiểm tra: ' + display + '.') : 'Vui lòng kiểm tra lại thông tin.';
+				if (typeof window.showMessage === 'function') window.showMessage(fullMsg, 'warning'); else alert(fullMsg);
 			}else if (res.ok){
 				const data = await res.json().catch(()=>({ success:true }));
 				if (data && data.success){
 					if (typeof window.showMessage === 'function') window.showMessage(data.message || 'Đặt lịch lái thử thành công!', 'success');
 					// Redirect to danh sách để đồng bộ
-					setTimeout(function(){ window.location.href = "{{ route('test-drives.index') }}"; }, 600);
+					setTimeout(function(){ window.location.href = "{{ route('test-drives.index') }}"; }, 1400);
 				}
 			}
 		}catch(e){
