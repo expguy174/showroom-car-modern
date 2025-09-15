@@ -9,7 +9,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
 @endphp
 
 <nav id="main-nav" class="sticky top-0 z-40 bg-white/85 backdrop-blur-md border-b border-gray-100">
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="h-16 flex items-center justify-between gap-2">
             {{-- Left: Brand / Home --}}
             <div class="flex items-center gap-3 min-w-[140px] h-16">
@@ -25,7 +25,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
             </div>
 
             {{-- Center: Primary Navigation (Desktop) --}}
-            <div class="center-menu hidden lg:flex items-center justify-center gap-1 text-[13px] flex-1 min-w-0 h-16">
+            <div class="center-menu hidden lg:flex items-center justify-center gap-1 text-[13px] flex-1 min-w-0 h-16 overflow-x-auto scrollbar-hide">
                 {{-- Hãng (giữ nguyên) --}}
                 <div class="dropdown-group car-dropdown-wrapper" data-dropdown="brands">
                     <button class="px-2 py-2 rounded-lg text-sm text-gray-700 hover:text-white hover:bg-indigo-600 inline-flex items-center gap-2 transition-colors duration-200" data-dropdown-trigger>
@@ -115,13 +115,13 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
             </div>
 
             {{-- Right: Search + Actions --}}
-            <div id="nav-actions" class="flex items-center gap-2 shrink-0 h-16">
+            <div id="nav-actions" class="flex items-center gap-1 sm:gap-2 shrink-0 h-16">
                 {{-- Search (Desktop) --}}
                 <form action="{{ route('products.index') }}" method="GET" class="hidden lg:flex items-center self-center h-16 m-0 mb-0">
                     <div class="relative h-full flex items-center">
                         <div class="flex items-center h-10 my-auto rounded-lg border border-gray-200 bg-white leading-none">
                             <span class="pl-3 pr-2 text-gray-400 flex items-center leading-none"><i class="fas fa-search"></i></span>
-                            <input id="desktop-search-input" name="q" type="search" class="search-input h-10 w-56 xl:w-72 bg-transparent border-0 outline-none focus:ring-0 text-sm leading-none mb-0" placeholder="Tìm kiếm" autocomplete="off" />
+                            <input id="desktop-search-input" name="q" type="search" class="search-input h-10 w-48 xl:w-72 bg-transparent border-0 outline-none focus:ring-0 text-sm leading-none mb-0" placeholder="Tìm kiếm" autocomplete="off" />
                             <button type="submit" class="px-2 py-0.5 text-indigo-600 hover:text-indigo-800 leading-none">
                                 <i class="fas fa-arrow-right"></i>
                             </button>
