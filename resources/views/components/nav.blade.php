@@ -9,7 +9,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
 @endphp
 
 <nav id="main-nav" class="sticky top-0 z-40 bg-white/85 backdrop-blur-md border-b border-gray-100">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <div class="h-16 flex items-center justify-between gap-2">
             {{-- Left: Brand / Home --}}
             <div class="flex items-center gap-3 min-w-[140px] h-16">

@@ -1,5 +1,5 @@
 <footer class="bg-gray-950 text-gray-300 py-10 sm:py-12">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12 lg:gap-16">
             <div class="md:col-span-1">
                 <div class="flex items-center mb-5 space-x-3">
