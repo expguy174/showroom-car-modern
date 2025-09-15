@@ -380,6 +380,7 @@
             transform: translateY(0);
             opacity: 1;
             visibility: visible;
+            pointer-events: auto;
         }
 
         /* Dropdown Menu Items hover unify */

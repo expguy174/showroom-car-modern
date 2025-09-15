@@ -25,7 +25,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
             </div>
 
             {{-- Center: Primary Navigation (Desktop) --}}
-            <div class="center-menu hidden lg:flex items-center justify-center gap-1 text-[13px] flex-1 min-w-0 h-16 overflow-x-auto scrollbar-hide overflow-visible">
+            <div class="center-menu hidden lg:flex items-center justify-center gap-1 text-[13px] flex-1 min-w-0 h-16">
                 {{-- Hãng (giữ nguyên) --}}
                 <div class="dropdown-group car-dropdown-wrapper" data-dropdown="brands">
                     <button class="px-2 py-2 rounded-lg text-sm text-gray-700 hover:text-white hover:bg-indigo-600 inline-flex items-center gap-2 transition-colors duration-200" data-dropdown-trigger>
@@ -34,7 +34,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                         <i class="fas fa-chevron-down text-xs transition-transform duration-200"></i>
                     </button>
                     <div class="dropdown-bridge"></div>
-                    <div class="dropdown-menu absolute left-0 mt-2 w-[720px] z-50 opacity-0 invisible scale-95 transition-all duration-200 transform origin-top-left" data-dropdown-menu>
+                    <div class="dropdown-menu absolute left-0 mt-2 w-[720px] z-50 opacity-0 invisible scale-95 transition-all duration-200 transform origin-top-left pointer-events-auto" data-dropdown-menu>
                         <div class="p-3 grid grid-cols-3 gap-2">
                             @forelse($navBrands as $brand)
                             <a href="{{ route('car-brands.show', $brand->id) }}" class="flex items-center gap-3 p-2 rounded-lg hover:bg-white transition-colors duration-150">
@@ -69,7 +69,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                         <i class="fas fa-chevron-down text-xs transition-transform duration-200"></i>
                     </button>
                     <div class="dropdown-bridge"></div>
-                    <div class="dropdown-menu absolute left-0 mt-2 min-w-[260px] z-50 opacity-0 invisible scale-95 transition-all duration-200 transform origin-top-left" data-dropdown-menu>
+                    <div class="dropdown-menu absolute left-0 mt-2 min-w-[260px] z-50 opacity-0 invisible scale-95 transition-all duration-200 transform origin-top-left pointer-events-auto" data-dropdown-menu>
                         <div class="p-2">
                             <a href="{{ route('products.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white transition-colors duration-150"><i class="fas fa-th-large text-gray-400"></i><span>Tất cả</span></a>
                             <a href="{{ route('products.index', ['type' => 'car']) }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white transition-colors duration-150"><i class="fas fa-car-side text-gray-400"></i><span>Xe hơi</span></a>
@@ -86,7 +86,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                         <i class="fas fa-chevron-down text-xs transition-transform duration-200"></i>
                     </button>
                     <div class="dropdown-bridge"></div>
-                    <div class="dropdown-menu absolute left-0 mt-2 min-w-[260px] z-50 opacity-0 invisible scale-95 transition-all duration-200 transform origin-top-left" data-dropdown-menu>
+                    <div class="dropdown-menu absolute left-0 mt-2 min-w-[260px] z-50 opacity-0 invisible scale-95 transition-all duration-200 transform origin-top-left pointer-events-auto" data-dropdown-menu>
                         <div class="p-2">
                             <a href="{{ route('finance.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white transition-colors duration-150"><i class="fas fa-info-circle text-gray-400"></i><span>Tổng quan</span></a>
                             <a href="{{ route('finance.calculator') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white transition-colors duration-150"><i class="fas fa-calculator text-gray-400"></i><span>Máy tính trả góp</span></a>
@@ -104,7 +104,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                         <i class="fas fa-chevron-down text-xs transition-transform duration-200"></i>
                     </button>
                     <div class="dropdown-bridge"></div>
-                    <div class="dropdown-menu absolute left-0 mt-2 min-w-[260px] z-50 opacity-0 invisible scale-95 transition-all duration-200 transform origin-top-left" data-dropdown-menu>
+                    <div class="dropdown-menu absolute left-0 mt-2 min-w-[260px] z-50 opacity-0 invisible scale-95 transition-all duration-200 transform origin-top-left pointer-events-auto" data-dropdown-menu>
                         <div class="p-2 grid grid-cols-1 gap-1">
                             <a href="{{ route('blogs.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white transition-colors duration-150"><i class="fas fa-newspaper text-gray-400"></i><span>Tin tức</span></a>
                             <a href="{{ route('about') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white transition-colors duration-150"><i class="fas fa-info-circle text-gray-400"></i><span>Giới thiệu</span></a>
