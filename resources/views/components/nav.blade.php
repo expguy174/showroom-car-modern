@@ -25,7 +25,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
             </div>
 
             {{-- Center: Primary Navigation (Desktop) --}}
-            <div class="center-menu hidden lg:flex items-center justify-center gap-1 text-[13px] flex-1 min-w-0 h-16 overflow-x-auto scrollbar-hide">
+            <div class="center-menu hidden lg:flex items-center justify-center gap-1 text-[13px] flex-1 min-w-0 h-16 overflow-x-auto scrollbar-hide overflow-visible">
                 {{-- Hãng (giữ nguyên) --}}
                 <div class="dropdown-group car-dropdown-wrapper" data-dropdown="brands">
                     <button class="px-2 py-2 rounded-lg text-sm text-gray-700 hover:text-white hover:bg-indigo-600 inline-flex items-center gap-2 transition-colors duration-200" data-dropdown-trigger>
