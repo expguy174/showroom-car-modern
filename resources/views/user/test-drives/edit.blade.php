@@ -2,7 +2,7 @@
 @section('title', 'Sửa lịch lái thử')
 @section('content')
 
-<div class="max-w-5xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8">
+<div class="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8">
 	<div class="flex items-center justify-between mb-4 sm:mb-6">
 		<div>
 			<div class="text-xs text-gray-500">Lịch lái thử</div>
@@ -12,18 +12,20 @@
 	</div>
 
 	@if(session('error') || $errors->any())
+		<div id="td-edit-flash" data-error="{{ e(session('error')) }}" data-errors='@json($errors->all())'></div>
 		<script>
 		(function(){
 			try{
-				if (typeof showMessage === 'function'){
-					var err = @json(session('error'));
-					if (err) showMessage(err, 'error');
-					var errs = @json($errors->all());
-					if (Array.isArray(errs)){
-						errs.forEach(function(m){ if (m) showMessage(m, 'error'); });
-					}
+				var host = document.getElementById('td-edit-flash');
+				if (!host || typeof window.showMessage !== 'function') return;
+				var single = host.getAttribute('data-error');
+				if (single) window.showMessage(single, 'error');
+				var list = host.getAttribute('data-errors');
+				if (list){
+					try { list = JSON.parse(list); } catch(e) { list = []; }
+					if (Array.isArray(list)) list.forEach(function(m){ if (m) window.showMessage(m, 'error'); });
 				}
-			}catch(e){}
+			} catch(e) {}
 		})();
 		</script>
 	@endif
