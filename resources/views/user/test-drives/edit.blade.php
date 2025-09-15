@@ -3,12 +3,12 @@
 @section('content')
 
 <div class="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8">
-	<div class="flex items-center justify-between mb-4 sm:mb-6">
-		<div>
+	<div class="flex items-start sm:items-center justify-between gap-3 mb-4 sm:mb-6">
+		<div class="min-w-0">
 			<div class="text-xs text-gray-500">Lịch lái thử</div>
 			<h1 class="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight">Sửa lịch #{{ $testDrive->test_drive_number ?? $testDrive->id }}</h1>
 		</div>
-		<a href="{{ route('test-drives.show', $testDrive) }}" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm font-semibold"><i class="fas fa-arrow-left"></i> Quay lại</a>
+		<a href="{{ route('test-drives.show', $testDrive) }}" class="shrink-0 inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm font-semibold"><i class="fas fa-arrow-left"></i> Quay lại</a>
 	</div>
 
 	@if(session('error') || $errors->any())
@@ -32,8 +32,8 @@
 
 	<!-- Summary card -->
 	<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 mb-4 sm:mb-6">
-		<div class="flex items-start gap-4">
-			<div class="w-32 h-20 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
+		<div class="flex items-start gap-3 sm:gap-4">
+			<div class="w-28 h-20 sm:w-32 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
 				<img src="{{ optional(optional($testDrive->carVariant)->images->first())->image_url ?: 'https://placehold.co/200x120/EEF2FF/3730A3?text=Car' }}" alt="thumb" class="w-full h-full object-cover" />
 			</div>
 			<div class="min-w-0 flex-1">
@@ -43,7 +43,7 @@
 						{{ optional(optional($testDrive->carVariant)->carModel)->name }} {{ optional($testDrive->carVariant)->name ?? '' }}
 					</a>
 				</div>
-				<div class="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+				<div class="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 text-sm">
 					<div class="flex items-center gap-2"><i class="far fa-calendar"></i><span>{{ optional($testDrive->preferred_date)->format('d/m/Y') }}</span></div>
 					<div class="flex items-center gap-2"><i class="far fa-clock"></i><span>{{ is_string($testDrive->preferred_time) ? substr($testDrive->preferred_time,0,5) : optional($testDrive->preferred_time)->format('H:i') }}</span></div>
 					<div class="flex items-center gap-2"><i class="fas fa-store"></i><span>{{ $testDrive->showroom->name ?? '—' }}</span></div>
