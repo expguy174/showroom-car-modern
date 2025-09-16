@@ -188,22 +188,22 @@ class ProductController extends Controller
                 $range = $request->price_quick;
                 if (strpos($range, '-') !== false) {
                     [$min, $max] = explode('-', $range);
-                    if ($min !== '') $accQuery->where('price', '>=', (int) $min);
-                    if ($max !== '') $accQuery->where('price', '<=', (int) $max);
+                    if ($min !== '') $accQuery->where('current_price', '>=', (int) $min);
+                    if ($max !== '') $accQuery->where('current_price', '<=', (int) $max);
                 }
             }
             if ($request->filled('price_min')) {
-                $accQuery->where('price', '>=', $request->price_min);
+                $accQuery->where('current_price', '>=', (int) $request->price_min);
             }
             if ($request->filled('price_max')) {
-                $accQuery->where('price', '<=', $request->price_max);
+                $accQuery->where('current_price', '<=', (int) $request->price_max);
             }
 
             $sortBy = $request->get('sort', 'name');
             $sortOrder = $request->get('order', 'asc');
             switch ($sortBy) {
                 case 'price':
-                    $accQuery->orderBy('price', $sortOrder);
+                    $accQuery->orderBy('current_price', $sortOrder);
                     break;
                 case 'name':
                     $accQuery->orderBy('name', $sortOrder);
@@ -274,10 +274,10 @@ class ProductController extends Controller
                 }
             }
             if ($request->filled('price_min')) {
-                $variantQuery->where('current_price', '>=', $request->price_min);
+                $variantQuery->where('current_price', '>=', (int) $request->price_min);
             }
             if ($request->filled('price_max')) {
-                $variantQuery->where('current_price', '<=', $request->price_max);
+                $variantQuery->where('current_price', '<=', (int) $request->price_max);
             }
             if ($request->filled('fuel_type')) {
                 $variantQuery->whereHas('specifications', function ($q) use ($request) {
@@ -329,21 +329,21 @@ class ProductController extends Controller
                 $range = $request->price_quick;
                 if (strpos($range, '-') !== false) {
                     [$min, $max] = explode('-', $range);
-                    if ($min !== '') $accQuery->where('price', '>=', (int) $min);
-                    if ($max !== '') $accQuery->where('price', '<=', (int) $max);
+                    if ($min !== '') $accQuery->where('current_price', '>=', (int) $min);
+                    if ($max !== '') $accQuery->where('current_price', '<=', (int) $max);
                 }
             }
             if ($request->filled('price_min')) {
-                $accQuery->where('price', '>=', $request->price_min);
+                $accQuery->where('current_price', '>=', (int) $request->price_min);
             }
             if ($request->filled('price_max')) {
-                $accQuery->where('price', '<=', $request->price_max);
+                $accQuery->where('current_price', '<=', (int) $request->price_max);
             }
 
             // Reuse sort for accessories (by name/price)
             switch ($sortBy) {
                 case 'price':
-                    $accQuery->orderBy('price', $sortOrder);
+                    $accQuery->orderBy('current_price', $sortOrder);
                     break;
                 case 'name':
                     $accQuery->orderBy('name', $sortOrder);

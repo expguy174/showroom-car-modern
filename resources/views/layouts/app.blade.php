@@ -731,12 +731,10 @@
         }
 
         #car-variant-page .action-btn:hover {
-            transform: translateY(-2px);
             box-shadow: 0 12px 24px rgba(17, 24, 39, .12);
         }
 
         #car-variant-page .action-btn:active {
-            transform: translateY(0);
             box-shadow: 0 6px 16px rgba(17, 24, 39, .08);
         }
 
@@ -809,12 +807,10 @@
         }
 
         .accessory-show-page .action-btn:hover {
-            transform: translateY(-2px);
             box-shadow: 0 12px 24px rgba(17, 24, 39, .12);
         }
 
         .accessory-show-page .action-btn:active {
-            transform: translateY(0);
             box-shadow: 0 6px 16px rgba(17, 24, 39, .08);
         }
 

@@ -46,9 +46,9 @@
         </nav>
 
         <!-- Brand Header -->
-        <div class="grid grid-cols-1 xl:grid-cols-[auto,1fr] items-center gap-8 xl:gap-12">
+        <div class="grid grid-cols-1 xl:grid-cols-[auto,1fr] items-center gap-6 sm:gap-8 xl:gap-12">
             <!-- Brand Logo & Info -->
-            <div class="flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left">
+            <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 text-center sm:text-left">
                 <!-- Logo -->
                 @php $logo = $brand->logo_url ?? null; @endphp
                 @if($logo)
@@ -63,35 +63,35 @@
                 
                 <!-- Brand Basic Info -->
                 <div class="flex-1">
-                    <h1 class="text-3xl sm:text-4xl xl:text-5xl font-extrabold text-white tracking-tight mb-4">
+                    <h1 class="text-2xl sm:text-3xl md:text-4xl xl:text-5xl font-extrabold text-white tracking-tight mb-3 sm:mb-4">
                         {{ $brand->name }}
                     </h1>
                     
                     <!-- Stats Badges -->
-                    <div class="flex flex-wrap items-center gap-3 mb-4">
-                        <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white text-sm font-semibold border border-white/20">
-                            <i class="fas fa-layer-group text-blue-300"></i>
-                            {{ number_format($totalModelsCount ?? $models->count()) }} dòng xe
+                    <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-3 mb-3 sm:mb-4">
+                        <span class="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white/10 backdrop-blur-sm text-white text-xs sm:text-sm font-semibold border border-white/20">
+                            <i class="fas fa-layer-group text-blue-300 text-xs sm:text-sm"></i>
+                            <span class="whitespace-nowrap">{{ number_format($totalModelsCount ?? $models->count()) }} dòng xe</span>
                         </span>
-                        <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white text-sm font-semibold border border-white/20">
-                            <i class="fas fa-cubes text-purple-300"></i>
-                            {{ $stats['total_variants'] ?? 0 }} phiên bản
+                        <span class="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white/10 backdrop-blur-sm text-white text-xs sm:text-sm font-semibold border border-white/20">
+                            <i class="fas fa-cubes text-purple-300 text-xs sm:text-sm"></i>
+                            <span class="whitespace-nowrap">{{ $stats['total_variants'] ?? 0 }} phiên bản</span>
                         </span>
                         @if(!empty($stats['price_range']['min']) && !empty($stats['price_range']['max']))
-                            <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-400/20 backdrop-blur-sm text-green-200 text-sm font-semibold border border-green-400/30">
-                                <i class="fas fa-tag"></i>
-                                Từ {{ number_format($stats['price_range']['min'], 0, ',', '.') }}₫
+                            <span class="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-green-400/20 backdrop-blur-sm text-green-200 text-xs sm:text-sm font-semibold border border-green-400/30">
+                                <i class="fas fa-tag text-xs sm:text-sm"></i>
+                                <span class="whitespace-nowrap">Từ {{ number_format($stats['price_range']['min'], 0, ',', '.') }}₫</span>
                             </span>
                         @endif
                     </div>
                     
                     <!-- Description -->
                     @if(!empty($brand->description))
-                        <p class="text-lg text-gray-300 leading-relaxed md:leading-loose max-w-2xl">
+                        <p class="text-sm sm:text-base lg:text-lg text-gray-300 leading-relaxed max-w-2xl">
                             {{ $brand->description }}
                         </p>
                     @else
-                        <p class="text-lg text-gray-300 leading-relaxed md:leading-loose max-w-2xl">
+                        <p class="text-sm sm:text-base lg:text-lg text-gray-300 leading-relaxed max-w-2xl">
                             {{ $brand->name }} là một trong những thương hiệu xe hơi uy tín với nhiều dòng xe đa dạng, đáp ứng nhu cầu từ gia đình đến cao cấp.
                         </p>
                     @endif
@@ -201,11 +201,11 @@
 <section id="models" class="py-20 bg-gradient-to-b from-white to-gray-50">
     <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Section Header -->
-        <div class="text-center mb-10 sm:mb-12">
-            <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 mb-3">
+        <div class="text-center mb-8 sm:mb-10 lg:mb-12">
+            <h2 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-slate-900 mb-2 sm:mb-3">
                 Chọn dòng xe để xem phiên bản
             </h2>
-            <p class="text-sm sm:text-base text-slate-500 max-w-2xl mx-auto">
+            <p class="text-sm sm:text-base text-slate-500 max-w-2xl mx-auto px-4">
                 Dòng xe hiển thị theo hàng ngang, bên dưới là các phiên bản tương ứng. Bạn cũng có thể xem chi tiết dòng xe.
             </p>
         </div>
@@ -235,25 +235,26 @@
             </div>
         @else
             <!-- Models Row (horizontal, simplified chips) -->
-            <div class="mb-6">
-                <div class="flex items-center justify-center gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent snap-x">
+            <div class="mb-6 sm:mb-8">
+                <div class="flex items-center justify-start sm:justify-center gap-2 sm:gap-3 overflow-x-auto pb-2 px-4 sm:px-0 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent snap-x">
                     @foreach($modelsWithVariants as $m)
                         @php $activeCount = $m->carVariants()->where('is_active', true)->count(); @endphp
                         <div class="snap-start flex-shrink-0">
-                            <button type="button" class="js-model-tab inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border {{ $m->id === $activeModelId ? 'border-indigo-500 bg-indigo-50 text-indigo-800' : 'border-gray-200 bg-white text-gray-700' }} hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 transition-all duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400/40"
+                            <button type="button" class="js-model-tab inline-flex items-center gap-2 px-3 sm:px-3.5 py-2 sm:py-1.5 rounded-full border {{ $m->id === $activeModelId ? 'border-indigo-500 bg-indigo-50 text-indigo-800' : 'border-gray-200 bg-white text-gray-700' }} hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 transition-all duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400/40 min-w-0"
                                     data-model-id="{{ $m->id }}" title="{{ $m->name }}">
                                 <span class="min-w-0 text-left leading-tight">
-                                    <span class="block text-sm font-semibold truncate">{{ $m->name }}</span>
-                                    <span class="block text-[11px] text-gray-500 truncate {{ $m->id === $activeModelId ? 'text-indigo-700' : '' }}">{{ $activeCount }} phiên bản</span>
+                                    <span class="block text-xs sm:text-sm font-semibold truncate max-w-[120px] sm:max-w-none">{{ $m->name }}</span>
+                                    <span class="block text-[10px] sm:text-[11px] text-gray-500 truncate {{ $m->id === $activeModelId ? 'text-indigo-700' : '' }} text-center sm:text-left">{{ $activeCount }} phiên bản</span>
                                 </span>
                             </button>
                         </div>
                     @endforeach
                 </div>
                 <div class="mt-4 flex items-center justify-center gap-2">
-                    <a id="model-detail-link" href="{{ route('car-models.show', $activeModelId) }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 bg-white text-gray-700 hover:border-indigo-400 hover:text-indigo-700 transition-colors">
-                        <i class="fas fa-external-link-alt"></i>
-                        <span>Xem chi tiết dòng xe</span>
+                    <a id="model-detail-link" href="{{ route('car-models.show', $activeModelId) }}" class="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full border border-gray-200 bg-white text-gray-700 hover:border-indigo-400 hover:text-indigo-700 transition-colors text-sm">
+                        <i class="fas fa-external-link-alt text-xs"></i>
+                        <span class="hidden sm:inline">Xem chi tiết dòng xe</span>
+                        <span class="sm:hidden">Chi tiết</span>
                     </a>
                 </div>
             </div>
@@ -262,13 +263,23 @@
             @foreach($modelsWithVariants as $m)
                 @php $variants = $m->carVariants()->where('is_active', true)->get(); @endphp
                 <div class="js-variants-row {{ $m->id === $activeModelId ? '' : 'hidden' }}" data-model-id="{{ $m->id }}">
-                    <div class="flex items-stretch gap-4 overflow-x-auto p-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent snap-x">
-                        @foreach($variants as $variant)
-                            <div class="snap-start flex-shrink-0 w-[280px] sm:w-[320px]">
-                                @include('components.variant-card', ['variant' => $variant, 'showCompare' => true])
+                    @if($variants->count() > 0)
+                        <div class="flex items-stretch gap-3 sm:gap-4 lg:gap-6 overflow-x-auto p-2 px-3 sm:px-4 lg:px-6 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent snap-x">
+                            @foreach($variants as $variant)
+                                <div class="snap-start flex-shrink-0 w-[280px] sm:w-[300px] lg:w-[320px]">
+                                    @include('components.variant-card', ['variant' => $variant, 'showCompare' => true])
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="text-center py-12 px-4">
+                            <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-car text-gray-400 text-2xl"></i>
                             </div>
-                        @endforeach
-                    </div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">Chưa có phiên bản</h3>
+                            <p class="text-gray-600 text-sm">Dòng xe này hiện chưa có phiên bản nào</p>
+                        </div>
+                    @endif
                 </div>
             @endforeach
         @endif
@@ -280,21 +291,21 @@
 <section id="featured" class="py-20 bg-white">
     <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Section Header -->
-        <div class="text-center mb-16">
-            <div class="inline-flex items-center px-4 py-2 rounded-full bg-yellow-100 text-yellow-700 text-sm font-semibold mb-4">
-                <i class="fas fa-star mr-2"></i>
+        <div class="text-center mb-12 sm:mb-16 px-4">
+            <div class="inline-flex items-center px-3 sm:px-4 py-2 rounded-full bg-yellow-100 text-yellow-700 text-xs sm:text-sm font-semibold mb-3 sm:mb-4">
+                <i class="fas fa-star mr-1.5 sm:mr-2 text-xs sm:text-sm"></i>
                 Xe nổi bật
             </div>
-            <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+            <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
                 Những phiên bản được quan tâm
             </h2>
-            <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+            <p class="text-sm sm:text-base lg:text-lg text-gray-600 max-w-2xl mx-auto">
                 Khám phá các mẫu xe {{ $brand->name }} được khách hàng yêu thích nhất
             </p>
         </div>
 
         <!-- Featured Variants Grid -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 px-4 sm:px-0">
             @foreach($featuredVariants as $variant)
                 <div class="group">
                     @include('components.variant-card', ['variant' => $variant, 'showCompare' => true])
@@ -454,9 +465,21 @@ document.addEventListener('click', function(e) {
     document.querySelectorAll('.js-model-tab').forEach(b => {
         b.classList.remove('border-indigo-400','border-indigo-500','bg-indigo-50','text-indigo-800');
         b.classList.add('border-gray-200','bg-white','text-gray-700');
+        // Also update the variant count text color
+        const variantCount = b.querySelector('span:last-child');
+        if (variantCount) {
+            variantCount.classList.remove('text-indigo-700');
+            variantCount.classList.add('text-gray-500');
+        }
     });
     tab.classList.remove('border-gray-200','bg-white','text-gray-700');
     tab.classList.add('border-indigo-500','bg-indigo-50','text-indigo-800');
+    // Update the variant count text color for active tab
+    const activeVariantCount = tab.querySelector('span:last-child');
+    if (activeVariantCount) {
+        activeVariantCount.classList.remove('text-gray-500');
+        activeVariantCount.classList.add('text-indigo-700');
+    }
     
     // Toggle rows
     document.querySelectorAll('.js-variants-row').forEach(row => row.classList.add('hidden'));
@@ -500,4 +523,5 @@ document.addEventListener('click', function(e){
     }
 });
 </script>
+
 @endpush

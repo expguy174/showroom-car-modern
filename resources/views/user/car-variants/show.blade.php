@@ -17,7 +17,10 @@
     // Pick main image by type priority: gallery main -> first gallery -> first exterior -> first interior
     $imagesGrouped = optional($variant->images)->groupBy('image_type') ?? collect();
     $gallery = $imagesGrouped->get('gallery', collect());
-    $exterior = $imagesGrouped->get('exterior', collect());
+    // Separate color images from exterior
+    $allExterior = $imagesGrouped->get('exterior', collect());
+    $exterior = $allExterior->filter(function($img) { return empty($img->car_variant_color_id); });
+    $colorImages = $allExterior->filter(function($img) { return !empty($img->car_variant_color_id); });
     $interior = $imagesGrouped->get('interior', collect());
     $colorSwatches = collect();
     $pick = $gallery->firstWhere('is_main', true)
@@ -67,7 +70,7 @@
     
     <!-- Breadcrumb -->
     <div class="bg-white border-b border-gray-100 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <nav class="flex" aria-label="Breadcrumb">
                 <ol class="flex items-center space-x-4">
                     <li>
@@ -99,20 +102,21 @@
         </div>
     </div>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-8">
             <!-- Image Gallery -->
-            <div class="space-y-5 lg:col-span-5">
+            <div class="space-y-3 lg:space-y-5 lg:col-span-5">
                 <!-- Main Image -->
                 <div class="relative group">
-                    <div class="aspect-[3/2] bg-white rounded-3xl shadow-2xl overflow-hidden">
+                    <div class="aspect-[3/2] bg-gradient-to-br from-gray-100 to-gray-200 rounded-3xl shadow-2xl overflow-hidden">
+                        
                         @php 
                             $fallback = 'Không có ảnh';
                             $main = $resolveImage($variant->image_url ?? (optional(optional($variant->images)->first())->image_url), $variant->name ?? $fallback);
                         @endphp
                         <img src="{{ $main }}"
                          id="main-image"
-                             class="w-full h-full object-cover cursor-zoom-in group-hover:scale-105 transition-transform duration-700"
+                             class="w-full h-full object-cover cursor-zoom-in transition-all duration-500 ease-out hover:scale-110"
                              alt="{{ $variant->name }}"
                              loading="lazy" decoding="async" width="1200" height="800"
                              data-lightbox-src="{{ $main }}">
@@ -149,30 +153,65 @@
                         'exterior' => $exterior,
                         'interior' => $interior,
                     ];
+                    $thumbLabels = [
+                        'gallery' => 'Thư viện ảnh',
+                        'exterior' => 'Ngoại thất',
+                        'interior' => 'Nội thất',
+                    ];
                 @endphp
-                <div class="space-y-2">
+                <div class="space-y-4">
                     @foreach($thumbBlocks as $typeKey => $collection)
                         @if($collection->count() > 0)
-                        <div class="flex items-center text-sm font-semibold text-gray-700 mt-1">
-                            <i class="fas fa-images mr-2"></i>{{ Str::ucfirst($typeKey) }} ({{ $collection->count() }})
+                        @php
+                            $chunkedImages = array_chunk($collection->toArray(), 4);
+                            $totalPages = count($chunkedImages);
+                        @endphp
+                        
+                        <div class="flex items-center justify-between text-sm font-semibold text-gray-700 mt-1">
+                            <div class="flex items-center">
+                                <i class="fas fa-images mr-2"></i>{{ $thumbLabels[$typeKey] ?? Str::ucfirst($typeKey) }} ({{ $collection->count() }})
+                            </div>
+                            @if($totalPages > 1)
+                            <div class="flex items-center gap-2">
+                                <button type="button" class="w-8 h-8 rounded-full bg-white shadow-sm hover:shadow-md border border-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 transition-all duration-200 slide-prev-variant" data-target="variant-thumbs-{{ $typeKey }}">
+                                    <i class="fas fa-chevron-left text-xs"></i>
+                                </button>
+                                <button type="button" class="w-8 h-8 rounded-full bg-white shadow-sm hover:shadow-md border border-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 transition-all duration-200 slide-next-variant" data-target="variant-thumbs-{{ $typeKey }}">
+                                    <i class="fas fa-chevron-right text-xs"></i>
+                                </button>
+                            </div>
+                            @endif
                         </div>
-                        <div id="variant-thumbs-{{ $typeKey }}" class="sm:grid sm:grid-cols-4 sm:gap-3 flex gap-3 overflow-x-auto pb-2 thumbnails-container scrollbar-hide">
-                            @foreach($collection as $image)
-                        @php $thumb = $resolveImage($image->image_url, $variant->name ?? ''); @endphp
-                        <div class="aspect-square min-w-[72px] sm:min-w-0 bg-white rounded-2xl shadow-lg overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 thumbnail-image" 
-                                     data-image="{{ $thumb }}" data-lightbox-src="{{ $thumb }}" data-type="{{ $typeKey }}" data-color-id="{{ (int)($image->car_variant_color_id ?? 0) }}" data-is-main="{{ $image->is_main ? '1' : '0' }}">
-                            <img src="{{ $thumb }}" alt="{{ $variant->name }}" class="w-full h-full object-cover hover:scale-110 transition-transform duration-300" loading="lazy" decoding="async" width="300" height="300">
+                        
+                        <div class="relative">
+                            
+                            <!-- Slider Container -->
+                            <div id="variant-thumbs-{{ $typeKey }}" class="relative overflow-hidden rounded-2xl">
+                                <div class="thumbnails-slider-variant flex transition-transform duration-500 ease-in-out" data-current-page="0" data-total-pages="{{ $totalPages }}">
+                                    @foreach($chunkedImages as $pageIndex => $pageImages)
+                                    <div class="w-full flex-shrink-0">
+                                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 px-1">
+                                            @foreach($pageImages as $image)
+                                            @php $thumb = $resolveImage($image['image_url'], $variant->name ?? ''); @endphp
+                                            <div class="aspect-square w-full bg-white rounded-2xl shadow-lg overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 thumbnail-image group" 
+                                                 data-image="{{ $thumb }}" data-lightbox-src="{{ $thumb }}" data-type="{{ $typeKey }}" data-color-id="{{ (int)($image['car_variant_color_id'] ?? 0) }}" data-is-main="{{ $image['is_main'] ? '1' : '0' }}">
+                                                <img src="{{ $thumb }}" alt="{{ $variant->name }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" loading="lazy" decoding="async" width="300" height="300">
+                                            </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                    @endforeach
+                                </div>
+                            </div>
                         </div>
-                        @endforeach
-                        </div>
-                    @endif
+                        @endif
                     @endforeach
                     {{-- Removed color_swatch thumbnails. Swatches are rendered from car_variant_colors above. --}}
                 </div>
             </div>
 
             <!-- Product Info -->
-            <div class="space-y-6 lg:col-span-7">
+            <div class="space-y-4 lg:space-y-6 lg:col-span-7 mt-4 lg:mt-0">
                 <!-- Header -->
                 <div class="space-y-4">
                     @if(optional($variant->carModel)->carBrand)
@@ -673,11 +712,11 @@
                                     <input type="hidden" name="reviewable_type" value="App\Models\CarVariant">
                                     <input type="hidden" name="reviewable_id" value="{{ $variant->id }}">
                                     <div>
-                                        <label class="block text-sm text-gray-700 mb-1">Chấm sao</label>
+                                        <label class="block text-sm text-gray-700 mb-1">Chấm sao <span class="text-red-500">*</span></label>
                                         <div class="flex items-center gap-2">
                                             @for($i=1;$i<=5;$i++)
                                             <label class="inline-flex items-center gap-1 cursor-pointer">
-                                                <input type="radio" name="rating" value="{{ $i }}" class="accent-yellow-500" required>
+                                                <input type="radio" name="rating" value="{{ $i }}" class="accent-yellow-500">
                                                 <i class="fas fa-star text-yellow-400"></i>
                                             </label>
                                             @endfor
@@ -685,11 +724,11 @@
                                     </div>
                                     <div>
                                         <label class="block text-sm text-gray-700 mb-1">Tiêu đề (tuỳ chọn)</label>
-                                        <input type="text" name="title" class="w-full border rounded-lg px-3 py-2" maxlength="255">
+                                        <input type="text" name="title" class="w-full border rounded-lg px-3 py-2">
                                     </div>
                                     <div>
-                                        <label class="block text-sm text-gray-700 mb-1">Nội dung</label>
-                                        <textarea name="comment" class="w-full border rounded-lg px-3 py-2" rows="4" required minlength="10"></textarea>
+                                        <label class="block text-sm text-gray-700 mb-1">Nội dung <span class="text-red-500">*</span></label>
+                                        <textarea name="comment" class="w-full border rounded-lg px-3 py-2" rows="4" placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm này..."></textarea>
                                     </div>
                                     <div class="flex items-center justify-end gap-2 pt-2">
                                         <button type="button" id="review-cancel" class="px-4 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">Hủy</button>
@@ -708,8 +747,8 @@
 
         <!-- Related Products -->
         @if(isset($relatedVariants) && $relatedVariants->count() > 0)
-        <div class="mt-10">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div class="mt-10 pb-20">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div class="text-center mb-12">
                 <h2 class="text-3xl font-black text-gray-900 mb-4">Sản phẩm liên quan</h2>
                     <p class="text-lg text-gray-600">Những mẫu xe tương tự bạn có thể quan tâm</p>
@@ -724,21 +763,6 @@
                 </div>
             @endif
             
-            <!-- Final CTA -->
-            <section class="mt-16 bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900 text-white overflow-hidden">
-                <div class="container mx-auto px-6 lg:px-8 py-10 text-center">
-                    <h3 class="text-3xl font-bold mb-3">Sẵn sàng trải nghiệm {{ $variant->name }}?</h3>
-                    <p class="text-indigo-200 mb-6 max-w-2xl mx-auto">Liên hệ đội ngũ tư vấn hoặc đặt lịch lái thử để cảm nhận trực tiếp.</p>
-                    <div class="flex flex-col sm:flex-row gap-3 justify-center">
-                        <a href="{{ route('test-drives.index') }}" class="inline-flex items-center px-6 py-3 rounded-xl bg-white text-slate-900 font-semibold hover:bg-indigo-50">
-                            <i class="fas fa-car-side mr-2"></i> Đặt lịch lái thử
-                        </a>
-                        <a href="{{ route('contact') }}" class="inline-flex items-center px-6 py-3 rounded-xl border border-white/30 text-white hover:bg-white/10">
-                            <i class="fas fa-phone mr-2"></i> Liên hệ tư vấn
-                        </a>
-                    </div>
-                </div>
-            </section>
     </div>
 </div>
 
@@ -780,12 +804,20 @@ document.addEventListener('DOMContentLoaded', function() {
         (scope || document).querySelectorAll('.thumbnail-image').forEach(thumb => {
         thumb.addEventListener('click', () => {
             const newSrc = thumb.getAttribute('data-image');
-                if (newSrc && mainImage) {
-            mainImage.src = newSrc;
+            if (newSrc && mainImage && newSrc !== mainImage.src) {
+                // Simple fade effect
+                mainImage.style.opacity = '0.3';
+                
+                setTimeout(() => {
+                    mainImage.src = newSrc;
                     mainImage.setAttribute('data-lightbox-src', newSrc);
-                }
-                document.querySelectorAll('.thumbnail-image').forEach(t => t.classList.remove('ring-2','ring-blue-500'));
-                thumb.classList.add('ring-2','ring-blue-500');
+                    mainImage.style.opacity = '1';
+                }, 150);
+            }
+            
+            // Update thumbnail active states
+            document.querySelectorAll('.thumbnail-image').forEach(t => t.classList.remove('ring-2','ring-blue-500'));
+            thumb.classList.add('ring-2','ring-blue-500');
         });
     });
     }
@@ -922,35 +954,92 @@ document.addEventListener('DOMContentLoaded', function() {
                 const dot = `<span class=\"inline-block w-3.5 h-3.5 rounded-full align-middle mr-2\" style=\"background:${colorHex}\"></span>`;
                 selectedColorText.innerHTML = `Màu đã chọn: ${dot}<span class=\"font-medium\">${colorName}</span>`;
             }
-            // Swap main image prioritizing images tied to this color
+            // Simple logic: find thumbnail with matching color and activate it
             try {
-                const thumbsAll = Array.from(document.querySelectorAll('.thumbnail-image'));
-                // priority list: gallery(is_main) -> gallery -> exterior -> interior for this color
-                const priority = [
-                    (t) => t.dataset && t.dataset.type==='gallery' && t.dataset.colorId===colorId && t.dataset.isMain==='1',
-                    (t) => t.dataset && t.dataset.type==='gallery' && t.dataset.colorId===colorId,
-                    (t) => t.dataset && t.dataset.type==='exterior' && t.dataset.colorId===colorId,
-                    (t) => t.dataset && t.dataset.type==='interior' && t.dataset.colorId===colorId,
-                ];
-                let chosen = null;
-                for (const rule of priority) {
-                    chosen = thumbsAll.find(rule);
-                    if (chosen) break;
-                }
-                // fallback: provided color image
-                if (!chosen && colorImg) {
-                mainImage.src = colorImg;
-                mainImage.setAttribute('data-lightbox-src', colorImg);
-                } else if (chosen) {
-                    const src = chosen.getAttribute('data-image');
-                    if (src) {
-                        mainImage.src = src;
-                        mainImage.setAttribute('data-lightbox-src', src);
-                        document.querySelectorAll('.thumbnail-image').forEach(t => t.classList.remove('ring-2','ring-blue-500'));
-                        chosen.classList.add('ring-2','ring-blue-500');
+                // Remove active state from all thumbnails first
+                document.querySelectorAll('.thumbnail-image').forEach(t => {
+                    t.classList.remove('ring-2','ring-blue-500', 'ring-indigo-500');
+                    t.classList.add('border-gray-200');
+                });
+                
+                // Find thumbnail with matching color ID
+                const matchingThumb = document.querySelector(`.thumbnail-image[data-color-id="${colorId}"]`);
+                
+                if (matchingThumb) {
+                    // Update main image with smooth transition
+                    const src = matchingThumb.getAttribute('data-image');
+                    if (src && mainImage && src !== mainImage.src) {
+                        // Simple fade effect
+                        mainImage.style.opacity = '0.3';
+                        
+                        setTimeout(() => {
+                            mainImage.src = src;
+                            mainImage.setAttribute('data-lightbox-src', src);
+                            mainImage.style.opacity = '1';
+                        }, 150);
                     }
+                    
+                    // Highlight the matching thumbnail
+                    matchingThumb.classList.remove('border-gray-200');
+                    matchingThumb.classList.add('ring-2','ring-blue-500');
+                    
+                    // Handle slide navigation if thumbnail is on different page
+                    const parentSlider = matchingThumb.closest('.thumbnails-slider-variant');
+                    if (parentSlider) {
+                        const allPages = Array.from(parentSlider.children);
+                        let targetPage = -1;
+                        
+                        // Find which page contains the matching thumbnail
+                        allPages.forEach((page, pageIndex) => {
+                            if (page.contains(matchingThumb)) {
+                                targetPage = pageIndex;
+                            }
+                        });
+                        
+                        if (targetPage >= 0) {
+                            const currentPage = parseInt(parentSlider.getAttribute('data-current-page') || '0');
+                            
+                            // Navigate to the page containing the thumbnail if not currently visible
+                            if (targetPage !== currentPage) {
+                                const translateX = -targetPage * 100;
+                                parentSlider.style.transform = `translateX(${translateX}%)`;
+                                parentSlider.setAttribute('data-current-page', targetPage);
+                                
+                                // Update navigation buttons state
+                                const container = parentSlider.closest('.relative');
+                                const prevBtn = container.querySelector('.slide-prev-variant');
+                                const nextBtn = container.querySelector('.slide-next-variant');
+                                const totalPages = parseInt(parentSlider.getAttribute('data-total-pages') || '1');
+                                
+                                if (prevBtn) {
+                                    prevBtn.style.opacity = targetPage <= 0 ? '0.5' : '1';
+                                    prevBtn.disabled = targetPage <= 0;
+                                }
+                                
+                                if (nextBtn) {
+                                    nextBtn.style.opacity = targetPage >= totalPages - 1 ? '0.5' : '1';
+                                    nextBtn.disabled = targetPage >= totalPages - 1;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Scroll into view after slide navigation
+                    setTimeout(() => {
+                        matchingThumb.scrollIntoView({ 
+                            behavior: 'smooth', 
+                            block: 'nearest', 
+                            inline: 'center' 
+                        });
+                    }, 100);
+                } else if (colorImg) {
+                    // Fallback to color image if no matching thumbnail
+                    mainImage.src = colorImg;
+                    mainImage.setAttribute('data-lightbox-src', colorImg);
                 }
-            } catch(e) {}
+            } catch(e) {
+                console.error('Error in color selection:', e);
+            }
             // Update price with color adjustment (client-side)
             if (priceEl) {
                 const baseCurrent = parseInt(priceEl.getAttribute('data-base-price') || '0', 10);
@@ -1081,7 +1170,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 const stars = Array.from({length:5},(_,i)=> i<rv.rating?'<i class="fas fa-star text-yellow-400"></i>':'<i class="far fa-star text-gray-300"></i>').join('');
                 const name = ((rv.user && rv.user.name) ? rv.user.name : 'Khách hàng');
                 const time = (new Date(rv.created_at)).toLocaleDateString('vi-VN');
-                return `<div class=\"border-b border-gray-100 pb-4\"><div class=\"flex items-center gap-3 mb-1\"><div class=\"w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center\"><i class=\"fas fa-user text-gray-500\"></i></div><div><div class=\"font-semibold text-gray-900\">${name}</div><div class=\"text-sm\">${stars}</div></div><div class=\"ml-auto text-xs text-gray-500\">${time}</div></div><div class=\"text-gray-700\">${(rv.comment||'').replace(/</g,'&lt;')}</div></div>`;
+                const safeComment = (rv.comment||'').replace(/</g,'&lt;');
+                const safeTitle = (rv.title||'').replace(/</g,'&lt;');
+                const titleHtml = safeTitle ? `<div class=\"font-medium text-gray-900 mb-1\">${safeTitle}</div>` : '';
+                return `<div class=\"border-b border-gray-100 pb-4\"><div class=\"flex items-center gap-3 mb-1\"><div class=\"w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center\"><i class=\"fas fa-user text-gray-500\"></i></div><div><div class=\"font-semibold text-gray-900\">${name}</div><div class=\"text-sm\">${stars}</div></div><div class=\"ml-auto text-xs text-gray-500\">${time}</div></div>${titleHtml}<div class=\"text-gray-700\">${safeComment}</div></div>`;
             }).join('');
             renderPager(data);
         }
@@ -1163,7 +1255,35 @@ document.addEventListener('DOMContentLoaded', function() {
         // Close on ESC
         document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeReviewModal(); });
         if (formEl){
-            formEl.addEventListener('submit', function(ev){ ev.preventDefault(); const fd=new FormData(formEl);
+            formEl.addEventListener('submit', function(ev){ 
+                ev.preventDefault(); 
+                
+                // Client-side validation with toast messages - show rating error first
+                // Check rating first
+                const ratingInputs = formEl.querySelectorAll('input[name="rating"]');
+                const ratingChecked = Array.from(ratingInputs).some(input => input.checked);
+                if (!ratingChecked) {
+                    if (typeof showMessage === 'function') {
+                        showMessage('Vui lòng chọn số sao đánh giá', 'error');
+                    }
+                    return; // Stop submission if rating not selected
+                }
+                
+                // Check comment after rating is valid
+                const commentInput = formEl.querySelector('textarea[name="comment"]');
+                if (!commentInput.value.trim()) {
+                    if (typeof showMessage === 'function') {
+                        showMessage('Vui lòng nhập nội dung đánh giá', 'error');
+                    }
+                    return; // Stop submission if comment empty
+                } else if (commentInput.value.trim().length < 10) {
+                    if (typeof showMessage === 'function') {
+                        showMessage('Nội dung đánh giá phải có ít nhất 10 ký tự', 'error');
+                    }
+                    return; // Stop submission if comment too short
+                }
+                
+                const fd=new FormData(formEl);
                 if (errorBox){ errorBox.classList.add('hidden'); errorBox.innerHTML=''; }
                 fetch(`{{ route('reviews.store') }}`,{method:'POST', headers:{'X-Requested-With':'XMLHttpRequest','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]').content}, body:fd})
                 .then(async function(r){
@@ -1172,17 +1292,35 @@ document.addEventListener('DOMContentLoaded', function() {
                         closeReviewModal(); formEl.reset(); load(1); updateInlineSummary();
                         if (typeof showMessage==='function'){ showMessage(data.message || 'Gửi đánh giá thành công','success'); }
                     } else {
-                        // Try to extract validation errors
                         const errs = (data && (data.errors || data.message)) ? data : null;
-                        if (errs && errorBox){
-                            let html = '';
-                            if (errs.errors){
-                                const list = Object.values(errs.errors).flat();
-                                html = `<ul class="list-disc list-inside">${list.map(m=>`<li>${m}</li>`).join('')}</ul>`;
-                            } else if (errs.message){
-                                html = `<div>${errs.message}</div>`;
+                        if (errs) {
+                            // Convert English validation messages to Vietnamese and show via toast
+                            const vietnameseErrors = [];
+                            if (errs.errors) {
+                                Object.entries(errs.errors).forEach(([field, messages]) => {
+                                    messages.forEach(msg => {
+                                        let vietnameseMsg = msg;
+                                        // Convert common validation messages
+                                        if (msg.includes('rating') && msg.includes('required')) {
+                                            vietnameseMsg = 'Vui lòng chọn số sao đánh giá';
+                                        } else if (msg.includes('comment') && msg.includes('required')) {
+                                            vietnameseMsg = 'Vui lòng nhập nội dung đánh giá';
+                                        } else if (msg.includes('comment') && msg.includes('min')) {
+                                            vietnameseMsg = 'Nội dung đánh giá phải có ít nhất 10 ký tự';
+                                        } else if (msg.includes('title') && msg.includes('max')) {
+                                            vietnameseMsg = 'Tiêu đề không được vượt quá 255 ký tự';
+                                        }
+                                        vietnameseErrors.push(vietnameseMsg);
+                                    });
+                                });
+                            } else if (errs.message) {
+                                vietnameseErrors.push(errs.message);
                             }
-                            if (html){ errorBox.innerHTML = html; errorBox.classList.remove('hidden'); }
+                            
+                            // Show errors via toast instead of error box
+                            if (typeof showMessage === 'function') {
+                                vietnameseErrors.forEach(msg => showMessage(msg, 'error'));
+                            }
                         }
                         if (typeof showMessage==='function'){ showMessage('Gửi đánh giá thất bại','error'); }
                     }
@@ -1214,6 +1352,160 @@ document.addEventListener('DOMContentLoaded', function() {
     var cname = el.getAttribute('data-color-name');
     if (cname && !el.getAttribute('title')) { el.setAttribute('title', cname); }
   });
+})();
+
+// Thumbnail Gallery Slider Functionality
+(function(){
+    const slideButtons = document.querySelectorAll('.slide-prev, .slide-next');
+    
+    function getVisibleCount() {
+        const width = window.innerWidth;
+        if (width < 640) return 2; // mobile: 2 columns
+        if (width < 768) return 3; // tablet: 3 columns  
+        return 4; // desktop: 4 columns
+    }
+    
+    function updateSlider(container, currentIndex) {
+        const slider = container.querySelector('.thumbnails-slider');
+        if (!slider) return;
+        
+        const thumbnails = slider.querySelectorAll('.thumbnail-image');
+        const totalCount = thumbnails.length;
+        const visibleCount = getVisibleCount();
+        
+        // Calculate how many full pages we can show
+        const totalPages = Math.ceil(totalCount / visibleCount);
+        const currentPage = Math.floor(currentIndex / visibleCount);
+        
+        // Hide thumbnails that shouldn't be visible
+        thumbnails.forEach((thumb, index) => {
+            const shouldShow = index >= (currentPage * visibleCount) && index < ((currentPage + 1) * visibleCount);
+            thumb.style.display = shouldShow ? 'block' : 'none';
+        });
+        
+        // Update button states
+        const prevBtn = container.parentElement.querySelector('.slide-prev');
+        const nextBtn = container.parentElement.querySelector('.slide-next');
+        
+        if (prevBtn) {
+            prevBtn.style.opacity = currentPage <= 0 ? '0.5' : '1';
+            prevBtn.disabled = currentPage <= 0;
+        }
+        
+        if (nextBtn) {
+            nextBtn.style.opacity = currentPage >= totalPages - 1 ? '0.5' : '1';
+            nextBtn.disabled = currentPage >= totalPages - 1;
+        }
+    }
+    
+    slideButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const targetId = this.getAttribute('data-target');
+            const container = document.getElementById(targetId);
+            if (!container) return;
+            
+            const slider = container.querySelector('.thumbnails-slider');
+            if (!slider) return;
+            
+            const thumbnails = slider.querySelectorAll('.thumbnail-image');
+            const totalCount = thumbnails.length;
+            const visibleCount = getVisibleCount();
+            
+            let currentIndex = parseInt(slider.getAttribute('data-slide-index') || '0');
+            
+            if (this.classList.contains('slide-next')) {
+                currentIndex = Math.min(currentIndex + visibleCount, totalCount - 1);
+            } else {
+                currentIndex = Math.max(currentIndex - visibleCount, 0);
+            }
+            
+            slider.setAttribute('data-slide-index', currentIndex);
+            updateSlider(container, currentIndex);
+        });
+    });
+    
+    // Initialize all sliders
+    function initializeSliders() {
+        slideButtons.forEach(button => {
+            const targetId = button.getAttribute('data-target');
+            const container = document.getElementById(targetId);
+            if (!container) return;
+            
+            updateSlider(container, 0);
+        });
+    }
+    
+    // Initialize on load
+    initializeSliders();
+    
+    // Re-initialize on window resize
+    let resizeTimeout;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(initializeSliders, 250);
+    });
+})();
+
+// Thumbnail carousel slider functionality
+(function(){
+    const slideButtonsVariant = document.querySelectorAll('.slide-prev-variant, .slide-next-variant');
+    
+    function updateVariantSlider(targetId, direction) {
+        const container = document.getElementById(targetId);
+        if (!container) return;
+        
+        const slider = container.querySelector('.thumbnails-slider-variant');
+        if (!slider) return;
+        
+        const currentPage = parseInt(slider.getAttribute('data-current-page') || '0');
+        const totalPages = parseInt(slider.getAttribute('data-total-pages') || '1');
+        
+        let newPage = currentPage;
+        if (direction === 'next' && currentPage < totalPages - 1) {
+            newPage = currentPage + 1;
+        } else if (direction === 'prev' && currentPage > 0) {
+            newPage = currentPage - 1;
+        }
+        
+        // Update slider position with smooth transition
+        const translateX = -newPage * 100;
+        slider.style.transform = `translateX(${translateX}%)`;
+        slider.setAttribute('data-current-page', newPage);
+        
+        // Update button states
+        const parentContainer = container.closest('.relative');
+        const prevBtn = parentContainer.querySelector('.slide-prev-variant');
+        const nextBtn = parentContainer.querySelector('.slide-next-variant');
+        
+        if (prevBtn) {
+            prevBtn.style.opacity = newPage <= 0 ? '0.5' : '1';
+            prevBtn.disabled = newPage <= 0;
+        }
+        
+        if (nextBtn) {
+            nextBtn.style.opacity = newPage >= totalPages - 1 ? '0.5' : '1';
+            nextBtn.disabled = newPage >= totalPages - 1;
+        }
+    }
+    
+    slideButtonsVariant.forEach(button => {
+        button.addEventListener('click', function() {
+            const targetId = this.getAttribute('data-target');
+            const direction = this.classList.contains('slide-next-variant') ? 'next' : 'prev';
+            updateVariantSlider(targetId, direction);
+        });
+    });
+    
+    // Initialize all variant sliders
+    function initializeVariantSliders() {
+        slideButtonsVariant.forEach(button => {
+            const targetId = button.getAttribute('data-target');
+            updateVariantSlider(targetId, 'init');
+        });
+    }
+    
+    // Initialize on load
+    initializeVariantSliders();
 })();
 </script>
 @endsection

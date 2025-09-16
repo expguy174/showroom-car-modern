@@ -10,7 +10,7 @@
             <div class="absolute -top-16 -right-16 w-80 h-80 rounded-full bg-white"></div>
             <div class="absolute -bottom-24 -left-24 w-96 h-96 rounded-full bg-white"></div>
         </div>
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-10 relative">
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                 <div class="text-white">
                     <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight">Khám phá xe hơi & phụ kiện</h1>
@@ -38,7 +38,7 @@
         </div>
     </div>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="flex flex-col lg:flex-row gap-8">
             <!-- Filters Sidebar -->
             <aside class="lg:w-72 w-full">
@@ -185,7 +185,7 @@
             <div class="absolute bottom-0 left-0 w-24 h-24 bg-white rounded-full translate-y-12 -translate-x-12"></div>
         </div>
         
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
             <div class="text-center text-white">
                 <div class="mb-8">
                     <i class="fas fa-car text-4xl text-indigo-200 mb-4"></i>
@@ -277,6 +277,7 @@
     if (!el) return;
     el.querySelectorAll('input, select, textarea, button').forEach(node => {
       if (node.name === 'type') return; // keep type
+      if (node.name === 'price_min' || node.name === 'price_max') return; // keep price inputs always enabled
       node.disabled = !!disabled;
     });
   }
@@ -331,7 +332,24 @@
   }
   function buildParams(fromForm){
     const f = fromForm || getActiveForm();
-    const params = new URLSearchParams(new FormData(f));
+    const params = new URLSearchParams();
+    
+    // Manually collect form data to ensure disabled inputs are included
+    const formData = new FormData(f);
+    for (const [key, value] of formData.entries()) {
+      if (value && value.toString().trim() !== '') {
+        params.set(key, value);
+      }
+    }
+    
+    // Also check all inputs manually (including disabled ones)
+    const allInputs = f.querySelectorAll('input, select, textarea');
+    allInputs.forEach(input => {
+      if (input.name && input.value && input.value.toString().trim() !== '') {
+        params.set(input.name, input.value);
+      }
+    });
+    
     const ct = f.querySelector('input[name="type"]:checked');
     if (ct) {
       params.set('type', ct.value);
@@ -339,11 +357,7 @@
       const hiddenType = f.querySelector('input[name="type"]');
       if (hiddenType && hiddenType.value) params.set('type', hiddenType.value);
     }
-    // Remove empty values and defaults to keep URL clean
-    Array.from(params.keys()).forEach((k)=>{
-      const v = (params.get(k) ?? '').toString().trim();
-      if (v === '') { params.delete(k); return; }
-    });
+    
     // Remove default type=all
     if (params.get('type') === 'all') params.delete('type');
     // Remove default sort/order when not needed
@@ -358,14 +372,27 @@
     results.classList.add('inv-smooth','dim');
     const h = results.offsetHeight;
     results.style.minHeight = h + 'px';
-    const f = getActiveForm();
-    const bar = f && f.querySelector('.js-filter-loading');
-    if (bar) bar.classList.remove('hidden');
   }
-  function fetchAndRender(params){
+  
+  function fetchAndRender(params) {
+    const results = document.querySelector('#inv-results');
+    const count = document.querySelector('#inv-count');
+    if (!results) return;
+    
+    // Scroll to top smoothly
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
     const f = getActiveForm();
     const url = new URL(f.action, window.location.origin);
     url.search = params.toString();
+    
+    // Show loading bar in filter
+    const bar = f && f.querySelector('.js-filter-loading');
+    if (bar) bar.classList.remove('hidden');
+    
+    // Show loading state
+    results.innerHTML = '<div class="bg-white rounded-2xl shadow-sm border border-gray-100 py-20 px-6 text-center text-gray-500"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>';
+    
     spin();
     fetch(url, { headers: { 'X-Requested-With':'XMLHttpRequest', 'Accept': 'text/html' } })
       .then(r => r.text())
@@ -376,42 +403,48 @@
         const newResults = scope.querySelector('#inv-results');
         const newCount = scope.querySelector('#inv-count');
         const newFilter = scope.querySelector('#filter-form');
-        if (newResults) {
-          results.innerHTML = newResults.innerHTML;
-          results.classList.add('fade-in');
-          setTimeout(()=> results.classList.remove('fade-in'), 260);
-        }
-        if (newCount && count) count.innerHTML = newCount.innerHTML;
-        const currentFilter = document.querySelector('#filter-form');
-        if (newFilter && currentFilter) {
-          currentFilter.outerHTML = newFilter.outerHTML;
-          // Re-sync panels on new filter markup according to current params
-          const t = (params.get('type') || 'all');
-          syncPanelsByType(t);
-        }
-        // Replace top sort form so its options match current type
-        const newSortForm = scope.querySelector('#sort-form');
-        const currentSortForm = document.querySelector('#sort-form');
-        if (newSortForm && currentSortForm) {
-          currentSortForm.outerHTML = newSortForm.outerHTML;
-        } else {
-          // Fallback: adjust options in place
-          updateSortOptionsByType((params.get('type') || 'all'), params.get('sort') || 'name');
-        }
-        const q = params.toString();
-        const newHref = q ? (url.pathname + '?' + q) : url.pathname;
-        history.replaceState({}, '', newHref);
-        // Restore
-        requestAnimationFrame(()=>{
-          results.classList.remove('dim');
-          results.classList.add('ready');
-          setTimeout(()=> { results.classList.remove('inv-smooth','ready'); results.style.minHeight=''; }, 240);
-          const f2 = getActiveForm();
-          const bar2 = f2 && f2.querySelector('.js-filter-loading');
-          if (bar2) bar2.classList.add('hidden');
-        });
+        
+        // Add a small delay to show loading state
+        setTimeout(() => {
+          if (newResults) {
+            results.innerHTML = newResults.innerHTML;
+            results.classList.add('fade-in');
+            setTimeout(()=> results.classList.remove('fade-in'), 260);
+          }
+          if (newCount && count) count.innerHTML = newCount.innerHTML;
+          const currentFilter = document.querySelector('#filter-form');
+          if (newFilter && currentFilter) {
+            currentFilter.outerHTML = newFilter.outerHTML;
+            // Re-sync panels on new filter markup according to current params
+            const t = (params.get('type') || 'all');
+            syncPanelsByType(t);
+          }
+          // Replace top sort form so its options match current type
+          const newSortForm = scope.querySelector('#sort-form');
+          const currentSortForm = document.querySelector('#sort-form');
+          if (newSortForm && currentSortForm) {
+            currentSortForm.outerHTML = newSortForm.outerHTML;
+          } else {
+            // Fallback: adjust options in place
+            updateSortOptionsByType((params.get('type') || 'all'), params.get('sort') || 'name');
+          }
+          const q = params.toString();
+          const newHref = q ? (url.pathname + '?' + q) : url.pathname;
+          history.replaceState({}, '', newHref);
+          // Restore
+          requestAnimationFrame(()=>{
+            results.classList.remove('dim');
+            results.classList.add('ready');
+            setTimeout(()=> { results.classList.remove('inv-smooth','ready'); results.style.minHeight=''; }, 240);
+            const f2 = getActiveForm();
+            const bar2 = f2 && f2.querySelector('.js-filter-loading');
+            if (bar2) bar2.classList.add('hidden');
+          });
+        }, 300); // Small delay to show loading
       })
-      .catch(()=>{ results.innerHTML = '<div class="bg-white rounded-xl p-10 text-center text-gray-600 shadow-sm">Không thể tải dữ liệu. Vui lòng thử lại.</div>'; });
+      .catch(()=>{ 
+        results.innerHTML = '<div class="bg-white rounded-xl p-10 text-center text-gray-600 shadow-sm">Không thể tải dữ liệu. Vui lòng thử lại.</div>'; 
+      });
   }
 
   // Intercept clicks on pagination and any link within filter form to keep AJAX flow
@@ -465,16 +498,47 @@
   });
   // Quick price buttons (delegated)
   document.addEventListener('click', function(e){
-    const btn = e.target.closest('#filter-form button[name="price_quick"]');
+    const btn = e.target.closest('button[name="price_quick"]');
     if (!btn) return;
     e.preventDefault();
+    console.log('Price button clicked:', btn.value);
     const f = getActiveForm();
+    if (!f) {
+      console.log('No active form found');
+      return;
+    }
+    
+    // Clear ALL price inputs in ALL visible panels first
+    const allMinInputs = f.querySelectorAll('input[name="price_min"]');
+    const allMaxInputs = f.querySelectorAll('input[name="price_max"]');
+    
+    allMinInputs.forEach(inp => {
+      inp.disabled = false;
+      inp.value = '';
+    });
+    allMaxInputs.forEach(inp => {
+      inp.disabled = false;
+      inp.value = '';
+    });
+    
+    // Set new values to ALL price inputs
     const [min,max] = (btn.value||'').split('-');
-    const minInp = f.querySelector('input[name="price_min"]');
-    const maxInp = f.querySelector('input[name="price_max"]');
-    if (minInp) minInp.value = min || '';
-    if (maxInp) maxInp.value = max || '';
-    fetchAndRender(buildParams(f));
+    allMinInputs.forEach(inp => {
+      if (min) inp.value = min;
+    });
+    allMaxInputs.forEach(inp => {
+      if (max) inp.value = max;
+    });
+    
+    console.log('Set values - Min:', min, 'Max:', max);
+    console.log('Updated inputs count - Min:', allMinInputs.length, 'Max:', allMaxInputs.length);
+    
+    // Build params and check
+    const params = buildParams(f);
+    console.log('Built params:', params.toString());
+    
+    // Use AJAX
+    fetchAndRender(params);
   });
   // Tabs for type (delegated)
   document.addEventListener('click', function(e){
@@ -489,14 +553,29 @@
     syncPanelsByType(val);
     // Instantly update sort options to reflect selected type
     updateSortOptionsByType(val, (new URLSearchParams(location.search)).get('sort') || 'name');
-    // Reset page and unrelated filters
-    const params = buildParams(f);
-    params.delete('page');
-    params.delete('cars_page');
-    params.delete('acc_page');
-    if (val !== 'accessory') { params.delete('acc_brand'); params.delete('acc_category'); params.delete('stock_status'); }
-    if (val === 'accessory') { params.delete('fuel_type'); params.delete('transmission'); params.delete('body_type'); params.delete('brand'); params.delete('model'); }
-    Array.from(params.keys()).forEach((k)=>{ const v = (params.get(k) ?? '').toString().trim(); if (v === '') params.delete(k); });
+    // Reset ALL filters when switching tabs
+    const params = new URLSearchParams();
+    params.set('type', val);
+    
+    // Clear all price inputs in all panels
+    const allMinInputs = f.querySelectorAll('input[name="price_min"]');
+    const allMaxInputs = f.querySelectorAll('input[name="price_max"]');
+    allMinInputs.forEach(inp => {
+      inp.disabled = false;
+      inp.value = '';
+    });
+    allMaxInputs.forEach(inp => {
+      inp.disabled = false;
+      inp.value = '';
+    });
+    
+    // Clear other filter inputs
+    f.querySelectorAll('select').forEach(select => {
+      if (select.name !== 'sort' && select.name !== 'order') {
+        select.selectedIndex = 0;
+      }
+    });
+    
     fetchAndRender(params);
   });
 

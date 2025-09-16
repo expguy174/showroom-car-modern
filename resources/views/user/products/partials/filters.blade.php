@@ -179,10 +179,10 @@
                     <input type="number" inputmode="numeric" name="price_max" value="{{ request('price_max') }}" placeholder="Tối đa" class="border-gray-200 rounded-lg text-sm" />
                 </div>
                 <div class="mt-2 grid grid-cols-2 gap-2 text-xs">
-                    <button name="price_quick" value="0-500000000" class="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">≤ 500tr</button>
-                    <button name="price_quick" value="500000000-1000000000" class="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">500tr - 1tỷ</button>
-                    <button name="price_quick" value="1000000000-2000000000" class="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">1 - 2 tỷ</button>
-                    <button name="price_quick" value="2000000000-" class="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">≥ 2 tỷ</button>
+                    <button type="button" name="price_quick" value="0-500000000" class="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">≤ 500tr</button>
+                    <button type="button" name="price_quick" value="500000000-1000000000" class="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">500tr - 1tỷ</button>
+                    <button type="button" name="price_quick" value="1000000000-2000000000" class="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">1 - 2 tỷ</button>
+                    <button type="button" name="price_quick" value="2000000000-" class="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">≥ 2 tỷ</button>
                 </div>
             </div>
         </div>
@@ -218,10 +218,10 @@
                     <input type="number" inputmode="numeric" name="price_max" value="{{ request('price_max') }}" placeholder="Tối đa" class="border-gray-200 rounded-lg text-sm" />
                 </div>
                 <div class="mt-2 grid grid-cols-2 gap-2 text-xs">
-                    <button name="price_quick" value="0-500000000" class="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">≤ 500tr</button>
-                    <button name="price_quick" value="500000000-1000000000" class="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">500tr - 1tỷ</button>
-                    <button name="price_quick" value="1000000000-2000000000" class="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">1 - 2 tỷ</button>
-                    <button name="price_quick" value="2000000000-" class="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">≥ 2 tỷ</button>
+                    <button type="button" name="price_quick" value="0-500000000" class="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">≤ 500tr</button>
+                    <button type="button" name="price_quick" value="500000000-1000000000" class="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">500tr - 1tỷ</button>
+                    <button type="button" name="price_quick" value="1000000000-2000000000" class="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">1 - 2 tỷ</button>
+                    <button type="button" name="price_quick" value="2000000000-" class="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">≥ 2 tỷ</button>
                 </div>
             </div>
         </div>
@@ -234,10 +234,10 @@
                     <input type="number" inputmode="numeric" name="price_max" value="{{ request('price_max') }}" placeholder="Tối đa" class="border-gray-200 rounded-lg text-sm" />
                 </div>
                 <div class="mt-2 grid grid-cols-2 gap-2 text-xs">
-                    <button name="price_quick" value="0-500000000" class="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">≤ 500tr</button>
-                    <button name="price_quick" value="500000000-1000000000" class="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">500tr - 1tỷ</button>
-                    <button name="price_quick" value="1000000000-2000000000" class="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">1 - 2 tỷ</button>
-                    <button name="price_quick" value="2000000000-" class="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">≥ 2 tỷ</button>
+                    <button type="button" name="price_quick" value="0-500000000" class="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">≤ 500tr</button>
+                    <button type="button" name="price_quick" value="500000000-1000000000" class="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">500tr - 1tỷ</button>
+                    <button type="button" name="price_quick" value="1000000000-2000000000" class="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">1 - 2 tỷ</button>
+                    <button type="button" name="price_quick" value="2000000000-" class="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">≥ 2 tỷ</button>
                 </div>
             </div>
         </div>

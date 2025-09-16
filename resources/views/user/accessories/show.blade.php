@@ -2,11 +2,61 @@
 
 @section('title', $accessory->name . ' - AutoLux')
 
+@push('head')
+@php
+    $resolveImage = function($value, $fallbackText = 'No Image'){
+        $val = trim((string) $value);
+        if ($val === '') {
+            return 'https://via.placeholder.com/1200x800/111827/ffffff?text=' . urlencode($fallbackText);
+        }
+        if (filter_var($val, FILTER_VALIDATE_URL)) {
+            return $val;
+        }
+        return 'https://placehold.co/1200x800/111827/ffffff?text=' . urlencode($val);
+    };
+    // Get gallery images
+    $galleryRaw = $accessory->gallery;
+    $gallery = is_array($galleryRaw) ? $galleryRaw : (json_decode($galleryRaw ?? '[]', true) ?: []);
+    $mainImage = $resolveImage(
+        $gallery[0] ?? $accessory->image_url,
+        $accessory->name ?? 'No Image'
+    );
+    $hasDiscount = (bool) ($accessory->has_discount ?? false);
+    $offerPrice = (int) ($accessory->current_price ?? 0);
+    $availability = $accessory->is_available ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock';
+    $avgForSchema = $accessory->approved_reviews_avg ?? 0;
+    $aggregateRating = ($avgForSchema ?? 0) > 0 ? [
+        '@type' => 'AggregateRating',
+        'ratingValue' => number_format((float)$avgForSchema, 1),
+        'reviewCount' => (int) ($accessory->approvedReviews()->count())
+    ] : null;
+    $productJson = [
+        '@context' => 'https://schema.org',
+        '@type' => 'Product',
+        'name' => $accessory->name ?? '',
+        'brand' => $accessory->brand ?: 'AutoLux',
+        'image' => $mainImage,
+        'description' => $accessory->description ?: 'Phụ kiện ô tô chính hãng tại AutoLux Showroom',
+        'sku' => (string) ($accessory->sku ?? ''),
+        'offers' => [
+            '@type' => 'Offer',
+            'priceCurrency' => 'VND',
+            'price' => (string) $offerPrice,
+            'availability' => $availability,
+            'url' => url()->current(),
+        ],
+    ];
+    if ($aggregateRating) { $productJson['aggregateRating'] = $aggregateRating; }
+@endphp
+<link rel="preload" as="image" href="{{ $mainImage }}">
+<script type="application/ld+json">{!! json_encode($productJson, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) !!}</script>
+@endpush
+
 @section('content')
-<div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 accessory-show-page">
+<div id="accessory-page" class="accessory-show-page min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
     <!-- Breadcrumb -->
     <div class="bg-white border-b border-gray-100 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <nav class="flex" aria-label="Breadcrumb">
                 <ol class="flex items-center space-x-4">
                     <li>
@@ -21,14 +71,6 @@
                             <a href="{{ route('products.index', ['type' => 'accessory']) }}" class="text-gray-500 hover:text-blue-600 transition-colors">Phụ kiện</a>
                         </div>
                     </li>
-                    @if($accessory->category)
-                    <li>
-                        <div class="flex items-center">
-                            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-                            <a href="{{ route('products.index', ['type' => 'accessory', 'acc_category' => $accessory->category]) }}" class="text-gray-500 hover:text-blue-600 transition-colors">{{ $accessory->category }}</a>
-                        </div>
-                    </li>
-                    @endif
                     <li>
                         <div class="flex items-center">
                             <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
@@ -40,32 +82,19 @@
         </div>
     </div>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-8">
             <!-- Image Gallery -->
-            <div class="space-y-6">
-                @php
-                    $galleryRaw = $accessory->gallery;
-                    $gallery = is_array($galleryRaw) ? $galleryRaw : (json_decode($galleryRaw ?? '[]', true) ?: []);
-                    $mainImageUrl = $gallery[0] ?? null;
-                    // Pricing per migration
-                    $currentPrice = (float) ($accessory->current_price ?? 0);
-                    $basePrice = (float) ($accessory->base_price ?? $currentPrice);
-                    $hasDiscountCalc = ($basePrice > 0) && ($currentPrice > 0) && ($basePrice > $currentPrice);
-                    $discountPctCalc = $hasDiscountCalc ? round((($basePrice - $currentPrice) / max($basePrice, 1)) * 100) : 0;
-                    $discountAmountCalc = $hasDiscountCalc ? ($basePrice - $currentPrice) : 0;
-                    // Stock per migration
-                    $stockStatus = (string) ($accessory->stock_status ?? 'in_stock');
-                    $stockQty = (int) ($accessory->stock_quantity ?? 0);
-                    $isInStock = $stockStatus === 'in_stock' || ($stockStatus === 'low_stock' && $stockQty > 0);
-                @endphp
+            <div class="space-y-3 lg:space-y-5 lg:col-span-5">
                 <!-- Main Image -->
                 <div class="relative group">
-                    <div class="aspect-square bg-white rounded-3xl shadow-2xl overflow-hidden">
-                        <img src="{{ $mainImageUrl }}" 
-                             id="main-image"
-                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
-                             alt="{{ $accessory->name }}">
+                    <div class="aspect-[3/2] bg-white rounded-3xl shadow-2xl overflow-hidden">
+                        <img src="{{ $mainImage }}"
+                         id="main-image"
+                             class="w-full h-full object-cover cursor-zoom-in transition-all duration-500 ease-out hover:scale-110"
+                             alt="{{ $accessory->name }}"
+                             loading="lazy" decoding="async" width="1200" height="800"
+                             data-lightbox-src="{{ $mainImage }}">
                     </div>
                     
                     <!-- Badges -->
@@ -89,35 +118,65 @@
                     
 
                     
-                    <!-- Discount Badge -->
-                    @if($hasDiscountCalc && $discountPctCalc > 0)
-                    <div class="absolute top-6 left-6 bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-xl">
-                        -{{ $discountPctCalc }}%
-                    </div>
-                    @endif
                 </div>
                 
                 <!-- Thumbnail Gallery -->
                 @if(!empty($gallery))
-                <div class="grid grid-cols-4 gap-4">
-                    @foreach($gallery as $index => $image)
-                    <div class="aspect-square bg-white rounded-2xl shadow-lg overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 thumbnail-image" 
-                         data-image="{{ $image }}">
-                        <img src="{{ $image }}" alt="{{ $accessory->name }}" class="w-full h-full object-cover hover:scale-110 transition-transform duration-300">
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between text-sm font-semibold text-gray-700 mt-1">
+                        <div class="flex items-center">
+                            <i class="fas fa-images mr-2"></i>Thư viện ảnh ({{ count($gallery) }})
+                        </div>
+                        @if(count($gallery) > 4)
+                        <div class="flex items-center gap-2">
+                            <button type="button" class="slide-prev w-8 h-8 rounded-full bg-white shadow-sm hover:shadow-md border border-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 transition-all duration-200" data-target="accessory-thumbs">
+                                <i class="fas fa-chevron-left text-xs"></i>
+                            </button>
+                            <button type="button" class="slide-next w-8 h-8 rounded-full bg-white shadow-sm hover:shadow-md border border-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 transition-all duration-200" data-target="accessory-thumbs">
+                                <i class="fas fa-chevron-right text-xs"></i>
+                            </button>
+                        </div>
+                        @endif
                     </div>
-                    @endforeach
+                    <div id="accessory-thumbs" class="relative overflow-hidden">
+                        @php
+                            $chunkedGallery = array_chunk($gallery, 4);
+                            $totalPages = count($chunkedGallery);
+                        @endphp
+                        <div class="flex transition-transform duration-500 ease-in-out thumbnails-slider" data-slide-index="0" data-total-pages="{{ $totalPages }}">
+                            @foreach($chunkedGallery as $pageIndex => $pageImages)
+                            <div class="w-full flex-shrink-0">
+                                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 px-1">
+                                    @foreach($pageImages as $image)
+                                    @php $thumb = $resolveImage($image, $accessory->name ?? ''); @endphp
+                                    <div class="aspect-square w-full bg-white rounded-2xl shadow-lg overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 thumbnail-image" 
+                                                 data-image="{{ $thumb }}" data-lightbox-src="{{ $thumb }}">
+                                        <img src="{{ $thumb }}" alt="{{ $accessory->name }}" class="w-full h-full object-cover hover:scale-110 transition-transform duration-300" loading="lazy" decoding="async" width="300" height="300">
+                                    </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
                 </div>
                 @endif
             </div>
             
             <!-- Product Info -->
-            <div class="space-y-8">
+            <div class="space-y-4 lg:space-y-6 lg:col-span-7 mt-4 lg:mt-0">
                 <!-- Header -->
                 <div class="space-y-4">
                     @if($accessory->brand)
+                    <div class="flex items-center gap-2">
                     <div class="inline-flex items-center bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-sm font-semibold">
-                        <i class="fas fa-tag mr-2"></i>
+                        <i class="fas fa-crown mr-2"></i>
                         {{ $accessory->brand }}
+                        </div>
+                        @if($accessory->category)
+                        <span class="text-gray-300">|</span>
+                        <a href="{{ route('products.index', ['type' => 'accessory', 'acc_category' => $accessory->category]) }}" class="text-sm text-gray-700 hover:text-gray-900 hover:underline">{{ $accessory->category }}</a>
+                        @endif
                     </div>
                     @endif
                     
@@ -146,73 +205,97 @@
                     </div>
                 </div>
                 
-                <!-- Price Section -->
-                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-3xl p-8 border border-blue-100">
-                    <div class="space-y-4">
-                        @if($hasDiscountCalc)
-                        <div class="flex items-center space-x-4">
-                            <span class="text-4xl lg:text-5xl font-black text-red-600">
-                                {{ number_format($currentPrice, 0, ',', '.') }}₫
-                            </span>
-                            <span class="text-2xl text-gray-500 line-through">
-                                {{ number_format($basePrice, 0, ',', '.') }}₫
-                            </span>
-                        </div>
-                        <div class="inline-flex items-center bg-red-100 text-red-700 px-4 py-2 rounded-full text-sm font-bold">
-                            <i class="fas fa-tag mr-2"></i>
-                            Tiết kiệm {{ number_format($discountAmountCalc, 0, ',', '.') }}₫
-                        </div>
-                        @else
-                        <div class="text-4xl lg:text-5xl font-black text-blue-600">
-                            {{ number_format($currentPrice ?: $basePrice, 0, ',', '.') }}₫
-                        </div>
-                        @endif
-                        
-                        <!-- Stock Status -->
-                        <div class="flex items-center space-x-3">
-                            @php
-                                $stockLabel = [
-                                    'in_stock' => 'Còn hàng',
-                                    'low_stock' => 'Sắp hết',
-                                    'out_of_stock' => 'Hết hàng',
-                                    'discontinued' => 'Ngừng kinh doanh'
-                                ][$stockStatus] ?? 'Còn hàng';
-                                $stockClass = in_array($stockStatus, ['in_stock','low_stock']) ? 'text-green-600' : 'text-red-600';
-                                $stockIcon = in_array($stockStatus, ['in_stock','low_stock']) ? 'fa-check-circle' : 'fa-times-circle';
-                            @endphp
-                            <div class="flex items-center {{ $stockClass }}">
-                                <i class="fas {{ $stockIcon }} mr-2"></i>
-                                <span class="font-semibold">{{ $stockLabel }}@if($stockStatus==='low_stock' && $stockQty>0) ({{ $stockQty }} sp)@endif</span>
+                <!-- Price + Inline Actions -->
+                @php 
+                    $hasDiscount = ($accessory->has_discount && ($accessory->discount_percentage ?? 0) > 0);
+                    $baseOriginal = (int) ($accessory->base_price ?? 0);
+                    $baseCurrent  = (int) ($accessory->current_price ?? $baseOriginal);
+                    $discountPct  = (float) ($accessory->discount_percentage ?? 0);
+                @endphp
+                <div class="inline-block bg-gradient-to-r from-blue-50 to-indigo-50 rounded-3xl p-4 lg:p-5 border border-blue-100">
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-3">
+                            <div class="text-2xl lg:text-3xl font-extrabold text-blue-700" aria-label="Giá">
+                                <span id="dynamic-price"
+                                      data-base-price="{{ (int) $baseCurrent }}"
+                                      data-base-original="{{ (int) $baseOriginal }}"
+                                      data-discount="{{ $hasDiscount ? $discountPct : 0 }}">{{ number_format($baseCurrent, 0, ',', '.') }}</span>₫
                             </div>
+                            @if($hasDiscount)
+                                <span class="text-sm lg:text-base text-gray-500 line-through">
+                                    <span id="original-price">{{ number_format($baseOriginal, 0, ',', '.') }}</span>₫
+                                </span>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-bold">-{{ rtrim(rtrim(number_format($discountPct, 1), '0'), '.') }}%</span>
+                            @endif
+                            @if($accessory->is_available)
+                            <div class="inline-flex items-center px-3 py-1.5 rounded-full bg-green-50 text-green-700 text-sm font-semibold" aria-live="polite">
+                                <i class="fas fa-check-circle mr-2"></i> Còn hàng
+                            </div>
+                            @else
+                            <div class="inline-flex items-center px-3 py-1.5 rounded-full bg-red-50 text-red-700 text-sm font-semibold" aria-live="polite">
+                                <i class="fas fa-times-circle mr-2"></i> Hết hàng
+                            </div>
+                            @endif
                         </div>
                     </div>
                 </div>
                 
-                <!-- Action Buttons -->
-                <div class="space-y-4">
-                    @if($isInStock)
-                    <!-- CTA row: full-width equal buttons -->
-                    <div class="grid grid-cols-2 gap-4">
-                        @php($__inWishlistAccPage = \App\Helpers\WishlistHelper::isInWishlist('accessory', $accessory->id))
-                        <button type="button" class="action-btn action-ghost w-full js-wishlist-toggle {{ $__inWishlistAccPage ? 'in-wishlist' : 'not-in-wishlist' }}" aria-label="Yêu thích" title="Yêu thích" aria-pressed="{{ $__inWishlistAccPage ? 'true' : 'false' }}" data-item-type="accessory" data-item-id="{{ $accessory->id }}">
-                            <i class="fa-heart {{ $__inWishlistAccPage ? 'fas text-red-500' : 'far' }}"></i><span>Yêu thích</span>
-                        </button>
-                        <form action="{{ route('user.cart.add') }}" method="POST" class="w-full add-to-cart-form" data-item-type="accessory" data-item-id="{{ $accessory->id }}">
-                            @csrf
-                            <input type="hidden" name="item_type" value="accessory">
-                            <input type="hidden" name="item_id" value="{{ $accessory->id }}">
-                            <input type="hidden" name="quantity" value="1">
-                            <button type="submit" class="action-btn action-primary w-full">
-                                <i class="fas fa-cart-plus"></i><span>Thêm vào giỏ</span>
-                            </button>
-                        </form>
-                    </div>
-                    @else
-                    <button disabled class="w-full bg-gray-400 text-white text-xl font-bold py-4 px-8 rounded-2xl cursor-not-allowed">
-                        <i class="fas fa-times mr-3"></i>
-                        Hết hàng
+                @if($accessory->is_available)
+                <!-- CTA row: full-width equal buttons -->
+                <div class="mt-3 grid grid-cols-2 gap-2">
+                    @php
+                        $__inWishlistAccPage = \App\Helpers\WishlistHelper::isInWishlist('accessory', $accessory->id);
+                    @endphp
+                    <button type="button" class="action-btn action-ghost w-full js-wishlist-toggle {{ $__inWishlistAccPage ? 'in-wishlist' : 'not-in-wishlist' }}" aria-label="Yêu thích" title="Yêu thích" aria-pressed="{{ $__inWishlistAccPage ? 'true' : 'false' }}" data-item-type="accessory" data-item-id="{{ $accessory->id }}">
+                        <i class="fa-heart {{ $__inWishlistAccPage ? 'fas' : 'far' }}"></i><span>Yêu thích</span>
                     </button>
-                    @endif
+                    <form action="{{ route('user.cart.add') }}" method="POST" class="w-full add-to-cart-form" data-item-type="accessory" data-item-id="{{ $accessory->id }}">
+                        @csrf
+                        <input type="hidden" name="item_type" value="accessory">
+                        <input type="hidden" name="item_id" value="{{ $accessory->id }}">
+                        <input type="hidden" name="quantity" value="1">
+                        <button type="submit" class="action-btn action-primary w-full">
+                            <i class="fas fa-cart-plus"></i><span>Thêm vào giỏ</span>
+                        </button>
+                    </form>
+                </div>
+                @endif
+
+                <!-- Additional Info Section -->
+                <div class="mt-8 space-y-6">
+                    <!-- Trust Badges -->
+                    <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                            <i class="fas fa-award text-yellow-600 mr-3"></i>
+                            Cam kết chất lượng
+                        </h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="text-center">
+                                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                                    <i class="fas fa-certificate text-green-600"></i>
+                                </div>
+                                <span class="text-xs text-gray-600">Chính hãng 100%</span>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                                    <i class="fas fa-thumbs-up text-blue-600"></i>
+                                </div>
+                                <span class="text-xs text-gray-600">Chất lượng cao</span>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                                    <i class="fas fa-star text-purple-600"></i>
+                                </div>
+                                <span class="text-xs text-gray-600">Đánh giá 5 sao</span>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                                    <i class="fas fa-heart text-red-600"></i>
+                                </div>
+                                <span class="text-xs text-gray-600">Khách hàng tin tưởng</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -279,13 +362,107 @@
                                     @if($accessory->category)
                                     <div class="flex justify-between items-center py-3 border-b border-gray-100">
                                         <span class="text-gray-600 font-medium">Danh mục:</span>
-                                        <span class="font-semibold text-gray-900">{{ $accessory->category }}</span>
+                                        <span class="font-semibold text-gray-900">
+                                            @switch($accessory->category)
+                                                @case('electronics')
+                                                    Thiết bị điện tử
+                                                    @break
+                                                @case('interior')
+                                                    Nội thất
+                                                    @break
+                                                @case('exterior')
+                                                    Ngoại thất
+                                                    @break
+                                                @case('performance')
+                                                    Hiệu suất
+                                                    @break
+                                                @case('safety')
+                                                    An toàn
+                                                    @break
+                                                @case('maintenance')
+                                                    Bảo dưỡng
+                                                    @break
+                                                @case('lighting')
+                                                    Đèn chiếu sáng
+                                                    @break
+                                                @case('audio')
+                                                    Âm thanh
+                                                    @break
+                                                @default
+                                                    {{ $accessory->category }}
+                                            @endswitch
+                                        </span>
                                     </div>
                                     @endif
                                     @if($accessory->subcategory)
                                     <div class="flex justify-between items-center py-3 border-b border-gray-100">
                                         <span class="text-gray-600 font-medium">Danh mục con:</span>
-                                        <span class="font-semibold text-gray-900">{{ $accessory->subcategory }}</span>
+                                        <span class="font-semibold text-gray-900">
+                                            @switch($accessory->subcategory)
+                                                @case('camera')
+                                                    Camera
+                                                    @break
+                                                @case('dash_cam')
+                                                    Camera hành trình
+                                                    @break
+                                                @case('gps')
+                                                    Định vị GPS
+                                                    @break
+                                                @case('speaker')
+                                                    Loa
+                                                    @break
+                                                @case('seat_cover')
+                                                    Bọc ghế
+                                                    @break
+                                                @case('floor_mat')
+                                                    Thảm sàn
+                                                    @break
+                                                @case('steering_wheel')
+                                                    Vô lăng
+                                                    @break
+                                                @case('body_kit')
+                                                    Body kit
+                                                    @break
+                                                @case('spoiler')
+                                                    Cánh gió
+                                                    @break
+                                                @case('rim')
+                                                    Mâm xe
+                                                    @break
+                                                @case('tire')
+                                                    Lốp xe
+                                                    @break
+                                                @case('headlight')
+                                                    Đèn pha
+                                                    @break
+                                                @case('taillight')
+                                                    Đèn hậu
+                                                    @break
+                                                @case('led_strip')
+                                                    Dải LED
+                                                    @break
+                                                @case('engine_oil')
+                                                    Dầu động cơ
+                                                    @break
+                                                @case('brake_pad')
+                                                    Má phanh
+                                                    @break
+                                                @case('air_filter')
+                                                    Lọc gió
+                                                    @break
+                                                @case('battery')
+                                                    Ắc quy
+                                                    @break
+                                                @case('alarm')
+                                                    Báo động
+                                                    @break
+                                                @case('sensor')
+                                                    Cảm biến
+                                                    @break
+                                                @default
+                                                    {{ $accessory->subcategory }}
+                                            @endswitch
+                                        </span>
                                     </div>
                                     @endif
                                     @if($accessory->brand)
@@ -500,11 +677,11 @@
                                     <input type="hidden" name="reviewable_type" value="App\Models\Accessory">
                                     <input type="hidden" name="reviewable_id" value="{{ $accessory->id }}">
                                     <div>
-                                        <label class="block text-sm text-gray-700 mb-1">Chấm sao</label>
+                                        <label class="block text-sm text-gray-700 mb-1">Chấm sao <span class="text-red-500">*</span></label>
                                         <div class="flex items-center gap-2">
                                             @for($i=1;$i<=5;$i++)
                                             <label class="inline-flex items-center gap-1 cursor-pointer">
-                                                <input type="radio" name="rating" value="{{ $i }}" class="accent-yellow-500" required>
+                                                <input type="radio" name="rating" value="{{ $i }}" class="accent-yellow-500">
                                                 <i class="fas fa-star text-yellow-400"></i>
                                             </label>
                                             @endfor
@@ -512,11 +689,11 @@
                                     </div>
                                     <div>
                                         <label class="block text-sm text-gray-700 mb-1">Tiêu đề (tuỳ chọn)</label>
-                                        <input type="text" name="title" class="w-full border rounded-lg px-3 py-2" maxlength="255">
+                                        <input type="text" name="title" class="w-full border rounded-lg px-3 py-2">
                                     </div>
                                     <div>
-                                        <label class="block text-sm text-gray-700 mb-1">Nội dung</label>
-                                        <textarea name="comment" class="w-full border rounded-lg px-3 py-2" rows="4" required minlength="10"></textarea>
+                                        <label class="block text-sm text-gray-700 mb-1">Nội dung <span class="text-red-500">*</span></label>
+                                        <textarea name="comment" class="w-full border rounded-lg px-3 py-2" rows="4" placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm này..."></textarea>
                                     </div>
                                     <div class="flex items-center justify-end gap-2 pt-2">
                                         <button type="button" id="review-cancel" class="px-4 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">Hủy</button>
@@ -536,7 +713,7 @@
         
         <!-- Related Products -->
         @if(isset($relatedAccessories) && $relatedAccessories->count() > 0)
-        <div class="mt-20">
+        <div class="mt-20 pb-20">
             <div class="text-center mb-12">
                 <h2 class="text-3xl font-black text-gray-900 mb-4">Sản phẩm liên quan</h2>
                 <p class="text-xl text-gray-600">Khám phá thêm các phụ kiện tương tự</p>
@@ -552,60 +729,140 @@
     </div>
 </div>
 
-<!-- Final CTA - Full Width Background -->
-<section class="bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900 text-white overflow-hidden">
-    <div class="max-w-7xl mx-auto px-6 lg:px-8 py-10 text-center">
-        <h3 class="text-3xl font-bold mb-3">Sẵn sàng trải nghiệm {{ $accessory->name }}?</h3>
-        <p class="text-indigo-200 mb-6 max-w-2xl mx-auto">Liên hệ đội ngũ tư vấn hoặc khám phá thêm các phụ kiện khác.</p>
-        <div class="flex flex-col sm:flex-row gap-3 justify-center">
-            <a href="{{ route('contact') }}" class="inline-flex items-center px-6 py-3 rounded-xl bg-white text-slate-900 font-semibold hover:bg-indigo-50">
-                <i class="fas fa-phone mr-2"></i> Liên hệ tư vấn
-            </a>
-                                <a href="{{ route('products.index', ['type' => 'accessory']) }}" class="inline-flex items-center px-6 py-3 rounded-xl border border-white/30 text-white hover:bg-white/10">
-                        <i class="fas fa-th-large mr-2"></i> Xem tất cả phụ kiện
-                    </a>
-        </div>
-    </div>
-</section>
-
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Image gallery functionality
+    const accessoryMainImage = document.getElementById('main-image');
+    
+    // Thumbnail click handlers - removed duplicate
+
+    // Thumbnail Gallery Slider Functionality
+    (function(){
+        const slideButtons = document.querySelectorAll('.slide-prev, .slide-next');
+        
+        function getVisibleCount() {
+            const width = window.innerWidth;
+            if (width < 640) return 2; // mobile: 2 columns
+            if (width < 768) return 3; // tablet: 3 columns  
+            return 4; // desktop: 4 columns
+        }
+        
+        function updateSlider(container, currentPage = 0) {
+            const slider = container.querySelector('.thumbnails-slider');
+            if (!slider) return;
+            
+            const totalPages = parseInt(slider.getAttribute('data-total-pages') || '1');
+            const translateX = -currentPage * 100;
+            
+            slider.style.transform = `translateX(${translateX}%)`;
+            slider.setAttribute('data-current-page', currentPage);
+            
+            // Update button states
+            const prevBtn = container.parentElement.querySelector('.slide-prev');
+            const nextBtn = container.parentElement.querySelector('.slide-next');
+            
+            if (prevBtn) {
+                prevBtn.style.opacity = currentPage <= 0 ? '0.5' : '1';
+                prevBtn.disabled = currentPage <= 0;
+            }
+            
+            if (nextBtn) {
+                nextBtn.style.opacity = currentPage >= totalPages - 1 ? '0.5' : '1';
+                nextBtn.disabled = currentPage >= totalPages - 1;
+            }
+        }
+        
+        slideButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-target');
+                const container = document.getElementById(targetId);
+                if (!container) return;
+                
+                const slider = container.querySelector('.thumbnails-slider');
+                if (!slider) return;
+                
+                const totalPages = parseInt(slider.getAttribute('data-total-pages') || '1');
+                let currentPage = parseInt(slider.getAttribute('data-current-page') || '0');
+                
+                if (this.classList.contains('slide-next')) {
+                    currentPage = Math.min(currentPage + 1, totalPages - 1);
+                } else {
+                    currentPage = Math.max(currentPage - 1, 0);
+                }
+                
+                updateSlider(container, currentPage);
+            });
+        });
+        
+        // Initialize all sliders
+        function initializeSliders() {
+            slideButtons.forEach(button => {
+                const targetId = button.getAttribute('data-target');
+                const container = document.getElementById(targetId);
+                if (!container) return;
+                
+                updateSlider(container, 0);
+            });
+        }
+        
+        // Initialize on load
+        initializeSliders();
+        
+        // Re-initialize on window resize
+        let resizeTimeout;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(initializeSliders, 250);
+        });
+    })();
+
     // Tab functionality
     const tabButtons = document.querySelectorAll('.tab-button');
     const tabContents = document.querySelectorAll('.tab-content');
     
     tabButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const targetTab = button.getAttribute('data-tab');
+        button.addEventListener('click', function() {
+            const targetTab = this.getAttribute('data-tab');
             
-            // Remove active state from all tabs
+            // Remove active classes from all buttons
             tabButtons.forEach(btn => {
                 btn.classList.remove('border-blue-500', 'text-blue-600');
                 btn.classList.add('border-transparent', 'text-gray-500');
             });
+            
+            // Add active classes to clicked button
+            this.classList.remove('border-transparent', 'text-gray-500');
+            this.classList.add('border-blue-500', 'text-blue-600');
             
             // Hide all tab contents
             tabContents.forEach(content => {
                 content.classList.add('hidden');
             });
             
-            // Activate clicked tab
-            button.classList.remove('border-transparent', 'text-gray-500');
-            button.classList.add('border-blue-500', 'text-blue-600');
-            
-            // Show target content
-            document.getElementById(targetTab).classList.remove('hidden');
+            // Show target tab content
+            const targetContent = document.getElementById(targetTab);
+            if (targetContent) {
+                targetContent.classList.remove('hidden');
+            }
         });
     });
     
     // Thumbnail gallery
     const thumbnails = document.querySelectorAll('.thumbnail-image');
-    const mainImage = document.getElementById('main-image');
     
     thumbnails.forEach(thumb => {
         thumb.addEventListener('click', () => {
             const newSrc = thumb.getAttribute('data-image');
-            mainImage.src = newSrc;
+            if (newSrc && accessoryMainImage && newSrc !== accessoryMainImage.src) {
+                // Simple fade effect
+                accessoryMainImage.style.opacity = '0.3';
+                
+                setTimeout(() => {
+                    accessoryMainImage.src = newSrc;
+                    accessoryMainImage.setAttribute('data-lightbox-src', newSrc);
+                    accessoryMainImage.style.opacity = '1';
+                }, 150);
+            }
             
             // Update active thumbnail
             thumbnails.forEach(t => t.classList.remove('ring-2', 'ring-blue-500'));
@@ -613,76 +870,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Add to cart form handling
-    const addToCartForms = document.querySelectorAll('.add-to-cart-form');
-    addToCartForms.forEach(form => {
+    // Add to cart form handling - simplified like car-variant page
+    document.querySelectorAll('form.add-to-cart-form').forEach(function(form) {
         form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const formData = new FormData(this);
-            const submitButton = this.querySelector('button[type="submit"]');
-            const originalText = submitButton.innerHTML;
-            
-            // Show loading state
-            submitButton.disabled = true;
-            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Đang thêm...';
-            
-            fetch('/cart/add', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Show success message
-                    submitButton.innerHTML = '<i class="fas fa-check mr-2"></i>Đã thêm!';
-                    submitButton.classList.add('bg-green-600');
-                    
-                    // Show toast notification
-                    if (typeof window.showMessage === 'function') {
-                        window.showMessage(data.message || 'Đã thêm vào giỏ hàng!', 'success');
-                    }
-                    
-                    // Update cart count if available
-                    const cartCountBadge = document.querySelector('#cart-count-badge');
-                    if (cartCountBadge && data.cart_count !== undefined) {
-                        cartCountBadge.textContent = data.cart_count;
-                        cartCountBadge.classList.remove('hidden');
-                    }
-                    
-                    // Reset button after 2 seconds
-                    setTimeout(() => {
-                        submitButton.disabled = false;
-                        submitButton.innerHTML = originalText;
-                        submitButton.classList.remove('bg-green-600');
-                    }, 2000);
-                } else {
-                    throw new Error(data.message || 'Có lỗi xảy ra');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                
-                // Show error message
-                submitButton.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>Lỗi!';
-                submitButton.classList.add('bg-red-600');
-                
-                // Show error toast
-                if (typeof window.showMessage === 'function') {
-                    window.showMessage('Có lỗi xảy ra khi thêm vào giỏ hàng!', 'error');
-                }
-                
-                // Reset button after 2 seconds
-                setTimeout(() => {
-                    submitButton.disabled = false;
-                    submitButton.innerHTML = originalText;
-                    submitButton.classList.remove('bg-red-600');
-                }, 2000);
-            });
+            // Let the form submit normally - no preventDefault
+            // The backend will handle the response and redirect
         });
     });
     
@@ -765,7 +957,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 const name = ((rv.user && rv.user.name) ? rv.user.name : 'Khách hàng');
                 const time = (new Date(rv.created_at)).toLocaleDateString('vi-VN');
                 const safeComment = (rv.comment||'').replace(/</g,'&lt;');
-                return `<div class=\"border-b border-gray-100 pb-4\"><div class=\"flex items-center gap-3 mb-1\"><div class=\"w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center\"><i class=\"fas fa-user text-gray-500\"></i></div><div><div class=\"font-semibold text-gray-900\">${name}</div><div class=\"text-sm\">${stars}</div></div><div class=\"ml-auto text-xs text-gray-500\">${time}</div></div><div class=\"text-gray-700\">${safeComment}</div></div>`;
+                const safeTitle = (rv.title||'').replace(/</g,'&lt;');
+                const titleHtml = safeTitle ? `<div class=\"font-medium text-gray-900 mb-1\">${safeTitle}</div>` : '';
+                return `<div class=\"border-b border-gray-100 pb-4\"><div class=\"flex items-center gap-3 mb-1\"><div class=\"w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center\"><i class=\"fas fa-user text-gray-500\"></i></div><div><div class=\"font-semibold text-gray-900\">${name}</div><div class=\"text-sm\">${stars}</div></div><div class=\"ml-auto text-xs text-gray-500\">${time}</div></div>${titleHtml}<div class=\"text-gray-700\">${safeComment}</div></div>`;
             }).join('');
             renderPager(data);
         }
@@ -838,9 +1032,38 @@ document.addEventListener('DOMContentLoaded', function() {
         document.addEventListener('click', function(e){ const m = e.target.closest('#review-modal'); if (!m) return; if (e.target === m) closeReview(); });
         document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeReview(); });
 
-        // AJAX submit
+        // AJAX submit with Vietnamese validation
         if (formEl){
-            formEl.addEventListener('submit', function(ev){ ev.preventDefault(); const fd=new FormData(formEl);
+            formEl.addEventListener('submit', function(ev){ 
+                ev.preventDefault(); 
+                
+                
+                // Client-side validation with toast messages - show rating error first
+                // Check rating first
+                const ratingInputs = formEl.querySelectorAll('input[name="rating"]');
+                const ratingChecked = Array.from(ratingInputs).some(input => input.checked);
+                if (!ratingChecked) {
+                    if (typeof showMessage === 'function') {
+                        showMessage('Vui lòng chọn số sao đánh giá', 'error');
+                    }
+                    return; // Stop submission if rating not selected
+                }
+                
+                // Check comment after rating is valid
+                const commentInput = formEl.querySelector('textarea[name="comment"]');
+                if (!commentInput.value.trim()) {
+                    if (typeof showMessage === 'function') {
+                        showMessage('Vui lòng nhập nội dung đánh giá', 'error');
+                    }
+                    return; // Stop submission if comment empty
+                } else if (commentInput.value.trim().length < 10) {
+                    if (typeof showMessage === 'function') {
+                        showMessage('Nội dung đánh giá phải có ít nhất 10 ký tự', 'error');
+                    }
+                    return; // Stop submission if comment too short
+                }
+                
+                const fd=new FormData(formEl);
                 if (errorBox){ errorBox.classList.add('hidden'); errorBox.innerHTML=''; }
                 fetch(`{{ route('reviews.store') }}`,{method:'POST', headers:{'X-Requested-With':'XMLHttpRequest','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]').content}, body:fd})
                 .then(async function(r){
@@ -851,11 +1074,34 @@ document.addEventListener('DOMContentLoaded', function() {
                         updateInlineSummary();
                     } else {
                         const errs = (data && (data.errors || data.message)) ? data : null;
-                        if (errs && errorBox){
-                            let html = '';
-                            if (errs.errors){ const list = Object.values(errs.errors).flat(); html = `<ul class="list-disc list-inside">${list.map(m=>`<li>${m}</li>`).join('')}</ul>`; }
-                            else if (errs.message){ html = `<div>${errs.message}</div>`; }
-                            if (html){ errorBox.innerHTML = html; errorBox.classList.remove('hidden'); }
+                        if (errs) {
+                            // Convert English validation messages to Vietnamese and show via toast
+                            const vietnameseErrors = [];
+                            if (errs.errors) {
+                                Object.entries(errs.errors).forEach(([field, messages]) => {
+                                    messages.forEach(msg => {
+                                        let vietnameseMsg = msg;
+                                        // Convert common validation messages
+                                        if (msg.includes('rating') && msg.includes('required')) {
+                                            vietnameseMsg = 'Vui lòng chọn số sao đánh giá';
+                                        } else if (msg.includes('comment') && msg.includes('required')) {
+                                            vietnameseMsg = 'Vui lòng nhập nội dung đánh giá';
+                                        } else if (msg.includes('comment') && msg.includes('min')) {
+                                            vietnameseMsg = 'Nội dung đánh giá phải có ít nhất 10 ký tự';
+                                        } else if (msg.includes('title') && msg.includes('max')) {
+                                            vietnameseMsg = 'Tiêu đề không được vượt quá 255 ký tự';
+                                        }
+                                        vietnameseErrors.push(vietnameseMsg);
+                                    });
+                                });
+                            } else if (errs.message) {
+                                vietnameseErrors.push(errs.message);
+                            }
+                            
+                            // Show errors via toast instead of error box
+                            if (typeof showMessage === 'function') {
+                                vietnameseErrors.forEach(msg => showMessage(msg, 'error'));
+                            }
                         }
                         if (typeof showMessage==='function'){ showMessage('Gửi đánh giá thất bại','error'); }
                     }
@@ -875,6 +1121,35 @@ document.addEventListener('DOMContentLoaded', function() {
             bar.style.width = percentage + '%';
         });
     }, 500);
+
+    // Simple Lightbox (no external lib)
+    function openLightbox(src){
+        const overlay = document.createElement('div');
+        overlay.className = 'fixed inset-0 z-[10000] bg-black/90 flex items-center justify-center p-4 cursor-zoom-out';
+        overlay.setAttribute('role','dialog');
+        overlay.innerHTML = `<img src="${src}" class="max-w-full max-h-full object-contain rounded-lg shadow-2xl" alt="Lightbox Image">`;
+        overlay.onclick = () => document.body.removeChild(overlay);
+        overlay.onkeydown = (e) => { if(e.key === 'Escape') document.body.removeChild(overlay); };
+        document.body.appendChild(overlay);
+        overlay.focus();
+    }
+
+    // Add lightbox click handlers
+    const accessoryMainImageLightbox = document.getElementById('main-image');
+    if (accessoryMainImageLightbox) {
+        accessoryMainImageLightbox.addEventListener('click', function(){
+            const src = this.getAttribute('data-lightbox-src') || this.src;
+            openLightbox(src);
+        });
+    }
+    
+    // Add double-click lightbox for thumbnails
+    document.querySelectorAll('.thumbnail-image').forEach(thumb => {
+        thumb.addEventListener('dblclick', function(){
+            const src = this.getAttribute('data-lightbox-src') || this.getAttribute('data-image');
+            if (src) openLightbox(src);
+        });
+    });
 });
 </script>
 @endsection
