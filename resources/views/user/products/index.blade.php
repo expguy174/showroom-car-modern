@@ -390,8 +390,9 @@
     const bar = f && f.querySelector('.js-filter-loading');
     if (bar) bar.classList.remove('hidden');
     
-    // Show loading state
-    results.innerHTML = '<div class="bg-white rounded-2xl shadow-sm border border-gray-100 py-20 px-6 text-center text-gray-500"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>';
+    // Get filter height and set loading state with same height
+    const filterHeight = f ? f.offsetHeight : 400;
+    results.innerHTML = `<div class="flex items-center justify-center px-6 text-gray-500" style="height: ${filterHeight}px;"><i class="fas fa-spinner fa-spin mr-2"></i> Đang tải...</div>`;
     
     spin();
     fetch(url, { headers: { 'X-Requested-With':'XMLHttpRequest', 'Accept': 'text/html' } })
