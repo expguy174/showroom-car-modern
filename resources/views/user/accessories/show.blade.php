@@ -525,9 +525,10 @@
                                 </form>
                             </div>
                         </div>
-                        @else
-                        <div class="mt-6 text-sm text-gray-600">Vui lòng đăng nhập để thêm đánh giá.</div>
                         @endauth
+                        @guest
+                        <div class="mt-6 text-sm text-gray-600">Vui lòng đăng nhập để thêm đánh giá.</div>
+                        @endguest
                     </div>
                 </div>
             </div>
