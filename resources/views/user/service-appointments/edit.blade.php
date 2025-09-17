@@ -3,120 +3,252 @@
 @section('title', 'Sửa lịch bảo dưỡng')
 
 @section('content')
-<div class="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8">
-  <div class="flex items-start sm:items-center justify-between gap-3 mb-4 sm:mb-6">
-    <div class="min-w-0">
-      <div class="flex items-center gap-2 flex-wrap">
-        <h1 class="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight truncate">Sửa lịch bảo dưỡng #{{ $appointment->appointment_number }}</h1>
-        <span class="px-2 py-0.5 rounded-full text-xs whitespace-nowrap inline-flex items-center {{ \App\Helpers\ServiceAppointmentHelper::statusBadgeClass($appointment->status) }}" data-role="status-badge">{{ \App\Helpers\ServiceAppointmentHelper::statusLabel($appointment->status) }}</span>
+<div class="min-h-screen bg-gray-50">
+  <div class="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <div class="flex items-center gap-3 mb-2">
+          <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
+            <i class="fas fa-edit text-indigo-600"></i>
+          </div>
+          <div>
+            <h1 class="text-2xl font-bold text-gray-900">Sửa lịch bảo dưỡng</h1>
+            <p class="text-sm text-gray-500">#{{ $appointment->appointment_number }}</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-4 text-sm text-gray-600">
+          <span><i class="fas fa-calendar mr-1"></i>{{ \App\Helpers\ServiceAppointmentHelper::formatDate($appointment->appointment_date) }}</span>
+          <span><i class="fas fa-clock mr-1"></i>{{ \App\Helpers\ServiceAppointmentHelper::formatTime($appointment->appointment_time) }}</span>
+          <span class="px-2 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-medium">{{ \App\Helpers\ServiceAppointmentHelper::statusLabel($appointment->status) }}</span>
+        </div>
       </div>
-      <div class="text-xs sm:text-sm text-gray-500 mt-1">{{ \App\Helpers\ServiceAppointmentHelper::formatDate($appointment->appointment_date) }} {{ $appointment->appointment_time }} • {{ $appointment->showroom->name }}</div>
+      <a href="{{ route('user.service-appointments.show', $appointment->id) }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-gray-700 hover:bg-white hover:shadow-sm transition-all text-sm font-medium">
+        <i class="fas fa-arrow-left"></i> Quay lại
+      </a>
     </div>
-    <a href="{{ route('user.service-appointments.show', $appointment->id) }}" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm font-semibold shrink-0"><i class="fas fa-arrow-left"></i> Quay lại</a>
-  </div>
 
-  <div class="max-w-7xl mx-auto px-0">
-    <form id="sa-edit-form" method="POST" action="{{ route('user.service-appointments.update', $appointment->id) }}" class="grid grid-cols-1 lg:grid-cols-3 gap-6" novalidate>
+    <form id="sa-edit-form" method="POST" action="{{ route('user.service-appointments.update', $appointment->id) }}">
       @csrf
       @method('PUT')
+      
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Main Content -->
+        <div class="lg:col-span-2">
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              
+              <!-- 1. Showroom -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Showroom <span class="text-red-500">*</span></label>
+                <select name="showroom_id" id="showroom_id" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500" required>
+                  <option value="">-- Chọn showroom --</option>
+                  @foreach($showrooms as $s)
+                    <option value="{{ $s->id }}" @selected(old('showroom_id', $appointment->showroom_id)==$s->id)>{{ $s->name }}</option>
+                  @endforeach
+                </select>
+                @error('showroom_id')<div class="text-sm text-red-600 mt-1">{{ $message }}</div>@enderror
+              </div>
 
-      <div class="lg:col-span-2 space-y-4 sm:space-y-6">
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6">
-          <h2 class="text-base sm:text-lg font-semibold text-gray-900 mb-4">Thông tin lịch hẹn</h2>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm text-gray-700 mb-1">Showroom <span class="text-rose-600">*</span></label>
-              <select name="showroom_id" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" required>
-                @foreach(\App\Models\Showroom::where('is_active', true)->get() as $s)
-                  <option value="{{ $s->id }}" @selected(old('showroom_id', $appointment->showroom_id)==$s->id)>{{ $s->name }}</option>
-                @endforeach
-              </select>
-              @error('showroom_id')<div class="text-sm text-red-600 mt-1">{{ $message }}</div>@enderror
-            </div>
-            <div>
-              <label class="block text-sm text-gray-700 mb-1">Xe <span class="text-rose-600">*</span></label>
-              <select name="car_variant_id" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" required>
-                @foreach(\App\Models\CarVariant::with(['carModel.carBrand'])->get() as $v)
-                  <option value="{{ $v->id }}" @selected(old('car_variant_id', $appointment->car_variant_id)==$v->id)>{{ $v->carModel->carBrand->name }} {{ $v->carModel->name }} - {{ $v->name ?? 'Phiên bản' }}</option>
-                @endforeach
-              </select>
-              @error('car_variant_id')<div class="text-sm text-red-600 mt-1">{{ $message }}</div>@enderror
-            </div>
-            <div>
-              <label class="block text-sm text-gray-700 mb-1">Loại hẹn <span class="text-rose-600">*</span></label>
-              @php $types=['maintenance'=>'Bảo dưỡng','repair'=>'Sửa chữa','inspection'=>'Kiểm tra','warranty_work'=>'Bảo hành','recall_service'=>'Triệu hồi','emergency'=>'Khẩn cấp','other'=>'Khác']; @endphp
-              <select name="appointment_type" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" required>
-                @foreach($types as $val=>$label)
-                  <option value="{{ $val }}" @selected(old('appointment_type', $appointment->appointment_type)==$val)>{{ $label }}</option>
-                @endforeach
-              </select>
-              @error('appointment_type')<div class="text-sm text-red-600 mt-1">{{ $message }}</div>@enderror
-            </div>
-            <div>
-              <label class="block text-sm text-gray-700 mb-1">Ngày hẹn <span class="text-rose-600">*</span></label>
-              <input type="date" name="appointment_date" value="{{ old('appointment_date', optional($appointment->appointment_date)->format('Y-m-d')) }}" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" placeholder="yyyy-mm-dd" required>
-              @error('appointment_date')<div class="text-sm text-red-600 mt-1">{{ $message }}</div>@enderror
-            </div>
-            <div>
-              <label class="block text-sm text-gray-700 mb-1">Giờ hẹn (HH:MM) <span class="text-rose-600">*</span></label>
-              <input type="time" name="appointment_time" value="{{ old('appointment_time', substr((string)$appointment->appointment_time, 0, 5)) }}" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" placeholder="09:00" required>
-              @error('appointment_time')<div class="text-sm text-red-600 mt-1">{{ $message }}</div>@enderror
+              <!-- 2. Ngày hẹn -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Ngày hẹn <span class="text-red-500">*</span></label>
+                <input type="date" name="appointment_date" id="appointment_date" value="{{ old('appointment_date', optional($appointment->appointment_date)->format('Y-m-d')) }}" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500" required>
+                @error('appointment_date')<div class="text-sm text-red-600 mt-1">{{ $message }}</div>@enderror
+              </div>
+
+              <!-- 3. Giờ hẹn -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Giờ hẹn <span class="text-red-500">*</span></label>
+                <input type="time" name="appointment_time" id="appointment_time" value="{{ old('appointment_time', substr((string)$appointment->appointment_time, 0, 5)) }}" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500" required>
+                @error('appointment_time')<div class="text-sm text-red-600 mt-1">{{ $message }}</div>@enderror
+              </div>
+
+              <!-- 4. Xe của bạn -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Xe của bạn <span class="text-red-500">*</span></label>
+                <select name="car_variant_id" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500" required>
+                  <option value="">-- Chọn xe --</option>
+                  @foreach($carVariants as $v)
+                    <option value="{{ $v->id }}" @selected(old('car_variant_id', $appointment->car_variant_id)==$v->id)>
+                      {{ $v->carModel->carBrand->name }} {{ $v->carModel->name }} - {{ $v->name ?? 'Phiên bản' }}
+                    </option>
+                  @endforeach
+                </select>
+                @error('car_variant_id')<div class="text-sm text-red-600 mt-1">{{ $message }}</div>@enderror
+              </div>
+
+              <!-- 5. Biển số xe -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Biển số xe</label>
+                <input type="text" name="vehicle_registration" value="{{ old('vehicle_registration', $appointment->vehicle_registration) }}" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500" placeholder="VD: 30A-123.45">
+                @error('vehicle_registration')<div class="text-sm text-red-600 mt-1">{{ $message }}</div>@enderror
+              </div>
+
+              <!-- 6. Số km hiện tại -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Số km hiện tại</label>
+                <input type="number" step="1" name="current_mileage" value="{{ old('current_mileage', $appointment->current_mileage) }}" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500" placeholder="VD: 25000">
+                @error('current_mileage')<div class="text-sm text-red-600 mt-1">{{ $message }}</div>@enderror
+              </div>
+
+              <!-- 7. Chọn dịch vụ -->
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Chọn dịch vụ <span class="text-red-500">*</span></label>
+                <select name="service_id" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500" required>
+                  <option value="">-- Chọn dịch vụ --</option>
+                  @foreach($services as $service)
+                    <option value="{{ $service->id }}" 
+                            @selected(old('service_id', $appointment->service_id) == $service->id)
+                            data-price="{{ $service->price }}" data-duration="{{ $service->duration_minutes }}">
+                      {{ $service->name }} 
+                      @if($service->price > 0)
+                        - {{ number_format($service->price, 0, ',', '.') }} VNĐ
+                      @else
+                        - Miễn phí
+                      @endif
+                    </option>
+                  @endforeach
+                </select>
+                @error('service_id')<div class="text-sm text-red-600 mt-1">{{ $message }}</div>@enderror
+              </div>
+
+              <!-- 8. Chi phí ước tính -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Chi phí ước tính</label>
+                <input type="number" step="1000" name="estimated_cost" value="{{ old('estimated_cost', $appointment->estimated_cost ? number_format($appointment->estimated_cost, 0, '', '') : '') }}" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500" placeholder="0" readonly>
+                @error('estimated_cost')<div class="text-sm text-red-600 mt-1">{{ $message }}</div>@enderror
+                <div class="text-xs text-gray-500 mt-1">Tự động điền</div>
+              </div>
+
+
+              <!-- 9. Bảo hành checkbox -->
+              <div class="flex items-center">
+                <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+                  <input type="checkbox" name="is_warranty_work" value="1" class="rounded border-gray-300" @checked(old('is_warranty_work', $appointment->is_warranty_work))>
+                  Là công việc bảo hành
+                </label>
+              </div>
+
+              <!-- 10. Yêu cầu thêm -->
+              <div class="md:col-span-2 lg:col-span-3">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Yêu cầu thêm (tùy chọn)</label>
+                <textarea name="requested_services" rows="3" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500" placeholder="VD: Kiểm tra thêm lốp xe, thay bóng đèn...">{{ old('requested_services', $appointment->requested_services) }}</textarea>
+                @error('requested_services')<div class="text-sm text-red-600 mt-1">{{ $message }}</div>@enderror
+              </div>
+
+              <!-- 11. Mô tả chi tiết -->
+              <div class="md:col-span-2 lg:col-span-3">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Mô tả chi tiết</label>
+                <textarea name="service_description" rows="3" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500" placeholder="Thông tin thêm giúp kỹ thuật viên chuẩn bị tốt hơn (tùy chọn)">{{ old('service_description', $appointment->service_description) }}</textarea>
+                @error('service_description')<div class="text-sm text-red-600 mt-1">{{ $message }}</div>@enderror
+              </div>
+
+              <!-- 12. Submit Button -->
+              <div class="md:col-span-2 lg:col-span-3">
+                <button type="submit" class="w-full bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-semibold text-lg transition-colors">
+                  <i class="fas fa-save mr-2"></i> Lưu thay đổi
+                </button>
+              </div>
+
             </div>
           </div>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6">
-          <h2 class="text-base sm:text-lg font-semibold text-gray-900 mb-4">Thông tin khách hàng & xe</h2>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm text-gray-700 mb-1">Họ tên <span class="text-rose-600">*</span></label>
-              <input type="text" name="customer_name" value="{{ old('customer_name', $appointment->customer_name ?: (optional(auth()->user()->userProfile)->name ?? (auth()->user()->name ?? ''))) }}" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" required>
-              @error('customer_name')<div class="text-sm text-red-600 mt-1">{{ $message }}</div>@enderror
+      <!-- Sidebar -->
+      <div class="space-y-6">
+        <!-- Kiểm tra lịch trống -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+              <i class="fas fa-calendar-check text-green-600 text-sm"></i>
             </div>
-            <div>
-              <label class="block text-sm text-gray-700 mb-1">Số điện thoại <span class="text-rose-600">*</span></label>
-              <input type="text" name="customer_phone" value="{{ old('customer_phone', $appointment->customer_phone ?: (optional(auth()->user()->userProfile)->phone ?? (auth()->user()->phone ?? ''))) }}" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" required>
-              @error('customer_phone')<div class="text-sm text-red-600 mt-1">{{ $message }}</div>@enderror
+            <h3 class="font-semibold text-gray-900">
+              Kiểm tra lịch trống
+            </h3>
+          </div>
+          <p class="text-sm text-gray-600 mb-4">Chọn showroom và ngày, sau đó bấm kiểm tra để xem slot còn trống.</p>
+          <button type="button" id="btn-check-slots" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium transition-colors">
+            <i class="fas fa-search"></i> 
+            Kiểm tra slot trống
+          </button>
+          <div id="slot-results" class="mt-4 space-y-2"></div>
+        </div>
+
+        <!-- Lưu ý quan trọng -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+              <i class="fas fa-exclamation-triangle text-amber-600 text-sm"></i>
             </div>
-            <div>
-              <label class="block text-sm text-gray-700 mb-1">Email <span class="text-rose-600">*</span></label>
-              <input type="email" name="customer_email" value="{{ old('customer_email', $appointment->customer_email ?: (auth()->user()->email ?? '')) }}" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" required>
-              @error('customer_email')<div class="text-sm text-red-600 mt-1">{{ $message }}</div>@enderror
+            <h3 class="font-semibold text-gray-900">
+              Lưu ý quan trọng
+            </h3>
+          </div>
+          <div class="space-y-3 text-sm text-gray-600">
+            <div class="flex items-start gap-2">
+              <i class="fas fa-check-circle text-green-500 mt-0.5 text-xs"></i>
+              <span>Chỉ có thể sửa lịch khi đang ở trạng thái "Đã lên lịch"</span>
             </div>
-            <div>
-              <label class="block text-sm text-gray-700 mb-1">Biển số</label>
-              <input type="text" name="vehicle_registration" value="{{ old('vehicle_registration', $appointment->vehicle_registration) }}" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" placeholder="VD: 51A-123.45">
-              @error('vehicle_registration')<div class="text-sm text-red-600 mt-1">{{ $message }}</div>@enderror
+            <div class="flex items-start gap-2">
+              <i class="fas fa-check-circle text-green-500 mt-0.5 text-xs"></i>
+              <span>Vui lòng đến đúng giờ hẹn để tránh chờ đợi</span>
             </div>
-            <div>
-              <label class="block text-sm text-gray-700 mb-1">Số km hiện tại</label>
-              <input type="number" name="current_mileage" value="{{ old('current_mileage', $appointment->current_mileage) }}" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" placeholder="VD: 25000">
-              @error('current_mileage')<div class="text-sm text-red-600 mt-1">{{ $message }}</div>@enderror
+            <div class="flex items-start gap-2">
+              <i class="fas fa-check-circle text-green-500 mt-0.5 text-xs"></i>
+              <span>Mang theo giấy tờ xe và CMND khi đến showroom</span>
+            </div>
+            <div class="flex items-start gap-2">
+              <i class="fas fa-check-circle text-green-500 mt-0.5 text-xs"></i>
+              <span>Liên hệ hotline nếu cần hỗ trợ khẩn cấp</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hỗ trợ khách hàng -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+              <i class="fas fa-headset text-blue-600 text-sm"></i>
+            </div>
+            <h3 class="font-semibold text-gray-900">
+              Hỗ trợ khách hàng
+            </h3>
+          </div>
+          <div class="space-y-3">
+            <div class="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
+              <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-phone text-green-600 text-xs"></i>
+              </div>
+              <div>
+                <div class="font-medium text-gray-900">Hotline</div>
+                <div class="text-blue-600">1900 1008</div>
+              </div>
+            </div>
+            
+            <div class="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
+              <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-envelope text-blue-600 text-xs"></i>
+              </div>
+              <div>
+                <div class="font-medium text-gray-900">Email</div>
+                <div class="text-blue-600">support@autolux.vn</div>
+              </div>
+            </div>
+            
+            <div class="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
+              <div class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-clock text-orange-600 text-xs"></i>
+              </div>
+              <div>
+                <div class="font-medium text-gray-900">Giờ làm việc</div>
+                <div class="text-gray-600">09:00 - 17:00 (T2-T6)</div>
+              </div>
             </div>
           </div>
         </div>
       </div>
-
-      <div class="space-y-4 sm:space-y-6">
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6">
-          <h2 class="text-base sm:text-lg font-semibold text-gray-900 mb-4">Nội dung yêu cầu</h2>
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm text-gray-700 mb-1">Mô tả dịch vụ <span class="text-rose-600">*</span></label>
-              <textarea name="service_description" rows="3" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" placeholder="Mô tả ngắn gọn dịch vụ bạn cần" required>{{ old('service_description', $appointment->service_description) }}</textarea>
-              @error('service_description')<div class="text-sm text-red-600 mt-1">{{ $message }}</div>@enderror
-            </div>
-            <label class="inline-flex items-center gap-2 text-sm text-gray-700">
-              <input type="checkbox" name="is_warranty_work" value="1" class="rounded border-gray-300" @checked(old('is_warranty_work', $appointment->is_warranty_work))>
-              Là công việc bảo hành
-            </label>
-          </div>
-        </div>
-
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6">
-          <button class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 font-semibold"><i class="fas fa-save"></i> Lưu thay đổi</button>
-        </div>
-      </div>
+    </div>
     </form>
   </div>
 </div>
@@ -136,15 +268,10 @@
     try {
       const requiredFields = [
         ['showroom_id','Vui lòng chọn showroom.'],
-        ['car_variant_id','Vui lòng chọn xe.'],
-        ['appointment_type','Vui lòng chọn loại hẹn.'],
         ['appointment_date','Vui lòng chọn ngày hẹn.'],
         ['appointment_time','Vui lòng chọn giờ hẹn.'],
-        ['customer_name','Vui lòng nhập họ tên.'],
-        ['customer_phone','Vui lòng nhập số điện thoại.'],
-        ['customer_email','Vui lòng nhập email.'],
-        ['service_description','Vui lòng nhập mô tả dịch vụ.'],
-        ['priority','Vui lòng chọn ưu tiên.']
+        ['car_variant_id','Vui lòng chọn xe.'],
+        ['service_id','Vui lòng chọn dịch vụ.']
       ];
       for (const [name, msg] of requiredFields){
         const el = form.querySelector(`[name="${name}"]`);
@@ -196,6 +323,103 @@
       if (submitBtn){ submitBtn.disabled = false; submitBtn.classList.remove('opacity-60'); }
     }
   });
+})();
+
+// Slot checker functionality
+(function(){
+  const btn = document.getElementById('btn-check-slots');
+  const out = document.getElementById('slot-results');
+  if (!btn || !out) return;
+  btn.addEventListener('click', async function(){
+    const showroom = document.getElementById('showroom_id')?.value;
+    const date = document.getElementById('appointment_date')?.value;
+    if (!showroom || !date){
+      if (typeof window.showMessage === 'function') window.showMessage('Vui lòng chọn showroom và ngày.', 'error');
+      return;
+    }
+    out.innerHTML = '<div class="text-gray-600"><i class="fas fa-spinner fa-spin"></i> Đang kiểm tra...</div>';
+    try {
+      const res = await fetch("{{ route('user.service-appointments.check-availability') }}", { method:'POST', headers:{ 'Content-Type':'application/json', 'X-Requested-With':'XMLHttpRequest', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }, body: JSON.stringify({ showroom_id: showroom, date }) });
+      const data = await res.json();
+      
+      // Handle validation errors
+      if (!res.ok) {
+        out.innerHTML = '';
+        const errorMessage = data.message || 'Có lỗi xảy ra khi kiểm tra slot.';
+        if (typeof window.showMessage === 'function') window.showMessage(errorMessage, 'error');
+        return;
+      }
+      
+      const slots = Array.isArray(data.available_slots) ? data.available_slots : [];
+      if (!slots.length){
+        out.innerHTML = '';
+        if (typeof window.showMessage === 'function') window.showMessage('Không có thông tin cho ngày này.', 'info');
+        return;
+      }
+      
+      // Display appointment summary
+      const slot = slots[0];
+      let html = `<div class="space-y-3">`;
+      html += `<div class="p-3 bg-blue-50 border border-blue-200 rounded-lg">`;
+      html += `<div class="font-medium text-blue-900 mb-2"><i class="fas fa-info-circle mr-2"></i>${slot.info}</div>`;
+      html += `<div class="text-sm text-blue-700">Tổng lịch hẹn: ${slot.total_appointments}</div>`;
+      html += `</div>`;
+      
+      if (slot.existing_times && slot.existing_times.length > 0) {
+        html += `<div class="p-3 bg-amber-50 border border-amber-200 rounded-lg">`;
+        html += `<div class="font-medium text-amber-900 mb-2"><i class="fas fa-clock mr-2"></i>Thời gian đã được đặt:</div>`;
+        html += `<div class="flex flex-wrap gap-2">`;
+        slot.existing_times.forEach(time => {
+          html += `<span class="px-2 py-1 bg-amber-100 text-amber-800 rounded text-xs">${time}</span>`;
+        });
+        html += `</div>`;
+        html += `<div class="text-xs text-amber-700 mt-2">Bạn có thể chọn thời gian khác trong giờ làm việc</div>`;
+        html += `</div>`;
+      } else {
+        html += `<div class="p-3 bg-green-50 border border-green-200 rounded-lg">`;
+        html += `<div class="text-sm text-green-700"><i class="fas fa-check-circle mr-2"></i>Chưa có lịch hẹn nào. Bạn có thể chọn bất kỳ thời gian nào trong giờ làm việc.</div>`;
+        html += `</div>`;
+      }
+      
+      html += `</div>`;
+      out.innerHTML = html;
+    } catch {
+      out.innerHTML = '';
+      if (typeof window.showMessage === 'function') window.showMessage('Không thể kiểm tra slot. Vui lòng thử lại.', 'error');
+    }
+  });
+})();
+
+// Auto-fill estimated cost when service is selected
+(function(){
+  const serviceSelect = document.querySelector('select[name="service_id"]');
+  const costInput = document.querySelector('input[name="estimated_cost"]');
+  
+  if (!serviceSelect || !costInput) return;
+  
+  function updateEstimatedCost() {
+    const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
+    if (selectedOption && selectedOption.value) {
+      const price = selectedOption.getAttribute('data-price');
+      if (price && price !== '0') {
+        // Format price without decimals
+        const formattedPrice = Math.round(parseFloat(price));
+        costInput.value = formattedPrice;
+      } else {
+        costInput.value = '0';
+      }
+    } else {
+      costInput.value = '';
+    }
+  }
+  
+  // Update on change
+  serviceSelect.addEventListener('change', updateEstimatedCost);
+  
+  // Update on page load if service is already selected
+  if (serviceSelect.value) {
+    updateEstimatedCost();
+  }
 })();
 </script>
 @endpush

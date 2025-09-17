@@ -19,39 +19,105 @@
 
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
     <div class="lg:col-span-2 space-y-4 sm:space-y-6">
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6">
-        <h2 class="text-base sm:text-lg font-semibold text-gray-900 mb-4">Thông tin chung</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
-          <div><span class="text-gray-500">Loại hẹn:</span> <span class="font-semibold">{{ \App\Helpers\ServiceAppointmentHelper::typeLabel($appointment->appointment_type) }}</span></div>
-          <div><span class="text-gray-500">Ưu tiên:</span> <span class="font-semibold">{{ \App\Helpers\ServiceAppointmentHelper::priorityLabel($appointment->priority) }}</span></div>
-          <div><span class="text-gray-500">Trạng thái:</span> <span class="font-semibold">{{ \App\Helpers\ServiceAppointmentHelper::statusLabel($appointment->status) }}</span></div>
-          <div><span class="text-gray-500">Showroom:</span> <span class="font-semibold">{{ $appointment->showroom->name }}</span></div>
-          <div><span class="text-gray-500">Ngày hẹn:</span> <span class="font-semibold">{{ \App\Helpers\ServiceAppointmentHelper::formatDate($appointment->appointment_date) }}</span></div>
-          <div><span class="text-gray-500">Giờ hẹn:</span> <span class="font-semibold">{{ \App\Helpers\ServiceAppointmentHelper::formatTime($appointment->appointment_time) }}</span></div>
+      <!-- Thông tin chính -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-4 sm:px-6 py-4 border-b bg-gradient-to-r from-gray-50 to-indigo-50 flex items-center justify-between">
+          <h2 class="text-lg font-bold">Chi tiết lịch bảo dưỡng</h2>
+          <div class="text-xs text-gray-500">Cập nhật lúc {{ $appointment->updated_at?->format('d/m/Y H:i') }}</div>
         </div>
-      </div>
+        <div class="p-4 sm:p-6">
+          <!-- Dịch vụ và lịch hẹn -->
+          @if($appointment->service)
+          <div class="flex items-start gap-4 mb-6">
+            <div class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-tools text-indigo-600 text-lg"></i>
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="text-gray-700 text-sm">Dịch vụ</div>
+              <div class="font-semibold text-gray-900 mb-1">{{ $appointment->service->name }}</div>
+              <div class="text-sm text-gray-600 mb-3">{{ $appointment->service->description }}</div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                <div class="flex items-center gap-2"><i class="far fa-calendar text-indigo-600"></i><span>Ngày:</span><span class="font-medium">{{ \App\Helpers\ServiceAppointmentHelper::formatDate($appointment->appointment_date) }}</span></div>
+                <div class="flex items-center gap-2"><i class="far fa-clock text-indigo-600"></i><span>Giờ:</span><span class="font-medium">{{ \App\Helpers\ServiceAppointmentHelper::formatTime($appointment->appointment_time) }}</span></div>
+                <div class="flex items-center gap-2"><i class="fas fa-store text-indigo-600"></i><span>Showroom:</span><span class="font-medium">{{ $appointment->showroom->name }}</span></div>
+                <div class="flex items-center gap-2"><i class="fas fa-tag text-indigo-600"></i><span>Chi phí:</span><span class="font-medium">
+                  @if($appointment->service->price > 0)
+                    {{ number_format($appointment->service->price, 0, ',', '.') }} đ
+                  @else
+                    Miễn phí
+                  @endif
+                </span></div>
+              </div>
+            </div>
+          </div>
+          @else
+          <div class="flex items-start gap-4 mb-6">
+            <div class="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-tools text-gray-600 text-lg"></i>
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="text-gray-700 text-sm">Dịch vụ</div>
+              <div class="font-semibold text-gray-900 mb-3">Chưa chọn dịch vụ</div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                <div class="flex items-center gap-2"><i class="far fa-calendar text-indigo-600"></i><span>Ngày:</span><span class="font-medium">{{ \App\Helpers\ServiceAppointmentHelper::formatDate($appointment->appointment_date) }}</span></div>
+                <div class="flex items-center gap-2"><i class="far fa-clock text-indigo-600"></i><span>Giờ:</span><span class="font-medium">{{ \App\Helpers\ServiceAppointmentHelper::formatTime($appointment->appointment_time) }}</span></div>
+                <div class="flex items-center gap-2"><i class="fas fa-store text-indigo-600"></i><span>Showroom:</span><span class="font-medium">{{ $appointment->showroom->name }}</span></div>
+                <div class="flex items-center gap-2"><i class="fas fa-tag text-indigo-600"></i><span>Chi phí:</span><span class="font-medium">{{ $appointment->estimated_cost ? number_format($appointment->estimated_cost, 0, ',', '.') . ' đ' : '—' }}</span></div>
+              </div>
+            </div>
+          </div>
+          @endif
 
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6">
-        <h2 class="text-base sm:text-lg font-semibold text-gray-900 mb-4">Xe & khách hàng</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-          <div><span class="text-gray-600">Xe:</span> <span class="font-semibold">{{ $appointment->carVariant->carModel->carBrand->name }} {{ $appointment->carVariant->carModel->name }} {{ $appointment->carVariant->name }}</span></div>
-          <div><span class="text-gray-600">Biển số:</span> <span class="font-semibold">{{ $appointment->vehicle_registration ?: '-' }}</span></div>
-          
-          <div><span class="text-gray-600">Khách hàng:</span> <span class="font-semibold">{{ $appointment->customer_name ?: (optional($appointment->user->userProfile)->name ?? ($appointment->user->name ?? '-')) }}</span></div>
-          <div><span class="text-gray-600">SĐT:</span> <span class="font-semibold">{{ $appointment->customer_phone ?: (optional($appointment->user->userProfile)->phone ?? '-') }}</span></div>
-          <div><span class="text-gray-600">Email:</span> <span class="font-semibold">{{ $appointment->customer_email ?: ($appointment->user->email ?? '-') }}</span></div>
-        </div>
-      </div>
+          <!-- Chi tiết bổ sung -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-gray-100">
+            <div class="space-y-4">
+              <h4 class="font-semibold text-gray-900 flex items-center gap-2">
+                <i class="fas fa-info-circle text-indigo-600"></i>
+                Thông tin cơ bản
+              </h4>
+              <dl class="space-y-2 text-sm">
+                <div class="flex justify-between"><dt class="text-gray-500">Mã lịch:</dt><dd class="font-medium">{{ $appointment->appointment_number }}</dd></div>
+                <div class="flex justify-between"><dt class="text-gray-500">Trạng thái:</dt><dd><span class="px-2 py-0.5 rounded-full text-xs {{ \App\Helpers\ServiceAppointmentHelper::statusBadgeClass($appointment->status) }}">{{ \App\Helpers\ServiceAppointmentHelper::statusLabel($appointment->status) }}</span></dd></div>
+                <div class="flex justify-between"><dt class="text-gray-500">Ưu tiên:</dt><dd class="font-medium">{{ \App\Helpers\ServiceAppointmentHelper::priorityLabel($appointment->priority) }}</dd></div>
+                <div class="flex justify-between"><dt class="text-gray-500">Bảo hành:</dt><dd class="font-medium">{{ $appointment->is_warranty_work ? 'Có' : 'Không' }}</dd></div>
+              </dl>
+            </div>
 
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6">
-        <h2 class="text-base sm:text-lg font-semibold text-gray-900 mb-4">Nội dung yêu cầu</h2>
-        <div class="space-y-2 text-sm text-gray-800">
-          <div><span class="text-gray-600">Dịch vụ yêu cầu:</span> {{ $appointment->requested_services }}</div>
-          <div><span class="text-gray-600">Mô tả:</span> {{ $appointment->service_description ?: 'Chưa có mô tả' }}</div>
-          <div><span class="text-gray-600">Phàn nàn:</span> {{ $appointment->customer_complaints ?: 'Không có' }}</div>
-          <div><span class="text-gray-600">Chỉ dẫn đặc biệt:</span> {{ $appointment->special_instructions ?: 'Không có' }}</div>
-          @if($appointment->is_warranty_work)
-            <div><span class="text-gray-600">Bảo hành:</span> Có</div>
+            <div class="space-y-4">
+              <h4 class="font-semibold text-gray-900 flex items-center gap-2">
+                <i class="fas fa-car text-indigo-600"></i>
+                Thông tin xe
+              </h4>
+              <dl class="space-y-2 text-sm">
+                <div class="flex justify-between"><dt class="text-gray-500">Xe:</dt><dd class="font-medium">{{ $appointment->carVariant->carModel->carBrand->name }} {{ $appointment->carVariant->carModel->name }} {{ $appointment->carVariant->name }}</dd></div>
+                <div class="flex justify-between"><dt class="text-gray-500">Biển số:</dt><dd class="font-medium">{{ $appointment->vehicle_registration ?: '—' }}</dd></div>
+                <div class="flex justify-between"><dt class="text-gray-500">Số km:</dt><dd class="font-medium">{{ $appointment->current_mileage ? number_format($appointment->current_mileage, 0, ',', '.') . ' km' : '—' }}</dd></div>
+              </dl>
+            </div>
+          </div>
+
+          <!-- Yêu cầu và mô tả -->
+          @if($appointment->requested_services || $appointment->service_description)
+            <div class="pt-6 border-t border-gray-100 mt-6">
+              <h4 class="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <i class="fas fa-sticky-note text-indigo-600"></i>
+                Yêu cầu & Mô tả
+              </h4>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                @if($appointment->requested_services)
+                  <div>
+                    <div class="text-gray-700 text-sm mb-2 font-medium">Yêu cầu thêm</div>
+                    <div class="text-sm text-gray-800 bg-gray-50 rounded-lg p-3 whitespace-pre-line">{{ $appointment->requested_services }}</div>
+                  </div>
+                @endif
+                @if($appointment->service_description)
+                  <div>
+                    <div class="text-gray-700 text-sm mb-2 font-medium">Mô tả chi tiết</div>
+                    <div class="text-sm text-gray-800 bg-gray-50 rounded-lg p-3 whitespace-pre-line">{{ $appointment->service_description }}</div>
+                  </div>
+                @endif
+              </div>
+            </div>
           @endif
         </div>
       </div>
@@ -68,14 +134,6 @@
         @else
           <div class="text-sm text-gray-600">Lịch hẹn đã ở trạng thái {{ \App\Helpers\ServiceAppointmentHelper::statusLabel($appointment->status) }}.</div>
         @endif
-      </div>
-
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6">
-        <h2 class="text-base sm:text-lg font-semibold text-gray-900 mb-3">Tổng quan chi phí</h2>
-        <div class="grid grid-cols-2 gap-3 text-sm text-gray-700">
-          <div class="text-gray-500">Chi phí ước tính</div>
-          <div class="text-right font-semibold">{{ $appointment->estimated_cost !== null ? number_format($appointment->estimated_cost, 0, ',', '.') . ' đ' : 'Chờ' }}</div>
-        </div>
       </div>
 
       @if($appointment->status === 'completed')

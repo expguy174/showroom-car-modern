@@ -30,16 +30,11 @@ class InstallmentSeeder extends Seeder
             ], [
                 'order_id' => $order->id,
                 'user_id' => $user->id,
+                'finance_option_id' => 1, // Reference to first finance option
                 'payment_transaction_id' => $txn?->id,
                 'installment_number' => $i,
-                'amount' => $amount,
+                'amount' => $monthly,
                 'due_date' => now()->addMonths($i),
-                'bank_name' => 'Vietcombank',
-                'interest_rate' => 9.5,
-                'tenure_months' => $tenure,
-                'down_payment_amount' => 0,
-                'monthly_payment_amount' => $monthly,
-                'schedule' => null,
                 'status' => $i <= 2 ? 'paid' : 'pending',
                 'paid_at' => $i <= 2 ? now()->subDays($i) : null,
                 'approved_at' => now(),

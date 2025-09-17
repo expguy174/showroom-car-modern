@@ -5,13 +5,14 @@ namespace App\Http\Controllers\User;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use App\Models\ServiceAppointment;
+use App\Models\Service;
 use App\Services\NotificationService;
 use App\Models\Showroom;
 use App\Models\CarVariant;
 use Carbon\Carbon;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
 class ServiceAppointmentController extends Controller
@@ -48,16 +49,16 @@ class ServiceAppointmentController extends Controller
     public function index(Request $request)
     {
         $status = $request->string('status')->toString();
-        $type = $request->string('appointment_type')->toString();
+        $serviceId = $request->string('service_id')->toString();
         $q = $request->string('q')->toString();
 
         $appointments = ServiceAppointment::where('user_id', Auth::id())
-            ->with(['showroom', 'carVariant.carModel.carBrand'])
+            ->with(['showroom', 'service', 'carVariant.carModel.carBrand'])
             ->when($status !== '', function ($query) use ($status) {
                 $query->where('status', $status);
             })
-            ->when($type !== '', function ($query) use ($type) {
-                $query->where('appointment_type', $type);
+            ->when($serviceId !== '', function ($query) use ($serviceId) {
+                $query->where('service_id', $serviceId);
             })
             ->when($q !== '', function ($query) use ($q) {
                 $query->where(function ($sub) use ($q) {
@@ -67,6 +68,9 @@ class ServiceAppointmentController extends Controller
                         })
                         ->orWhereHas('showroom', function ($sr) use ($q) {
                             $sr->where('name', 'like', "%{$q}%");
+                        })
+                        ->orWhereHas('service', function ($svc) use ($q) {
+                            $svc->where('name', 'like', "%{$q}%");
                         });
                 });
             })
@@ -82,14 +86,29 @@ class ServiceAppointmentController extends Controller
             ]);
         }
 
-        return view('user.service-appointments.index', compact('appointments'));
+        // Get services for filter dropdown
+        $services = Service::where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+
+        return view('user.service-appointments.index', compact('appointments', 'services'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $showrooms = Showroom::where('is_active', true)->get();
+        $services = Service::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
         $carVariants = CarVariant::with(['carModel.carBrand'])->get();
-        return view('user.service-appointments.create', compact('showrooms', 'carVariants'));
+        
+        // Pre-select service if service_id is provided
+        $selectedServiceId = $request->get('service_id');
+        $selectedService = null;
+        if ($selectedServiceId) {
+            $selectedService = Service::find($selectedServiceId);
+        }
+        
+        return view('user.service-appointments.create', compact('showrooms', 'services', 'carVariants', 'selectedService'));
     }
 
     public function store(Request $request)
@@ -112,56 +131,114 @@ class ServiceAppointmentController extends Controller
                 $request->merge(['appointment_time' => $normalized]);
             }
 
-            $validated = $request->validate([
-                'showroom_id' => 'required|exists:showrooms,id',
-                'car_variant_id' => 'required|exists:car_variants,id',
-                'appointment_type' => 'required|in:' . implode(',', ServiceAppointment::APPOINTMENT_TYPES),
-                'appointment_date' => 'required|date|after:today',
-                'appointment_time' => [
-                    'required','string',
-                    function($attr,$value,$fail){
-                        if (!preg_match('/^([01]?\d|2[0-3]):[0-5]\d$/', (string)$value)) {
-                            $fail('Giờ hẹn không hợp lệ (định dạng HH:MM).');
-                        }
+            // Validate theo thứ tự ưu tiên - dừng ngay khi gặp error đầu tiên
+            $validationRules = [
+                // 1. Showroom
+                ['showroom_id', 'required|exists:showrooms,id', 'Vui lòng chọn showroom.'],
+                
+                // 2. Appointment Date
+                ['appointment_date', 'required|date|after:today', 'Vui lòng chọn ngày hẹn hợp lệ.'],
+                
+                // 3. Appointment Time  
+                ['appointment_time', 'required|string', 'Vui lòng chọn giờ hẹn.'],
+                
+                // 4. Car Variant
+                ['car_variant_id', 'required|exists:car_variants,id', 'Vui lòng chọn xe.'],
+                
+                // 5. Service ID
+                ['service_id', 'required|exists:services,id', 'Vui lòng chọn dịch vụ.'],
+                
+                // 6. Requested Services
+                ['requested_services', 'nullable|string|max:65535', 'Yêu cầu thêm quá dài.'],
+            ];
+            
+            $validated = [];
+            
+            // Validate từng field theo thứ tự với custom messages
+            foreach ($validationRules as [$field, $rules, $message]) {
+                try {
+                    $fieldValidation = $request->validate([
+                        $field => $rules
+                    ], [
+                        $field . '.required' => $message,
+                        $field . '.date' => $field === 'appointment_date' ? 'Ngày hẹn không hợp lệ.' : $message,
+                        $field . '.after' => $field === 'appointment_date' ? 'Ngày hẹn phải sau hôm nay.' : $message,
+                        $field . '.exists' => $field === 'showroom_id' ? 'Showroom không khả dụng.' : 
+                                            ($field === 'service_id' ? 'Dịch vụ không khả dụng.' : 
+                                            ($field === 'car_variant_id' ? 'Xe không khả dụng.' : $message)),
+                        $field . '.string' => $message,
+                        $field . '.max' => $field === 'requested_services' ? 'Yêu cầu thêm quá dài.' : $message,
+                    ]);
+                    $validated = array_merge($validated, $fieldValidation);
+                } catch (\Illuminate\Validation\ValidationException $e) {
+                    // Dừng ngay khi gặp error đầu tiên
+                    if ($request->expectsJson() || $request->ajax()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => $message,
+                            'errors' => [$field => [$message]],
+                        ], 422);
                     }
-                ],
-                'customer_name' => 'required|string|max:255',
-                'customer_phone' => [
-                    'required','string','min:10','max:15',
-                    function($attr,$value,$fail){
-                        if (!preg_match('/^[0-9+\-\s()]+$/', (string)$value)) {
-                            $fail('Số điện thoại không hợp lệ.');
-                        }
+                    return back()->withErrors([$field => $message])->withInput();
+                }
+            }
+            
+            // Custom validation cho appointment_date (weekend check)
+            if (isset($validated['appointment_date'])) {
+                $date = \Carbon\Carbon::parse($validated['appointment_date']);
+                if ($date->dayOfWeek === 0 || $date->dayOfWeek === 6) {
+                    $message = 'Không thể đặt lịch vào cuối tuần. Vui lòng chọn thứ 2 - thứ 6.';
+                    if ($request->expectsJson() || $request->ajax()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => $message,
+                            'errors' => ['appointment_date' => [$message]],
+                        ], 422);
                     }
-                ],
-                'customer_email' => 'required|email|max:255',
-                'vehicle_registration' => 'nullable|string|max:20',
-                'current_mileage' => 'nullable|numeric|min:0|max:999999',
-                'requested_services' => 'required|string|max:1000',
-                'service_description' => 'nullable|string|max:1000',
-                'is_warranty_work' => 'boolean',
-                'satisfaction_rating' => 'nullable|integer|min:1|max:5',
-                'feedback' => 'nullable|string|max:2000',
-            ], [
-                'showroom_id.required' => 'Vui lòng chọn showroom.',
-                'showroom_id.exists' => 'Showroom không khả dụng.',
-                'car_variant_id.required' => 'Vui lòng chọn xe.',
-                'car_variant_id.exists' => 'Xe không khả dụng.',
-                'appointment_type.required' => 'Vui lòng chọn loại hẹn.',
-                'appointment_type.in' => 'Loại hẹn không hợp lệ.',
-                'appointment_date.required' => 'Vui lòng chọn ngày hẹn.',
-                'appointment_date.date' => 'Ngày hẹn không hợp lệ.',
-                'appointment_date.after' => 'Ngày hẹn phải sau hôm nay.',
-                'appointment_time.required' => 'Vui lòng chọn giờ hẹn.',
-                'customer_name.required' => 'Vui lòng nhập họ tên.',
-                'customer_phone.required' => 'Vui lòng nhập số điện thoại.',
-                'customer_phone.regex' => 'Số điện thoại không hợp lệ.',
-                'customer_email.required' => 'Vui lòng nhập email.',
-                'customer_email.email' => 'Email không hợp lệ.',
-                'requested_services.required' => 'Vui lòng nhập dịch vụ yêu cầu.',
-                'current_mileage.numeric' => 'Số km phải là số.',
-                'current_mileage.max' => 'Số km không hợp lệ.',
+                    return back()->withErrors(['appointment_date' => $message])->withInput();
+                }
+            }
+            
+            // Custom validation cho appointment_time (business hours)
+            if (isset($validated['appointment_time'])) {
+                $time = $validated['appointment_time'];
+                if (!preg_match('/^([01]?\d|2[0-3]):[0-5]\d$/', $time)) {
+                    $message = 'Giờ hẹn không hợp lệ (định dạng HH:MM).';
+                    if ($request->expectsJson() || $request->ajax()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => $message,
+                            'errors' => ['appointment_time' => [$message]],
+                        ], 422);
+                    }
+                    return back()->withErrors(['appointment_time' => $message])->withInput();
+                }
+                
+                $hour = (int) substr($time, 0, 2);
+                if ($hour < 9 || $hour >= 17) {
+                    $message = 'Giờ hẹn phải trong khung giờ làm việc (09:00 - 16:59).';
+                    if ($request->expectsJson() || $request->ajax()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => $message,
+                            'errors' => ['appointment_time' => [$message]],
+                        ], 422);
+                    }
+                    return back()->withErrors(['appointment_time' => $message])->withInput();
+                }
+            }
+            
+            // Validate additional fields (không dừng khi có lỗi)
+            $additionalValidation = $request->validate([
+                'vehicle_registration' => 'nullable|string|max:32',
+                'current_mileage' => 'nullable|integer|min:0|max:4294967295', 
+                'estimated_cost' => 'nullable|numeric|min:0|max:9999999999999.99',
+                'is_warranty_work' => 'nullable|boolean',
+                'service_description' => 'nullable|string|max:65535',
+                'priority' => 'nullable|in:low,medium,high,urgent',
             ]);
+            
+            $validated = array_merge($validated, $additionalValidation);
 
             // Check showroom availability
             $showroom = \App\Models\Showroom::find($validated['showroom_id']);
@@ -176,15 +253,27 @@ class ServiceAppointmentController extends Controller
                 return back()->withErrors(['showroom_id' => 'Showroom không khả dụng'])->withInput();
             }
 
+            // Check service availability
+            $service = \App\Models\Service::find($validated['service_id']);
+            if (!$service || !$service->is_active) {
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Dịch vụ không khả dụng',
+                        'errors' => ['service_id' => ['Dịch vụ không khả dụng']],
+                    ], 422);
+                }
+                return back()->withErrors(['service_id' => 'Dịch vụ không khả dụng'])->withInput();
+            }
+
             // Chuẩn hoá giờ (HH:MM -> HH:MM:00) để khớp kiểu time trong DB
             $normalizedTime = $validated['appointment_time'] . ':00';
 
-            // Check if time slot is available
-            $scheduledDateTime = $validated['appointment_date'] . ' ' . $normalizedTime;
+            // Check if exact time slot is already taken
             $existingAppointment = ServiceAppointment::where('showroom_id', $validated['showroom_id'])
                 ->where('appointment_date', $validated['appointment_date'])
                 ->where('appointment_time', $normalizedTime)
-                ->where('status', '!=', 'cancelled')
+                ->whereIn('status', ['scheduled', 'confirmed', 'in_progress'])
                 ->first();
 
             if ($existingAppointment) {
@@ -192,19 +281,22 @@ class ServiceAppointmentController extends Controller
                     return response()->json([
                         'success' => false,
                         'message' => 'Thời gian này đã được đặt. Vui lòng chọn thời gian khác.',
-                        'errors' => ['scheduled_time' => ['Thời gian này đã được đặt. Vui lòng chọn thời gian khác.']],
+                        'errors' => ['appointment_time' => ['Thời gian này đã được đặt. Vui lòng chọn thời gian khác.']],
                     ], 422);
                 }
-                return back()->withErrors(['scheduled_time' => 'Thời gian này đã được đặt. Vui lòng chọn thời gian khác.'])->withInput();
+                return back()->withErrors(['appointment_time' => 'Thời gian này đã được đặt. Vui lòng chọn thời gian khác.'])->withInput();
             }
 
-            // Generate appointment number
-            $appointmentNumber = 'SA-' . date('Ymd') . '-' . strtoupper(substr(bin2hex(random_bytes(3)), 0, 6));
+            // Generate unique appointment number
+            do {
+                $appointmentNumber = 'SA-' . date('Ymd') . '-' . strtoupper(substr(bin2hex(random_bytes(3)), 0, 6));
+            } while (ServiceAppointment::where('appointment_number', $appointmentNumber)->exists());
 
             $data = $validated;
             $data['user_id'] = Auth::id();
             $data['appointment_number'] = $appointmentNumber;
             $data['status'] = 'scheduled';
+            $data['priority'] = $validated['priority'] ?? 'medium'; // Default priority
             $data['appointment_time'] = $normalizedTime;
 
             $appointment = ServiceAppointment::create($data);
@@ -264,7 +356,7 @@ class ServiceAppointmentController extends Controller
             abort(403);
         }
 
-        $appointment->load(['showroom', 'carVariant.carModel.carBrand']);
+        $appointment->load(['showroom', 'service', 'carVariant.carModel.carBrand']);
 
         return view('user.service-appointments.show', compact('appointment'));
     }
@@ -277,9 +369,10 @@ class ServiceAppointmentController extends Controller
         }
 
         $showrooms = Showroom::where('is_active', true)->get();
+        $services = Service::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
         $carVariants = CarVariant::with(['carModel.carBrand'])->get();
 
-        return view('user.service-appointments.edit', compact('appointment', 'showrooms', 'carVariants'));
+        return view('user.service-appointments.edit', compact('appointment', 'showrooms', 'services', 'carVariants'));
     }
 
     public function update(Request $request, ServiceAppointment $appointment)
@@ -293,42 +386,132 @@ class ServiceAppointmentController extends Controller
         $normalized = $this->normalizeTimeToHHMM($request->input('appointment_time'));
         if ($normalized) { $request->merge(['appointment_time' => $normalized]); }
 
-        $validated = $request->validate([
-            'showroom_id' => 'required|exists:showrooms,id',
-            'car_variant_id' => 'required|exists:car_variants,id',
-            'appointment_type' => 'required|in:' . implode(',', ServiceAppointment::APPOINTMENT_TYPES),
-            'appointment_date' => 'required|date|after:today',
-            'appointment_time' => [ 'required','string', function($a,$v,$f){ if(!preg_match('/^([01]?\d|2[0-3]):[0-5]\d$/', (string)$v)) $f('Giờ hẹn không hợp lệ (định dạng HH:MM).'); } ],
-            'customer_name' => 'required|string|max:255',
-            'customer_phone' => 'required|string|max:20',
-            'customer_email' => 'required|email|max:255',
-            'vehicle_registration' => 'nullable|string|max:20',
-            'current_mileage' => 'nullable|numeric|min:0',
-            'service_description' => 'required|string|max:1000',
-            // priority removed from user edits
-            'preferred_technician' => 'nullable|string|max:255',
-            'special_instructions' => 'nullable|string|max:500',
-            'estimated_cost' => 'nullable|numeric|min:0',
-            // status removed from user edits
-            'customer_satisfaction' => 'nullable|numeric|min:0|max:5',
-        ], [
-            'showroom_id.required' => 'Vui lòng chọn showroom.',
-            'showroom_id.exists' => 'Showroom không khả dụng.',
-            'car_variant_id.required' => 'Vui lòng chọn xe.',
-            'car_variant_id.exists' => 'Xe không khả dụng.',
-            'appointment_type.required' => 'Vui lòng chọn loại hẹn.',
-            'appointment_type.in' => 'Loại hẹn không hợp lệ.',
-            'appointment_date.required' => 'Vui lòng chọn ngày hẹn.',
-            'appointment_date.date' => 'Ngày hẹn không hợp lệ.',
-            'appointment_date.after' => 'Ngày hẹn phải sau hôm nay.',
-            'appointment_time.required' => 'Vui lòng chọn giờ hẹn.',
-            'customer_name.required' => 'Vui lòng nhập họ tên.',
-            'customer_phone.required' => 'Vui lòng nhập số điện thoại.',
-            'customer_email.required' => 'Vui lòng nhập email.',
-            'customer_email.email' => 'Email không hợp lệ.',
-            'service_description.required' => 'Vui lòng nhập mô tả dịch vụ.',
-            'current_mileage.numeric' => 'Số km phải là số.',
+        // Use same validation as store method - allow editing existing appointments
+        $validationRules = [
+            // 1. Showroom
+            ['showroom_id', 'required|exists:showrooms,id', 'Vui lòng chọn showroom.'],
+            
+            // 2. Appointment Date (allow current date for existing appointments)
+            ['appointment_date', 'required|date|after_or_equal:today', 'Vui lòng chọn ngày hẹn hợp lệ.'],
+            
+            // 3. Appointment Time  
+            ['appointment_time', 'required|string', 'Vui lòng chọn giờ hẹn.'],
+            
+            // 4. Car Variant
+            ['car_variant_id', 'required|exists:car_variants,id', 'Vui lòng chọn xe.'],
+            
+            // 5. Service ID
+            ['service_id', 'required|exists:services,id', 'Vui lòng chọn dịch vụ.'],
+            
+            // 6. Requested Services
+            ['requested_services', 'nullable|string|max:65535', 'Yêu cầu thêm quá dài.'],
+        ];
+        
+        $validated = [];
+        
+        // Validate từng field theo thứ tự
+        foreach ($validationRules as [$field, $rules, $message]) {
+            try {
+                $fieldValidation = $request->validate([
+                    $field => $rules
+                ]);
+                $validated = array_merge($validated, $fieldValidation);
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $message,
+                        'errors' => [$field => [$message]],
+                    ], 422);
+                }
+                return back()->withErrors([$field => $message])->withInput();
+            }
+        }
+        
+        // Custom validation cho appointment_date (weekend check)
+        if (isset($validated['appointment_date'])) {
+            $date = \Carbon\Carbon::parse($validated['appointment_date']);
+            if ($date->dayOfWeek === 0 || $date->dayOfWeek === 6) {
+                $message = 'Không thể đặt lịch vào cuối tuần. Vui lòng chọn thứ 2 - thứ 6.';
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $message,
+                        'errors' => ['appointment_date' => [$message]],
+                    ], 422);
+                }
+                return back()->withErrors(['appointment_date' => $message])->withInput();
+            }
+        }
+        
+        // Custom validation cho appointment_time (business hours)
+        if (isset($validated['appointment_time'])) {
+            $time = $validated['appointment_time'];
+            if (!preg_match('/^([01]?\d|2[0-3]):[0-5]\d$/', $time)) {
+                $message = 'Giờ hẹn không hợp lệ (định dạng HH:MM).';
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $message,
+                        'errors' => ['appointment_time' => [$message]],
+                    ], 422);
+                }
+                return back()->withErrors(['appointment_time' => $message])->withInput();
+            }
+            
+            $hour = (int) substr($time, 0, 2);
+            if ($hour < 9 || $hour >= 17) {
+                $message = 'Giờ hẹn phải trong khung giờ làm việc (09:00 - 16:59).';
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $message,
+                        'errors' => ['appointment_time' => [$message]],
+                    ], 422);
+                }
+                return back()->withErrors(['appointment_time' => $message])->withInput();
+            }
+        }
+        
+        // Validate additional fields (không dừng khi có lỗi)
+        $additionalValidation = $request->validate([
+            'vehicle_registration' => 'nullable|string|max:32',
+            'current_mileage' => 'nullable|integer|min:0|max:4294967295', 
+            'estimated_cost' => 'nullable|numeric|min:0|max:9999999999999.99',
+            'is_warranty_work' => 'nullable|boolean',
+            'service_description' => 'nullable|string|max:65535',
+            'priority' => 'nullable|in:low,medium,high,urgent',
         ]);
+        
+        $validated = array_merge($validated, $additionalValidation);
+
+        // Check showroom availability
+        $showroom = \App\Models\Showroom::find($validated['showroom_id']);
+        if (!$showroom || !$showroom->is_active) {
+            $message = 'Showroom không khả dụng';
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $message,
+                    'errors' => ['showroom_id' => [$message]],
+                ], 422);
+            }
+            return back()->withErrors(['showroom_id' => $message])->withInput();
+        }
+
+        // Check service availability
+        $service = \App\Models\Service::find($validated['service_id']);
+        if (!$service || !$service->is_active) {
+            $message = 'Dịch vụ không khả dụng';
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $message,
+                    'errors' => ['service_id' => [$message]],
+                ], 422);
+            }
+            return back()->withErrors(['service_id' => $message])->withInput();
+        }
 
         if (isset($validated['appointment_time'])) {
             $validated['appointment_time'] = $validated['appointment_time'] . ':00';
@@ -427,11 +610,13 @@ class ServiceAppointmentController extends Controller
 
         $data = $request->validate([
             'satisfaction_rating' => 'required|integer|min:1|max:5',
-            'feedback' => 'nullable|string|max:2000',
+            'feedback' => 'nullable|string|max:65535', // Match DB text field
         ], [
             'satisfaction_rating.required' => 'Vui lòng chọn số sao.',
-            'satisfaction_rating.min' => 'Số sao không hợp lệ.',
-            'satisfaction_rating.max' => 'Số sao không hợp lệ.',
+            'satisfaction_rating.integer' => 'Số sao phải là số nguyên.',
+            'satisfaction_rating.min' => 'Số sao tối thiểu là 1.',
+            'satisfaction_rating.max' => 'Số sao tối đa là 5.',
+            'feedback.max' => 'Phản hồi không được quá 65535 ký tự.',
         ]);
 
         $appointment->update($data);
@@ -446,7 +631,16 @@ class ServiceAppointmentController extends Controller
     {
         $request->validate([
             'showroom_id' => 'required|exists:showrooms,id',
-            'date' => 'required|date|after:today',
+            'date' => [
+                'required','date','after:today',
+                function($attr,$value,$fail){
+                    $date = \Carbon\Carbon::parse($value);
+                    // Check if it's weekend
+                    if ($date->dayOfWeek === 0 || $date->dayOfWeek === 6) {
+                        $fail('Không thể đặt lịch vào cuối tuần. Vui lòng chọn thứ 2 - thứ 6.');
+                    }
+                }
+            ],
         ]);
 
         $date = Carbon::parse($request->date);
@@ -458,25 +652,20 @@ class ServiceAppointmentController extends Controller
             ->whereIn('status', ['scheduled', 'confirmed', 'in_progress'])
             ->get();
 
-        // Define available time slots (9:00 AM to 5:00 PM, 1-hour slots)
-        $availableSlots = [];
-        $startTime = 9;
-        $endTime = 17;
+        // Show existing appointments for this date (since users can pick any time)
+        $appointmentTimes = $existingAppointments->pluck('appointment_time')->map(function($time) {
+            return substr($time, 0, 5); // Remove seconds (HH:MM:SS -> HH:MM)
+        })->sort()->values();
 
-        for ($hour = $startTime; $hour < $endTime; $hour++) {
-            $timeSlot = sprintf('%02d:00', $hour);       // hiển thị cho UI
-            $dbTimeSlot = $timeSlot . ':00';             // so sánh trong DB (HH:MM:SS)
-            $slotCount = $existingAppointments->where('appointment_time', $dbTimeSlot)->count();
-            
-            // Assume max 3 appointments per time slot
-            if ($slotCount < 3) {
-                $availableSlots[] = [
-                    'time' => $timeSlot,
-                    'available' => 3 - $slotCount,
-                    'status' => $slotCount == 0 ? 'available' : 'limited'
-                ];
-            }
-        }
+        $availableSlots = [];
+        
+        // Show summary info instead of predefined slots
+        $totalAppointments = $existingAppointments->count();
+        $availableSlots[] = [
+            'info' => 'Giờ làm việc: 09:00 - 16:59',
+            'total_appointments' => $totalAppointments,
+            'existing_times' => $appointmentTimes->toArray()
+        ];
 
         return response()->json([
             'date' => $date->format('Y-m-d'),

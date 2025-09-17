@@ -4,6 +4,7 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\ServiceAppointment;
+use App\Models\Service;
 use App\Application\ServiceAppointments\UseCases\BookAppointment as BookServiceAppointment;
 use App\Models\CarVariant;
 use App\Models\Accessory;
@@ -17,94 +18,62 @@ class ServiceController extends Controller
      */
     public function index()
     {
-        $services = [
-            'maintenance' => [
-                'title' => 'Bảo dưỡng định kỳ',
-                'description' => 'Dịch vụ bảo dưỡng định kỳ theo khuyến nghị của nhà sản xuất',
-                'icon' => 'fas fa-tools',
-                'features' => [
-                    'Thay dầu nhớt và bộ lọc',
-                    'Kiểm tra hệ thống phanh',
-                    'Kiểm tra hệ thống điện',
-                    'Kiểm tra hệ thống làm mát',
-                    'Kiểm tra hệ thống treo'
-                ],
-                'price_range' => '500,000 - 2,000,000 VNĐ',
-                'duration' => '2-4 giờ'
-            ],
-            'repair' => [
-                'title' => 'Sửa chữa chuyên nghiệp',
-                'description' => 'Sửa chữa các sự cố với đội ngũ kỹ thuật viên chuyên môn cao',
-                'icon' => 'fas fa-wrench',
-                'features' => [
-                    'Chẩn đoán lỗi bằng thiết bị hiện đại',
-                    'Sửa chữa động cơ và hộp số',
-                    'Sửa chữa hệ thống điện tử',
-                    'Sửa chữa hệ thống điều hòa',
-                    'Bảo hành sửa chữa'
-                ],
-                'price_range' => 'Tùy theo mức độ hư hỏng',
-                'duration' => '1-3 ngày'
-            ],
-            'insurance' => [
-                'title' => 'Bảo hiểm xe hơi',
-                'description' => 'Gói bảo hiểm toàn diện với mức phí hợp lý và quyền lợi tối ưu',
-                'icon' => 'fas fa-shield-alt',
-                'features' => [
-                    'Bảo hiểm bắt buộc trách nhiệm dân sự',
-                    'Bảo hiểm tự nguyện toàn diện',
-                    'Bảo hiểm người ngồi trên xe',
-                    'Bảo hiểm tai nạn lái xe',
-                    'Tư vấn và hỗ trợ khiếu nại'
-                ],
-                'price_range' => 'Từ 500,000 VNĐ/năm',
-                'duration' => '1-2 giờ'
-            ],
-            'finance' => [
-                'title' => 'Tài chính linh hoạt',
-                'description' => 'Giải pháp tài chính đa dạng với lãi suất cạnh tranh',
-                'icon' => 'fas fa-calculator',
-                'features' => [
-                    'Vay trả góp xe hơi',
-                    'Lãi suất cạnh tranh từ 0%',
-                    'Thủ tục đơn giản, nhanh chóng',
-                    'Hỗ trợ vay lên đến 90% giá trị xe',
-                    'Tư vấn tài chính miễn phí'
-                ],
-                'price_range' => 'Lãi suất từ 0%',
-                'duration' => '1-3 ngày'
-            ],
-            'accessories' => [
-                'title' => 'Phụ kiện chính hãng',
-                'description' => 'Cung cấp đầy đủ phụ kiện chính hãng với chất lượng cao',
-                'icon' => 'fas fa-tools',
-                'features' => [
-                    'Phụ kiện nội thất cao cấp',
-                    'Phụ kiện ngoại thất và bảo vệ',
-                    'Phụ kiện công nghệ và giải trí',
-                    'Phụ kiện bảo dưỡng và chăm sóc',
-                    'Bảo hành chính hãng'
-                ],
-                'price_range' => 'Từ 100,000 VNĐ',
-                'duration' => '30 phút - 2 giờ'
-            ],
-            'consultation' => [
-                'title' => 'Tư vấn chuyên nghiệp',
-                'description' => 'Dịch vụ tư vấn chuyên nghiệp về xe hơi và dịch vụ',
-                'icon' => 'fas fa-headset',
-                'features' => [
-                    'Tư vấn chọn xe phù hợp',
-                    'Tư vấn bảo dưỡng và sửa chữa',
-                    'Tư vấn tài chính và bảo hiểm',
-                    'Tư vấn phụ kiện và nâng cấp',
-                    'Hỗ trợ 24/7'
-                ],
-                'price_range' => 'Miễn phí',
-                'duration' => '30 phút - 2 giờ'
-            ]
-        ];
+        // Get services from database instead of hard-coded array
+        $services = Service::where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get()
+            ->map(function($service) {
+                // Map database fields to view format
+                $features = [];
+                if ($service->requirements) {
+                    $features = explode(', ', $service->requirements);
+                }
+                
+                // Determine icon based on service code (since category is mapped to enum)
+                $iconMap = [
+                    'maintenance' => 'fas fa-tools',
+                    'repair' => 'fas fa-wrench', 
+                    'insurance' => 'fas fa-shield-alt',
+                    'finance' => 'fas fa-calculator',
+                    'accessories' => 'fas fa-puzzle-piece',
+                    'consultation' => 'fas fa-headset',
+                ];
+                
+                // Use service code for icon mapping instead of category
+                $icon = $iconMap[$service->code] ?? ($iconMap[$service->category] ?? 'fas fa-cog');
+                
+                return [
+                    'id' => $service->id,
+                    'code' => $service->code,
+                    'title' => $service->name,
+                    'description' => $service->description,
+                    'icon' => $icon,
+                    'features' => $features,
+                    'price_range' => $service->price > 0 ? number_format($service->price, 0, ',', '.') . ' VNĐ' : 'Miễn phí',
+                    'duration' => $this->formatDuration($service->duration_minutes),
+                    'category' => $service->category,
+                ];
+            })
+            ->keyBy('code'); // Key by code for backward compatibility
 
         return view('user.services.index', compact('services'));
+    }
+    
+    /**
+     * Format duration from minutes to human readable
+     */
+    private function formatDuration($minutes)
+    {
+        if ($minutes < 60) {
+            return $minutes . ' phút';
+        } elseif ($minutes < 1440) { // Less than 24 hours
+            $hours = round($minutes / 60);
+            return $hours . ' giờ';
+        } else {
+            $days = round($minutes / 1440);
+            return $days . ' ngày';
+        }
     }
 
     /**
@@ -112,54 +81,27 @@ class ServiceController extends Controller
      */
     public function maintenance()
     {
-        $maintenancePackages = [
-            'basic' => [
-                'name' => 'Gói cơ bản',
-                'price' => '500,000',
-                'description' => 'Bảo dưỡng cơ bản cho xe mới',
-                'services' => [
-                    'Thay dầu nhớt động cơ',
-                    'Thay bộ lọc dầu',
-                    'Thay bộ lọc gió',
-                    'Kiểm tra mức nước làm mát',
-                    'Kiểm tra áp suất lốp'
-                ],
-                'suitable_for' => 'Xe dưới 20,000 km',
-                'duration' => '2 giờ'
-            ],
-            'standard' => [
-                'name' => 'Gói tiêu chuẩn',
-                'price' => '1,200,000',
-                'description' => 'Bảo dưỡng tiêu chuẩn toàn diện',
-                'services' => [
-                    'Tất cả dịch vụ gói cơ bản',
-                    'Thay dầu hộp số',
-                    'Thay dầu phanh',
-                    'Kiểm tra hệ thống phanh',
-                    'Kiểm tra hệ thống điện',
-                    'Kiểm tra hệ thống treo'
-                ],
-                'suitable_for' => 'Xe 20,000 - 60,000 km',
-                'duration' => '3 giờ'
-            ],
-            'premium' => [
-                'name' => 'Gói cao cấp',
-                'price' => '2,000,000',
-                'description' => 'Bảo dưỡng cao cấp toàn diện',
-                'services' => [
-                    'Tất cả dịch vụ gói tiêu chuẩn',
-                    'Thay dầu vi sai',
-                    'Kiểm tra hệ thống điều hòa',
-                    'Kiểm tra hệ thống an toàn',
-                    'Kiểm tra hệ thống giải trí',
-                    'Làm sạch hệ thống nhiên liệu'
-                ],
-                'suitable_for' => 'Xe trên 60,000 km',
-                'duration' => '4 giờ'
-            ]
-        ];
+        // Get maintenance services from database
+        $maintenanceServices = Service::where('is_active', true)
+            ->where('category', 'maintenance')
+            ->orderBy('sort_order')
+            ->orderBy('price')
+            ->get();
 
-        return view('user.services.maintenance', compact('maintenancePackages'));
+        // Get recent maintenance appointments for user (if logged in)
+        $recentAppointments = collect();
+        if (auth()->check()) {
+            $recentAppointments = ServiceAppointment::where('user_id', auth()->id())
+                ->whereHas('service', function($query) {
+                    $query->where('category', 'maintenance');
+                })
+                ->with(['service', 'showroom'])
+                ->orderBy('appointment_date', 'desc')
+                ->limit(5)
+                ->get();
+        }
+
+        return view('user.services.maintenance', compact('maintenanceServices', 'recentAppointments'));
     }
 
     /**

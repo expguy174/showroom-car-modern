@@ -23,22 +23,8 @@ return new class extends Migration
             $table->boolean('is_featured')->default(false); // Dịch vụ nổi bật
             $table->integer('sort_order')->default(0); // Thứ tự sắp xếp
             
-            // Tương thích với xe
-            $table->json('compatible_car_brands')->nullable(); // Thương hiệu xe tương thích
-            $table->json('compatible_car_models')->nullable(); // Dòng xe tương thích
-            $table->json('compatible_car_years')->nullable(); // Năm sản xuất tương thích
-            
             // Yêu cầu và điều kiện
             $table->text('requirements')->nullable(); // Yêu cầu thực hiện
-            $table->integer('warranty_months')->default(0); // Bảo hành (tháng)
-            $table->boolean('service_center_required')->default(false); // Yêu cầu trung tâm dịch vụ
-            
-            // Dịch vụ bao gồm
-            $table->boolean('parts_included')->default(false); // Bao gồm phụ tùng
-            $table->boolean('labor_included')->default(true); // Bao gồm nhân công
-            $table->boolean('oil_change_included')->default(false); // Bao gồm thay dầu
-            $table->boolean('filter_change_included')->default(false); // Bao gồm thay lọc
-            $table->boolean('inspection_included')->default(false); // Bao gồm kiểm tra
             
             $table->text('notes')->nullable(); // Ghi chú
             $table->timestamps();

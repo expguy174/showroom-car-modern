@@ -37,7 +37,7 @@ class TestDriveController extends Controller
 
         if (!in_array($testDrive->status, ['pending','confirmed'])) {
             return redirect()->route('test-drives.show', $testDrive)
-                ->with('error', 'Lịch không thể sửa ở trạng thái hiện tại');
+                ->with('success', 'Đặt lịch lái thử thành công! Chúng tôi sẽ liên hệ xác nhận.');
         }
 
         $data = $request->validate([
@@ -86,60 +86,102 @@ class TestDriveController extends Controller
 
     public function store(Request $request)
     {
-        // Business constraints
-        $maxDaysAhead = 60; // within 60 days
-        $openHour = 8;  // 08:00
-        $closeHour = 20; // 20:00
+        // Business constraints - align with Service Appointments
+        $openHour = 9;  // 09:00 (same as service appointments)
+        $closeHour = 17; // 17:00 (same as service appointments)
 
-        $request->validate([
-            'car_variant_id' => 'required|exists:car_variants,id',
-            'preferred_date' => 'required|date|after:today|before_or_equal:'.now()->addDays($maxDaysAhead)->toDateString(),
-            'preferred_time' => 'required|date_format:H:i',
+        // Sequential validation theo thứ tự: mẫu xe → showroom → ngày → giờ
+        $validationRules = [
+            // 1. Mẫu xe
+            ['car_variant_id', 'required|exists:car_variants,id', 'Vui lòng chọn mẫu xe.'],
+            
+            // 2. Showroom
+            ['showroom_id', 'nullable|exists:showrooms,id', 'Showroom không khả dụng.'],
+            
+            // 3. Ngày mong muốn
+            ['preferred_date', 'required|date|after:today', 'Vui lòng chọn ngày mong muốn.'],
+            
+            // 4. Giờ mong muốn
+            ['preferred_time', 'required|date_format:H:i', 'Vui lòng chọn giờ mong muốn.'],
+        ];
+        
+        $validated = [];
+        
+        // Validate từng field theo thứ tự với custom messages
+        foreach ($validationRules as [$field, $rules, $message]) {
+            try {
+                $fieldValidation = $request->validate([
+                    $field => $rules
+                ], [
+                    $field . '.required' => $message,
+                    $field . '.date' => $field === 'preferred_date' ? 'Ngày mong muốn không hợp lệ.' : $message,
+                    $field . '.after' => $field === 'preferred_date' ? 'Ngày mong muốn phải sau hôm nay.' : $message,
+                    $field . '.exists' => $field === 'showroom_id' ? 'Showroom không khả dụng.' : 
+                                        ($field === 'car_variant_id' ? 'Mẫu xe không khả dụng.' : $message),
+                    $field . '.date_format' => $field === 'preferred_time' ? 'Giờ mong muốn không hợp lệ.' : $message,
+                ]);
+                $validated = array_merge($validated, $fieldValidation);
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                // Dừng ngay khi gặp error đầu tiên
+                return $request->expectsJson()
+                    ? response()->json(['success'=>false,'message'=>$message], 422)
+                    : back()->withErrors([$field => $message])->withInput();
+            }
+        }
+        
+        // Validate additional fields (không dừng khi có lỗi)
+        $additionalValidation = $request->validate([
             'duration_minutes' => 'nullable|integer|min:5|max:240',
             'location' => 'nullable|string|max:255',
             'notes' => 'nullable|string|max:1000',
             'special_requirements' => 'nullable|string|max:1000',
             'has_experience' => 'nullable|boolean',
             'experience_level' => 'nullable|string|max:100',
-            'showroom_id' => 'nullable|exists:showrooms,id',
             'test_drive_type' => 'nullable|in:individual,group,virtual',
         ]);
+        
+        $validated = array_merge($validated, $additionalValidation);
 
-        // Extra server-side checks: weekend and business hours
-        $date = new \DateTime($request->preferred_date);
-        $dayOfWeek = (int)$date->format('w'); // 0=Sun, 6=Sat
-        if (in_array($dayOfWeek, [0])) { // disallow Sunday; adjust as needed
+        // Weekend check - align with Service Appointments (no Saturday/Sunday)
+        $date = \Carbon\Carbon::parse($validated['preferred_date']);
+        if ($date->dayOfWeek === 0 || $date->dayOfWeek === 6) {
+            $message = 'Không thể đặt lịch vào cuối tuần. Vui lòng chọn thứ 2 - thứ 6.';
             return $request->expectsJson()
-                ? response()->json(['success'=>false,'message'=>'Chủ nhật tạm ngưng nhận lịch. Vui lòng chọn ngày khác.'], 422)
-                : back()->withErrors(['preferred_date' => 'Chủ nhật tạm ngưng nhận lịch.'])->withInput();
+                ? response()->json(['success'=>false,'message'=>$message], 422)
+                : back()->withErrors(['preferred_date' => $message])->withInput();
         }
 
-        // Normalize time and check opening hours
-        $normalizedTime = preg_match('/^\d{2}:\d{2}:\d{2}$/', (string) $request->preferred_time)
-            ? $request->preferred_time
-            : ($request->preferred_time . ':00');
-        [$h] = explode(':', $normalizedTime);
-        $hour = (int)$h;
-        if ($hour < $openHour || $hour >= $closeHour) {
+        // Business hours check - align with Service Appointments (09:00-16:59)
+        $time = $validated['preferred_time'];
+        if (!preg_match('/^([01]?\d|2[0-3]):[0-5]\d$/', $time)) {
+            $message = 'Giờ hẹn không hợp lệ (định dạng HH:MM).';
             return $request->expectsJson()
-                ? response()->json(['success'=>false,'message'=>"Giờ làm việc từ ${openHour}:00 đến ${closeHour}:00"], 422)
-                : back()->withErrors(['preferred_time' => "Giờ làm việc từ ${openHour}:00 đến ${closeHour}:00"])->withInput();
+                ? response()->json(['success'=>false,'message'=>$message], 422)
+                : back()->withErrors(['preferred_time' => $message])->withInput();
+        }
+        
+        $hour = (int) substr($time, 0, 2);
+        if ($hour < $openHour || $hour >= $closeHour) {
+            $message = 'Giờ hẹn phải trong khung giờ làm việc (09:00 - 16:59).';
+            return $request->expectsJson()
+                ? response()->json(['success'=>false,'message'=>$message], 422)
+                : back()->withErrors(['preferred_time' => $message])->withInput();
         }
 
         $useCase = app(BookTestDrive::class);
         $testDrive = $useCase->handle([
             'user_id' => Auth::id(),
-            'car_variant_id' => $request->car_variant_id,
-            'preferred_date' => $request->preferred_date,
-            'preferred_time' => $normalizedTime,
-            'duration_minutes' => $request->duration_minutes,
-            'location' => $request->location,
-            'notes' => $request->notes,
-            'special_requirements' => $request->special_requirements,
-            'has_experience' => $request->boolean('has_experience'),
-            'experience_level' => $request->experience_level,
-            'showroom_id' => $request->showroom_id,
-            'test_drive_type' => $request->test_drive_type,
+            'car_variant_id' => $validated['car_variant_id'],
+            'preferred_date' => $validated['preferred_date'],
+            'preferred_time' => $time . ':00',
+            'duration_minutes' => $validated['duration_minutes'],
+            'location' => $validated['location'],
+            'notes' => $validated['notes'],
+            'special_requirements' => $validated['special_requirements'],
+            'has_experience' => $validated['has_experience'] ?? false,
+            'experience_level' => $validated['experience_level'],
+            'showroom_id' => $validated['showroom_id'],
+            'test_drive_type' => $validated['test_drive_type'],
         ]);
 
         // Notify user about the booking
@@ -328,6 +370,63 @@ class TestDriveController extends Controller
             'success' => true,
             'message' => 'Cảm ơn bạn đã đánh giá buổi lái thử!',
             'test_drive' => $testDrive->fresh(),
+        ]);
+    }
+
+    public function checkAvailability(Request $request)
+    {
+        $request->validate([
+            'showroom_id' => 'nullable|exists:showrooms,id',
+            'date' => 'required|date',
+        ]);
+
+        $date = $request->date;
+        $showroomId = $request->showroom_id;
+
+        // Get existing test drives for this date (and showroom if specified)
+        $query = TestDrive::whereDate('preferred_date', $date)
+            ->whereIn('status', ['pending', 'confirmed', 'in_progress']);
+
+        if ($showroomId) {
+            $query->where('showroom_id', $showroomId);
+        }
+
+        $existingTestDrives = $query->get();
+
+        // Get existing service appointments for this date (and showroom if specified)
+        $serviceQuery = \App\Models\ServiceAppointment::whereDate('appointment_date', $date)
+            ->whereIn('status', ['scheduled', 'confirmed', 'in_progress']);
+
+        if ($showroomId) {
+            $serviceQuery->where('showroom_id', $showroomId);
+        }
+
+        $existingServices = $serviceQuery->get();
+
+        // Combine all existing times
+        $existingTimes = [];
+        
+        foreach ($existingTestDrives as $td) {
+            $existingTimes[] = substr($td->preferred_time, 0, 5); // HH:MM
+        }
+        
+        foreach ($existingServices as $sa) {
+            $existingTimes[] = substr($sa->appointment_time, 0, 5); // HH:MM
+        }
+
+        $existingTimes = array_unique($existingTimes);
+        sort($existingTimes);
+
+        $totalAppointments = count($existingTimes);
+        $showroomName = $showroomId ? \App\Models\Showroom::find($showroomId)->name : 'Tất cả showroom';
+
+        return response()->json([
+            'success' => true,
+            'available_slots' => [[
+                'info' => "Lịch hẹn cho ngày " . \Carbon\Carbon::parse($date)->format('d/m/Y') . " tại " . $showroomName,
+                'total_appointments' => $totalAppointments,
+                'existing_times' => $existingTimes,
+            ]]
         ]);
     }
 } 

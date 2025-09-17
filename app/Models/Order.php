@@ -23,6 +23,10 @@ class Order extends Model
         'grand_total',
         'note',
         'payment_method_id',
+        'finance_option_id',
+        'down_payment_amount',
+        'tenure_months',
+        'monthly_payment_amount',
         'payment_status',
         'transaction_id',
         'paid_at',
@@ -41,6 +45,8 @@ class Order extends Model
         'tax_total' => 'decimal:2',
         'shipping_fee' => 'decimal:2',
         'grand_total' => 'decimal:2',
+        'down_payment_amount' => 'decimal:2',
+        'monthly_payment_amount' => 'decimal:2',
         'paid_at' => 'datetime',
         'estimated_delivery' => 'date',
     ];
@@ -66,9 +72,19 @@ class Order extends Model
         return $this->hasMany(Installment::class);
     }
 
+    public function refunds()
+    {
+        return $this->hasManyThrough(Refund::class, PaymentTransaction::class);
+    }
+
     public function paymentMethod()
     {
         return $this->belongsTo(PaymentMethod::class);
+    }
+
+    public function financeOption()
+    {
+        return $this->belongsTo(FinanceOption::class);
     }
 
     // commissions() removed; not used in basic showroom setup
@@ -119,6 +135,16 @@ class Order extends Model
             'refunded' => 'Đã hoàn tiền',
         ];
         return $statuses[$this->payment_status] ?? $this->payment_status;
+    }
+
+    public function isInstallmentOrder()
+    {
+        return !is_null($this->finance_option_id);
+    }
+
+    public function getPaymentTypeDisplayAttribute()
+    {
+        return $this->isInstallmentOrder() ? 'Trả góp' : 'Thanh toán một lần';
     }
 
     // deposits removed

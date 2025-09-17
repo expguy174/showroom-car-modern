@@ -42,12 +42,11 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Loại hẹn</label>
-                    @php($saTypes=['maintenance'=>'Bảo dưỡng','repair'=>'Sửa chữa','inspection'=>'Kiểm tra','warranty_work'=>'Bảo hành','recall_service'=>'Triệu hồi','emergency'=>'Khẩn cấp','other'=>'Khác'])
-                    <select name="appointment_type" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
-                        <option value="">Tất cả</option>
-                        @foreach($saTypes as $key=>$label)
-                            <option value="{{ $key }}" @selected(request('appointment_type')===$key)>{{ $label }}</option>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Dịch vụ</label>
+                    <select name="service_id" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                        <option value="">Tất cả dịch vụ</option>
+                        @foreach($services as $service)
+                            <option value="{{ $service->id }}" @selected(request('service_id')==$service->id)>{{ $service->name }}</option>
                         @endforeach
                     </select>
                 </div>

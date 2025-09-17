@@ -57,7 +57,20 @@ class OrderController extends Controller
         if (Auth::id() !== $order->user_id) {
             abort(403);
         }
-        $order->load(['items.item', 'items.color', 'paymentMethod', 'billingAddress', 'shippingAddress']);
+        $order->load([
+            'items.item', 
+            'items.color', 
+            'paymentMethod', 
+            'financeOption',
+            'billingAddress', 
+            'shippingAddress',
+            'installments' => function($query) {
+                $query->orderBy('installment_number');
+            },
+            'refunds' => function($query) {
+                $query->orderBy('created_at', 'desc');
+            }
+        ]);
         return view('user.orders.show', compact('order'));
     }
 
@@ -128,6 +141,107 @@ class OrderController extends Controller
         }
         
         return redirect()->route('user.orders.index')->with('status', $message);
+    }
+
+    public function requestRefund(Request $request, Order $order)
+    {
+        if (Auth::id() !== $order->user_id) {
+            abort(403);
+        }
+
+        // Validate refund eligibility
+        if ($order->payment_status !== 'completed') {
+            $message = 'Chỉ có thể yêu cầu hoàn tiền cho đơn hàng đã thanh toán.';
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'message' => $message], 422);
+            }
+            return back()->with('error', $message);
+        }
+
+        if ($order->status === 'cancelled') {
+            $message = 'Đơn hàng đã bị hủy, không thể yêu cầu hoàn tiền.';
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'message' => $message], 422);
+            }
+            return back()->with('error', $message);
+        }
+
+        // Check if refund already exists
+        $existingRefund = \App\Models\Refund::whereHas('paymentTransaction', function($query) use ($order) {
+            $query->where('order_id', $order->id);
+        })->whereIn('status', ['pending', 'processing'])->first();
+
+        if ($existingRefund) {
+            $message = 'Đã có yêu cầu hoàn tiền đang được xử lý cho đơn hàng này.';
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'message' => $message], 422);
+            }
+            return back()->with('error', $message);
+        }
+
+        $request->validate([
+            'reason' => 'required|string|max:1000',
+            'amount' => 'nullable|numeric|min:0|max:' . $order->grand_total
+        ]);
+
+        // Get payment transaction for this order
+        $paymentTransaction = \App\Models\PaymentTransaction::where('order_id', $order->id)
+            ->where('status', 'completed')
+            ->first();
+
+        if (!$paymentTransaction) {
+            $message = 'Không tìm thấy giao dịch thanh toán để hoàn tiền.';
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'message' => $message], 422);
+            }
+            return back()->with('error', $message);
+        }
+
+        // Create refund request
+        $refund = \App\Models\Refund::create([
+            'payment_transaction_id' => $paymentTransaction->id,
+            'amount' => $request->amount ?: $order->grand_total,
+            'reason' => $request->reason,
+            'status' => 'pending'
+        ]);
+
+        // Log action
+        try {
+            OrderLog::create([
+                'order_id' => $order->id,
+                'user_id' => Auth::id(),
+                'action' => 'refund_request',
+                'message' => 'Khách hàng yêu cầu hoàn tiền',
+                'details' => [
+                    'refund_id' => $refund->id,
+                    'amount' => $refund->amount,
+                    'reason' => $refund->reason,
+                ],
+                'ip_address' => $request->ip(),
+                'user_agent' => (string) $request->userAgent(),
+            ]);
+        } catch (\Throwable $e) {}
+
+        // Notify user
+        try {
+            app(NotificationService::class)->send(
+                $order->user_id,
+                'refund_request',
+                'Yêu cầu hoàn tiền đã được gửi',
+                'Yêu cầu hoàn tiền cho đơn hàng ' . ($order->order_number ?? ('#'.$order->id)) . ' đã được gửi và đang chờ xử lý.'
+            );
+        } catch (\Throwable $e) {}
+
+        $message = 'Yêu cầu hoàn tiền đã được gửi thành công. Chúng tôi sẽ xử lý trong vòng 3-5 ngày làm việc.';
+        
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => $message
+            ]);
+        }
+        
+        return back()->with('success', $message);
     }
 }
 

@@ -19,6 +19,10 @@ return new class extends Migration {
             $table->decimal('grand_total', 15, 2)->unsigned()->default(0);
             $table->text('note')->nullable();
             $table->foreignId('payment_method_id')->nullable()->constrained('payment_methods')->onDelete('set null');
+            $table->foreignId('finance_option_id')->nullable()->constrained('finance_options')->onDelete('set null');
+            $table->decimal('down_payment_amount', 15, 2)->unsigned()->nullable();
+            $table->unsignedSmallInteger('tenure_months')->nullable();
+            $table->decimal('monthly_payment_amount', 15, 2)->unsigned()->nullable();
             $table->string('payment_status')->default('pending');
             $table->enum('status', ['pending', 'confirmed', 'shipping', 'delivered', 'cancelled'])->default('pending');
 			$table->string('order_number', 64)->unique();

@@ -37,7 +37,6 @@ use App\Http\Controllers\User\ProductController;
 use App\Http\Controllers\User\CarBrandController as BrandController;
 use App\Http\Controllers\User\ServiceController;
 use App\Http\Controllers\User\FinanceController;
-use App\Http\Controllers\User\PaymentController as UserPaymentController;
 use App\Http\Controllers\User\AddressController as UserAddressController;
 use App\Http\Controllers\User\WishlistController;
 
@@ -67,6 +66,7 @@ Route::middleware('auth')->prefix('test-drives')->name('test-drives.')->group(fu
     Route::post('/book', [UserTestDriveController::class, 'store'])->name('book');
     Route::get('/create', [UserTestDriveController::class, 'create'])->name('create');
     Route::get('/', [UserTestDriveController::class, 'index'])->name('index');
+    Route::post('/check-availability', [UserTestDriveController::class, 'checkAvailability'])->name('check-availability');
     Route::get('/{testDrive}', [UserTestDriveController::class, 'show'])->name('show');
     Route::get('/{testDrive}/edit', [UserTestDriveController::class, 'edit'])->name('edit');
     Route::put('/{testDrive}', [UserTestDriveController::class, 'update'])->name('update');
@@ -153,6 +153,7 @@ Route::middleware('auth')->group(function(){
     Route::get('/user/orders', [UserOrderController::class, 'index'])->name('user.order.index');
     Route::get('/user/orders/{order}', [UserOrderController::class, 'show'])->name('user.orders.show');
     Route::post('/user/orders/{order}/cancel', [UserOrderController::class, 'cancel'])->name('user.orders.cancel');
+    Route::post('/user/orders/{order}/refund', [UserOrderController::class, 'requestRefund'])->name('user.orders.refund');
     Route::post('/order', [UserOrderController::class, 'store'])->name('order.store');
 });
 
@@ -390,20 +391,6 @@ Route::prefix('service-appointments')->name('user.service-appointments.')->middl
     Route::put('/{appointment}/reschedule', [App\Http\Controllers\User\ServiceAppointmentController::class, 'reschedule'])->whereNumber('appointment')->name('reschedule');
 });
 
-// User Payment Routes
-Route::prefix('payments')->name('user.payments.')->middleware(['auth'])->group(function () {
-    Route::get('/', [App\Http\Controllers\User\PaymentController::class, 'index'])->name('index');
-    Route::get('/create', [App\Http\Controllers\User\PaymentController::class, 'create'])->name('create');
-    Route::post('/', [App\Http\Controllers\User\PaymentController::class, 'store'])->name('store');
-    Route::get('/{transaction}', [App\Http\Controllers\User\PaymentController::class, 'show'])->name('show');
-    Route::post('/{transaction}/process', [App\Http\Controllers\User\PaymentController::class, 'processPayment'])->name('process');
-    Route::post('/calculate-installment', [App\Http\Controllers\User\PaymentController::class, 'calculateInstallment'])->name('calculate-installment');
-    Route::post('/{transaction}/refund', [App\Http\Controllers\User\PaymentController::class, 'refund'])->name('refund');
-    Route::get('/installment-history', [App\Http\Controllers\User\PaymentController::class, 'installmentHistory'])->name('installment-history');
-    Route::get('/payment-methods', [App\Http\Controllers\User\PaymentController::class, 'paymentMethods'])->name('payment-methods');
-    Route::get('/transaction-history', [App\Http\Controllers\User\PaymentController::class, 'transactionHistory'])->name('transaction-history');
-    Route::get('/{transaction}/receipt', [App\Http\Controllers\User\PaymentController::class, 'downloadReceipt'])->name('download-receipt');
-});
 
 // User Address Book
 Route::prefix('addresses')->name('user.addresses.')->middleware(['auth'])->group(function () {
@@ -412,6 +399,24 @@ Route::prefix('addresses')->name('user.addresses.')->middleware(['auth'])->group
     Route::put('/{address}', [UserAddressController::class, 'update'])->name('update');
     Route::delete('/{address}', [UserAddressController::class, 'destroy'])->name('destroy');
     Route::post('/{address}/default', [UserAddressController::class, 'setDefault'])->name('set-default');
+});
+
+// User Promotions Routes
+Route::prefix('promotions')->name('user.promotions.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\User\PromotionController::class, 'index'])->name('index');
+    Route::get('/{promotion}', [\App\Http\Controllers\User\PromotionController::class, 'show'])->name('show');
+    Route::post('/{promotion}/validate', [\App\Http\Controllers\User\PromotionController::class, 'validatePromotion'])->name('validate');
+    Route::post('/{promotion}/apply', [\App\Http\Controllers\User\PromotionController::class, 'apply'])->name('apply')->middleware('auth');
+    Route::get('/my/used', [\App\Http\Controllers\User\PromotionController::class, 'myPromotions'])->name('my-promotions')->middleware('auth');
+});
+
+// User Showrooms Routes
+Route::prefix('showrooms')->name('user.showrooms.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\User\ShowroomController::class, 'index'])->name('index');
+    Route::get('/map', [\App\Http\Controllers\User\ShowroomController::class, 'map'])->name('map');
+    Route::get('/{showroom}', [\App\Http\Controllers\User\ShowroomController::class, 'show'])->name('show');
+    Route::post('/{showroom}/contact', [\App\Http\Controllers\User\ShowroomController::class, 'contact'])->name('contact');
+    Route::get('/{showroom}/directions', [\App\Http\Controllers\User\ShowroomController::class, 'directions'])->name('directions');
 });
 
 // Customer profile orders (fallback simple list)

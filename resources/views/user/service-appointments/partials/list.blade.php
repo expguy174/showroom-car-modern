@@ -11,7 +11,10 @@
                                         <span class="hidden xs:inline text-gray-400">•</span>
                                         <span class="text-gray-500 text-xs sm:text-sm">{{ optional($appointment->appointment_date)->format('d/m/Y') }} {{ $appointment->appointment_time }}</span>
                                     </div>
-                                    <div class="text-xs sm:text-sm text-gray-500 mt-1 truncate">{{ $appointment->carVariant->carModel->carBrand->name }} {{ $appointment->carVariant->carModel->name }} • {{ \App\Helpers\ServiceAppointmentHelper::typeLabel($appointment->appointment_type) }}</div>
+                                    <div class="text-xs sm:text-sm text-gray-500 mt-1 truncate">
+                                        {{ $appointment->carVariant->carModel->carBrand->name }} {{ $appointment->carVariant->carModel->name }} • 
+                                        {{ $appointment->service ? $appointment->service->name : 'Chưa chọn dịch vụ' }}
+                                    </div>
                                 </div>
                                 <div class="flex items-center gap-2 shrink-0">
                                     <span class="px-2 py-0.5 rounded-full text-xs whitespace-nowrap inline-flex items-center {{ \App\Helpers\ServiceAppointmentHelper::statusBadgeClass($appointment->status) }}" data-role="status-badge">{{ \App\Helpers\ServiceAppointmentHelper::statusLabel($appointment->status) }}</span>

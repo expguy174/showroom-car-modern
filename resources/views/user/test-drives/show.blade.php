@@ -8,101 +8,164 @@
     @if($__toastKind && $__toastMsg)
         <span id="toast-payload" data-kind="{{ $__toastKind }}" data-msg="{{ $__toastMsg }}" style="display:none"></span>
     @endif
-	<div class="flex items-center justify-between mb-4 sm:mb-6">
-		<div>
-			<div class="text-xs text-gray-500">Lịch lái thử</div>
-			<h1 class="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight">#{{ $testDrive->test_drive_number ?? $testDrive->id }}</h1>
-			<div class="mt-1 text-sm text-gray-500">Tạo lúc {{ $testDrive->created_at?->format('d/m/Y H:i') }}</div>
+	<div class="flex items-start sm:items-center justify-between gap-3 mb-4 sm:mb-6">
+		<div class="min-w-0">
+			<div class="flex items-center gap-2 flex-wrap">
+				<h1 class="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight truncate">Lịch lái thử #{{ $testDrive->test_drive_number ?? $testDrive->id }}</h1>
+				<span class="px-2 py-0.5 rounded-full text-xs whitespace-nowrap inline-flex items-center 
+					@switch($testDrive->status ?? 'pending')
+						@case('pending') bg-yellow-100 text-yellow-800 @break
+						@case('confirmed') bg-blue-100 text-blue-800 @break
+						@case('completed') bg-green-100 text-green-800 @break
+						@case('cancelled') bg-red-100 text-red-800 @break
+						@default bg-gray-100 text-gray-800
+					@endswitch
+				" data-role="status-badge">
+					@switch($testDrive->status ?? 'pending')
+						@case('pending') Chờ xác nhận @break
+						@case('confirmed') Đã xác nhận @break
+						@case('completed') Hoàn thành @break
+						@case('cancelled') Đã hủy @break
+						@default {{ ucfirst($testDrive->status ?? 'Pending') }}
+					@endswitch
+				</span>
+			</div>
+			<div class="text-xs sm:text-sm text-gray-500 mt-1">{{ optional($testDrive->preferred_date)->format('d/m/Y') }} {{ is_string($testDrive->preferred_time) ? substr($testDrive->preferred_time,0,5) : optional($testDrive->preferred_time)->format('H:i') }} • {{ $testDrive->showroom->name ?? 'Chưa chọn showroom' }}</div>
 		</div>
-		<div class="flex items-center gap-2">
-			<span data-role="header-status-badge" class="px-3 py-1 rounded-full text-sm {{ $testDrive->status_badge }} whitespace-nowrap">{{ $testDrive->status_text }}</span>
-			<a href="{{ route('test-drives.index') }}" class="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm font-semibold"><i class="fas fa-arrow-left"></i> Quay lại</a>
-		</div>
+		<a href="{{ route('test-drives.index') }}" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm font-semibold shrink-0">
+			<i class="fas fa-arrow-left"></i> Quay lại
+		</a>
 	</div>
 
 	<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
 		<!-- Left: Primary info -->
 		<div class="lg:col-span-2 space-y-4 sm:space-y-6">
+			<!-- Thông tin chính -->
 			<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
 				<div class="px-4 sm:px-6 py-4 border-b bg-gradient-to-r from-gray-50 to-indigo-50 flex items-center justify-between">
-					<h2 class="text-lg font-bold">Thông tin lịch</h2>
+					<h2 class="text-lg font-bold">Chi tiết lịch lái thử</h2>
 					<div class="text-xs text-gray-500">Cập nhật lúc {{ $testDrive->updated_at?->format('d/m/Y H:i') }}</div>
 				</div>
 				<div class="p-4 sm:p-6">
-					<div class="flex items-start gap-4">
+					<!-- Thông tin xe và lịch hẹn -->
+					<div class="flex items-start gap-4 mb-6">
 						<div class="w-40 h-24 rounded-xl bg-gray-100 overflow-hidden flex-shrink-0">
 							<img src="{{ optional(optional($testDrive->carVariant)->images->first())->image_url ?: 'https://placehold.co/160x100/EEF2FF/3730A3?text=Car' }}" alt="thumb" class="w-full h-full object-cover" />
 						</div>
 						<div class="min-w-0 flex-1">
 							<div class="text-gray-700 text-sm">Mẫu xe</div>
-							<div class="font-semibold text-gray-900 truncate">
+							<div class="font-semibold text-gray-900 truncate mb-3">
 								<a href="{{ route('car-variants.show', $testDrive->car_variant_id) }}" class="hover:text-indigo-700">
 									{{ optional(optional($testDrive->carVariant)->carModel)->name }} {{ optional($testDrive->carVariant)->name ?? '' }}
 								</a>
 							</div>
-							<div class="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-								<div class="flex items-center gap-2"><i class="far fa-calendar"></i><span>Ngày:</span><span class="font-medium">{{ optional($testDrive->preferred_date)->format('d/m/Y') }}</span></div>
-								<div class="flex items-center gap-2"><i class="far fa-clock"></i><span>Giờ:</span><span class="font-medium">{{ is_string($testDrive->preferred_time) ? $testDrive->preferred_time : optional($testDrive->preferred_time)->format('H:i') }}</span></div>
+							<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+								<div class="flex items-center gap-2"><i class="far fa-calendar text-indigo-600"></i><span>Ngày:</span><span class="font-medium">{{ optional($testDrive->preferred_date)->format('d/m/Y') }}</span></div>
+								<div class="flex items-center gap-2"><i class="far fa-clock text-indigo-600"></i><span>Giờ:</span><span class="font-medium">{{ is_string($testDrive->preferred_time) ? substr($testDrive->preferred_time,0,5) : optional($testDrive->preferred_time)->format('H:i') }}</span></div>
 								@if($testDrive->showroom)
-									<div class="flex items-center gap-2 sm:col-span-2"><i class="fas fa-store"></i><span>Showroom:</span><span class="font-medium">{{ $testDrive->showroom->name }}</span></div>
+									<div class="flex items-center gap-2"><i class="fas fa-store text-indigo-600"></i><span>Showroom:</span><span class="font-medium">{{ $testDrive->showroom->name }}</span></div>
 								@endif
+								<div class="flex items-center gap-2"><i class="fas fa-hourglass-half text-indigo-600"></i><span>Thời lượng:</span><span class="font-medium">{{ $testDrive->duration_minutes ? ($testDrive->duration_minutes.' phút') : '—' }}</span></div>
 							</div>
 						</div>
 					</div>
-					@if(!empty($testDrive->notes))
-						<div class="mt-4">
-							<div class="text-gray-700 text-sm mb-1">Ghi chú</div>
-							<div class="text-sm text-gray-800 whitespace-pre-line">{{ $testDrive->notes }}</div>
+
+					<!-- Chi tiết bổ sung -->
+					<div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-gray-100">
+						<div class="space-y-4">
+							<h4 class="font-semibold text-gray-900 flex items-center gap-2">
+								<i class="fas fa-info-circle text-indigo-600"></i>
+								Thông tin cơ bản
+							</h4>
+							<dl class="space-y-2 text-sm">
+								<div class="flex justify-between"><dt class="text-gray-500">Mã lịch:</dt><dd class="font-medium">{{ $testDrive->test_drive_number ?? ('TD-'.($testDrive->id)) }}</dd></div>
+								<div class="flex justify-between"><dt class="text-gray-500">Trạng thái:</dt><dd><span data-role="summary-status-badge" class="px-2 py-0.5 rounded-full text-xs 
+									@switch($testDrive->status ?? 'pending')
+										@case('pending') bg-yellow-100 text-yellow-800 @break
+										@case('confirmed') bg-blue-100 text-blue-800 @break
+										@case('completed') bg-green-100 text-green-800 @break
+										@case('cancelled') bg-red-100 text-red-800 @break
+										@default bg-gray-100 text-gray-800
+									@endswitch
+								">
+									@switch($testDrive->status ?? 'pending')
+										@case('pending') Chờ xác nhận @break
+										@case('confirmed') Đã xác nhận @break
+										@case('completed') Hoàn thành @break
+										@case('cancelled') Đã hủy @break
+										@default {{ ucfirst($testDrive->status ?? 'Pending') }}
+									@endswitch
+								</span></dd></div>
+								<div class="flex justify-between"><dt class="text-gray-500">Địa điểm:</dt><dd class="font-medium">{{ $testDrive->location ?: '—' }}</dd></div>
+								<div class="flex justify-between"><dt class="text-gray-500">Loại lịch:</dt><dd class="font-medium">
+									@php($typeMap=['individual'=>'Cá nhân','group'=>'Nhóm','virtual'=>'Trực tuyến'])
+									{{ $typeMap[$testDrive->test_drive_type] ?? $testDrive->test_drive_type }}
+								</dd></div>
+							</dl>
 						</div>
-					@endif
-					@if(!empty($testDrive->special_requirements))
-						<div class="mt-4">
-							<div class="text-gray-700 text-sm mb-1">Yêu cầu đặc biệt</div>
-							<div class="text-sm text-gray-800 whitespace-pre-line">{{ $testDrive->special_requirements }}</div>
+
+						<div class="space-y-4">
+							<h4 class="font-semibold text-gray-900 flex items-center gap-2">
+								<i class="fas fa-user-check text-indigo-600"></i>
+								Kinh nghiệm lái xe
+							</h4>
+							<dl class="space-y-2 text-sm">
+								@php($expMap=[''=>'—','beginner'=>'Mới bắt đầu','intermediate'=>'Trung bình','advanced'=>'Nhiều kinh nghiệm'])
+								<div class="flex justify-between"><dt class="text-gray-500">Mức độ:</dt><dd class="font-medium">{{ $expMap[$testDrive->experience_level ?? ''] ?? '—' }}</dd></div>
+								<div class="flex justify-between"><dt class="text-gray-500">Đã từng lái tương tự:</dt><dd class="font-medium">{{ $testDrive->has_experience ? 'Có' : 'Không' }}</dd></div>
+								@if(!empty($testDrive->confirmed_at))
+									<div class="flex justify-between"><dt class="text-gray-500">Xác nhận lúc:</dt><dd class="font-medium">{{ optional($testDrive->confirmed_at)->format('d/m/Y H:i') }}</dd></div>
+								@endif
+								@if(!empty($testDrive->completed_at))
+									<div class="flex justify-between"><dt class="text-gray-500">Hoàn thành lúc:</dt><dd class="font-medium">{{ optional($testDrive->completed_at)->format('d/m/Y H:i') }}</dd></div>
+								@endif
+							</dl>
+						</div>
+					</div>
+
+					<!-- Ghi chú và yêu cầu -->
+					@if(!empty($testDrive->notes) || !empty($testDrive->special_requirements))
+						<div class="pt-6 border-t border-gray-100 mt-6">
+							<h4 class="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+								<i class="fas fa-sticky-note text-indigo-600"></i>
+								Ghi chú & Yêu cầu
+							</h4>
+							<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+								@if(!empty($testDrive->notes))
+									<div>
+										<div class="text-gray-700 text-sm mb-2 font-medium">Ghi chú</div>
+										<div class="text-sm text-gray-800 bg-gray-50 rounded-lg p-3 whitespace-pre-line">{{ $testDrive->notes }}</div>
+									</div>
+								@endif
+								@if(!empty($testDrive->special_requirements))
+									<div>
+										<div class="text-gray-700 text-sm mb-2 font-medium">Yêu cầu đặc biệt</div>
+										<div class="text-sm text-gray-800 bg-gray-50 rounded-lg p-3 whitespace-pre-line">{{ $testDrive->special_requirements }}</div>
+									</div>
+								@endif
+							</div>
 						</div>
 					@endif
 				</div>
-			</div>
-			<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
-				<h3 class="text-base font-bold mb-3">Tóm tắt</h3>
-				<dl class="grid grid-cols-1 gap-3 text-sm">
-					<div class="flex items-center justify-between"><dt class="text-gray-500">Mã lịch</dt><dd class="font-medium text-gray-900">{{ $testDrive->test_drive_number ?? ('TD-'.($testDrive->id)) }}</dd></div>
-					<div class="flex items-center justify-between"><dt class="text-gray-500">Trạng thái</dt><dd><span data-role="summary-status-badge" class="px-2 py-0.5 rounded-full text-xs {{ $testDrive->status_badge }} whitespace-nowrap">{{ $testDrive->status_text }}</span></dd></div>
-					<div class="flex items-center justify-between"><dt class="text-gray-500">Thời lượng</dt><dd class="font-medium text-gray-900">{{ $testDrive->duration_minutes ? ($testDrive->duration_minutes.' phút') : '—' }}</dd></div>
-					<div class="flex items-center justify-between"><dt class="text-gray-500">Địa điểm</dt><dd class="font-medium text-gray-900">{{ $testDrive->location ?: '—' }}</dd></div>
-					<div class="flex items-center justify-between"><dt class="text-gray-500">Loại lịch</dt><dd class="font-medium text-gray-900">
-						@php($typeMap=['individual'=>'Cá nhân','group'=>'Nhóm','virtual'=>'Trực tuyến'])
-						{{ $typeMap[$testDrive->test_drive_type] ?? $testDrive->test_drive_type }}
-					</dd></div>
-					@php($expMap=[''=>'—','beginner'=>'Mới bắt đầu','intermediate'=>'Trung bình','advanced'=>'Nhiều kinh nghiệm'])
-					<div class="flex items-center justify-between"><dt class="text-gray-500">Kinh nghiệm</dt><dd class="font-medium text-gray-900">{{ $expMap[$testDrive->experience_level ?? ''] ?? '—' }}</dd></div>
-					<div class="flex items-center justify-between"><dt class="text-gray-500">Đã từng lái tương tự</dt><dd class="font-medium text-gray-900">{{ $testDrive->has_experience ? 'Có' : 'Không' }}</dd></div>
-					@if(!empty($testDrive->confirmed_at))
-						<div class="flex items-center justify-between"><dt class="text-gray-500">Xác nhận lúc</dt><dd class="font-medium text-gray-900">{{ optional($testDrive->confirmed_at)->format('d/m/Y H:i') }}</dd></div>
-					@endif
-					@if(!empty($testDrive->completed_at))
-						<div class="flex items-center justify-between"><dt class="text-gray-500">Hoàn thành lúc</dt><dd class="font-medium text-gray-900">{{ optional($testDrive->completed_at)->format('d/m/Y H:i') }}</dd></div>
-					@endif
-				</dl>
 			</div>
 	  </div>
 
 		<!-- Right: meta -->
 		<div class="space-y-4 sm:space-y-6">
-			<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
-				<h3 class="text-base font-bold mb-3">Hành động</h3>
+			<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6">
+				<h2 class="text-base sm:text-lg font-semibold text-gray-900 mb-4">Hành động</h2>
 				@if(in_array($testDrive->status, ['pending','confirmed']))
 					<div class="flex flex-col gap-2">
 						<a href="{{ route('test-drives.edit', $testDrive) }}" class="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-600 font-semibold text-sm"><i class="fas fa-edit"></i> Sửa</a>
-						<button type="button" class="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-rose-600 text-white hover:bg-rose-700 font-semibold text-sm js-cancel-one" data-id="{{ $testDrive->id }}" data-cancel-url="{{ url('/test-drives/'.$testDrive->id.'/cancel') }}"><i class="fas fa-times"></i> Hủy lịch</button>
+						<button type="button" class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-rose-600 text-white hover:bg-rose-700 font-semibold text-sm js-cancel-one" data-id="{{ $testDrive->id }}" data-cancel-url="{{ url('/test-drives/'.$testDrive->id.'/cancel') }}"><i class="fas fa-times"></i> Hủy lịch</button>
 					</div>
 				@else
 					<div class="text-sm text-gray-600">Lịch hẹn đã ở trạng thái {{ $testDrive->status_text }}.</div>
 				@endif
 			</div>
 			@if($testDrive->status === 'completed')
-			<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
-				<h3 class="text-base font-bold mb-3">Đánh giá trải nghiệm</h3>
+			<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6">
+				<h2 class="text-base sm:text-lg font-semibold text-gray-900 mb-3">Đánh giá trải nghiệm</h2>
 				<form id="ratingForm" class="space-y-3" data-submitting="0">
 					@csrf
 					@php($current = (int)round((float)($testDrive->satisfaction_rating ?? 0)))
@@ -210,9 +273,9 @@
 			const data = await res.json().catch(()=>({}));
 			if (res.ok && data && data.success){
 				// Update status badges (header and summary) to exact cancelled style as initially rendered
-				const topBadge = document.querySelector('[data-role="header-status-badge"]');
+				const topBadge = document.querySelector('[data-role="status-badge"]');
 				if (topBadge){
-					topBadge.className = 'px-3 py-1 rounded-full text-sm bg-red-100 text-red-800 whitespace-nowrap';
+					topBadge.className = 'px-2 py-0.5 rounded-full text-xs whitespace-nowrap inline-flex items-center bg-red-100 text-red-800';
 					topBadge.textContent = 'Đã hủy';
 				}
 				const summaryBadge = document.querySelector('[data-role="summary-status-badge"]');

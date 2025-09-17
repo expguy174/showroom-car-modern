@@ -11,6 +11,7 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('showroom_id')->constrained('showrooms')->onDelete('cascade');
+            $table->foreignId('service_id')->nullable()->constrained('services')->onDelete('set null');
             $table->foreignId('car_variant_id')->constrained('car_variants')->onDelete('cascade');
 
             // Thông tin xe tối thiểu
@@ -22,8 +23,7 @@ return new class extends Migration {
             $table->date('appointment_date');
             $table->time('appointment_time');
 
-            $table->enum('appointment_type', ['maintenance','repair','inspection','warranty_work','recall_service','emergency','other'])->default('maintenance');
-            $table->text('requested_services');
+            $table->text('requested_services')->nullable();
             $table->text('service_description')->nullable();
 
             $table->enum('status', ['scheduled','confirmed','in_progress','completed','cancelled','no_show','rescheduled'])->default('scheduled');
@@ -35,9 +35,9 @@ return new class extends Migration {
             // Chi phí ước tính
             $table->decimal('estimated_cost', 15, 2)->unsigned()->nullable();
 
-            // Đánh giá sau dịch vụ (tùy chọn)
-            $table->tinyInteger('satisfaction_rating')->unsigned()->nullable(); // 1-5 sao
-            $table->text('feedback')->nullable();
+            // Đánh giá dịch vụ (sau khi hoàn thành)
+            $table->tinyInteger('satisfaction_rating')->unsigned()->nullable(); // 1-5 stars
+            $table->text('feedback')->nullable(); // Customer feedback
 
             $table->timestamps();
 

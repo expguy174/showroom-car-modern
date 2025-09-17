@@ -28,21 +28,19 @@ class ServiceAppointmentSeeder extends Seeder
             ServiceAppointment::create([
                 'user_id' => $user->id,
                 'showroom_id' => $showroomId,
+                'service_id' => rand(1,6), // Random service from seeded services
                 'car_variant_id' => $variantId,
                 'vehicle_registration' => 'XX-' . rand(10,99) . rand(100,999) . '.' . rand(10,99),
                 'current_mileage' => rand(5000,90000),
                 'appointment_number' => 'SA-' . date('Ymd') . '-' . str_pad((string) $i, 4, '0', STR_PAD_LEFT),
                 'appointment_date' => $date->toDateString(),
                 'appointment_time' => $time,
-                'appointment_type' => ['maintenance','repair','inspection'][array_rand(['maintenance','repair','inspection'])],
                 'requested_services' => 'Dịch vụ #' . $i,
                 'service_description' => null,
                 'status' => ['scheduled','in_progress','completed','cancelled'][array_rand(['scheduled','in_progress','completed','cancelled'])],
                 'priority' => ['low','medium','high'][array_rand(['low','medium','high'])],
                 'is_warranty_work' => (bool) rand(0,1),
                 'estimated_cost' => rand(300000,3000000),
-                'satisfaction_rating' => rand(0,1) ? rand(3,5) : null,
-                'feedback' => rand(0,1) ? 'Dịch vụ ổn, sẽ quay lại.' : null,
             ]);
         }
 
@@ -56,21 +54,19 @@ class ServiceAppointmentSeeder extends Seeder
                 ServiceAppointment::create([
                     'user_id' => $targetUser->id,
                     'showroom_id' => $showroomId,
+                    'service_id' => rand(1,6), // Random service from seeded services
                     'car_variant_id' => $variantId,
                     'vehicle_registration' => 'KH-' . rand(10,99) . rand(100,999) . '.' . rand(10,99),
                     'current_mileage' => rand(5000,90000),
                     'appointment_number' => 'SA-' . date('Ymd') . '-KH' . str_pad((string) $i, 3, '0', STR_PAD_LEFT),
                     'appointment_date' => $date->toDateString(),
                     'appointment_time' => $time,
-                    'appointment_type' => ['maintenance','repair','inspection'][array_rand(['maintenance','repair','inspection'])],
                     'requested_services' => 'Dịch vụ KH ' . $i,
                     'service_description' => 'Bảo dưỡng định kỳ và kiểm tra tổng quát #'.$i,
                     'status' => ['scheduled','confirmed','in_progress','completed'][array_rand(['scheduled','confirmed','in_progress','completed'])],
                     'priority' => ['low','medium','high','urgent'][array_rand(['low','medium','high','urgent'])],
                     'is_warranty_work' => (bool) rand(0,1),
                     'estimated_cost' => rand(300000,3000000),
-                    'satisfaction_rating' => rand(0,1) ? rand(3,5) : null,
-                    'feedback' => rand(0,1) ? 'Dịch vụ tốt.' : null,
                 ]);
             }
         }
