@@ -30,7 +30,7 @@
     <!-- Progress Steps -->
     <div class="bg-white border-b border-gray-100">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div class="max-w-4xl mx-auto">
+            <div>
                 <div class="flex items-center justify-center space-x-8">
                     <a href="{{ route('user.cart.index') }}" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
                         <div class="w-8 h-8 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center text-sm font-semibold">1</div>
@@ -52,7 +52,7 @@
     </div>
 
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div class="max-w-4xl mx-auto space-y-6">
+        <div class="space-y-6">
         <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             <div class="px-6 py-5 border-b bg-gradient-to-r from-indigo-50 to-white">
                 <div class="flex items-center gap-3">
@@ -70,54 +70,185 @@
                             <div class="text-sm font-semibold text-gray-800">Trạng thái</div>
                         </div>
                         <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
-                            <div class="flex items-center justify-between sm:justify-start sm:gap-3">
-                                <dt class="text-gray-500">Đơn hàng</dt>
-                                <dd>
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
-                                        @class([
-                                            'bg-yellow-50 text-yellow-700 border border-yellow-200' => $order->status === 'pending',
-                                            'bg-blue-50 text-blue-700 border border-blue-200' => $order->status === 'confirmed',
-                                            'bg-indigo-50 text-indigo-700 border border-indigo-200' => $order->status === 'shipping',
-                                            'bg-emerald-50 text-emerald-700 border border-emerald-200' => $order->status === 'delivered',
-                                            'bg-rose-50 text-rose-700 border border-rose-200' => $order->status === 'cancelled',
-                                        ])">{{ $order->status_display }}</span>
-                                </dd>
+                            <!-- Cột trái -->
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between sm:justify-start sm:gap-3">
+                                    <dt class="text-gray-500">Đơn hàng</dt>
+                                    <dd>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
+                                            @class([
+                                                'bg-yellow-50 text-yellow-700 border border-yellow-200' => $order->status === 'pending',
+                                                'bg-blue-50 text-blue-700 border border-blue-200' => $order->status === 'confirmed',
+                                                'bg-indigo-50 text-indigo-700 border border-indigo-200' => $order->status === 'shipping',
+                                                'bg-emerald-50 text-emerald-700 border border-emerald-200' => $order->status === 'delivered',
+                                                'bg-rose-50 text-rose-700 border border-rose-200' => $order->status === 'cancelled',
+                                            ])">{{ $order->status_display }}</span>
+                                    </dd>
+                                </div>
+                                <div class="flex items-center justify-between sm:justify-start sm:gap-3">
+                                    <dt class="text-gray-500">Trạng thái</dt>
+                                    <dd>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
+                                            @class([
+                                                'bg-gray-50 text-gray-700 border border-gray-200' => $order->payment_status === 'pending',
+                                                'bg-blue-50 text-blue-700 border border-blue-200' => $order->payment_status === 'processing',
+                                                'bg-emerald-50 text-emerald-700 border border-emerald-200' => $order->payment_status === 'completed',
+                                                'bg-rose-50 text-rose-700 border border-rose-200' => $order->payment_status === 'failed',
+                                                'bg-slate-50 text-slate-700 border border-slate-200' => $order->payment_status === 'cancelled',
+                                            ])">{{ $order->payment_status_display }}</span>
+                                    </dd>
+                                </div>
+                                <div class="flex items-center justify-between sm:justify-start sm:gap-3">
+                                    <dt class="text-gray-500">Tạo lúc</dt>
+                                    <dd class="font-medium text-gray-900">{{ $order->created_at?->format('d/m/Y H:i') }}</dd>
+                                </div>
                             </div>
-                            <div class="flex items-center justify-between sm:justify-start sm:gap-3">
-                                <dt class="text-gray-500">Tạo lúc</dt>
-                                <dd class="font-medium text-gray-900">{{ $order->created_at?->format('d/m/Y H:i') }}</dd>
-                            </div>
-                            <div class="flex items-center justify-between sm:justify-start sm:gap-3">
-                                <dt class="text-gray-500">Thanh toán</dt>
-                                <dd>
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
-                                        @class([
-                                            'bg-gray-50 text-gray-700 border border-gray-200' => $order->payment_status === 'pending',
-                                            'bg-blue-50 text-blue-700 border border-blue-200' => $order->payment_status === 'processing',
-                                            'bg-emerald-50 text-emerald-700 border border-emerald-200' => $order->payment_status === 'completed',
-                                            'bg-rose-50 text-rose-700 border border-rose-200' => $order->payment_status === 'failed',
-                                            'bg-slate-50 text-slate-700 border border-slate-200' => $order->payment_status === 'cancelled',
-                                        ])">{{ $order->payment_status_display }}</span>
-                                </dd>
-                            </div>
-                            <div class="flex items-center justify-between sm:justify-start sm:gap-3">
-                                <dt class="text-gray-500">Phương thức</dt>
-                                <dd class="font-medium text-gray-900">{{ $order->paymentMethod->name ?? '—' }}</dd>
+                            
+                            <!-- Cột phải -->
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between sm:justify-start sm:gap-3">
+                                    <dt class="text-gray-500">Hình thức</dt>
+                                    <dd class="font-medium text-gray-900">
+                                        @if($order->finance_option_id)
+                                            Trả góp
+                                        @else
+                                            Thanh toán 1 lần
+                                        @endif
+                                    </dd>
+                                </div>
+                                <div class="flex items-center justify-between sm:justify-start sm:gap-3">
+                                    <dt class="text-gray-500">Phương thức</dt>
+                                    <dd class="font-medium text-gray-900">{{ $order->paymentMethod->name ?? '—' }}</dd>
+                                </div>
                             </div>
                         </dl>
+                        
                         @if(session('payment_method') === 'bank_transfer' || $order->paymentMethod?->code === 'bank_transfer')
+                        @if(!$order->finance_option_id)
+                        <!-- Bank Transfer Info for Full Payment -->
                         <div class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                            <div class="text-sm font-semibold text-blue-900 mb-2">Thông tin chuyển khoản</div>
-                            <div class="space-y-1 text-sm text-blue-800">
+                            <div class="text-sm font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                                <i class="fas fa-university"></i>
+                                Thông tin chuyển khoản
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-blue-800 mb-3">
                                 <div><span class="font-medium">Ngân hàng:</span> Vietcombank - CN TP.HCM</div>
                                 <div><span class="font-medium">Tên tài khoản:</span> CONG TY TNHH SHOWROOM</div>
                                 <div><span class="font-medium">Số tài khoản:</span> <span class="font-mono">0123456789</span></div>
-                                <div><span class="font-medium">Số tiền:</span> <span class="font-bold">{{ number_format($order->grand_total ?? $order->total_price, 0, ',', '.') }} đ</span></div>
                                 <div><span class="font-medium">Nội dung:</span> <span class="font-mono">{{ $order->order_number ?? ('#'.$order->id) }}</span></div>
+                            </div>
+                            <div class="text-center p-2 bg-blue-100 rounded border border-blue-300">
+                                <div class="text-xs text-blue-700 font-medium">Số tiền cần chuyển</div>
+                                <div class="text-lg font-bold text-blue-900">{{ number_format($order->grand_total ?? $order->total_price, 0, ',', '.') }} đ</div>
                             </div>
                             <div class="mt-2 text-xs text-blue-700">
                                 <i class="fas fa-info-circle mr-1"></i>
                                 Vui lòng chuyển khoản chính xác số tiền và nội dung để hệ thống đối soát tự động.
+                            </div>
+                        </div>
+                        @endif
+                        @endif
+                        
+                        @if($order->finance_option_id && $order->financeOption)
+                        <!-- Finance Details Section -->
+                        <div class="mt-4 p-4 bg-indigo-50 rounded-lg border border-indigo-200">
+                            <div class="text-sm font-semibold text-indigo-900 mb-3 flex items-center gap-2">
+                                <i class="fas fa-calculator"></i>
+                                Chi tiết trả góp
+                            </div>
+                            <!-- Finance Provider Info -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm mb-4">
+                                <div>
+                                    <div class="text-indigo-700 font-medium">Ngân hàng</div>
+                                    <div class="text-indigo-900">{{ $order->financeOption->bank_name }}</div>
+                                </div>
+                                <div>
+                                    <div class="text-indigo-700 font-medium">Lãi suất</div>
+                                    <div class="text-indigo-900">{{ $order->financeOption->interest_rate }}%/năm</div>
+                                </div>
+                            </div>
+
+                            <!-- Finance Amount Breakdown -->
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm mb-4">
+                                <div class="text-center p-3 bg-white rounded-lg border border-indigo-100">
+                                    <div class="text-indigo-700 font-medium text-xs mb-1">Trả trước</div>
+                                    <div class="text-indigo-900 font-bold text-lg">{{ number_format($order->down_payment_amount ?? 0, 0, ',', '.') }} đ</div>
+                                </div>
+                                <div class="text-center p-3 bg-white rounded-lg border border-indigo-100">
+                                    <div class="text-indigo-700 font-medium text-xs mb-1">Số tiền vay</div>
+                                    <div class="text-indigo-900 font-bold text-lg">{{ number_format(($order->subtotal ?? $order->total_price) - ($order->down_payment_amount ?? 0), 0, ',', '.') }} đ</div>
+                                </div>
+                                <div class="text-center p-3 bg-white rounded-lg border border-indigo-100">
+                                    <div class="text-indigo-700 font-medium text-xs mb-1">Trả hàng tháng</div>
+                                    <div class="text-indigo-900 font-bold text-lg">{{ number_format($order->monthly_payment_amount ?? 0, 0, ',', '.') }} đ</div>
+                                </div>
+                            </div>
+
+                            <!-- Tenure Info -->
+                            <div class="text-center mb-4">
+                                <div class="text-indigo-700 font-medium text-sm">Thời hạn vay</div>
+                                <div class="text-indigo-900 font-semibold text-lg">{{ $order->tenure_months ?? 0 }} tháng</div>
+                            </div>
+                            
+                            <!-- Additional Costs Info -->
+                            @if($order->tax_total > 0 || $order->shipping_fee > 0)
+                            <div class="p-3 bg-amber-50 rounded-lg border border-amber-200 mb-3">
+                                <div class="text-xs text-amber-800 mb-2">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    <span class="font-medium">Lưu ý về chi phí bổ sung:</span>
+                                </div>
+                                <div class="text-xs text-amber-700 space-y-1">
+                                    @if($order->tax_total > 0)
+                                    <div>• Thuế: {{ number_format($order->tax_total, 0, ',', '.') }} đ (thanh toán riêng)</div>
+                                    @endif
+                                    @if($order->shipping_fee > 0)
+                                    <div>• Phí vận chuyển: {{ number_format($order->shipping_fee, 0, ',', '.') }} đ (thanh toán riêng)</div>
+                                    @endif
+                                    <div class="mt-1 font-medium">→ Trả góp chỉ áp dụng cho giá trị sản phẩm</div>
+                                </div>
+                            </div>
+                            @endif
+                            @if(session('payment_method') === 'bank_transfer' || $order->paymentMethod?->code === 'bank_transfer')
+                            <!-- Bank Transfer Info for Finance -->
+                            <div class="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                <div class="text-sm font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                                    <i class="fas fa-university"></i>
+                                    Thông tin chuyển khoản (trả trước)
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-blue-800 mb-3">
+                                    <div><span class="font-medium">Ngân hàng:</span> Vietcombank - CN TP.HCM</div>
+                                    <div><span class="font-medium">Tên tài khoản:</span> CONG TY TNHH SHOWROOM</div>
+                                    <div><span class="font-medium">Số tài khoản:</span> <span class="font-mono">0123456789</span></div>
+                                    <div><span class="font-medium">Nội dung:</span> <span class="font-mono">{{ $order->order_number ?? ('#'.$order->id) }}</span></div>
+                                </div>
+                                <div class="text-center p-2 bg-blue-100 rounded border border-blue-300">
+                                    <div class="text-xs text-blue-700 font-medium">Số tiền cần chuyển</div>
+                                    <div class="text-lg font-bold text-blue-900">{{ number_format($order->down_payment_amount ?? 0, 0, ',', '.') }} đ</div>
+                                    <div class="text-xs text-blue-600">(Khoản trả trước)</div>
+                                </div>
+                                <div class="mt-2 text-xs text-blue-700">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    Chuyển khoản chính xác số tiền và nội dung để hệ thống đối soát tự động.
+                                </div>
+                            </div>
+                            @endif
+                            
+                            <div class="mt-3 p-3 bg-white rounded-lg border border-indigo-100">
+                                <div class="text-xs text-indigo-700 flex items-start gap-2">
+                                    <i class="fas fa-info-circle mt-0.5 flex-shrink-0"></i>
+                                    <div>
+                                        <div class="font-medium mb-1">Lưu ý quan trọng:</div>
+                                        <ul class="space-y-1">
+                                            @if(session('payment_method') === 'bank_transfer' || $order->paymentMethod?->code === 'bank_transfer')
+                                            <li>• Sau khi chuyển khoản, ngân hàng sẽ liên hệ để hoàn tất thủ tục vay</li>
+                                            @else
+                                            <li>• Bạn đã thanh toán khoản trả trước qua {{ $order->paymentMethod->name ?? 'phương thức đã chọn' }}</li>
+                                            @endif
+                                            <li>• Ngân hàng sẽ liên hệ để hoàn tất thủ tục vay trong 1-2 ngày làm việc</li>
+                                            <li>• Vui lòng chuẩn bị đầy đủ hồ sơ theo yêu cầu của ngân hàng</li>
+                                        </ul>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         @endif
@@ -194,9 +325,20 @@
                             </div>
                             @endif
                             <div class="border-t pt-3 flex items-center justify-between text-base font-bold text-gray-900">
-                                <span>Tổng cộng</span>
-                                <span>{{ number_format($order->grand_total ?? $order->total_price, 0, ',', '.') }} đ</span>
+                                @if($order->finance_option_id)
+                                    <span>Đã thanh toán (trả trước)</span>
+                                    <span>{{ number_format($order->down_payment_amount ?? 0, 0, ',', '.') }} đ</span>
+                                @else
+                                    <span>Tổng cộng</span>
+                                    <span>{{ number_format($order->grand_total ?? $order->total_price, 0, ',', '.') }} đ</span>
+                                @endif
                             </div>
+                            @if($order->finance_option_id)
+                            <div class="flex items-center justify-between text-sm text-gray-600 mt-2">
+                                <span>Còn lại (trả góp)</span>
+                                <span>{{ number_format(($order->grand_total ?? $order->total_price) - ($order->down_payment_amount ?? 0), 0, ',', '.') }} đ</span>
+                            </div>
+                            @endif
                             
                         </div>
                     </div>
@@ -208,6 +350,7 @@
                     @endif
                 </aside>
             </div>
+            
         </div>
     </div>
 </div>
@@ -216,12 +359,34 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+  // Show success message
   if (typeof window.showMessage === 'function') {
     var msg = <?php echo json_encode(session('success') ?? ''); ?> || 'Đặt hàng thành công!';
     if (msg) {
       window.showMessage(msg, 'success');
     }
   }
+  
+  // Force update cart count to 0 since order was successful
+  if (typeof window.updateCartCount === 'function') {
+    window.updateCartCount(0);
+  }
+  
+  // Clear any cached cart data in localStorage/sessionStorage
+  if (typeof Storage !== 'undefined') {
+    localStorage.removeItem('cart_items');
+    localStorage.removeItem('cart_count');
+    sessionStorage.removeItem('cart_items');
+    sessionStorage.removeItem('cart_count');
+  }
+  
+  // Update cart badge immediately
+  const cartBadges = document.querySelectorAll('.cart-count, [data-cart-count]');
+  cartBadges.forEach(badge => {
+    badge.textContent = '0';
+    badge.style.display = 'none';
+  });
+  
 });
 </script>
 @endpush

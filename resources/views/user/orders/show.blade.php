@@ -13,17 +13,59 @@
                     <div class="mt-1 text-sm text-gray-500">Tạo lúc {{ $order->created_at?->format('d/m/Y H:i') }}</div>
                 </div>
                 <div class="text-right">
-                    <div class="text-indigo-700 font-extrabold text-base sm:text-lg">{{ number_format($order->grand_total, 0, ',', '.') }} đ</div>
-                    <div class="text-xs text-gray-500">Tổng thanh toán</div>
-                    @php
-                        $canCancel = in_array($order->status, ['pending', 'confirmed']) && $order->payment_status !== 'completed';
-                    @endphp
-                    <form action="{{ route('user.orders.cancel', $order->id) }}" method="post" class="mt-2" title="{{ $canCancel ? 'Hủy đơn' : 'Không thể hủy ở trạng thái hiện tại' }}">
-                        @csrf
-                        <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-500 text-white hover:bg-rose-600 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors duration-200" {{ $canCancel ? '' : 'disabled' }}>
-                            <i class="fas fa-ban"></i> Hủy đơn
-                        </button>
-                    </form>
+                    @if($order->finance_option_id)
+                        <!-- Finance Order Display -->
+                        <div class="text-indigo-700 font-extrabold text-base sm:text-lg">{{ number_format($order->down_payment_amount ?? 0, 0, ',', '.') }} đ</div>
+                        <div class="text-xs text-gray-500">Trả trước</div>
+                        <div class="text-xs text-blue-600 mt-1">
+                            <i class="fas fa-credit-card mr-1"></i>Trả góp {{ $order->tenure_months ?? 0 }} tháng
+                        </div>
+                    @else
+                        <!-- Full Payment Display -->
+                        <div class="text-indigo-700 font-extrabold text-base sm:text-lg">{{ number_format($order->grand_total, 0, ',', '.') }} đ</div>
+                        <div class="text-xs text-gray-500">Tổng thanh toán</div>
+                    @endif
+                    @if($order->status !== 'cancelled')
+                        @php
+                            // Improved cancel logic with better edge case handling
+                            $canCancel = in_array($order->status, ['pending', 'confirmed']) 
+                                && !in_array($order->payment_status, ['completed', 'processing']);
+                            
+                            // Additional checks for finance orders
+                            if ($order->finance_option_id && $order->down_payment_amount > 0) {
+                                // If down payment is made, only allow cancel if payment is still pending
+                                $canCancel = $canCancel && $order->payment_status === 'pending';
+                            }
+                            
+                            // Time-based restriction: 24 hours window for cancellation
+                            $withinCancelWindow = $order->created_at->diffInHours(now()) <= 24;
+                            $canCancel = $canCancel && $withinCancelWindow;
+                            
+                            // Generate cancel reason for better UX
+                            $cancelReason = '';
+                            if (!in_array($order->status, ['pending', 'confirmed'])) {
+                                $cancelReason = 'Đơn hàng đã được xử lý, không thể hủy';
+                            } elseif (in_array($order->payment_status, ['completed', 'processing'])) {
+                                $cancelReason = 'Thanh toán đã được xử lý, không thể hủy';
+                            } elseif ($order->finance_option_id && $order->down_payment_amount > 0 && $order->payment_status !== 'pending') {
+                                $cancelReason = 'Đã thanh toán trả trước, vui lòng yêu cầu hoàn tiền';
+                            } elseif (!$withinCancelWindow) {
+                                $cancelReason = 'Chỉ có thể hủy trong vòng 24 giờ sau khi đặt hàng';
+                            } else {
+                                $cancelReason = 'Hủy đơn hàng';
+                            }
+                        @endphp
+                        <form action="{{ route('user.orders.cancel', $order->id) }}" method="post" class="mt-2" title="{{ $cancelReason }}">
+                            @csrf
+                            <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-500 text-white hover:bg-rose-600 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors duration-200" {{ $canCancel ? '' : 'disabled' }}>
+                                <i class="fas fa-ban"></i> Hủy đơn
+                            </button>
+                        </form>
+                    @else
+                        <div class="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-gray-500 bg-gray-100">
+                            <i class="fas fa-ban"></i> Đã hủy
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -63,9 +105,6 @@
                         @endif
                     @endforeach
                 </div>
-                @if($order->status === 'cancelled')
-                <div class="mt-2 text-xs text-rose-600"><i class="fas fa-ban mr-1"></i> Đơn hàng đã bị hủy</div>
-                @endif
             </div>
             <div>
                 <div class="flex items-center justify-between mb-2">
@@ -83,9 +122,7 @@
                         @endif
                     @endforeach
                 </div>
-                @if($order->status === 'cancelled')
-                <div class="mt-2 text-xs text-rose-600"><i class="fas fa-ban mr-1"></i> Đơn hàng đã bị hủy</div>
-                @elseif(in_array($order->payment_status, ['failed','cancelled']))
+                @if(in_array($order->payment_status, ['failed','cancelled']) && $order->status !== 'cancelled')
                 <div class="mt-2 text-xs text-rose-600"><i class="fas fa-exclamation-circle mr-1"></i> Thanh toán không thành công</div>
                 @endif
             </div>
@@ -101,52 +138,207 @@
                     <h2 class="text-lg font-bold">Trạng thái</h2>
                     <div class="text-sm text-gray-500">Tạo lúc {{ $order->created_at?->format('d/m/Y H:i') }}</div>
                 </div>
-                <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
-                    <div class="flex items-center justify-between sm:justify-start sm:gap-3">
-                        <dt class="text-gray-500">Mã đơn</dt>
-                        <dd class="font-medium text-gray-900">#{{ $order->order_number ?? $order->id }}</dd>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Cột trái: Thông tin cơ bản -->
+                    <dl class="space-y-3 text-sm">
+                        <div class="flex items-center justify-between sm:justify-start sm:gap-3">
+                            <dt class="text-gray-500">Mã đơn</dt>
+                            <dd class="font-medium text-gray-900">#{{ $order->order_number ?? $order->id }}</dd>
+                        </div>
+                        <div class="flex items-center justify-between sm:justify-start sm:gap-3">
+                            <dt class="text-gray-500">Loại thanh toán</dt>
+                            <dd class="font-medium text-gray-900">{{ $order->payment_type_display }}</dd>
+                        </div>
+                        @if($order->financeOption)
+                        <div class="flex items-center justify-between sm:justify-start sm:gap-3">
+                            <dt class="text-gray-500">Gói trả góp</dt>
+                            <dd class="font-medium text-gray-900">{{ $order->financeOption->name }}</dd>
+                        </div>
+                        @else
+                        <div class="flex items-center justify-between sm:justify-start sm:gap-3">
+                            <dt class="text-gray-500">Số sản phẩm</dt>
+                            <dd class="font-medium text-gray-900">{{ $order->items->count() }} sản phẩm</dd>
+                        </div>
+                        @endif
+                    </dl>
+                    
+                    <!-- Cột phải: Phương thức và Trạng thái -->
+                    <dl class="space-y-3 text-sm">
+                        <div class="flex items-center justify-between sm:justify-start sm:gap-3">
+                            <dt class="text-gray-500">Phương thức</dt>
+                            <dd class="font-medium text-gray-900">{{ $order->paymentMethod->name ?? '—' }}</dd>
+                        </div>
+                        <div class="flex items-center justify-between sm:justify-start sm:gap-3">
+                            <dt class="text-gray-500">Đơn hàng</dt>
+                            <dd>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
+                                    @class([
+                                        'bg-yellow-50 text-yellow-700 border border-yellow-200' => $order->status === 'pending',
+                                        'bg-blue-50 text-blue-700 border border-blue-200' => $order->status === 'confirmed',
+                                        'bg-indigo-50 text-indigo-700 border border-indigo-200' => $order->status === 'shipping',
+                                        'bg-emerald-50 text-emerald-700 border border-emerald-200' => $order->status === 'delivered',
+                                        'bg-rose-50 text-rose-700 border border-rose-200' => $order->status === 'cancelled',
+                                    ])">{{ $order->status_display }}</span>
+                            </dd>
+                        </div>
+                        <div class="flex items-center justify-between sm:justify-start sm:gap-3">
+                            <dt class="text-gray-500">Thanh toán</dt>
+                            <dd>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
+                                    @class([
+                                        'bg-gray-50 text-gray-700 border border-gray-200' => $order->payment_status === 'pending',
+                                        'bg-blue-50 text-blue-700 border border-blue-200' => $order->payment_status === 'processing',
+                                        'bg-emerald-50 text-emerald-700 border border-emerald-200' => $order->payment_status === 'completed',
+                                        'bg-rose-50 text-rose-700 border border-rose-200' => $order->payment_status === 'failed',
+                                        'bg-slate-50 text-slate-700 border border-slate-200' => $order->payment_status === 'cancelled',
+                                    ])">{{ $order->payment_status_display }}</span>
+                            </dd>
+                        </div>
+                    </dl>
+                </div>
+                
+                @if(!$order->finance_option_id)
+                <!-- Payment Type Info for Full Payment -->
+                <div class="mt-4 p-4 bg-emerald-50 rounded-xl border border-emerald-200">
+                    <div class="flex items-start gap-3">
+                        <div class="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center mt-0.5">
+                            <i class="fas fa-check text-emerald-600"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-medium text-emerald-800 mb-1">Thanh toán một lần</h4>
+                            <p class="text-sm text-emerald-700">Đơn hàng này được thanh toán toàn bộ một lần, không có lịch trả góp.</p>
+                        </div>
                     </div>
-                    <div class="flex items-center justify-between sm:justify-start sm:gap-3">
-                        <dt class="text-gray-500">Đơn hàng</dt>
-                        <dd>
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
-                                @class([
-                                    'bg-yellow-50 text-yellow-700 border border-yellow-200' => $order->status === 'pending',
-                                    'bg-blue-50 text-blue-700 border border-blue-200' => $order->status === 'confirmed',
-                                    'bg-indigo-50 text-indigo-700 border border-indigo-200' => $order->status === 'shipping',
-                                    'bg-emerald-50 text-emerald-700 border border-emerald-200' => $order->status === 'delivered',
-                                    'bg-rose-50 text-rose-700 border border-rose-200' => $order->status === 'cancelled',
-                                ])">{{ $order->status_display }}</span>
-                        </dd>
+                </div>
+                @endif
+                
+                @if($order->paymentMethod && in_array($order->paymentMethod->code, ['bank_transfer']) && !$order->finance_option_id)
+                <!-- Bank Transfer Info for Full Payment -->
+                <div class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <div class="text-sm font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                        <i class="fas fa-university"></i>
+                        Thông tin chuyển khoản
                     </div>
-                    <div class="flex items-center justify-between sm:justify-start sm:gap-3">
-                        <dt class="text-gray-500">Phương thức</dt>
-                        <dd class="font-medium text-gray-900">{{ $order->paymentMethod->name ?? '—' }}</dd>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-blue-800 mb-3">
+                        <div><span class="font-medium">Ngân hàng:</span> Vietcombank - CN TP.HCM</div>
+                        <div><span class="font-medium">Tên tài khoản:</span> CONG TY TNHH SHOWROOM</div>
+                        <div><span class="font-medium">Số tài khoản:</span> <span class="font-mono">0123456789</span></div>
+                        <div><span class="font-medium">Nội dung:</span> <span class="font-mono">{{ $order->order_number ?? ('#'.$order->id) }}</span></div>
                     </div>
-                    <div class="flex items-center justify-between sm:justify-start sm:gap-3">
-                        <dt class="text-gray-500">Loại thanh toán</dt>
-                        <dd class="font-medium text-gray-900">{{ $order->payment_type_display }}</dd>
+                    <div class="text-center p-2 bg-blue-100 rounded border border-blue-300">
+                        <div class="text-xs text-blue-700 font-medium">Số tiền cần chuyển</div>
+                        <div class="text-lg font-bold text-blue-900">{{ number_format($order->grand_total ?? $order->total_price, 0, ',', '.') }} đ</div>
                     </div>
-                    @if($order->financeOption)
-                    <div class="flex items-center justify-between sm:justify-start sm:gap-3">
-                        <dt class="text-gray-500">Gói trả góp</dt>
-                        <dd class="font-medium text-gray-900">{{ $order->financeOption->name }}</dd>
+                    <div class="mt-2 text-xs text-blue-700">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Vui lòng chuyển khoản chính xác số tiền và nội dung để hệ thống đối soát tự động.
+                    </div>
+                </div>
+                @endif
+                
+                @if($order->finance_option_id && $order->financeOption)
+                <!-- Finance Details Section -->
+                <div class="mt-4 p-4 bg-indigo-50 rounded-lg border border-indigo-200">
+                    <div class="text-sm font-semibold text-indigo-900 mb-3 flex items-center gap-2">
+                        <i class="fas fa-calculator"></i>
+                        Chi tiết trả góp
+                    </div>
+                    <!-- Finance Provider Info -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm mb-4">
+                        <div>
+                            <div class="text-indigo-700 font-medium">Ngân hàng</div>
+                            <div class="text-indigo-900">{{ $order->financeOption->bank_name }}</div>
+                        </div>
+                        <div>
+                            <div class="text-indigo-700 font-medium">Lãi suất</div>
+                            <div class="text-indigo-900">{{ $order->financeOption->interest_rate }}%/năm</div>
+                        </div>
+                    </div>
+
+                    <!-- Finance Amount Breakdown -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm mb-4">
+                        <div class="text-center p-3 bg-white rounded-lg border border-indigo-100">
+                            <div class="text-indigo-700 font-medium text-xs mb-1">Trả trước</div>
+                            <div class="text-indigo-900 font-bold text-lg">{{ number_format($order->down_payment_amount ?? 0, 0, ',', '.') }} đ</div>
+                        </div>
+                        <div class="text-center p-3 bg-white rounded-lg border border-indigo-100">
+                            <div class="text-indigo-700 font-medium text-xs mb-1">Số tiền vay</div>
+                            <div class="text-indigo-900 font-bold text-lg">{{ number_format(($order->subtotal ?? $order->total_price) - ($order->down_payment_amount ?? 0), 0, ',', '.') }} đ</div>
+                        </div>
+                        <div class="text-center p-3 bg-white rounded-lg border border-indigo-100">
+                            <div class="text-indigo-700 font-medium text-xs mb-1">Trả hàng tháng</div>
+                            <div class="text-indigo-900 font-bold text-lg">{{ number_format($order->monthly_payment_amount ?? 0, 0, ',', '.') }} đ</div>
+                        </div>
+                    </div>
+
+                    <!-- Tenure Info -->
+                    <div class="text-center mb-4">
+                        <div class="text-indigo-700 font-medium text-sm">Thời hạn vay</div>
+                        <div class="text-indigo-900 font-semibold text-lg">{{ $order->tenure_months ?? 0 }} tháng</div>
+                    </div>
+                    
+                    <!-- Additional Costs Info -->
+                    @if($order->tax_total > 0 || $order->shipping_fee > 0)
+                    <div class="p-3 bg-amber-50 rounded-lg border border-amber-200 mb-3">
+                        <div class="text-xs text-amber-800 mb-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            <span class="font-medium">Lưu ý về chi phí bổ sung:</span>
+                        </div>
+                        <div class="text-xs text-amber-700 space-y-1">
+                            @if($order->tax_total > 0)
+                            <div>• Thuế: {{ number_format($order->tax_total, 0, ',', '.') }} đ (thanh toán riêng)</div>
+                            @endif
+                            @if($order->shipping_fee > 0)
+                            <div>• Phí vận chuyển: {{ number_format($order->shipping_fee, 0, ',', '.') }} đ (thanh toán riêng)</div>
+                            @endif
+                            <div class="mt-1 font-medium">→ Trả góp chỉ áp dụng cho giá trị sản phẩm</div>
+                        </div>
                     </div>
                     @endif
-                    <div class="flex items-center justify-between sm:justify-start sm:gap-3">
-                        <dt class="text-gray-500">Thanh toán</dt>
-                        <dd>
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
-                                @class([
-                                    'bg-gray-50 text-gray-700 border border-gray-200' => $order->payment_status === 'pending',
-                                    'bg-blue-50 text-blue-700 border border-blue-200' => $order->payment_status === 'processing',
-                                    'bg-emerald-50 text-emerald-700 border border-emerald-200' => $order->payment_status === 'completed',
-                                    'bg-rose-50 text-rose-700 border border-rose-200' => $order->payment_status === 'failed',
-                                    'bg-slate-50 text-slate-700 border border-slate-200' => $order->payment_status === 'cancelled',
-                                ])">{{ $order->payment_status_display }}</span>
-                        </dd>
+                    @if($order->paymentMethod && in_array($order->paymentMethod->code, ['bank_transfer']))
+                    <!-- Bank Transfer Info for Finance -->
+                    <div class="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <div class="text-sm font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                            <i class="fas fa-university"></i>
+                            Thông tin chuyển khoản (trả trước)
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-blue-800 mb-3">
+                            <div><span class="font-medium">Ngân hàng:</span> Vietcombank - CN TP.HCM</div>
+                            <div><span class="font-medium">Tên tài khoản:</span> CONG TY TNHH SHOWROOM</div>
+                            <div><span class="font-medium">Số tài khoản:</span> <span class="font-mono">0123456789</span></div>
+                            <div><span class="font-medium">Nội dung:</span> <span class="font-mono">{{ $order->order_number ?? ('#'.$order->id) }}</span></div>
+                        </div>
+                        <div class="text-center p-2 bg-blue-100 rounded border border-blue-300">
+                            <div class="text-xs text-blue-700 font-medium">Số tiền cần chuyển</div>
+                            <div class="text-lg font-bold text-blue-900">{{ number_format($order->down_payment_amount ?? 0, 0, ',', '.') }} đ</div>
+                            <div class="text-xs text-blue-600">(Khoản trả trước)</div>
+                        </div>
+                        <div class="mt-2 text-xs text-blue-700">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Chuyển khoản chính xác số tiền và nội dung để hệ thống đối soát tự động.
+                        </div>
                     </div>
-                </dl>
+                    @endif
+                    
+                    <div class="mt-3 p-3 bg-white rounded-lg border border-indigo-100">
+                        <div class="text-xs text-indigo-700 flex items-start gap-2">
+                            <i class="fas fa-info-circle mt-0.5 flex-shrink-0"></i>
+                            <div>
+                                <div class="font-medium mb-1">Lưu ý quan trọng:</div>
+                                <ul class="space-y-1">
+                                    @if($order->paymentMethod && in_array($order->paymentMethod->code, ['bank_transfer']))
+                                    <li>• Sau khi chuyển khoản, ngân hàng sẽ liên hệ để hoàn tất thủ tục vay</li>
+                                    @else
+                                    <li>• Bạn đã thanh toán khoản trả trước qua {{ $order->paymentMethod->name ?? 'phương thức đã chọn' }}</li>
+                                    @endif
+                                    <li>• Ngân hàng sẽ liên hệ để hoàn tất thủ tục vay trong 1-2 ngày làm việc</li>
+                                    <li>• Vui lòng chuẩn bị đầy đủ hồ sơ theo yêu cầu của ngân hàng</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
             </div>
 
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
@@ -325,25 +517,6 @@
                 </div>
             </div>
 
-            @if(($order->paymentMethod?->code === 'bank_transfer') || (session('payment_method') === 'bank_transfer'))
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
-                <h3 class="text-base font-bold mb-3">Hướng dẫn chuyển khoản</h3>
-                <div class="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <div class="text-sm font-semibold text-blue-900 mb-2">Thông tin chuyển khoản</div>
-                    <div class="space-y-1 text-sm text-blue-800">
-                        <div><span class="font-medium">Ngân hàng:</span> Vietcombank - CN TP.HCM</div>
-                        <div><span class="font-medium">Tên tài khoản:</span> CONG TY TNHH SHOWROOM</div>
-                        <div><span class="font-medium">Số tài khoản:</span> <span class="font-mono">0123456789</span></div>
-                        <div><span class="font-medium">Số tiền:</span> <span class="font-bold">{{ number_format($order->grand_total ?? $order->total_price, 0, ',', '.') }} đ</span></div>
-                        <div><span class="font-medium">Nội dung:</span> <span class="font-mono">{{ $order->order_number ?? ('#'.$order->id) }}</span></div>
-                    </div>
-                    <div class="mt-2 text-xs text-blue-700">
-                        <i class="fas fa-info-circle mr-1"></i>
-                        Vui lòng chuyển khoản chính xác số tiền và nội dung để hệ thống đối soát tự động.
-                    </div>
-                </div>
-            </div>
-            @endif
 
             <!-- Refund Section -->
             @if($order->payment_status === 'completed' && $order->status !== 'cancelled')
@@ -389,20 +562,6 @@
                 @endif
             @endif
 
-            <!-- Payment Type Information -->
-            @if(!$order->isInstallmentOrder())
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
-                    <div class="flex items-center gap-3">
-                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                            <i class="fas fa-credit-card text-green-600 text-xl"></i>
-                        </div>
-                        <div>
-                            <h3 class="text-base font-bold text-gray-900">Thanh toán một lần</h3>
-                            <p class="text-sm text-gray-600">Đơn hàng này được thanh toán toàn bộ một lần, không có lịch trả góp.</p>
-                        </div>
-                    </div>
-                </div>
-            @endif
 
             <!-- Installments Section -->
             @if($order->isInstallmentOrder() && $order->installments->count() > 0)
@@ -501,23 +660,29 @@
 </div>
 
 <!-- Refund Modal -->
-<div id="refundModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+<div id="refundModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50" onclick="closeRefundModal()">
     <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
-            <h3 class="text-lg font-bold text-gray-900 mb-4">Yêu cầu hoàn tiền</h3>
+        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-gray-900">Yêu cầu hoàn tiền</h3>
+                <button type="button" onclick="closeRefundModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
             <form action="{{ route('user.orders.refund', $order) }}" method="POST" id="refundForm">
                 @csrf
                 <div class="space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Số tiền hoàn (VND)</label>
-                        <input type="number" name="amount" max="{{ $order->grand_total }}" 
-                               value="{{ $order->grand_total }}"
-                               class="w-full rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500">
+                        <input type="number" name="amount" id="refundAmount"
+                               value="{{ intval($order->grand_total) }}"
+                               class="w-full rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                               placeholder="Nhập số tiền hoàn">
                         <p class="text-xs text-gray-500 mt-1">Tối đa: {{ number_format($order->grand_total, 0, ',', '.') }} đ</p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Lý do hoàn tiền</label>
-                        <textarea name="reason" rows="4" required 
+                        <textarea name="reason" id="refundReason" rows="4"
                                   class="w-full rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500"
                                   placeholder="Vui lòng mô tả lý do bạn muốn hoàn tiền..."></textarea>
                     </div>
@@ -546,13 +711,22 @@ document.addEventListener('click', function(e) {
         const button = form.querySelector('button[type="submit"]');
         
         const orderNumber = '#{{ $order->order_number ?? $order->id }}';
+        const orderAmount = '{{ number_format($order->grand_total, 0, ",", ".") }} đ';
         
-        // Use confirm dialog like orders index page
+        // Enhanced confirm dialog with more details
+        let confirmMessage = `Bạn có chắc chắn muốn hủy đơn hàng ${orderNumber}?\n\nGiá trị đơn hàng: ${orderAmount}`;
+        
+        @if($order->finance_option_id)
+        confirmMessage += `\nLưu ý: Nếu đã thanh toán trả trước, bạn có thể yêu cầu hoàn tiền sau khi hủy.`;
+        @endif
+        
+        confirmMessage += `\n\nHành động này không thể hoàn tác.`;
+        
         showConfirmDialog(
-            'Hủy đơn hàng?',
-            `Bạn có chắc chắn muốn hủy đơn hàng ${orderNumber}? Hành động này không thể hoàn tác.`,
-            'Hủy đơn',
-            'Hủy bỏ',
+            'Xác nhận hủy đơn hàng',
+            confirmMessage,
+            'Xác nhận hủy',
+            'Không hủy',
             () => {
                 button.disabled = true;
                 button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Đang hủy...';
@@ -664,11 +838,26 @@ function showConfirmDialog(title, message, confirmText, cancelText, onConfirm){
 // Refund modal functions
 function openRefundModal() {
     document.getElementById('refundModal').classList.remove('hidden');
+    setTimeout(() => {
+        document.getElementById('refundAmount').focus();
+    }, 100);
 }
 
 function closeRefundModal() {
     document.getElementById('refundModal').classList.add('hidden');
+    document.getElementById('refundForm').reset();
+    document.getElementById('refundAmount').value = '{{ intval($order->grand_total) }}';
 }
+
+// Handle ESC key to close modal
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('refundModal');
+        if (!modal.classList.contains('hidden')) {
+            closeRefundModal();
+        }
+    }
+});
 
 // Handle refund form submission
 document.getElementById('refundForm').addEventListener('submit', function(e) {
@@ -677,15 +866,65 @@ document.getElementById('refundForm').addEventListener('submit', function(e) {
     const form = this;
     const submitBtn = form.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
+    const amountInput = form.querySelector('#refundAmount');
+    const reasonInput = form.querySelector('#refundReason');
+    
+    // Client-side validation with Vietnamese toast messages
+    const amountValue = parseFloat(amountInput.value);
+    const reasonValue = reasonInput.value.trim();
+    const maxAmount = parseInt('{{ $order->grand_total }}');
+    
+    if (!amountValue || amountValue <= 0) {
+        if (typeof window.showMessage === 'function') {
+            window.showMessage('Vui lòng nhập số tiền hoàn hợp lệ', 'error');
+        } else {
+            alert('Vui lòng nhập số tiền hoàn hợp lệ');
+        }
+        amountInput.focus();
+        return;
+    }
+    
+    if (amountValue > maxAmount) {
+        if (typeof window.showMessage === 'function') {
+            window.showMessage('Số tiền hoàn không được vượt quá ' + maxAmount.toLocaleString('vi-VN') + ' đ', 'error');
+        } else {
+            alert('Số tiền hoàn không được vượt quá ' + maxAmount.toLocaleString('vi-VN') + ' đ');
+        }
+        amountInput.focus();
+        return;
+    }
+    
+    if (!reasonValue) {
+        if (typeof window.showMessage === 'function') {
+            window.showMessage('Vui lòng nhập lý do hoàn tiền', 'error');
+        } else {
+            alert('Vui lòng nhập lý do hoàn tiền');
+        }
+        reasonInput.focus();
+        return;
+    }
+    
+    if (reasonValue.length < 10) {
+        if (typeof window.showMessage === 'function') {
+            window.showMessage('Lý do hoàn tiền phải có ít nhất 10 ký tự', 'error');
+        } else {
+            alert('Lý do hoàn tiền phải có ít nhất 10 ký tự');
+        }
+        reasonInput.focus();
+        return;
+    }
     
     // Show loading state
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Đang gửi...';
     
+    // Use FormData from form directly
+    const formData = new FormData(form);
+    
     // Submit form
     fetch(form.action, {
         method: 'POST',
-        body: new FormData(form),
+        body: formData,
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
             'Accept': 'application/json'
@@ -694,20 +933,23 @@ document.getElementById('refundForm').addEventListener('submit', function(e) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Show success message
+            // Show Vietnamese success message
+            const successMessage = data.message || 'Yêu cầu hoàn tiền đã được gửi thành công!';
             if (typeof window.showMessage === 'function') {
-                window.showMessage(data.message, 'success');
+                window.showMessage(successMessage, 'success');
             } else {
-                alert(data.message);
+                alert(successMessage);
             }
             
-            // Close modal and reload page
+            // Close modal immediately
             closeRefundModal();
+            
+            // Reload page to show updated status
             setTimeout(() => {
                 window.location.reload();
-            }, 1000);
+            }, 1500);
         } else {
-            throw new Error(data.message || 'Có lỗi xảy ra');
+            throw new Error(data.message || 'Có lỗi xảy ra khi gửi yêu cầu hoàn tiền');
         }
     })
     .catch(error => {
@@ -724,13 +966,6 @@ document.getElementById('refundForm').addEventListener('submit', function(e) {
     });
 });
 
-// Close modal when clicking outside
-document.getElementById('refundModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeRefundModal();
-    }
-});
+// Modal close functionality is now handled by onclick attributes in HTML
 </script>
 @endsection
-
-

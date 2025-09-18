@@ -30,7 +30,7 @@
     <!-- Progress Steps -->
     <div class="bg-white border-b border-gray-100">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div class="max-w-4xl mx-auto">
+            <div>
                 <div class="flex items-center justify-center space-x-8">
                     <div class="flex items-center space-x-3">
                         <div class="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-semibold">1</div>
@@ -340,7 +340,7 @@
 
 @push('scripts')
 <script>
- document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function() {
     // Initialize color displays
    document.querySelectorAll('[data-bg-hex]').forEach(function(el){
      const hex = el.getAttribute('data-bg-hex');

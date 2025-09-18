@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use App\Models\Order;
 use App\Models\PaymentTransaction;
+use App\Models\CartItem;
 
 class PaymentController extends Controller
 {
@@ -176,6 +177,10 @@ class PaymentController extends Controller
                 $placeOrder = app(\App\Application\Orders\UseCases\PlaceOrder::class);
                 $order = $placeOrder->handle($orderData);
                 session()->forget('pending_order_data');
+                
+                // Clear cart after successful payment
+                $this->clearCart($orderData['user_id']);
+                
                 return redirect()->route('user.order.success', ['order' => $order->id])
                     ->with('success', 'Thanh toán VNPay thành công!');
             }
@@ -276,6 +281,10 @@ class PaymentController extends Controller
                 $placeOrder = app(\App\Application\Orders\UseCases\PlaceOrder::class);
                 $order = $placeOrder->handle($orderData);
                 session()->forget('pending_order_data');
+                
+                // Clear cart after successful payment
+                $this->clearCart($orderData['user_id']);
+                
                 return redirect()->route('user.order.success', ['order' => $order->id])
                     ->with('success', 'Thanh toán MoMo thành công!');
             }
@@ -340,6 +349,18 @@ class PaymentController extends Controller
             Log::error('MoMo webhook error', ['error' => $e->getMessage()]);
             return response('ERR', 500);
         }
+    }
+
+    /**
+     * Clear cart items for user after successful payment
+     */
+    private function clearCart($userId)
+    {
+        if (!$userId) return;
+        
+        CartItem::where('user_id', $userId)->delete();
+        
+        Log::info('Cart cleared after successful payment', ['user_id' => $userId]);
     }
 }
 

@@ -30,7 +30,7 @@
     <!-- Progress Steps -->
     <div class="bg-white border-b border-gray-100">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div class="max-w-4xl mx-auto">
+            <div>
                 <div class="flex items-center justify-center space-x-8">
                     <a href="{{ route('user.cart.index') }}" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
                         <div class="w-8 h-8 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center text-sm font-semibold">1</div>
@@ -84,24 +84,137 @@
                             </div>
                         </div>
                         <div class="pt-2 space-y-2">
-                            <label class="block text-sm font-medium text-gray-700">Địa chỉ thanh toán</label>
+                            <label class="block text-sm font-medium text-gray-700">Địa chỉ thanh toán <span class="text-red-500">*</span></label>
                             @if(($addresses ?? collect())->count() > 0)
-                            <select name="billing_address_id" class="block w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
-                                <option value="">— Chọn địa chỉ đã lưu —</option>
+                            <select name="billing_address_id" class="block w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" required>
+                                <option value="">— Chọn địa chỉ —</option>
                                 @foreach($addresses as $addr)
-                                    <option value="{{ $addr->id }}" @selected(old('billing_address_id') == $addr->id)>
+                                    <option value="{{ $addr->id }}" @selected(old('billing_address_id') == $addr->id || $addr->is_default)>
                                         {{ $addr->contact_name }} - {{ $addr->address }} @if($addr->is_default) (Mặc định) @endif
                                     </option>
                                 @endforeach
                             </select>
-                            <div class="text-center text-gray-500 text-sm">hoặc</div>
+                            @else
+                            <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                <div class="flex items-center gap-2 text-yellow-800">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <span class="text-sm font-medium">Chưa có địa chỉ đã lưu</span>
+                                </div>
+                                <p class="text-sm text-yellow-700 mt-1">Vui lòng thêm địa chỉ trước khi thanh toán.</p>
+                                <a href="{{ route('user.addresses.index') }}" class="inline-flex items-center gap-1 text-sm font-medium text-yellow-800 hover:text-yellow-900 mt-2">
+                                    <i class="fas fa-plus"></i>
+                                    Thêm địa chỉ
+                                </a>
+                            </div>
                             @endif
-                            <textarea name="billing_address" rows="3" class="block w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" placeholder="Nhập địa chỉ thanh toán mới...">{{ old('billing_address') }}</textarea>
+                        </div>
+
+                        <!-- Payment Type Selection -->
+                        <div class="pt-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Hình thức thanh toán</label>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                                <label class="relative flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-indigo-400 cursor-pointer">
+                                    <input type="radio" name="payment_type" value="full" class="text-indigo-600 focus:ring-indigo-500" checked />
+                                    <div>
+                                        <div class="text-sm font-semibold text-gray-900">Thanh toán toàn bộ</div>
+                                        <div class="text-xs text-gray-500">Thanh toán một lần</div>
+                                    </div>
+                                </label>
+                                <label class="relative flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-indigo-400 cursor-pointer">
+                                    <input type="radio" name="payment_type" value="finance" class="text-indigo-600 focus:ring-indigo-500" />
+                                    <div>
+                                        <div class="text-sm font-semibold text-gray-900">Trả góp</div>
+                                        <div class="text-xs text-gray-500">Vay ngân hàng</div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Finance Options (Hidden by default) -->
+                        <div id="finance-options-section" class="pt-2 hidden">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Gói tài chính</label>
+                            <div class="space-y-3 mb-4">
+                                @foreach(($financeOptions ?? []) as $fo)
+                                <label class="relative flex items-start gap-3 p-4 rounded-lg border border-gray-200 hover:border-indigo-400 cursor-pointer">
+                                    <input type="radio" name="finance_option_id" value="{{ $fo->id }}" 
+                                           data-interest-rate="{{ $fo->interest_rate }}"
+                                           data-min-tenure="{{ $fo->min_tenure }}"
+                                           data-max-tenure="{{ $fo->max_tenure }}"
+                                           data-min-down-payment="{{ $fo->min_down_payment }}"
+                                           class="mt-1 text-indigo-600 focus:ring-indigo-500" />
+                                    <div class="flex-1">
+                                        <div class="flex items-center justify-between mb-1">
+                                            <div class="text-sm font-semibold text-gray-900">{{ $fo->name }}</div>
+                                            <div class="text-sm font-semibold text-indigo-600">{{ $fo->interest_rate }}%/năm</div>
+                                        </div>
+                                        <div class="text-xs text-gray-600 mb-2">{{ $fo->bank_name }}</div>
+                                        <div class="grid grid-cols-2 gap-4 text-xs text-gray-500">
+                                            <div>
+                                                <span class="font-medium">Thời hạn:</span> {{ $fo->min_tenure }}-{{ $fo->max_tenure }} tháng
+                                            </div>
+                                            <div>
+                                                <span class="font-medium">Trả trước:</span> Từ {{ $fo->min_down_payment }}%
+                                            </div>
+                                        </div>
+                                        @if($fo->description)
+                                        <div class="text-xs text-gray-500 mt-1">{{ $fo->description }}</div>
+                                        @endif
+                                    </div>
+                                </label>
+                                @endforeach
+                            </div>
+
+                            <!-- Finance Details -->
+                            <div id="finance-details" class="hidden space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Trả trước (%)</label>
+                                        <input type="number" name="down_payment_percent" min="20" max="80" value="30" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" />
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Thời hạn (tháng)</label>
+                                        <select name="tenure_months" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                                            <option value="12">12 tháng</option>
+                                            <option value="24">24 tháng</option>
+                                            <option value="36" selected>36 tháng</option>
+                                            <option value="48">48 tháng</option>
+                                            <option value="60">60 tháng</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                                    <div class="text-center p-3 bg-white rounded-lg">
+                                        <div class="text-gray-500">Trả trước</div>
+                                        <div id="down-payment-amount" class="font-semibold text-gray-900">0 đ</div>
+                                    </div>
+                                    <div class="text-center p-3 bg-white rounded-lg">
+                                        <div class="text-gray-500">Số tiền vay</div>
+                                        <div id="loan-amount" class="font-semibold text-gray-900">0 đ</div>
+                                    </div>
+                                    <div class="text-center p-3 bg-white rounded-lg">
+                                        <div class="text-gray-500">Trả hàng tháng</div>
+                                        <div id="monthly-payment" class="font-semibold text-indigo-600">0 đ</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Additional Costs Info -->
+                            <div id="additional-costs-info" class="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-200 hidden">
+                                <div class="text-xs text-amber-800 mb-2">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    <span class="font-medium">Lưu ý về chi phí bổ sung:</span>
+                                </div>
+                                <div class="text-xs text-amber-700 space-y-1">
+                                    <div id="tax-info" class="hidden">• Thuế: <span id="tax-amount">0 đ</span> (thanh toán riêng)</div>
+                                    <div id="shipping-info" class="hidden">• Phí vận chuyển: <span id="shipping-amount">0 đ</span> (thanh toán riêng)</div>
+                                    <div class="mt-1 font-medium">→ Trả góp chỉ áp dụng cho giá trị sản phẩm</div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Payment methods -->
                         <div class="pt-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Phương thức thanh toán</label>
+                            <label id="payment-method-label" class="block text-sm font-medium text-gray-700 mb-2">Phương thức thanh toán</label>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 @foreach(($paymentMethods ?? []) as $pm)
                                 <label class="relative flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-indigo-400 cursor-pointer">
@@ -345,6 +458,7 @@ document.addEventListener('DOMContentLoaded', function() {
 @endif
 @endsection
 
+@push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Custom client-side validation using global toast
@@ -366,24 +480,77 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else { alert('Số điện thoại không hợp lệ.'); }
                 return false;
             }
-            // 1) Validate billing address (either selected saved address or entered new address)
+            // 1) Validate billing address (must select from saved addresses)
             const billingSelect = document.querySelector('select[name="billing_address_id"]');
-            const billingTextarea = document.querySelector('textarea[name="billing_address"]');
-            const hasSavedAddress = billingSelect && billingSelect.value && billingSelect.value.trim() !== '';
-            const hasTypedAddress = billingTextarea && billingTextarea.value && billingTextarea.value.trim() !== '';
-            const hasBillingAddress = !!(hasSavedAddress || hasTypedAddress);
+            const hasBillingAddress = billingSelect && billingSelect.value && billingSelect.value.trim() !== '';
 
             if (!hasBillingAddress) {
                 e.preventDefault();
                 if (typeof window.showMessage === 'function') {
-                    window.showMessage('Vui lòng chọn hoặc nhập địa chỉ thanh toán', 'error');
+                    window.showMessage('Vui lòng chọn địa chỉ thanh toán', 'error');
                 } else {
-                    alert('Vui lòng chọn hoặc nhập địa chỉ thanh toán');
+                    alert('Vui lòng chọn địa chỉ thanh toán');
                 }
+                billingSelect?.focus();
                 return false;
             }
 
-            // 2) Validate payment method
+            // 2) Validate payment type
+            const paymentType = document.querySelector('input[name="payment_type"]:checked');
+            if (!paymentType) {
+                e.preventDefault();
+                if (typeof window.showMessage === 'function') {
+                    window.showMessage('Vui lòng chọn hình thức thanh toán', 'error');
+                } else {
+                    alert('Vui lòng chọn hình thức thanh toán');
+                }
+                document.querySelector('input[name="payment_type"]')?.focus();
+                return false;
+            }
+
+            // 3) Validate finance options if payment type is finance
+            if (paymentType.value === 'finance') {
+                const financeOption = document.querySelector('input[name="finance_option_id"]:checked');
+                if (!financeOption) {
+                    e.preventDefault();
+                    if (typeof window.showMessage === 'function') {
+                        window.showMessage('Vui lòng chọn gói tài chính', 'error');
+                    } else {
+                        alert('Vui lòng chọn gói tài chính');
+                    }
+                    document.querySelector('input[name="finance_option_id"]')?.focus();
+                    return false;
+                }
+
+                // Validate down payment percentage
+                const downPaymentInput = document.querySelector('input[name="down_payment_percent"]');
+                const downPaymentValue = parseFloat(downPaymentInput?.value || '0');
+                if (!downPaymentValue || downPaymentValue < 20 || downPaymentValue > 80) {
+                    e.preventDefault();
+                    if (typeof window.showMessage === 'function') {
+                        window.showMessage('Trả trước phải từ 20% đến 80%', 'error');
+                    } else {
+                        alert('Trả trước phải từ 20% đến 80%');
+                    }
+                    downPaymentInput?.focus();
+                    return false;
+                }
+
+                // Validate tenure
+                const tenureSelect = document.querySelector('select[name="tenure_months"]');
+                if (!tenureSelect?.value) {
+                    e.preventDefault();
+                    if (typeof window.showMessage === 'function') {
+                        window.showMessage('Vui lòng chọn thời hạn vay', 'error');
+                    } else {
+                        alert('Vui lòng chọn thời hạn vay');
+                    }
+                    tenureSelect?.focus();
+                    return false;
+                }
+            }
+
+            // 4) Validate payment method
             const picked = document.querySelector('input[name="payment_method_id"]:checked');
             if (!picked) {
                 e.preventDefault();
@@ -392,10 +559,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     alert('Vui lòng chọn phương thức thanh toán');
                 }
+                document.querySelector('input[name="payment_method_id"]')?.focus();
                 return false;
             }
 
-            // 3) Validate terms acceptance
+            // 5) Validate terms acceptance
             const terms = document.querySelector('input[name="terms_accepted"]');
             if (!terms || !terms.checked) {
                 e.preventDefault();
@@ -404,6 +572,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     alert('Bạn phải đồng ý với điều khoản sử dụng');
                 }
+                terms?.focus();
                 return false;
             }
         });
@@ -428,7 +597,202 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     select?.addEventListener('change', recalc);
     recalc();
+
+    // Finance options handling
+    const paymentTypeRadios = document.querySelectorAll('input[name="payment_type"]');
+    const financeSection = document.getElementById('finance-options-section');
+    const financeDetails = document.getElementById('finance-details');
+    const financeRadios = document.querySelectorAll('input[name="finance_option_id"]');
+    const downPaymentInput = document.querySelector('input[name="down_payment_percent"]');
+    const tenureSelect = document.querySelector('select[name="tenure_months"]');
+
+    // Show/hide finance options based on payment type
+    paymentTypeRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            const paymentMethodLabel = document.getElementById('payment-method-label');
+            if (this.value === 'finance') {
+                financeSection.classList.remove('hidden');
+                if (paymentMethodLabel) {
+                    paymentMethodLabel.textContent = 'Phương thức thanh toán (cho khoản trả trước)';
+                }
+            } else {
+                financeSection.classList.add('hidden');
+                financeDetails.classList.add('hidden');
+                if (paymentMethodLabel) {
+                    paymentMethodLabel.textContent = 'Phương thức thanh toán';
+                }
+            }
+        });
+    });
+
+    // Show finance details when a finance option is selected
+    financeRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.checked) {
+                financeDetails.classList.remove('hidden');
+                updateFinanceInputs();
+                calculateFinance();
+            }
+        });
+    });
+
+    // Recalculate when finance inputs change
+    downPaymentInput?.addEventListener('input', calculateFinance);
+    tenureSelect?.addEventListener('change', calculateFinance);
+
+    function updateFinanceInputs() {
+        const selectedFinanceOption = document.querySelector('input[name="finance_option_id"]:checked');
+        if (!selectedFinanceOption) return;
+
+        // Get finance option details from data attributes
+        const minTenure = parseInt(selectedFinanceOption.dataset.minTenure);
+        const maxTenure = parseInt(selectedFinanceOption.dataset.maxTenure);
+        const minDownPayment = parseFloat(selectedFinanceOption.dataset.minDownPayment);
+        
+        // Update tenure select options
+        if (tenureSelect) {
+            tenureSelect.innerHTML = '';
+            
+            // Generate comprehensive options based on min/max tenure range
+            const options = new Set();
+            
+            // Add all multiples of 6 within range (standard increments)
+            for (let months = 6; months <= 60; months += 6) {
+                if (months >= minTenure && months <= maxTenure) {
+                    options.add(months);
+                }
+            }
+            
+            // Add all multiples of 12 within range (yearly increments)
+            for (let months = 12; months <= 60; months += 12) {
+                if (months >= minTenure && months <= maxTenure) {
+                    options.add(months);
+                }
+            }
+            
+            // Add specific common options within range
+            const commonOptions = [3, 6, 9, 12, 15, 18, 21, 24, 30, 36, 42, 48, 54, 60, 66, 72, 84, 96];
+            commonOptions.forEach(months => {
+                if (months >= minTenure && months <= maxTenure) {
+                    options.add(months);
+                }
+            });
+            
+            // Ensure min and max tenure are always included
+            options.add(minTenure);
+            options.add(maxTenure);
+            
+            // Convert to sorted array
+            const sortedOptions = Array.from(options).sort((a, b) => a - b);
+            
+            // Smart default selection
+            let defaultSelected = false;
+            sortedOptions.forEach(months => {
+                const option = document.createElement('option');
+                option.value = months;
+                option.textContent = months + ' tháng';
+                
+                // Selection priority: 36 > 24 > 12 > middle option > first option
+                if (!defaultSelected) {
+                    if (months === 36) {
+                        option.selected = true;
+                        defaultSelected = true;
+                    } else if (months === 24 && !sortedOptions.includes(36)) {
+                        option.selected = true;
+                        defaultSelected = true;
+                    } else if (months === 12 && !sortedOptions.includes(36) && !sortedOptions.includes(24)) {
+                        option.selected = true;
+                        defaultSelected = true;
+                    } else if (months === sortedOptions[Math.floor(sortedOptions.length / 2)] && !sortedOptions.includes(36) && !sortedOptions.includes(24) && !sortedOptions.includes(12)) {
+                        option.selected = true;
+                        defaultSelected = true;
+                    } else if (months === sortedOptions[0] && sortedOptions.length === 1) {
+                        option.selected = true;
+                        defaultSelected = true;
+                    }
+                }
+                
+                tenureSelect.appendChild(option);
+            });
+            
+            // Fallback: select first option if nothing selected
+            if (!defaultSelected && sortedOptions.length > 0) {
+                tenureSelect.options[0].selected = true;
+            }
+        }
+        
+        // Update down payment input
+        if (downPaymentInput) {
+            downPaymentInput.min = minDownPayment;
+            downPaymentInput.value = minDownPayment;
+        }
+    }
+
+    function calculateFinance() {
+        const selectedFinanceOption = document.querySelector('input[name="finance_option_id"]:checked');
+        if (!selectedFinanceOption) return;
+
+        const subtotal = parseInt(subtotalEl.dataset.subtotal || '0');
+        const tax = parseInt(taxEl.dataset.tax || '0');
+        const shipping = parseInt(shipEl.dataset.shipping || '0');
+        
+        // Finance calculation should be based on product value only (excluding tax and shipping)
+        const financeableAmount = subtotal; // Product value only
+        const totalAmount = subtotal + tax + shipping; // For display purposes
+
+        const downPaymentPercent = parseFloat(downPaymentInput?.value || '30');
+        const tenureMonths = parseInt(tenureSelect?.value || '36');
+        
+        // Get interest rate from data attribute
+        const interestRate = parseFloat(selectedFinanceOption.dataset.interestRate) / 100;
+
+        const downPaymentAmount = Math.round(financeableAmount * (downPaymentPercent / 100));
+        const loanAmount = financeableAmount - downPaymentAmount;
+        
+        // Calculate monthly payment using compound interest formula
+        const monthlyRate = interestRate / 12;
+        const monthlyPayment = monthlyRate > 0 
+            ? Math.round(loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, tenureMonths)) / (Math.pow(1 + monthlyRate, tenureMonths) - 1))
+            : Math.round(loanAmount / tenureMonths);
+
+        // Update display
+        document.getElementById('down-payment-amount').textContent = format(downPaymentAmount);
+        document.getElementById('loan-amount').textContent = format(loanAmount);
+        document.getElementById('monthly-payment').textContent = format(monthlyPayment);
+        
+        // Show additional costs info if tax or shipping exists
+        const additionalCostsEl = document.getElementById('additional-costs-info');
+        if (additionalCostsEl) {
+            if (tax > 0 || shipping > 0) {
+                additionalCostsEl.classList.remove('hidden');
+                
+                const taxInfoEl = document.getElementById('tax-info');
+                const taxAmountEl = document.getElementById('tax-amount');
+                if (taxInfoEl && taxAmountEl) {
+                    if (tax > 0) {
+                        taxAmountEl.textContent = format(tax);
+                        taxInfoEl.classList.remove('hidden');
+                    } else {
+                        taxInfoEl.classList.add('hidden');
+                    }
+                }
+                
+                const shippingInfoEl = document.getElementById('shipping-info');
+                const shippingAmountEl = document.getElementById('shipping-amount');
+                if (shippingInfoEl && shippingAmountEl) {
+                    if (shipping > 0) {
+                        shippingAmountEl.textContent = format(shipping);
+                        shippingInfoEl.classList.remove('hidden');
+                    } else {
+                        shippingInfoEl.classList.add('hidden');
+                    }
+                }
+            } else {
+                additionalCostsEl.classList.add('hidden');
+            }
+        }
+    }
+
 });
 </script>
-
-
+@endpush

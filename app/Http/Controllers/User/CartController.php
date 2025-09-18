@@ -489,12 +489,13 @@ class CartController extends Controller
         }
 
         $paymentMethods = PaymentMethod::where('is_active', true)->orderBy('id')->get();
+        $financeOptions = \App\Models\FinanceOption::where('is_active', true)->orderBy('sort_order')->get();
 
         // Issue one-time checkout token to prevent duplicate submissions/back-resubmit
         $checkoutToken = bin2hex(random_bytes(16));
         session(['checkout_token' => $checkoutToken]);
 
-        return view('user.cart.checkout', compact('cartItems', 'total', 'user', 'addresses', 'paymentMethods', 'checkoutToken'));
+        return view('user.cart.checkout', compact('cartItems', 'total', 'user', 'addresses', 'paymentMethods', 'financeOptions', 'checkoutToken'));
     }
 
     public function processCheckout(Request $request)
@@ -552,6 +553,10 @@ class CartController extends Controller
                 'shipping_method' => 'nullable|in:standard,express',
                 'note' => 'nullable|string|max:1000',
                 'payment_method_id' => 'required|exists:payment_methods,id',
+                'payment_type' => 'required|in:full,finance',
+                'finance_option_id' => 'required_if:payment_type,finance|exists:finance_options,id',
+                'down_payment_percent' => 'required_if:payment_type,finance|numeric|min:20|max:80',
+                'tenure_months' => 'required_if:payment_type,finance|integer|min:3|max:96',
                 'terms_accepted' => 'required|accepted',
             ], [
                 'phone.required' => 'Vui lòng nhập số điện thoại.',
@@ -775,7 +780,33 @@ class CartController extends Controller
             
             // For COD and Bank Transfer, create order immediately
             $placeOrder = app(PlaceOrder::class);
-            $order = $placeOrder->handle([
+            // Calculate finance data if applicable
+            $financeData = [];
+            if ($validated['payment_type'] === 'finance' && !empty($validated['finance_option_id'])) {
+                $financeOption = \App\Models\FinanceOption::find($validated['finance_option_id']);
+                $downPaymentPercent = $validated['down_payment_percent'] ?? 30;
+                $tenureMonths = $validated['tenure_months'] ?? 36;
+                
+                // Finance calculation should be based on product value only (excluding tax and shipping)
+                $financeableAmount = $total; // Product value only
+                $downPaymentAmount = round($financeableAmount * ($downPaymentPercent / 100));
+                $loanAmount = $financeableAmount - $downPaymentAmount;
+                
+                // Calculate monthly payment
+                $monthlyRate = ($financeOption->interest_rate / 100) / 12;
+                $monthlyPayment = $monthlyRate > 0 
+                    ? round($loanAmount * ($monthlyRate * pow(1 + $monthlyRate, $tenureMonths)) / (pow(1 + $monthlyRate, $tenureMonths) - 1))
+                    : round($loanAmount / $tenureMonths);
+                
+                $financeData = [
+                    'finance_option_id' => $validated['finance_option_id'],
+                    'down_payment_amount' => $downPaymentAmount,
+                    'tenure_months' => $tenureMonths,
+                    'monthly_payment_amount' => $monthlyPayment,
+                ];
+            }
+
+            $orderData = array_merge([
                 'user_id' => $userId,
                 'phone' => $validated['phone'],
                 'name' => $validated['name'],
@@ -802,7 +833,9 @@ class CartController extends Controller
                         'item_metadata' => $item['item_metadata'] ?? null,
                     ];
                 }, $orderItems),
-            ]);
+            ], $financeData);
+
+            $order = $placeOrder->handle($orderData);
 
             // Notifications are handled by OrderCreated event listener
 
@@ -829,8 +862,34 @@ class CartController extends Controller
 
     private function processOnlinePayment($methodCode, $validated, $orderItems, $cartItems, $userId, $sessionId, $total, $taxTotal, $shippingFee, $grandTotal, $billingAddressId, $shippingAddressId, $billingAddressText, $shippingAddressText)
     {
+        // Calculate finance data if applicable
+        $financeData = [];
+        if ($validated['payment_type'] === 'finance' && !empty($validated['finance_option_id'])) {
+            $financeOption = \App\Models\FinanceOption::find($validated['finance_option_id']);
+            $downPaymentPercent = $validated['down_payment_percent'] ?? 30;
+            $tenureMonths = $validated['tenure_months'] ?? 36;
+            
+            // Finance calculation should be based on product value only (excluding tax and shipping)
+            $financeableAmount = $total; // Product value only
+            $downPaymentAmount = round($financeableAmount * ($downPaymentPercent / 100));
+            $loanAmount = $financeableAmount - $downPaymentAmount;
+            
+            // Calculate monthly payment
+            $monthlyRate = ($financeOption->interest_rate / 100) / 12;
+            $monthlyPayment = $monthlyRate > 0 
+                ? round($loanAmount * ($monthlyRate * pow(1 + $monthlyRate, $tenureMonths)) / (pow(1 + $monthlyRate, $tenureMonths) - 1))
+                : round($loanAmount / $tenureMonths);
+            
+            $financeData = [
+                'finance_option_id' => $validated['finance_option_id'],
+                'down_payment_amount' => $downPaymentAmount,
+                'tenure_months' => $tenureMonths,
+                'monthly_payment_amount' => $monthlyPayment,
+            ];
+        }
+
         // Store order data in session for later creation
-        $orderData = [
+        $orderData = array_merge([
             'user_id' => $userId,
             'phone' => $validated['phone'],
             'name' => $validated['name'],
@@ -857,7 +916,7 @@ class CartController extends Controller
                     'item_metadata' => $item['item_metadata'] ?? null,
                 ];
             }, $orderItems),
-        ];
+        ], $financeData);
         
         session(['pending_order_data' => $orderData]);
         
@@ -943,6 +1002,7 @@ class CartController extends Controller
             'items.item',
             'items.color',
             'paymentMethod',
+            'financeOption',
             'billingAddress',
             'shippingAddress',
         ]);

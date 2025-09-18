@@ -22,10 +22,51 @@
                                 </div>
                                 <div class="text-xs sm:text-sm text-gray-500 mt-1 truncate" data-role="order-meta">{{ $order->items->count() }} sản phẩm</div>
                             </div>
-                            @php($canCancel = in_array($order->status, ['pending','confirmed']) && $order->payment_status !== 'completed')
+                            @php
+                                // Improved cancel logic consistent with detail page
+                                $canCancel = in_array($order->status, ['pending', 'confirmed']) 
+                                    && !in_array($order->payment_status, ['completed', 'processing']);
+                                
+                                // Additional checks for finance orders
+                                if ($order->finance_option_id && $order->down_payment_amount > 0) {
+                                    // If down payment is made, only allow cancel if payment is still pending
+                                    $canCancel = $canCancel && $order->payment_status === 'pending';
+                                }
+                                
+                                // Time-based restriction: 24 hours window for cancellation
+                                $withinCancelWindow = $order->created_at->diffInHours(now()) <= 24;
+                                $canCancel = $canCancel && $withinCancelWindow;
+                                
+                                // Generate cancel reason for better UX
+                                $cancelReason = '';
+                                if (!in_array($order->status, ['pending', 'confirmed'])) {
+                                    $cancelReason = 'Đơn hàng đã được xử lý, không thể hủy';
+                                } elseif (in_array($order->payment_status, ['completed', 'processing'])) {
+                                    $cancelReason = 'Thanh toán đã được xử lý, không thể hủy';
+                                } elseif ($order->finance_option_id && $order->down_payment_amount > 0 && $order->payment_status !== 'pending') {
+                                    $cancelReason = 'Đã thanh toán trả trước, vui lòng yêu cầu hoàn tiền';
+                                } elseif (!$withinCancelWindow) {
+                                    $cancelReason = 'Chỉ có thể hủy trong vòng 24 giờ sau khi đặt hàng';
+                                } else {
+                                    $cancelReason = 'Hủy đơn hàng';
+                                }
+                            @endphp
                             <div class="text-right shrink-0 ml-2">
-                                <div class="text-indigo-700 font-extrabold text-sm sm:text-lg">{{ number_format($order->grand_total, 0, ',', '.') }} đ</div>
-                                <div class="text-[11px] sm:text-xs text-gray-500">Tổng thanh toán</div>
+                                @if($order->finance_option_id)
+                                    <!-- Finance Order Display -->
+                                    <div class="text-indigo-700 font-extrabold text-sm sm:text-lg">{{ number_format($order->down_payment_amount ?? 0, 0, ',', '.') }} đ</div>
+                                    <div class="text-[11px] sm:text-xs text-gray-500">Trả trước</div>
+                                    <div class="text-[10px] sm:text-xs text-blue-600 mt-1">
+                                        <i class="fas fa-credit-card mr-1"></i>Trả góp {{ $order->tenure_months ?? 0 }} tháng
+                                    </div>
+                                @else
+                                    <!-- Full Payment Display -->
+                                    <div class="text-indigo-700 font-extrabold text-sm sm:text-lg">{{ number_format($order->grand_total, 0, ',', '.') }} đ</div>
+                                    <div class="text-[11px] sm:text-xs text-gray-500">Tổng thanh toán</div>
+                                    <div class="text-[10px] sm:text-xs text-emerald-600 mt-1">
+                                        <i class="fas fa-check-circle mr-1"></i>Thanh toán đầy đủ
+                                    </div>
+                                @endif
                             </div>
                         </div>
 
@@ -41,49 +82,66 @@
                     @endif
                     <div class="mt-3 sm:mt-4 flex items-center justify-between">
                         <div class="flex flex-wrap items-center gap-2 sm:gap-3" data-role="status-container">
-                            <span class="inline-flex items-center py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold
-                                @class([
-                                    'bg-yellow-50 text-yellow-700 border border-yellow-200' => $order->status === 'pending',
-                                    'bg-blue-50 text-blue-700 border border-blue-200' => $order->status === 'confirmed',
-                                    'bg-indigo-50 text-indigo-700 border border-indigo-200' => $order->status === 'shipping',
-                                    'bg-emerald-50 text-emerald-700 border border-emerald-200' => $order->status === 'delivered',
-                                    'bg-rose-50 text-rose-700 border border-rose-200' => $order->status === 'cancelled',
-                                ])" data-role="status-badge">
-                                <i class="fas 
-                                    @if($order->status === 'pending') fa-clock
-                                    @elseif($order->status === 'confirmed') fa-check-circle
-                                    @elseif($order->status === 'shipping') fa-shipping-fast
-                                    @elseif($order->status === 'delivered') fa-check-double
-                                    @elseif($order->status === 'cancelled') fa-ban
-                                    @else fa-box
-                                    @endif mr-1"></i> {{ $order->status_display }}
-                            </span>
-                            <span class="inline-flex items-center py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold
-                                @class([
-                                    'bg-gray-50 text-gray-700 border border-gray-200' => $order->payment_status === 'pending',
-                                    'bg-blue-50 text-blue-700 border border-blue-200' => $order->payment_status === 'processing',
-                                    'bg-emerald-50 text-emerald-700 border border-emerald-200' => $order->payment_status === 'completed',
-                                    'bg-rose-50 text-rose-700 border border-rose-200' => $order->payment_status === 'failed',
-                                    'bg-slate-50 text-slate-700 border border-slate-200' => $order->payment_status === 'cancelled',
-                                ])">
-                                <i class="fas 
-                                    @if($order->payment_status === 'pending') fa-clock
-                                    @elseif($order->payment_status === 'processing') fa-spinner
-                                    @elseif($order->payment_status === 'completed') fa-check-circle
-                                    @elseif($order->payment_status === 'failed') fa-times-circle
-                                    @elseif($order->payment_status === 'cancelled') fa-ban
-                                    @else fa-credit-card
-                                    @endif mr-1"></i> {{ $order->payment_status_display }}
-                            </span>
+                            <div class="flex items-center gap-1 text-[10px] sm:text-xs">
+                                <span class="text-gray-500">Đơn hàng:</span>
+                                <span class="inline-flex items-center py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold
+                                    @class([
+                                        'bg-yellow-50 text-yellow-700' => $order->status === 'pending',
+                                        'bg-blue-50 text-blue-700' => $order->status === 'confirmed',
+                                        'bg-indigo-50 text-indigo-700' => $order->status === 'shipping',
+                                        'bg-emerald-50 text-emerald-700' => $order->status === 'delivered',
+                                        'text-gray-800 font-semibold' => $order->status === 'cancelled',
+                                    ])" 
+                                    data-role="status-badge"
+                                    data-status="{{ $order->status }}">
+                                    <i class="fas 
+                                        @if($order->status === 'pending') fa-clock
+                                        @elseif($order->status === 'confirmed') fa-check-circle
+                                        @elseif($order->status === 'shipping') fa-shipping-fast
+                                        @elseif($order->status === 'delivered') fa-check-double
+                                        @elseif($order->status === 'cancelled') fa-ban
+                                        @else fa-box
+                                        @endif mr-1"></i> {{ $order->status_display }}
+                                </span>
+                            </div>
+                            <div class="flex items-center gap-1 text-[10px] sm:text-xs">
+                                <span class="text-gray-500">Thanh toán:</span>
+                                <span class="inline-flex items-center py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold
+                                    @class([
+                                        'bg-gray-50 text-gray-700' => $order->payment_status === 'pending',
+                                        'bg-blue-50 text-blue-700' => $order->payment_status === 'processing',
+                                        'bg-emerald-50 text-emerald-700' => $order->payment_status === 'completed',
+                                        'text-gray-800 font-semibold' => $order->payment_status === 'failed',
+                                        'text-gray-800 font-semibold' => $order->payment_status === 'cancelled',
+                                    ])"
+                                    data-role="payment-status-badge"
+                                    data-payment-status="{{ $order->payment_status }}">
+                                    <i class="fas 
+                                        @if($order->payment_status === 'pending') fa-clock
+                                        @elseif($order->payment_status === 'processing') fa-spinner
+                                        @elseif($order->payment_status === 'completed') fa-check-circle
+                                        @elseif($order->payment_status === 'failed') fa-times-circle
+                                        @elseif($order->payment_status === 'cancelled') fa-ban
+                                        @else fa-credit-card
+                                        @endif mr-1"></i> 
+                                    {{ $order->payment_status_display }}
+                                </span>
+                            </div>
                         </div>
                         <div class="flex items-center gap-2">
                             <a href="{{ route('user.orders.show', $order) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 text-xs"><i class="fas fa-eye"></i> Chi tiết</a>
-                            <form action="{{ route('user.orders.cancel', $order) }}" method="post" title="{{ $canCancel ? 'Hủy đơn' : 'Không thể hủy ở trạng thái hiện tại' }}">
-                                @csrf
-                                <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-500 text-white hover:bg-rose-600 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed" {{ $canCancel ? '' : 'disabled' }}>
-                                    <i class="fas fa-ban"></i> Hủy đơn
-                                </button>
-                            </form>
+                            @if($order->status !== 'cancelled')
+                                <form action="{{ route('user.orders.cancel', $order) }}" method="post" title="{{ $cancelReason }}">
+                                    @csrf
+                                    <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-500 text-white hover:bg-rose-600 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed" {{ $canCancel ? '' : 'disabled' }}>
+                                        <i class="fas fa-ban"></i> Hủy đơn
+                                    </button>
+                                </form>
+                            @else
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-gray-500 bg-gray-100">
+                                    <i class="fas fa-ban"></i> Đã hủy
+                                </span>
+                            @endif
                         </div>
                     </div>
                 </div>

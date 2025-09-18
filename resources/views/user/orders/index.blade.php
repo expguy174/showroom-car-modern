@@ -131,14 +131,27 @@
                 const canCancel = !button.disabled;
                 
                 if (canCancel) {
-                    const orderNumber = form.closest('.bg-white').querySelector('a[href*="/orders/"]').textContent;
+                    const orderCard = form.closest('.bg-white');
+                    const orderNumber = orderCard.querySelector('a[href*="/orders/"]').textContent;
+                    const orderAmountEl = orderCard.querySelector('.text-indigo-700.font-extrabold');
+                    const orderAmount = orderAmountEl ? orderAmountEl.textContent : '';
+                    const isFinanceOrder = orderCard.querySelector('.fa-credit-card') !== null;
                     
-                    // Use confirm dialog like wishlist
+                    // Enhanced confirm dialog with more details
+                    let confirmMessage = `Bạn có chắc chắn muốn hủy đơn hàng ${orderNumber}?`;
+                    if (orderAmount) {
+                        confirmMessage += `\n\nGiá trị đơn hàng: ${orderAmount}`;
+                    }
+                    if (isFinanceOrder) {
+                        confirmMessage += `\nLưu ý: Nếu đã thanh toán trả trước, bạn có thể yêu cầu hoàn tiền sau khi hủy.`;
+                    }
+                    confirmMessage += `\n\nHành động này không thể hoàn tác.`;
+                    
                     showConfirmDialog(
-                        'Hủy đơn hàng?',
-                        `Bạn có chắc chắn muốn hủy đơn hàng ${orderNumber}? Hành động này không thể hoàn tác.`,
-                        'Hủy đơn',
-                        'Hủy bỏ',
+                        'Xác nhận hủy đơn hàng',
+                        confirmMessage,
+                        'Xác nhận hủy',
+                        'Không hủy',
                         () => {
                             // Show loading state
                             button.disabled = true;
@@ -163,7 +176,7 @@
                                                 window.showMessage(data.message || 'Đã hủy đơn hàng thành công', 'success');
                                             }
 
-                                            // Update UI without reload
+                                            // Update UI immediately without reload
                                             updateOrderStatusAfterCancel(form, orderNumber);
 
                                             // Refresh notifications UI (badge + list)
@@ -203,27 +216,47 @@
             }
         });
 
-        // Update order status after cancellation
+        // Update order status after cancellation - SIMPLE & EFFECTIVE
         function updateOrderStatusAfterCancel(form, orderNumber) {
             const orderCard = form.closest('.order-card') || form.closest('.bg-white');
             const button = form.querySelector('button[type="submit"]');
 
-            // Disable the cancel button but show original label/icon
-            if (button){
-                button.disabled = true;
-                button.innerHTML = '<i class="fas fa-ban"></i> Hủy đơn';
-                button.classList.remove('bg-rose-500', 'hover:bg-rose-600');
-                button.classList.add('bg-gray-100', 'text-gray-400', 'cursor-not-allowed');
+            // 1. Replace cancel button with "Đã hủy" status
+            if (button) {
+                button.parentElement.innerHTML = `
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-gray-500 bg-gray-100">
+                        <i class="fas fa-ban"></i> Đã hủy
+                    </span>
+                `;
             }
 
-            // Simple, effective: only change the ORDER status badge content to cancelled (keep all classes as-is)
-            const statusBadge = orderCard?.querySelector('[data-role="status-badge"]');
-            if (statusBadge){
-                statusBadge.classList.add('font-semibold');
+            if (!orderCard) return;
+
+            // 2. Update ORDER status badge - COPY EXACT template classes
+            const statusBadge = orderCard.querySelector('[data-role="status-badge"]');
+            if (statusBadge) {
+                statusBadge.className = 'inline-flex items-center py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold text-gray-800 font-semibold';
+                statusBadge.setAttribute('data-status', 'cancelled');
                 statusBadge.innerHTML = '<i class="fas fa-ban mr-1"></i> Đã hủy';
             }
 
-            // Leave payment status badge and meta line unchanged
+            // 3. Update PAYMENT status badge - COPY EXACT template classes
+            const paymentBadge = orderCard.querySelector('[data-role="payment-status-badge"]');
+            if (paymentBadge) {
+                const currentPaymentStatus = paymentBadge.getAttribute('data-payment-status');
+                
+                if (currentPaymentStatus === 'pending') {
+                    // pending → cancelled
+                    paymentBadge.className = 'inline-flex items-center py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold text-gray-800 font-semibold';
+                    paymentBadge.setAttribute('data-payment-status', 'cancelled');
+                    paymentBadge.innerHTML = '<i class="fas fa-ban mr-1"></i> Đã hủy';
+                } else if (currentPaymentStatus === 'processing') {
+                    // processing → failed
+                    paymentBadge.className = 'inline-flex items-center py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold text-gray-800 font-semibold';
+                    paymentBadge.setAttribute('data-payment-status', 'failed');
+                    paymentBadge.innerHTML = '<i class="fas fa-times-circle mr-1"></i> Thanh toán thất bại';
+                }
+            }
         }
 
         // Confirm dialog function (same as wishlist)

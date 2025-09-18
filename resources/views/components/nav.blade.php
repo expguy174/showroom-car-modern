@@ -518,6 +518,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
 
     // Notification UI helpers
     window.refreshNotifBadge = async function(){
+        @auth
         try{
             const res = await fetch(`{{ route('notifications.unread-count') }}`, { headers: { 'X-Requested-With':'XMLHttpRequest' } });
             const data = await res.json().catch(()=>({}));
@@ -533,6 +534,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                 });
             }
         }catch{}
+        @endauth
     };
 
     window.prependNotifItem = function(title, message){
@@ -580,14 +582,18 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
         }catch{}
     };
 
-    // Poll badge every 30s
+    // Poll badge every 30s (only when authenticated)
+    @auth
     setInterval(function(){ if (window.refreshNotifBadge) window.refreshNotifBadge(); }, 30000);
+    @endauth
 
     // Load list when user opens notification dropdown
     document.addEventListener('click', function(e){
         const btn = e.target.closest('.notif-dropdown [data-dropdown-trigger]');
         if (!btn) return;
+        @auth
         if (window.refreshNotifList) window.refreshNotifList();
         if (window.refreshNotifBadge) window.refreshNotifBadge();
+        @endauth
     });
 </script>

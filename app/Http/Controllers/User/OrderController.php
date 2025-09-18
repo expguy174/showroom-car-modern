@@ -101,7 +101,17 @@ class OrderController extends Controller
         }
 
         $oldStatus = $order->status;
+        $oldPaymentStatus = $order->payment_status;
+        
         $order->status = 'cancelled';
+        // Update payment status based on current status
+        if ($order->payment_status === 'pending') {
+            $order->payment_status = 'cancelled';
+        } elseif ($order->payment_status === 'processing') {
+            $order->payment_status = 'failed'; // Processing payments become failed when order is cancelled
+        }
+        // Note: completed payments remain completed (handled by validation above)
+        
         $order->save();
 
         // Log action
@@ -112,8 +122,8 @@ class OrderController extends Controller
                 'action' => 'user_cancel',
                 'message' => 'Khách hàng yêu cầu hủy đơn hàng',
                 'details' => [
-                    'from' => $oldStatus,
-                    'to' => 'cancelled',
+                    'order_status' => ['from' => $oldStatus, 'to' => 'cancelled'],
+                    'payment_status' => ['from' => $oldPaymentStatus, 'to' => $order->payment_status],
                 ],
                 'ip_address' => $request->ip(),
                 'user_agent' => (string) $request->userAgent(),
