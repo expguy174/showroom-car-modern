@@ -12,9 +12,15 @@ return new class extends Migration {
             $table->string('name');
             $table->string('code')->unique();
             $table->text('description')->nullable();
-            $table->enum('type', ['percentage', 'fixed_amount', 'free_shipping'])->default('percentage');
+            $table->enum('type', [
+                'percentage',            // Giảm theo %
+                'fixed_amount',          // Giảm cố định
+                'free_shipping',         // Miễn phí ship
+                'brand_specific'         // Giảm giá theo thương hiệu
+            ])->default('percentage');
             $table->decimal('discount_value', 10, 2); // Giá trị giảm giá
             $table->decimal('min_order_amount', 15, 2)->nullable(); // Giá trị đơn hàng tối thiểu
+            $table->decimal('max_discount_amount', 15, 2)->nullable()->comment('Số tiền giảm tối đa');
             $table->unsignedInteger('usage_limit')->nullable(); // Giới hạn sử dụng
             $table->unsignedInteger('usage_count')->default(0); // Số lần đã sử dụng
             

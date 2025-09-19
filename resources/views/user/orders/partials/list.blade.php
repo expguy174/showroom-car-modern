@@ -12,75 +12,89 @@
         @foreach($orders as $order)
             <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow order-card" data-id="{{ $order->id }}">
                 <div class="p-3 sm:p-5 flex flex-col h-full">
-                    <div class="flex-1 flex flex-col gap-3 sm:gap-4">
-                        <div class="flex items-start sm:items-center justify-between gap-2">
-                            <div class="min-w-0">
-                                <div class="flex items-center gap-2 flex-wrap">
-                                    <a href="{{ route('user.orders.show', $order) }}" class="text-gray-800 font-semibold truncate hover:underline">#{{ $order->order_number ?? $order->id }}</a>
-                                    <span class="hidden xs:inline text-gray-400">•</span>
-                                    <span class="text-gray-500 text-xs sm:text-sm">{{ $order->created_at?->format('d/m/Y H:i') }}</span>
-                                </div>
-                                <div class="text-xs sm:text-sm text-gray-500 mt-1 truncate" data-role="order-meta">{{ $order->items->count() }} sản phẩm</div>
+                    <div class="flex-1 flex flex-col space-y-2">
+                        <!-- Dòng 1: Mã đơn + Ngày tạo (trái) | Giá tiền (phải) -->
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2 flex-wrap min-w-0">
+                                <a href="{{ route('user.orders.show', $order) }}" class="text-gray-800 font-semibold truncate hover:underline">#{{ $order->order_number ?? $order->id }}</a>
+                                <span class="hidden xs:inline text-gray-400">•</span>
+                                <span class="text-gray-500 text-xs sm:text-sm">{{ $order->created_at?->format('d/m/Y H:i') }}</span>
                             </div>
-                            @php
-                                // Improved cancel logic consistent with detail page
-                                $canCancel = in_array($order->status, ['pending', 'confirmed']) 
-                                    && !in_array($order->payment_status, ['completed', 'processing']);
-                                
-                                // Additional checks for finance orders
-                                if ($order->finance_option_id && $order->down_payment_amount > 0) {
-                                    // If down payment is made, only allow cancel if payment is still pending
-                                    $canCancel = $canCancel && $order->payment_status === 'pending';
-                                }
-                                
-                                // Time-based restriction: 24 hours window for cancellation
-                                $withinCancelWindow = $order->created_at->diffInHours(now()) <= 24;
-                                $canCancel = $canCancel && $withinCancelWindow;
-                                
-                                // Generate cancel reason for better UX
-                                $cancelReason = '';
-                                if (!in_array($order->status, ['pending', 'confirmed'])) {
-                                    $cancelReason = 'Đơn hàng đã được xử lý, không thể hủy';
-                                } elseif (in_array($order->payment_status, ['completed', 'processing'])) {
-                                    $cancelReason = 'Thanh toán đã được xử lý, không thể hủy';
-                                } elseif ($order->finance_option_id && $order->down_payment_amount > 0 && $order->payment_status !== 'pending') {
-                                    $cancelReason = 'Đã thanh toán trả trước, vui lòng yêu cầu hoàn tiền';
-                                } elseif (!$withinCancelWindow) {
-                                    $cancelReason = 'Chỉ có thể hủy trong vòng 24 giờ sau khi đặt hàng';
-                                } else {
-                                    $cancelReason = 'Hủy đơn hàng';
-                                }
-                            @endphp
-                            <div class="text-right shrink-0 ml-2">
+                            <div class="text-right shrink-0">
+                                <div class="text-indigo-700 font-extrabold text-sm sm:text-lg">{{ number_format($order->finance_option_id ? ($order->down_payment_amount ?? 0) : $order->grand_total, 0, ',', '.') }} đ</div>
+                            </div>
+                        </div>
+
+                        <!-- Dòng 2: Meta info (trái) | Trả trước/Khuyến mãi (phải) -->
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="text-xs sm:text-sm text-gray-500 flex items-center gap-3 min-w-0" data-role="order-meta">
+                                <div>{{ $order->items->count() }} sản phẩm</div>
+                                <div class="flex items-center gap-1 text-gray-600">
+                                    <i class="fas fa-shipping-fast text-[10px]"></i>
+                                    <span>{{ $order->shipping_method === 'express' ? 'Giao nhanh' : 'Tiêu chuẩn' }}</span>
+                                </div>
+                                @if($order->paymentMethod)
+                                    <div class="flex items-center gap-1 text-gray-600">
+                                        <i class="fas fa-credit-card text-[10px]"></i>
+                                        <span>{{ $order->paymentMethod->name }}</span>
+                                    </div>
+                                @endif
+                            </div>
+                            <div class="text-right shrink-0 flex flex-col space-y-2">
                                 @if($order->finance_option_id)
-                                    <!-- Finance Order Display -->
-                                    <div class="text-indigo-700 font-extrabold text-sm sm:text-lg">{{ number_format($order->down_payment_amount ?? 0, 0, ',', '.') }} đ</div>
                                     <div class="text-[11px] sm:text-xs text-gray-500">Trả trước</div>
-                                    <div class="text-[10px] sm:text-xs text-blue-600 mt-1">
-                                        <i class="fas fa-credit-card mr-1"></i>Trả góp {{ $order->tenure_months ?? 0 }} tháng
+                                @else
+                                    <div class="text-[11px] sm:text-xs text-gray-500">Tổng cộng</div>
+                                @endif
+                                @if((float)($order->discount_total ?? 0) > 0)
+                                    <div class="text-[10px] sm:text-xs text-green-600">
+                                        <i class="fas fa-tag mr-1"></i>Có khuyến mãi
                                     </div>
                                 @else
-                                    <!-- Full Payment Display -->
-                                    <div class="text-indigo-700 font-extrabold text-sm sm:text-lg">{{ number_format($order->grand_total, 0, ',', '.') }} đ</div>
-                                    <div class="text-[11px] sm:text-xs text-gray-500">Tổng thanh toán</div>
-                                    <div class="text-[10px] sm:text-xs text-emerald-600 mt-1">
-                                        <i class="fas fa-check-circle mr-1"></i>Thanh toán đầy đủ
-                                    </div>
+                                    @if($order->finance_option_id)
+                                        <div class="text-[10px] sm:text-xs text-blue-600">
+                                            <i class="fas fa-credit-card mr-1"></i>{{ $order->tenure_months ?? 0 }} tháng
+                                        </div>
+                                    @else
+                                        <div class="text-[10px] sm:text-xs text-emerald-600">
+                                            <i class="fas fa-check-circle mr-1"></i>Thanh toán đầy đủ
+                                        </div>
+                                    @endif
                                 @endif
                             </div>
                         </div>
 
-                        
-                    </div>
-                    @if($order->tracking_number)
-                    <div class="mt-2 sm:mt-3 text-[11px] sm:text-xs text-gray-500">
-                        Mã vận đơn: <span class="font-medium text-gray-700">{{ $order->tracking_number }}</span>
-                        @if($order->estimated_delivery)
-                            <span class="ml-2">• Dự kiến: {{ $order->estimated_delivery->format('d/m/Y') }}</span>
-                        @endif
-                    </div>
-                    @endif
-                    <div class="mt-3 sm:mt-4 flex items-center justify-between">
+                        <!-- Dòng 3: Status (trái) | Buttons (phải) -->
+                        @php
+                            // Improved cancel logic consistent with detail page
+                            $canCancel = in_array($order->status, ['pending', 'confirmed']) 
+                                && !in_array($order->payment_status, ['completed', 'processing']);
+                            
+                            // Additional checks for finance orders
+                            if ($order->finance_option_id && $order->down_payment_amount > 0) {
+                                // If down payment is made, only allow cancel if payment is still pending
+                                $canCancel = $canCancel && $order->payment_status === 'pending';
+                            }
+                            
+                            // Time-based restriction: 24 hours window for cancellation
+                            $withinCancelWindow = $order->created_at->diffInHours(now()) <= 24;
+                            $canCancel = $canCancel && $withinCancelWindow;
+                            
+                            // Generate cancel reason for better UX
+                            $cancelReason = '';
+                            if (!in_array($order->status, ['pending', 'confirmed'])) {
+                                $cancelReason = 'Đơn hàng đã được xử lý, không thể hủy';
+                            } elseif (in_array($order->payment_status, ['completed', 'processing'])) {
+                                $cancelReason = 'Thanh toán đã được xử lý, không thể hủy';
+                            } elseif ($order->finance_option_id && $order->down_payment_amount > 0 && $order->payment_status !== 'pending') {
+                                $cancelReason = 'Đã thanh toán trả trước, vui lòng yêu cầu hoàn tiền';
+                            } elseif (!$withinCancelWindow) {
+                                $cancelReason = 'Chỉ có thể hủy trong vòng 24 giờ sau khi đặt hàng';
+                            } else {
+                                $cancelReason = 'Hủy đơn hàng';
+                            }
+                        @endphp
+                        <div class="flex items-center justify-between gap-2">
                         <div class="flex flex-wrap items-center gap-2 sm:gap-3" data-role="status-container">
                             <div class="flex items-center gap-1 text-[10px] sm:text-xs">
                                 <span class="text-gray-500">Đơn hàng:</span>
@@ -128,7 +142,7 @@
                                 </span>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-2">
                             <a href="{{ route('user.orders.show', $order) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 text-xs"><i class="fas fa-eye"></i> Chi tiết</a>
                             @if($order->status !== 'cancelled')
                                 <form action="{{ route('user.orders.cancel', $order) }}" method="post" title="{{ $cancelReason }}">
@@ -142,6 +156,7 @@
                                     <i class="fas fa-ban"></i> Đã hủy
                                 </span>
                             @endif
+                            </div>
                         </div>
                     </div>
                 </div>

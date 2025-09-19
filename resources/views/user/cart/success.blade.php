@@ -176,7 +176,11 @@
                                 </div>
                                 <div class="text-center p-3 bg-white rounded-lg border border-indigo-100">
                                     <div class="text-indigo-700 font-medium text-xs mb-1">Số tiền vay</div>
-                                    <div class="text-indigo-900 font-bold text-lg">{{ number_format(($order->subtotal ?? $order->total_price) - ($order->down_payment_amount ?? 0), 0, ',', '.') }} đ</div>
+                                    @php
+                                        $financeableAmount = ($order->subtotal ?? $order->total_price) - ($order->discount_total ?? 0);
+                                        $loanAmount = $financeableAmount - ($order->down_payment_amount ?? 0);
+                                    @endphp
+                                    <div class="text-indigo-900 font-bold text-lg">{{ number_format($loanAmount, 0, ',', '.') }} đ</div>
                                 </div>
                                 <div class="text-center p-3 bg-white rounded-lg border border-indigo-100">
                                     <div class="text-indigo-700 font-medium text-xs mb-1">Trả hàng tháng</div>
@@ -315,12 +319,32 @@
                                 <span>{{ number_format($order->tax_total ?? 0, 0, ',', '.') }} đ</span>
                             </div>
                             <div class="flex items-center justify-between text-sm text-gray-600">
-                                <span>Vận chuyển</span>
-                                <span>{{ number_format($order->shipping_fee ?? 0, 0, ',', '.') }} đ</span>
+                                <span>Vận chuyển
+                                    @if($order->shipping_method)
+                                        <span class="text-xs text-gray-500 ml-1">
+                                            ({{ $order->shipping_method === 'express' ? 'Nhanh' : 'Tiêu chuẩn' }})
+                                        </span>
+                                    @endif
+                                    @if($order->promotion && $order->promotion->type === 'free_shipping')
+                                        <span class="text-xs text-green-600 ml-1">(Miễn phí)</span>
+                                    @endif
+                                </span>
+                                @if($order->promotion && $order->promotion->type === 'free_shipping')
+                                    <span class="line-through text-gray-400">{{ number_format($order->shipping_fee ?? 0, 0, ',', '.') }} đ</span>
+                                    <span class="text-green-600 font-medium ml-2">0 đ</span>
+                                @else
+                                    <span>{{ number_format($order->shipping_fee ?? 0, 0, ',', '.') }} đ</span>
+                                @endif
                             </div>
                             @if((float)($order->discount_total ?? 0) > 0)
                             <div class="flex items-center justify-between text-sm text-gray-600">
-                                <span>Giảm giá</span>
+                                <span>Giảm giá
+                                    @if($order->promotion)
+                                        <span class="text-xs text-gray-500 ml-1">
+                                            ({{ $order->promotion->code }})
+                                        </span>
+                                    @endif
+                                </span>
                                 <span class="text-rose-600">-{{ number_format($order->discount_total ?? 0, 0, ',', '.') }} đ</span>
                             </div>
                             @endif
@@ -336,7 +360,11 @@
                             @if($order->finance_option_id)
                             <div class="flex items-center justify-between text-sm text-gray-600 mt-2">
                                 <span>Còn lại (trả góp)</span>
-                                <span>{{ number_format(($order->grand_total ?? $order->total_price) - ($order->down_payment_amount ?? 0), 0, ',', '.') }} đ</span>
+                                @php
+                                    $financeableAmountRemaining = ($order->subtotal ?? $order->total_price) - ($order->discount_total ?? 0);
+                                    $remainingAmount = $financeableAmountRemaining - ($order->down_payment_amount ?? 0);
+                                @endphp
+                                <span>{{ number_format($remainingAmount, 0, ',', '.') }} đ</span>
                             </div>
                             @endif
                             

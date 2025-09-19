@@ -34,6 +34,11 @@ return new class extends Migration {
             $table->timestamp('paid_at')->nullable();
             $table->string('tracking_number')->nullable();
             $table->date('estimated_delivery')->nullable();
+            
+            // Additional order details
+            $table->foreignId('promotion_id')->nullable()->constrained('promotions')->onDelete('set null')->comment('Khuyến mãi đã áp dụng');
+            $table->string('shipping_method', 50)->default('standard')->comment('Phương thức vận chuyển: standard, express');
+            $table->decimal('tax_rate', 5, 4)->default(0.1000)->comment('Thuế suất áp dụng (VD: 0.1000 = 10%)');
 
             $table->timestamps();
             $table->softDeletes();

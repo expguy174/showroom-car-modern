@@ -405,6 +405,7 @@ Route::prefix('addresses')->name('user.addresses.')->middleware(['auth'])->group
 Route::prefix('promotions')->name('user.promotions.')->group(function () {
     Route::get('/', [\App\Http\Controllers\User\PromotionController::class, 'index'])->name('index');
     Route::get('/{promotion}', [\App\Http\Controllers\User\PromotionController::class, 'show'])->name('show');
+    Route::post('/validate-code', [\App\Http\Controllers\User\PromotionController::class, 'validatePromotion'])->name('validate-code');
     Route::post('/{promotion}/validate', [\App\Http\Controllers\User\PromotionController::class, 'validatePromotion'])->name('validate');
     Route::post('/{promotion}/apply', [\App\Http\Controllers\User\PromotionController::class, 'apply'])->name('apply')->middleware('auth');
     Route::get('/my/used', [\App\Http\Controllers\User\PromotionController::class, 'myPromotions'])->name('my-promotions')->middleware('auth');

@@ -17,13 +17,28 @@
                         <!-- Finance Order Display -->
                         <div class="text-indigo-700 font-extrabold text-base sm:text-lg">{{ number_format($order->down_payment_amount ?? 0, 0, ',', '.') }} đ</div>
                         <div class="text-xs text-gray-500">Trả trước</div>
-                        <div class="text-xs text-blue-600 mt-1">
-                            <i class="fas fa-credit-card mr-1"></i>Trả góp {{ $order->tenure_months ?? 0 }} tháng
-                        </div>
+                        @if((float)($order->discount_total ?? 0) > 0)
+                            <div class="text-xs text-green-600 mt-1">
+                                <i class="fas fa-tag mr-1"></i>Có khuyến mãi
+                            </div>
+                        @else
+                            <div class="text-xs text-blue-600 mt-1">
+                                <i class="fas fa-credit-card mr-1"></i>{{ $order->tenure_months ?? 0 }} tháng
+                            </div>
+                        @endif
                     @else
                         <!-- Full Payment Display -->
                         <div class="text-indigo-700 font-extrabold text-base sm:text-lg">{{ number_format($order->grand_total, 0, ',', '.') }} đ</div>
-                        <div class="text-xs text-gray-500">Tổng thanh toán</div>
+                        <div class="text-xs text-gray-500">Tổng cộng</div>
+                        @if((float)($order->discount_total ?? 0) > 0)
+                            <div class="text-xs text-green-600 mt-1">
+                                <i class="fas fa-tag mr-1"></i>Có khuyến mãi
+                            </div>
+                        @else
+                            <div class="text-xs text-emerald-600 mt-1">
+                                <i class="fas fa-check-circle mr-1"></i>Thanh toán đầy đủ
+                            </div>
+                        @endif
                     @endif
                     @if($order->status !== 'cancelled')
                         @php
@@ -55,15 +70,31 @@
                                 $cancelReason = 'Hủy đơn hàng';
                             }
                         @endphp
-                        <form action="{{ route('user.orders.cancel', $order->id) }}" method="post" class="mt-2" title="{{ $cancelReason }}">
-                            @csrf
-                            <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-500 text-white hover:bg-rose-600 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors duration-200" {{ $canCancel ? '' : 'disabled' }}>
-                                <i class="fas fa-ban"></i> Hủy đơn
-                            </button>
-                        </form>
+                        <div class="mt-2 flex items-center gap-2">
+                            <a href="{{ route('user.order.index') }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 text-xs">
+                                <i class="fas fa-arrow-left"></i> Quay về
+                            </a>
+                            @if($order->status !== 'cancelled')
+                                <form action="{{ route('user.orders.cancel', $order->id) }}" method="post" title="{{ $cancelReason }}">
+                                    @csrf
+                                    <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-500 text-white hover:bg-rose-600 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors duration-200" {{ $canCancel ? '' : 'disabled' }}>
+                                        <i class="fas fa-ban"></i> Hủy đơn
+                                    </button>
+                                </form>
+                            @else
+                                <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-gray-500 bg-gray-100">
+                                    <i class="fas fa-ban"></i> Đã hủy
+                                </div>
+                            @endif
+                        </div>
                     @else
-                        <div class="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-gray-500 bg-gray-100">
-                            <i class="fas fa-ban"></i> Đã hủy
+                        <div class="mt-2 flex items-center gap-2">
+                            <a href="{{ route('user.order.index') }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 text-xs">
+                                <i class="fas fa-arrow-left"></i> Quay về
+                            </a>
+                            <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-gray-500 bg-gray-100">
+                                <i class="fas fa-ban"></i> Đã hủy
+                            </div>
                         </div>
                     @endif
                 </div>
@@ -484,16 +515,28 @@
                         <span class="text-gray-900 font-medium">{{ number_format($order->subtotal ?? 0, 0, ',', '.') }} đ</span>
                     </div>
                     <div class="flex items-center justify-between">
-                        <span class="text-gray-600">Thuế</span>
+                        <span class="text-gray-600">Thuế ({{ number_format(($order->tax_rate ?? 0.1) * 100, 1) }}%)</span>
                         <span class="text-gray-900 font-medium">{{ number_format($order->tax_total ?? 0, 0, ',', '.') }} đ</span>
                     </div>
                     <div class="flex items-center justify-between">
-                        <span class="text-gray-600">Vận chuyển</span>
+                        <span class="text-gray-600">
+                            Vận chuyển
+                            @if($order->shipping_method)
+                                <span class="text-xs text-blue-600 ml-1">
+                                    ({{ $order->shipping_method === 'express' ? 'Nhanh' : ($order->shipping_method === 'standard' ? 'Tiêu chuẩn' : ucfirst($order->shipping_method)) }})
+                                </span>
+                            @endif
+                        </span>
                         <span class="text-gray-900 font-medium">{{ number_format($order->shipping_fee ?? 0, 0, ',', '.') }} đ</span>
                     </div>
                     @if((float)($order->discount_total ?? 0) > 0)
                     <div class="flex items-center justify-between">
-                        <span class="text-gray-600">Giảm giá</span>
+                        <span class="text-gray-600">
+                            Giảm giá
+                            @if($order->promotion)
+                                <span class="text-xs text-green-600 ml-1">({{ $order->promotion->code }})</span>
+                            @endif
+                        </span>
                         <span class="text-rose-600 font-medium">-{{ number_format($order->discount_total ?? 0, 0, ',', '.') }} đ</span>
                     </div>
                     @endif
@@ -517,6 +560,71 @@
                 </div>
             </div>
 
+            <!-- Promotion Details Section -->
+            @if($order->promotion)
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-tag text-green-600"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">Khuyến mãi đã áp dụng</h3>
+                        <p class="text-sm text-gray-600">Thông tin chi tiết về ưu đãi</p>
+                    </div>
+                </div>
+                
+                <div class="bg-green-50 rounded-xl p-4 border border-green-200">
+                    <div class="flex items-start justify-between gap-4">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    {{ $order->promotion->code }}
+                                </span>
+                                <span class="text-xs text-gray-500">
+                                    @switch($order->promotion->type)
+                                        @case('percentage')
+                                            Giảm theo %
+                                            @break
+                                        @case('fixed_amount')
+                                            Giảm cố định
+                                            @break
+                                        @case('free_shipping')
+                                            Miễn phí ship
+                                            @break
+                                        @case('brand_specific')
+                                            Theo thương hiệu
+                                            @break
+                                        @case('category_specific')
+                                            Theo danh mục
+                                            @break
+                                        @case('buy_x_get_y')
+                                            Mua X tặng Y
+                                            @break
+                                        @case('bundle_discount')
+                                            Combo giảm giá
+                                            @break
+                                        @case('tiered_discount')
+                                            Giảm theo bậc
+                                            @break
+                                        @case('time_based')
+                                            Flash Sale
+                                            @break
+                                        @default
+                                            {{ ucfirst($order->promotion->type) }}
+                                    @endswitch
+                                </span>
+                            </div>
+                            <h4 class="font-semibold text-green-900 mb-1">{{ $order->promotion->name }}</h4>
+                            <p class="text-sm text-green-700">{{ $order->promotion->description }}</p>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-lg font-bold text-green-900">-{{ number_format($order->discount_total, 0, ',', '.') }} đ</div>
+                            <div class="text-xs text-green-600">Đã tiết kiệm</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
 
             <!-- Refund Section -->
             @if($order->payment_status === 'completed' && $order->status !== 'cancelled')

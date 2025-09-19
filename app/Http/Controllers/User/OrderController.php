@@ -17,7 +17,7 @@ class OrderController extends Controller
         $paymentStatus = $request->string('payment_status')->toString();
         $q = $request->string('q')->toString();
 
-        $orders = Order::with(['items.item', 'shippingAddress', 'billingAddress', 'paymentMethod'])
+        $orders = Order::with(['items.item', 'shippingAddress', 'billingAddress', 'paymentMethod', 'promotion'])
             ->where('user_id', Auth::id())
             ->when($status !== '', function ($query) use ($status) {
                 $query->where('status', $status);
@@ -64,6 +64,7 @@ class OrderController extends Controller
             'financeOption',
             'billingAddress', 
             'shippingAddress',
+            'promotion',
             'installments' => function($query) {
                 $query->orderBy('installment_number');
             },

@@ -65,7 +65,8 @@
                 <div class="px-4 md:px-6 py-4">
                     <form id="checkout-form" action="{{ route('user.cart.checkout') }}" method="POST" class="space-y-4" novalidate>
                         @csrf
-                        <input type="hidden" name="checkout_token" value="{{ $checkoutToken ?? '' }}">
+                        <input type="hidden" name="checkout_token" value="{{ $checkoutToken }}">
+                        <input type="hidden" name="promotion_code" id="applied_promotion_code" value="">
                         @if(request()->has('debug'))
                             <input type="hidden" name="debug" value="1">
                         @endif
@@ -399,6 +400,49 @@
                             <span>Phí vận chuyển</span>
                             <span id="shipping-fee-amount" data-shipping="{{ (int) $defaultShippingFee }}" class="whitespace-nowrap tabular-nums">{{ number_format($defaultShippingFee,0,',','.') }} đ</span>
                         </div>
+                        
+                        <!-- Promotion Code Section -->
+                        <div class="border-t pt-3 mt-3">
+                            <div class="flex items-center gap-2 mb-2">
+                                <i class="fas fa-tags text-orange-500"></i>
+                                <span class="text-sm font-medium text-gray-700">Mã khuyến mãi</span>
+                            </div>
+                            <div class="flex gap-2">
+                                <input type="text" id="promotion-code" placeholder="Nhập mã khuyến mãi" 
+                                       class="flex-1 text-sm border-gray-300 rounded-md focus:border-orange-500 focus:ring-orange-500">
+                                <button type="button" onclick="applyPromotionCode()" 
+                                        class="px-3 py-2 bg-orange-600 text-white text-sm rounded-md hover:bg-orange-700 font-medium">
+                                    Áp dụng
+                                </button>
+                            </div>
+                            <div id="promotion-result" class="mt-2 hidden">
+                                <div id="promotion-success" class="hidden text-sm text-green-700 bg-green-50 p-2 rounded">
+                                    <i class="fas fa-check-circle mr-1"></i>
+                                    <span id="promotion-message"></span>
+                                </div>
+                                <div id="promotion-error" class="hidden text-sm text-red-700 bg-red-50 p-2 rounded">
+                                    <i class="fas fa-exclamation-circle mr-1"></i>
+                                    <span id="promotion-error-message"></span>
+                                </div>
+                            </div>
+                            <div id="applied-promotion" class="hidden mt-2 p-2 bg-green-50 rounded-md border border-green-200">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fas fa-tag text-green-600"></i>
+                                        <span class="text-sm font-medium text-green-800" id="applied-code"></span>
+                                    </div>
+                                    <button type="button" onclick="removePromotionCode()" class="text-red-600 hover:text-red-800">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <div class="text-xs text-green-700 mt-1" id="applied-description"></div>
+                            </div>
+                            <div id="discount-line" class="hidden flex items-center justify-between text-sm text-green-700 mt-2">
+                                <span>Giảm giá</span>
+                                <span id="discount-amount" class="whitespace-nowrap tabular-nums">-0 đ</span>
+                            </div>
+                        </div>
+                        
                         <div class="border-t pt-2 flex items-center justify-between text-base font-bold text-gray-900">
                             <span>Tổng cộng</span>
                             <span id="grand-total-amount" class="whitespace-nowrap tabular-nums">{{ number_format($grandWithShip,0,',','.') }} đ</span>
@@ -590,12 +634,23 @@ document.addEventListener('DOMContentLoaded', function() {
         const tax = parseInt(taxEl.dataset.tax || '0');
         const option = select.options[select.selectedIndex];
         const fee = parseInt(option.getAttribute('data-fee') || '0');
+        const discount = parseInt(document.getElementById('discount-amount')?.textContent?.replace(/[^\d]/g, '') || '0');
+        
         shipEl.dataset.shipping = String(fee);
         shipEl.textContent = format(fee);
-        const grand = Math.max(0, subtotal + tax + fee);
+        const grand = Math.max(0, subtotal + tax + fee - discount);
         grandEl.textContent = format(grand);
+        
+        // Recalculate finance if finance is selected
+        if (document.querySelector('input[name="payment_type"]:checked')?.value === 'finance') {
+            calculateFinance();
+        }
     }
-    select?.addEventListener('change', recalc);
+    select?.addEventListener('change', function() {
+        recalc();
+        // Update discount amount if free shipping promotion is applied
+        updateDiscountDisplayOnShippingChange();
+    });
     recalc();
 
     // Finance options handling
@@ -735,9 +790,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const subtotal = parseInt(subtotalEl.dataset.subtotal || '0');
         const tax = parseInt(taxEl.dataset.tax || '0');
         const shipping = parseInt(shipEl.dataset.shipping || '0');
+        const discount = parseInt(document.getElementById('discount-amount')?.textContent?.replace(/[^\d]/g, '') || '0');
         
-        // Finance calculation should be based on product value only (excluding tax and shipping)
-        const financeableAmount = subtotal; // Product value only
+        // Finance calculation should be based on product value only (excluding tax, shipping, and discount)
+        const financeableAmount = subtotal - discount; // Product value after discount
         const totalAmount = subtotal + tax + shipping; // For display purposes
 
         const downPaymentPercent = parseFloat(downPaymentInput?.value || '30');
@@ -791,6 +847,230 @@ document.addEventListener('DOMContentLoaded', function() {
                 additionalCostsEl.classList.add('hidden');
             }
         }
+    }
+
+    // Promotion Code Functions
+    window.applyPromotionCode = function() {
+        const codeInput = document.getElementById('promotion-code');
+        const code = codeInput.value.trim().toUpperCase();
+        
+        if (!code) {
+            showPromotionError('Vui lòng nhập mã khuyến mãi');
+            return;
+        }
+        
+        // Check CSRF token
+        const csrfToken = document.querySelector('meta[name="csrf-token"]');
+        if (!csrfToken || !csrfToken.content) {
+            showPromotionError('Lỗi bảo mật: Vui lòng tải lại trang và thử lại');
+            return;
+        }
+        
+        // Get current order total for validation
+        const subtotalEl = document.getElementById('subtotal-amount');
+        const orderTotal = subtotalEl ? parseInt(subtotalEl.dataset.subtotal) : 0;
+        
+        // Show loading
+        const applyBtn = document.querySelector('button[onclick="applyPromotionCode()"]');
+        const originalText = applyBtn.innerHTML;
+        applyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        applyBtn.disabled = true;
+        
+        // Call validation API
+        const formData = new FormData();
+        formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+        formData.append('code', code);
+        formData.append('order_total', orderTotal);
+        
+        // Add current shipping method
+        const shippingSelect = document.getElementById('shipping-method');
+        if (shippingSelect) {
+            formData.append('shipping_method', shippingSelect.value);
+        }
+        
+        fetch('{{ route("user.promotions.validate-code") }}', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.valid) {
+                // Check if discount amount is 0 (promotion not applicable to current shipping method)
+                if (data.promotion.discount_amount === 0 && data.promotion.type === 'free_shipping') {
+                    const shippingSelect = document.getElementById('shipping-method');
+                    const shippingMethod = shippingSelect ? shippingSelect.value : 'standard';
+                    const methodName = shippingMethod === 'express' ? 'vận chuyển nhanh' : 'vận chuyển tiêu chuẩn';
+                    showPromotionError(`Mã khuyến mãi này không áp dụng cho ${methodName}. Vui lòng chọn phương thức vận chuyển phù hợp.`);
+                } else {
+                    showPromotionSuccess(data.message, data.promotion);
+                    updateOrderTotals(data.promotion.discount_amount, data.promotion.type);
+                    
+                    // Store promotion code in hidden input for form submission
+                    const promotionCodeInput = document.getElementById('applied_promotion_code');
+                    if (promotionCodeInput) {
+                        promotionCodeInput.value = data.promotion.code;
+                    }
+                }
+            } else {
+                showPromotionError(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Lỗi:', error);
+            showPromotionError('Có lỗi xảy ra khi kiểm tra mã khuyến mãi. Vui lòng thử lại.');
+        })
+        .finally(() => {
+            applyBtn.innerHTML = originalText;
+            applyBtn.disabled = false;
+        });
+    };
+    
+    window.removePromotionCode = function() {
+        // Clear current promotion
+        currentPromotion = null;
+        
+        const promotionCode = document.getElementById('promotion-code');
+        const appliedPromotion = document.getElementById('applied-promotion');
+        const discountLine = document.getElementById('discount-line');
+        const promotionResult = document.getElementById('promotion-result');
+        
+        if (promotionCode) promotionCode.value = '';
+        if (appliedPromotion) appliedPromotion.classList.add('hidden');
+        if (discountLine) discountLine.classList.add('hidden');
+        if (promotionResult) promotionResult.classList.add('hidden');
+        
+        // Reset totals
+        updateOrderTotals(0);
+        
+        // Clear promotion code from hidden input
+        const promotionCodeInput = document.getElementById('applied_promotion_code');
+        if (promotionCodeInput) {
+            promotionCodeInput.value = '';
+        }
+    };
+    
+    function showPromotionSuccess(message, promotion) {
+        // Store current promotion globally
+        currentPromotion = promotion;
+        
+        // Safely get elements and check if they exist
+        const promotionResult = document.getElementById('promotion-result');
+        const promotionSuccess = document.getElementById('promotion-success');
+        const promotionError = document.getElementById('promotion-error');
+        const promotionSuccessMessage = document.getElementById('promotion-message');
+        const appliedPromotion = document.getElementById('applied-promotion');
+        const appliedCode = document.getElementById('applied-code');
+        const appliedDescription = document.getElementById('applied-description');
+        const discountLine = document.getElementById('discount-line');
+        const discountAmount = document.getElementById('discount-amount');
+        
+        if (promotionResult) promotionResult.classList.remove('hidden');
+        if (promotionSuccess) promotionSuccess.classList.remove('hidden');
+        if (promotionError) promotionError.classList.add('hidden');
+        if (promotionSuccessMessage) promotionSuccessMessage.textContent = message;
+        
+        // Show applied promotion
+        if (appliedPromotion) appliedPromotion.classList.remove('hidden');
+        if (appliedCode) appliedCode.textContent = promotion.code;
+        
+        // Build description with max discount info
+        let description = promotion.description || promotion.name;
+        if (promotion.max_discount_amount && (promotion.type === 'percentage' || promotion.type === 'brand_specific')) {
+            description += ` (Tối đa ${formatNumber(promotion.max_discount_amount)}đ)`;
+        }
+        if (appliedDescription) appliedDescription.textContent = description;
+        
+        // Show discount line with correct amount
+        if (discountLine) discountLine.classList.remove('hidden');
+        
+        // For free shipping, calculate discount based on selected shipping method
+        let displayAmount = promotion.discount_amount;
+        if (promotion.type === 'free_shipping') {
+            const shippingSelect = document.getElementById('shipping-method');
+            if (shippingSelect && shippingSelect.selectedIndex >= 0) {
+                const selectedOption = shippingSelect.options[shippingSelect.selectedIndex];
+                displayAmount = parseInt(selectedOption.dataset.fee) || 30000;
+            }
+        }
+        
+        if (discountAmount) discountAmount.textContent = '-' + formatNumber(displayAmount) + ' đ';
+    }
+    
+    function showPromotionError(message) {
+        const promotionResult = document.getElementById('promotion-result');
+        const promotionError = document.getElementById('promotion-error');
+        const promotionSuccess = document.getElementById('promotion-success');
+        const promotionErrorMessage = document.getElementById('promotion-error-message');
+        const appliedPromotion = document.getElementById('applied-promotion');
+        const discountLine = document.getElementById('discount-line');
+        
+        if (promotionResult) promotionResult.classList.remove('hidden');
+        if (promotionError) promotionError.classList.remove('hidden');
+        if (promotionSuccess) promotionSuccess.classList.add('hidden');
+        if (promotionErrorMessage) promotionErrorMessage.textContent = message;
+        
+        // Hide applied promotion
+        if (appliedPromotion) appliedPromotion.classList.add('hidden');
+        if (discountLine) discountLine.classList.add('hidden');
+    }
+    
+    // Global variable to store current promotion
+    let currentPromotion = null;
+    
+    function updateDiscountDisplayOnShippingChange() {
+        if (currentPromotion && currentPromotion.type === 'free_shipping') {
+            // Re-validate promotion with new shipping method
+            const promotionCode = document.getElementById('promotion-code');
+            if (promotionCode && promotionCode.value) {
+                applyPromotionCode();
+            }
+        }
+    }
+    
+    function updateOrderTotals(discountAmount, promotionType = null) {
+        const subtotalEl = document.getElementById('subtotal-amount');
+        const taxEl = document.getElementById('tax-amount');
+        const shippingEl = document.getElementById('shipping-fee-amount');
+        const grandTotalEl = document.getElementById('grand-total-amount');
+        
+        if (!subtotalEl || !taxEl || !shippingEl || !grandTotalEl) return;
+        
+        const subtotal = parseInt(subtotalEl.dataset.subtotal);
+        const tax = parseInt(taxEl.dataset.tax);
+        let shipping = parseInt(shippingEl.dataset.shipping);
+        
+        // Handle free shipping promotions
+        if (promotionType === 'free_shipping') {
+            shipping = 0; // Free shipping
+            shippingEl.textContent = '0 đ';
+            shippingEl.classList.add('line-through', 'text-green-600');
+        } else {
+            // Reset shipping display
+            shippingEl.textContent = formatNumber(shipping) + ' đ';
+            shippingEl.classList.remove('line-through', 'text-green-600');
+        }
+        
+        let newGrandTotal = subtotal + tax + shipping;
+        
+        // Apply discount (except for free shipping which is already handled)
+        if (promotionType !== 'free_shipping') {
+            newGrandTotal = Math.max(0, newGrandTotal - discountAmount);
+        }
+        
+        grandTotalEl.textContent = formatNumber(newGrandTotal) + ' đ';
+        
+        // Recalculate finance details if finance is selected
+        if (document.querySelector('input[name="payment_type"]:checked')?.value === 'finance') {
+            calculateFinance();
+        }
+    }
+    
+    function formatNumber(num) {
+        return new Intl.NumberFormat('vi-VN').format(num);
     }
 
 });

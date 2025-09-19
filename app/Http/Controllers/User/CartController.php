@@ -764,9 +764,70 @@ class CartController extends Controller
             }
 
             // Calculate tax and shipping
-            $shippingFee = ($validated['shipping_method'] ?? 'standard') === 'express' ? 50000 : 30000;
-            $taxTotal = (int) round($total * 0.10); // 10% VAT
-            $grandTotal = $total + $taxTotal + $shippingFee;
+            $shippingMethod = $validated['shipping_method'] ?? 'standard';
+            $shippingFee = $shippingMethod === 'express' ? 50000 : 30000;
+            $taxRate = 0.10; // 10% VAT
+            $taxTotal = (int) round($total * $taxRate);
+            
+            // Handle promotion if provided
+            $promotionId = null;
+            $discountTotal = 0;
+            
+            if ($request->promotion_code) {
+                $promotion = \App\Models\Promotion::where('code', strtoupper(trim($request->promotion_code)))
+                    ->where('is_active', true)
+                    ->first();
+                    
+                if ($promotion) {
+                    // Validate promotion
+                    $now = now();
+                    $isValid = true;
+                    
+                    // Check dates
+                    if ($promotion->start_date && $now < $promotion->start_date) $isValid = false;
+                    if ($promotion->end_date && $now > $promotion->end_date) $isValid = false;
+                    
+                    // Check usage limit
+                    if ($promotion->usage_limit && $promotion->usage_count >= $promotion->usage_limit) $isValid = false;
+                    
+                    // Check minimum order amount
+                    if ($promotion->min_order_amount && $total < $promotion->min_order_amount) $isValid = false;
+                    
+                    if ($isValid) {
+                        // Calculate discount using promotion logic
+                        $cartItems = \App\Models\CartItem::where('user_id', $userId ?? null)
+                            ->orWhere('session_id', $sessionId)
+                            ->with(['item'])
+                            ->get();
+                            
+                        // Simple discount calculation based on promotion type
+                        switch ($promotion->type) {
+                            case 'percentage':
+                                $discountTotal = $total * ($promotion->discount_value / 100);
+                                if ($promotion->max_discount_amount) {
+                                    $discountTotal = min($discountTotal, $promotion->max_discount_amount);
+                                }
+                                break;
+                            case 'fixed_amount':
+                                $discountTotal = min($promotion->discount_value, $total);
+                                break;
+                            case 'free_shipping':
+                                $discountTotal = $shippingFee; // Will be subtracted from total
+                                break;
+                            default:
+                                $discountTotal = 0;
+                        }
+                        
+                        // For free shipping, don't limit by total since it affects shipping fee
+                        if ($promotion->type !== 'free_shipping') {
+                            $discountTotal = min($discountTotal, $total);
+                        }
+                        $promotionId = $promotion->id;
+                    }
+                }
+            }
+            
+            $grandTotal = $total + $taxTotal + $shippingFee - $discountTotal;
 
             $methodCode = optional(\App\Models\PaymentMethod::find($validated['payment_method_id']))->code;
             
@@ -775,7 +836,7 @@ class CartController extends Controller
             
             // For VNPay and MoMo, create order after payment success
             if (in_array($methodCode, ['vnpay', 'momo'])) {
-                return $this->processOnlinePayment($methodCode, $validated, $orderItems, $cartItems, $userId, $sessionId, $total, $taxTotal, $shippingFee, $grandTotal, $billingAddressId, $shippingAddressId, $billingAddressText, $shippingAddressText);
+                return $this->processOnlinePayment($methodCode, $validated, $orderItems, $cartItems, $userId, $sessionId, $total, $taxTotal, $shippingFee, $grandTotal, $billingAddressId, $shippingAddressId, $billingAddressText, $shippingAddressText, $promotionId, $discountTotal);
             }
             
             // For COD and Bank Transfer, create order immediately
@@ -787,8 +848,8 @@ class CartController extends Controller
                 $downPaymentPercent = $validated['down_payment_percent'] ?? 30;
                 $tenureMonths = $validated['tenure_months'] ?? 36;
                 
-                // Finance calculation should be based on product value only (excluding tax and shipping)
-                $financeableAmount = $total; // Product value only
+                // Finance calculation should be based on product value only (excluding tax, shipping, and discount)
+                $financeableAmount = $total - $discountTotal; // Product value after discount
                 $downPaymentAmount = round($financeableAmount * ($downPaymentPercent / 100));
                 $loanAmount = $financeableAmount - $downPaymentAmount;
                 
@@ -819,7 +880,11 @@ class CartController extends Controller
                 'subtotal' => $total,
                 'tax_total' => $taxTotal,
                 'shipping_fee' => $shippingFee,
+                'discount_total' => $discountTotal,
                 'grand_total' => $grandTotal,
+                'promotion_id' => $promotionId,
+                'shipping_method' => $shippingMethod,
+                'tax_rate' => $taxRate,
                 'items' => array_map(function ($item) use ($cartItems) {
                     $itemModel = $cartItems->firstWhere(function($cartItem) use ($item) {
                         return $cartItem->item_id == $item['item_id'] && $cartItem->item_type == $item['item_type'];
@@ -836,6 +901,11 @@ class CartController extends Controller
             ], $financeData);
 
             $order = $placeOrder->handle($orderData);
+
+            // Increment promotion usage count if promotion was applied
+            if ($promotionId) {
+                \App\Models\Promotion::where('id', $promotionId)->increment('usage_count');
+            }
 
             // Notifications are handled by OrderCreated event listener
 
@@ -860,7 +930,7 @@ class CartController extends Controller
         }
     }
 
-    private function processOnlinePayment($methodCode, $validated, $orderItems, $cartItems, $userId, $sessionId, $total, $taxTotal, $shippingFee, $grandTotal, $billingAddressId, $shippingAddressId, $billingAddressText, $shippingAddressText)
+    private function processOnlinePayment($methodCode, $validated, $orderItems, $cartItems, $userId, $sessionId, $total, $taxTotal, $shippingFee, $grandTotal, $billingAddressId, $shippingAddressId, $billingAddressText, $shippingAddressText, $promotionId = null, $discountTotal = 0)
     {
         // Calculate finance data if applicable
         $financeData = [];
@@ -869,8 +939,8 @@ class CartController extends Controller
             $downPaymentPercent = $validated['down_payment_percent'] ?? 30;
             $tenureMonths = $validated['tenure_months'] ?? 36;
             
-            // Finance calculation should be based on product value only (excluding tax and shipping)
-            $financeableAmount = $total; // Product value only
+            // Finance calculation should be based on product value only (excluding tax, shipping, and discount)
+            $financeableAmount = $total - $discountTotal; // Product value after discount
             $downPaymentAmount = round($financeableAmount * ($downPaymentPercent / 100));
             $loanAmount = $financeableAmount - $downPaymentAmount;
             
@@ -902,7 +972,11 @@ class CartController extends Controller
             'subtotal' => $total,
             'tax_total' => $taxTotal,
             'shipping_fee' => $shippingFee,
+            'discount_total' => $discountTotal,
             'grand_total' => $grandTotal,
+            'promotion_id' => $promotionId,
+            'shipping_method' => $validated['shipping_method'] ?? 'standard',
+            'tax_rate' => 0.10,
             'items' => array_map(function ($item) use ($cartItems) {
                 $itemModel = $cartItems->firstWhere(function($cartItem) use ($item) {
                     return $cartItem->item_id == $item['item_id'] && $cartItem->item_type == $item['item_type'];
@@ -997,14 +1071,14 @@ class CartController extends Controller
         if (!Auth::check() || ($order->user_id && $order->user_id !== Auth::id())) {
             abort(403);
         }
-
-        $order->load([
+        $order = $order->load([
             'items.item',
             'items.color',
             'paymentMethod',
             'financeOption',
             'billingAddress',
             'shippingAddress',
+            'promotion',
         ]);
 
         return view('user.cart.success', [

@@ -114,6 +114,9 @@ class PlaceOrder
                 'order_number' => 'ORD-' . date('Ymd') . '-' . strtoupper(uniqid()),
                 'billing_address_id' => $payload['billing_address_id'] ?? null,
                 'shipping_address_id' => $payload['shipping_address_id'] ?? null,
+                'promotion_id' => $payload['promotion_id'] ?? null,
+                'shipping_method' => $payload['shipping_method'] ?? 'standard',
+                'tax_rate' => $payload['tax_rate'] ?? 0.10,
             ]);
 
             // Decrement stock for each item (color stock takes precedence)

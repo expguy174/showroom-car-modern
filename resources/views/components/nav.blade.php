@@ -107,6 +107,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                     <div class="dropdown-menu absolute left-0 mt-2 min-w-[260px] z-50 opacity-0 invisible scale-95 transition-all duration-200 transform origin-top-left pointer-events-auto" data-dropdown-menu>
                         <div class="p-2 grid grid-cols-1 gap-1">
                             <a href="{{ route('blogs.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white transition-colors duration-150"><i class="fas fa-newspaper text-gray-400"></i><span>Tin tức</span></a>
+                            <a href="{{ route('user.promotions.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white transition-colors duration-150"><i class="fas fa-tags text-gray-400"></i><span>Khuyến mãi</span></a>
                             <a href="{{ route('about') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white transition-colors duration-150"><i class="fas fa-info-circle text-gray-400"></i><span>Giới thiệu</span></a>
                             <a href="{{ route('contact') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white transition-colors duration-150"><i class="fas fa-phone text-gray-400"></i><span>Liên hệ</span></a>
                         </div>
@@ -390,6 +391,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                     <div class="mobile-dropdown-content">
                         <div class="grid grid-cols-1 gap-1 pl-2 pr-2">
                             <a href="{{ route('blogs.index') }}" class="px-4 py-2 rounded-md hover:bg-gray-50 flex items-center gap-2"><i class="fas fa-newspaper text-gray-400"></i><span>Tin tức</span></a>
+                            <a href="{{ route('user.promotions.index') }}" class="px-4 py-2 rounded-md hover:bg-gray-50 flex items-center gap-2"><i class="fas fa-tags text-gray-400"></i><span>Khuyến mãi</span></a>
                             <a href="{{ route('about') }}" class="px-4 py-2 rounded-md hover:bg-gray-50 flex items-center gap-2"><i class="fas fa-info-circle text-gray-400"></i><span>Giới thiệu</span></a>
                             <a href="{{ route('contact') }}" class="px-4 py-2 rounded-md hover:bg-gray-50 flex items-center gap-2"><i class="fas fa-phone text-gray-400"></i><span>Liên hệ</span></a>
                         </div>

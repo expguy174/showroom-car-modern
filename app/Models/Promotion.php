@@ -16,6 +16,7 @@ class Promotion extends Model
         'type',
         'discount_value',
         'min_order_amount',
+        'max_discount_amount',
         'usage_limit',
         'usage_count',
         'start_date',
@@ -26,6 +27,7 @@ class Promotion extends Model
     protected $casts = [
         'discount_value' => 'decimal:2',
         'min_order_amount' => 'decimal:2',
+        'max_discount_amount' => 'decimal:2',
         'usage_limit' => 'integer',
         'usage_count' => 'integer',
         'start_date' => 'date',
@@ -35,13 +37,18 @@ class Promotion extends Model
 
     public function getFormattedValueAttribute()
     {
-        if ($this->type === 'percentage' && $this->discount_value) {
-            return number_format($this->discount_value, 0) . '%';
+        switch ($this->type) {
+            case 'percentage':
+                return $this->discount_value ? number_format($this->discount_value, 0) . '%' : '0%';
+            case 'fixed_amount':
+                return $this->discount_value ? number_format($this->discount_value, 0, ',', '.') . ' VNĐ' : '0 VNĐ';
+            case 'free_shipping':
+                return 'Miễn phí ship';
+            case 'brand_specific':
+                return 'Theo thương hiệu';
+            default:
+                return 'Liên hệ';
         }
-        if ($this->type === 'fixed_amount' && $this->discount_value) {
-            return number_format($this->discount_value, 0, ',', '.') . ' VNĐ';
-        }
-        return 'Liên hệ';
     }
 
     public function getStatusAttribute()
