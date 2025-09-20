@@ -15,24 +15,23 @@
     </div>
 
     <!-- Search and Filter Section -->
-    <div class="max-w-4xl mx-auto mb-10">
+    <div class="mb-10">
         <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-            <form method="GET" class="space-y-4">
-                <!-- Search Row -->
-                <div class="relative">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-search mr-2 text-orange-500"></i>Tìm kiếm khuyến mãi
-                    </label>
-                    <div class="relative">
+            <form method="GET">
+                <!-- Single Row Layout -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-end">
+                    <!-- Search Field -->
+                    <div class="lg:col-span-5">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-search mr-2 text-orange-500"></i>Tìm kiếm khuyến mãi
+                        </label>
                         <input type="text" name="search" value="{{ request('search') }}" 
-                               placeholder="Nhập tên khuyến mãi, mã giảm giá hoặc mô tả..." 
+                               placeholder="Nhập tên khuyến mãi, mã giảm giá..." 
                                class="w-full pl-4 pr-4 py-3 rounded-xl border border-gray-300 focus:border-orange-500 focus:ring-orange-500 text-gray-900 placeholder-gray-500">
                     </div>
-                </div>
-                
-                <!-- Filter Row -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
+                    
+                    <!-- Filter Field -->
+                    <div class="lg:col-span-4">
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             <i class="fas fa-filter mr-2 text-orange-500"></i>Loại khuyến mãi
                         </label>
@@ -47,19 +46,16 @@
                     </div>
                     
                     <!-- Action Buttons -->
-                    <div class="flex flex-col justify-end">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            <i class="fas fa-cogs mr-2 text-orange-500"></i>Thao tác
-                        </label>
-                        <div class="flex gap-3">
+                    <div class="lg:col-span-3">
+                        <div class="flex gap-2">
                             <button type="submit" 
-                                    class="flex-1 inline-flex items-center justify-center px-6 py-3 bg-orange-600 text-white rounded-xl font-semibold hover:bg-orange-700 transition-colors duration-200 shadow-lg hover:shadow-xl">
+                                    class="flex-1 inline-flex items-center justify-center px-4 py-3 bg-orange-600 text-white rounded-xl font-semibold hover:bg-orange-700 transition-colors duration-200 shadow-lg hover:shadow-xl">
                                 <i class="fas fa-search mr-2"></i>Tìm kiếm
                             </button>
                             @if(request()->hasAny(['search', 'type']))
                                 <a href="{{ route('user.promotions.index') }}" 
-                                   class="inline-flex items-center justify-center px-4 py-3 bg-gray-100 text-gray-600 rounded-xl font-medium hover:bg-gray-200 transition-colors duration-200">
-                                    <i class="fas fa-refresh mr-2"></i>Đặt lại
+                                   class="inline-flex items-center justify-center px-3 py-3 bg-gray-100 text-gray-600 rounded-xl font-medium hover:bg-gray-200 transition-colors duration-200">
+                                    <i class="fas fa-refresh"></i>
                                 </a>
                             @endif
                         </div>

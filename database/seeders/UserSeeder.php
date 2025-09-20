@@ -27,6 +27,7 @@ class UserSeeder extends Seeder
                 'profile' => [
                     'profile_type' => 'employee',
                     'name' => 'Quản trị viên',
+                    'phone' => '0901234567',
                     'birth_date' => '1990-01-01',
                     'gender' => 'male',
                     'driver_license_number' => null,
@@ -74,6 +75,7 @@ class UserSeeder extends Seeder
                 'profile' => [
                     'profile_type' => 'customer',
                     'name' => 'Nguyễn Văn A',
+                    'phone' => '0912345678',
                     'birth_date' => '1995-05-20',
                     'gender' => 'male',
                     'driver_license_number' => 'B123456789',
@@ -162,6 +164,7 @@ class UserSeeder extends Seeder
                 'user_id' => $user->id,
                 'profile_type' => 'customer',
                 'name' => 'Khách hàng #' . $i,
+                'phone' => '09' . str_pad((string) rand(10000000, 99999999), 8, '0', STR_PAD_LEFT),
                 'birth_date' => now()->subYears(rand(20,55))->format('Y-m-d'),
                 'gender' => rand(0,1) ? 'male' : 'female',
                 'driver_license_number' => null,
@@ -222,6 +225,7 @@ class UserSeeder extends Seeder
                 'user_id' => $user->id,
                 'profile_type' => in_array($er['role'], ['sales_person','manager','technician']) ? 'employee' : 'customer',
                 'name' => $er['name'],
+                'phone' => '09' . str_pad((string) rand(10000000, 99999999), 8, '0', STR_PAD_LEFT),
                 'birth_date' => now()->subYears(rand(25,45))->format('Y-m-d'),
                 'gender' => rand(0,1) ? 'male' : 'female',
                 'driver_license_number' => null,

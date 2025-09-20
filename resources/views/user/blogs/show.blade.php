@@ -8,7 +8,7 @@
 <section class="relative bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white overflow-hidden">
     <div class="absolute inset-0 bg-black/40"></div>
     
-    <div class="relative container mx-auto px-4 py-20 lg:py-32">
+    <div class="relative container mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
         <div class="max-w-4xl mx-auto text-center">
             <div class="inline-flex items-center bg-white/10 backdrop-blur-sm rounded-full px-6 py-3 mb-8">
                 <i class="fas fa-newspaper text-blue-400 mr-3 text-xl"></i>
@@ -39,7 +39,7 @@
 
 <!-- Blog Content -->
 <section class="py-16 bg-white">
-    <div class="container mx-auto px-4">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <div class="max-w-4xl mx-auto">
             <!-- Breadcrumb -->
             <nav class="mb-8">
@@ -125,7 +125,7 @@
 <!-- Related Articles -->
 @if($recentBlogs->count() > 0)
 <section class="py-16 bg-gradient-to-r from-gray-50 to-gray-100">
-    <div class="container mx-auto px-4">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <div class="max-w-6xl mx-auto">
             <div class="text-center mb-16">
                 <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
@@ -186,7 +186,7 @@
 
 <!-- Newsletter Section -->
 <section class="py-16 bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
-    <div class="container mx-auto px-4">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <div class="max-w-4xl mx-auto text-center">
             <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-8 lg:p-12 border border-white/20">
                 <div class="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -222,7 +222,7 @@
 
 <!-- CTA Section -->
 <section class="py-16 bg-white">
-    <div class="container mx-auto px-4">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <div class="max-w-4xl mx-auto text-center">
             <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">
                 Sẵn sàng tìm xe mơ ước?

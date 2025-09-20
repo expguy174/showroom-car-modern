@@ -48,6 +48,9 @@ Route::get('/dashboard', function () {
     return redirect()->route('home');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
+// Car brand detail (User)
+Route::get('/car-brands/{id}', [\App\Http\Controllers\User\CarBrandController::class, 'show'])->name('car-brands.show');
+
 // Carvariant detail (User) - support slug or id
 Route::get('/car-variants/{slugOrId}', [UserCarVariantController::class, 'show'])->name('car-variants.show');
 

@@ -69,10 +69,10 @@ class SearchController extends Controller
         // Apply sorting
         switch ($sortBy) {
             case 'price_low':
-                $searchQuery->orderBy('price', 'asc');
+                $searchQuery->orderBy('current_price', 'asc');
                 break;
             case 'price_high':
-                $searchQuery->orderBy('price', 'desc');
+                $searchQuery->orderBy('current_price', 'desc');
                 break;
             case 'newest':
                 $searchQuery->orderBy('created_at', 'desc');
@@ -103,10 +103,10 @@ class SearchController extends Controller
         // Apply sorting
         switch ($sortBy) {
             case 'price_low':
-                $searchQuery->orderBy('price', 'asc');
+                $searchQuery->orderBy('current_price', 'asc');
                 break;
             case 'price_high':
-                $searchQuery->orderBy('price', 'desc');
+                $searchQuery->orderBy('current_price', 'desc');
                 break;
             case 'newest':
                 $searchQuery->orderBy('created_at', 'desc');
@@ -245,10 +245,10 @@ class SearchController extends Controller
         // Apply sorting
         switch ($sortBy) {
             case 'price_low':
-                $query->orderBy('price', 'asc');
+                $query->orderBy('current_price', 'asc');
                 break;
             case 'price_high':
-                $query->orderBy('price', 'desc');
+                $query->orderBy('current_price', 'desc');
                 break;
             case 'newest':
                 $query->orderBy('created_at', 'desc');

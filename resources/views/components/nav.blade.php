@@ -29,7 +29,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                 {{-- Hãng (giữ nguyên) --}}
                 <div class="dropdown-group car-dropdown-wrapper" data-dropdown="brands">
                     <button class="px-2 py-2 rounded-lg text-sm text-gray-700 hover:text-white hover:bg-indigo-600 inline-flex items-center gap-2 transition-colors duration-200" data-dropdown-trigger>
-                        <i class="fas fa-tags text-[15px]"></i>
+                        <i class="fas fa-industry text-[15px]"></i>
                         <span class="nav-label">Hãng</span>
                         <i class="fas fa-chevron-down text-xs transition-transform duration-200"></i>
                     </button>
@@ -108,8 +108,9 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                         <div class="p-2 grid grid-cols-1 gap-1">
                             <a href="{{ route('blogs.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white transition-colors duration-150"><i class="fas fa-newspaper text-gray-400"></i><span>Tin tức</span></a>
                             <a href="{{ route('user.promotions.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white transition-colors duration-150"><i class="fas fa-tags text-gray-400"></i><span>Khuyến mãi</span></a>
-                            <a href="{{ route('about') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white transition-colors duration-150"><i class="fas fa-info-circle text-gray-400"></i><span>Giới thiệu</span></a>
-                            <a href="{{ route('contact') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white transition-colors duration-150"><i class="fas fa-phone text-gray-400"></i><span>Liên hệ</span></a>
+                            <a href="{{ route('user.showrooms.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white transition-colors duration-150"><i class="fas fa-store text-gray-400"></i><span>Showroom</span></a>
+                            <a href="{{ route('about') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white transition-colors duration-150"><i class="fas fa-info-circle text-gray-400"></i><span>Về chúng tôi</span></a>
+                            <a href="{{ route('contact') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white transition-colors duration-150"><i class="fas fa-phone text-gray-400"></i><span>Liên hệ tư vấn</span></a>
                         </div>
                     </div>
                 </div>
@@ -335,7 +336,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                 {{-- Mobile menu items (đồng bộ desktop) --}}
                 <div>
                     <button type="button" class="mobile-dropdown-btn w-full text-left px-4 py-3 rounded-lg hover:bg-gray-50 flex items-center justify-between">
-                        <span><i class="fas fa-tags mr-3 text-gray-400"></i>Hãng</span>
+                        <span><i class="fas fa-industry mr-3 text-gray-400"></i>Hãng</span>
                         <i class="fas fa-chevron-down text-xs text-gray-500"></i>
                     </button>
                     <div class="mobile-dropdown-content pl-2">
@@ -392,8 +393,9 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                         <div class="grid grid-cols-1 gap-1 pl-2 pr-2">
                             <a href="{{ route('blogs.index') }}" class="px-4 py-2 rounded-md hover:bg-gray-50 flex items-center gap-2"><i class="fas fa-newspaper text-gray-400"></i><span>Tin tức</span></a>
                             <a href="{{ route('user.promotions.index') }}" class="px-4 py-2 rounded-md hover:bg-gray-50 flex items-center gap-2"><i class="fas fa-tags text-gray-400"></i><span>Khuyến mãi</span></a>
-                            <a href="{{ route('about') }}" class="px-4 py-2 rounded-md hover:bg-gray-50 flex items-center gap-2"><i class="fas fa-info-circle text-gray-400"></i><span>Giới thiệu</span></a>
-                            <a href="{{ route('contact') }}" class="px-4 py-2 rounded-md hover:bg-gray-50 flex items-center gap-2"><i class="fas fa-phone text-gray-400"></i><span>Liên hệ</span></a>
+                            <a href="{{ route('user.showrooms.index') }}" class="px-4 py-2 rounded-md hover:bg-gray-50 flex items-center gap-2"><i class="fas fa-store text-gray-400"></i><span>Showroom</span></a>
+                            <a href="{{ route('about') }}" class="px-4 py-2 rounded-md hover:bg-gray-50 flex items-center gap-2"><i class="fas fa-info-circle text-gray-400"></i><span>Về chúng tôi</span></a>
+                            <a href="{{ route('contact') }}" class="px-4 py-2 rounded-md hover:bg-gray-50 flex items-center gap-2"><i class="fas fa-phone text-gray-400"></i><span>Liên hệ tư vấn</span></a>
                         </div>
                     </div>
                 </div>

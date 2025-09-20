@@ -7,7 +7,7 @@
     <div class="absolute inset-0 bg-black/20"></div>
     <div class="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23ffffff" fill-opacity="0.1"%3E%3Ccircle cx="30" cy="30" r="2"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-30"></div>
     
-    <div class="relative container mx-auto px-4 py-16 lg:py-20">
+    <div class="relative container mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
         <div class="max-w-4xl mx-auto text-center">
             <div class="inline-flex items-center bg-white/10 backdrop-blur-sm rounded-full px-6 py-3 mb-8">
                 <i class="fas fa-calculator text-emerald-400 mr-3 text-xl"></i>
@@ -27,7 +27,7 @@
 
 <!-- Calculator Section -->
 <section class="py-16 bg-gray-50">
-  <div class="container mx-auto px-4">
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <div class="max-w-7xl mx-auto">
             <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
                 
@@ -55,8 +55,8 @@
                                     <select name="car_variant_id" class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-300">
                                         <option value="">Chọn xe cụ thể</option>
                                         @foreach($carVariants as $car)
-                                        <option value="{{ $car->id }}" data-price="{{ $car->price }}">
-                                            {{ $car->carModel->carBrand->name }} {{ $car->carModel->name }} - {{ number_format($car->price) }} VNĐ
+                                        <option value="{{ $car->id }}" data-price="{{ $car->current_price }}">
+                                            {{ $car->carModel->carBrand->name }} {{ $car->carModel->name }} {{ $car->name }} - {{ number_format($car->current_price, 0, ',', '.') }}đ
                                         </option>
                                         @endforeach
                                     </select>
@@ -69,7 +69,7 @@
                                     </label>
                                     <input type="number" name="car_price" id="car_price" 
                                            class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-300" 
-                                           required min="1000000" placeholder="Nhập giá xe">
+                                           placeholder="Nhập giá xe">
                                 </div>
           </div>
 
@@ -82,7 +82,7 @@
                                 <div class="space-y-3">
                                     <input type="number" name="down_payment" id="down_payment" 
                                            class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-300" 
-                                           required min="0" placeholder="Nhập số tiền trả trước">
+                                           placeholder="Nhập số tiền trả trước">
                                     <div class="flex items-center space-x-4">
                                         <span class="text-sm text-gray-500">Hoặc chọn tỷ lệ:</span>
                                         <div class="flex space-x-2">
@@ -120,7 +120,7 @@
                                     </label>
                                     <input type="number" name="interest_rate" 
                                            class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-300" 
-                                           required step="0.01" min="0" max="30" value="9.5">
+                                           step="0.01" value="9.5" placeholder="Nhập lãi suất">
                                 </div>
                             </div>
 
@@ -231,7 +231,7 @@
 
 <!-- Finance Options Section -->
 <section class="py-16 bg-white">
-    <div class="container mx-auto px-4">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-12">
             <h2 class="text-3xl font-bold text-gray-900 mb-4">Gói vay tài chính</h2>
             <p class="text-lg text-gray-600 max-w-2xl mx-auto">
@@ -324,7 +324,7 @@ Vui lòng liên hệ tư vấn chi tiết về gói vay phù hợp và hỗ tr�
 
     console.log('Generated message:', message);
     
-    const contactUrl = `{{ route('contact') }}?subject=finance&message=${encodeURIComponent(message)}#contact-form`;
+    const contactUrl = `{{ route('contact') }}?subject=finance&message=${encodeURIComponent(message)}&from=calculator#contact-form`;
     console.log('New URL:', contactUrl);
     
     window.location.href = contactUrl;
@@ -341,77 +341,56 @@ const form = document.getElementById('calc-form');
     const interestRateInput = document.querySelector('input[name="interest_rate"]');
     const loanTermSelect = document.querySelector('select[name="loan_term"]');
 
-    // Prefill from query params when coming from "Tính toán với gói này"
-    (function prefillFromParams() {
-        const params = new URLSearchParams(window.location.search);
-        const optionId = params.get('option_id');
+    // Prefill from selected option when coming from "Tính toán với gói này"
+    @if($selectedOption)
+    (function prefillFromSelectedOption() {
+        const option = @json($selectedOption);
         
-        if (optionId) {
-            // Fetch finance option data and prefill form
-            fetch('{{ route("finance.options") }}')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        const option = data.options.find(opt => opt.id == optionId);
-                        if (option) {
-                            // Prefill interest rate
-                            interestRateInput.value = option.interest_rate;
-                            
-                            // Prefill loan term (use max_tenure if available, otherwise min_tenure)
-                            const targetTenure = option.max_tenure || option.min_tenure;
-                            if (targetTenure) {
-                                const opt = Array.from(loanTermSelect.options).find(o => parseInt(o.value, 10) === targetTenure);
-                                if (opt) {
-                                    loanTermSelect.value = String(targetTenure);
-                                } else {
-                                    // If exact match not found, find closest option
-                                    const closestOption = Array.from(loanTermSelect.options).reduce((closest, current) => {
-                                        const currentVal = parseInt(current.value, 10);
-                                        const closestVal = parseInt(closest.value, 10);
-                                        return Math.abs(currentVal - targetTenure) < Math.abs(closestVal - targetTenure) ? current : closest;
-                                    });
-                                    if (closestOption) loanTermSelect.value = closestOption.value;
-                                }
-                            }
-                            
-                            // Show a notification that form has been prefilled
-                            showPrefillNotification(option.name, option.bank_name);
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching finance options:', error);
-                });
+        if (option) {
+            // Prefill interest rate
+            interestRateInput.value = option.interest_rate;
+            
+            // Prefill loan term (use max_tenure if available, otherwise min_tenure)
+            const targetTenure = option.max_tenure || option.min_tenure;
+            if (targetTenure) {
+                const opt = Array.from(loanTermSelect.options).find(o => parseInt(o.value, 10) === targetTenure);
+                if (opt) {
+                    loanTermSelect.value = String(targetTenure);
+                } else {
+                    // If exact match not found, find closest option
+                    const closestOption = Array.from(loanTermSelect.options).reduce((closest, current) => {
+                        const currentVal = parseInt(current.value, 10);
+                        const closestVal = parseInt(closest.value, 10);
+                        return Math.abs(currentVal - targetTenure) < Math.abs(closestVal - targetTenure) ? current : closest;
+                    }, loanTermSelect.options[0]);
+                    loanTermSelect.value = closestOption.value;
+                }
+            }
+            
+            // Show a notification that form has been prefilled
+            showPrefillNotification(option.name, option.bank_name);
         }
     })();
+    @endif
 
     // Show notification when form is prefilled
     function showPrefillNotification(optionName, bankName) {
-        const notification = document.createElement('div');
-        notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300';
-        notification.innerHTML = `
-            <div class="flex items-center">
-                <i class="fas fa-check-circle mr-2"></i>
-                <span>Đã điền sẵn thông tin gói vay: <strong>${optionName}</strong> (${bankName})</span>
-            </div>
-        `;
-        
-        document.body.appendChild(notification);
-        
-        // Auto-hide after 5 seconds
-        setTimeout(() => {
-            notification.style.transform = 'translateX(100%)';
-            setTimeout(() => {
-                document.body.removeChild(notification);
-            }, 300);
-        }, 5000);
+        const message = `Đã điền sẵn thông tin gói vay: ${optionName} (${bankName})`;
+        if (typeof window.showMessage === 'function') {
+            window.showMessage(message, 'success');
+        } else {
+            // Fallback notification
+            console.log(message);
+        }
     }
 
     // Auto-fill car price when car is selected
     carSelect.addEventListener('change', function() {
         const selectedOption = this.options[this.selectedIndex];
         if (selectedOption.value && selectedOption.dataset.price) {
-            carPriceInput.value = selectedOption.dataset.price;
+            // Format price without decimals
+            const price = parseFloat(selectedOption.dataset.price);
+            carPriceInput.value = Math.round(price);
             updateDownPayment();
         }
     });
@@ -439,9 +418,64 @@ const form = document.getElementById('calc-form');
         }
     }
 
+    // Validation function
+    function validateForm() {
+        const carPrice = parseFloat(carPriceInput.value);
+        const downPayment = parseFloat(downPaymentInput.value);
+        const interestRate = parseFloat(interestRateInput.value);
+        const loanTerm = parseInt(loanTermSelect.value);
+
+        if (!carPrice || carPrice < 100000000) {
+            showToast('Vui lòng nhập giá xe tối thiểu 100 triệu VNĐ', 'error');
+            carPriceInput.focus();
+            return false;
+        }
+
+        if (!downPayment || downPayment < 0) {
+            showToast('Vui lòng nhập số tiền trả trước hợp lệ', 'error');
+            downPaymentInput.focus();
+            return false;
+        }
+
+        if (downPayment >= carPrice) {
+            showToast('Số tiền trả trước phải nhỏ hơn giá xe', 'error');
+            downPaymentInput.focus();
+            return false;
+        }
+
+        if (!interestRate || interestRate < 0 || interestRate > 30) {
+            showToast('Vui lòng nhập lãi suất từ 0% đến 30%', 'error');
+            interestRateInput.focus();
+            return false;
+        }
+
+        if (!loanTerm || loanTerm < 6 || loanTerm > 84) {
+            showToast('Vui lòng chọn thời hạn vay từ 6 đến 84 tháng', 'error');
+            loanTermSelect.focus();
+            return false;
+        }
+
+        return true;
+    }
+
+    // Toast notification function - use global showMessage
+    function showToast(message, type = 'success') {
+        if (typeof window.showMessage === 'function') {
+            window.showMessage(message, type);
+        } else {
+            // Fallback if global showMessage not available
+            alert(message);
+        }
+    }
+
     // Form submission
     form.addEventListener('submit', function(e) {
-  e.preventDefault();
+        e.preventDefault();
+        
+        // Validate form
+        if (!validateForm()) {
+            return;
+        }
         
         const formData = new FormData(form);
         

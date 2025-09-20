@@ -9,7 +9,7 @@
     <div class="absolute inset-0 bg-black/20"></div>
     <div class="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23ffffff" fill-opacity="0.1"%3E%3Ccircle cx="30" cy="30" r="2"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-30"></div>
     
-    <div class="relative container mx-auto px-4 py-20 lg:py-32">
+    <div class="relative container mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
         <div class="max-w-4xl mx-auto text-center">
             <div class="inline-flex items-center bg-white/10 backdrop-blur-sm rounded-full px-6 py-3 mb-8">
                 <i class="fas fa-newspaper text-purple-400 mr-3 text-xl"></i>
@@ -17,7 +17,7 @@
             </div>
             
             <h1 class="text-4xl lg:text-6xl font-bold mb-6 leading-tight">
-                Tin tức & Blog
+                Tin tức
                 <span class="text-purple-400 block">AutoLux</span>
             </h1>
             
@@ -31,7 +31,7 @@
 <!-- Featured Blog Section -->
 @if($blogs->count() > 0)
 <section class="py-16 bg-white">
-    <div class="container mx-auto px-4">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <div class="max-w-7xl mx-auto">
             <div class="text-center mb-16">
                 <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
@@ -177,7 +177,7 @@
 
 <!-- Newsletter Section -->
 <section class="py-16 bg-gradient-to-r from-purple-50 to-blue-50">
-    <div class="container mx-auto px-4">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <div class="max-w-4xl mx-auto text-center">
             <div class="bg-white rounded-2xl shadow-xl p-8 lg:p-12">
                 <div class="w-20 h-20 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -213,7 +213,7 @@
 
 <!-- Categories Section -->
 <section class="py-16 bg-white">
-    <div class="container mx-auto px-4">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <div class="max-w-6xl mx-auto">
             <div class="text-center mb-16">
                 <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">

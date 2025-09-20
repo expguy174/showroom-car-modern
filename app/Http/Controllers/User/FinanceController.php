@@ -172,15 +172,21 @@ class FinanceController extends Controller
     /**
      * Get financing calculator with preset options
      */
-    public function calculator()
+    public function calculator(Request $request)
     {
         $financeOptions = FinanceOption::where('is_active', 1)->get();
         $carVariants = CarVariant::with(['carModel.carBrand'])
             ->where('is_active', 1)
-            ->orderBy('price')
+            ->orderBy('current_price')
             ->get();
 
-        return view('user.finance.calculator', compact('financeOptions', 'carVariants'));
+        // Get selected finance option if provided
+        $selectedOption = null;
+        if ($request->has('option_id')) {
+            $selectedOption = FinanceOption::find($request->option_id);
+        }
+
+        return view('user.finance.calculator', compact('financeOptions', 'carVariants', 'selectedOption'));
     }
 
     /**

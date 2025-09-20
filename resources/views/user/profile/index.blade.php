@@ -311,7 +311,7 @@
                         </div>
                         <div>
                           <label class="block text-sm text-gray-700">Số điện thoại</label>
-                          <input class="form-input" name="phone" type="text" value="{{ old('phone', $user->phone) }}" placeholder="Ví dụ: +84 90 123 4567">
+                          <input class="form-input" name="phone" type="text" value="{{ old('phone', optional($user->userProfile)->phone ?? optional($user->addresses()->where('is_default', true)->first())->phone ?? '') }}" placeholder="Ví dụ: +84 90 123 4567">
                           @error('phone')<div class="error-text">{{ $message }}</div>@enderror
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -1108,7 +1108,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Số điện thoại <span class="text-red-500">*</span></label>
-                    <input class="form-input" name="phone" type="tel" value="{{ old('phone', $user->phone ?? optional($user->userProfile)->phone ?? '') }}" placeholder="Ví dụ: +84 90 123 4567" required>
+                    <input class="form-input" name="phone" type="tel" value="{{ old('phone', optional($user->userProfile)->phone ?? optional($user->addresses()->where('is_default', true)->first())->phone ?? '') }}" placeholder="Ví dụ: +84 90 123 4567" required>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>

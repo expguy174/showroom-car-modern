@@ -73,7 +73,7 @@ class HomeController extends Controller
         $recentReviews = \App\Models\Review::where('is_approved', true)
             ->with(['user.userProfile:id,user_id,name'])
             ->with('reviewable') // Load reviewable models without specifying relationships
-            ->select('id', 'rating', 'comment', 'user_id', 'reviewable_type', 'reviewable_id', 'created_at')
+            ->select('id', 'rating', 'title', 'comment', 'user_id', 'reviewable_type', 'reviewable_id', 'created_at')
             ->orderByDesc('rating')
             ->orderByDesc('created_at')
             ->take(3)
@@ -106,7 +106,7 @@ class HomeController extends Controller
         $promotions = \App\Models\Promotion::where('is_active', 1)
             ->orderByDesc('start_date')
             ->take(3)
-            ->get(['id','name','code','description','type','discount_value','start_date','end_date','is_active']);
+            ->get();
 
 
 

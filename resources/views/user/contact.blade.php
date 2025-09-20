@@ -136,7 +136,7 @@
                             <input type="tel" 
                                    id="phone" 
                                    name="phone" 
-                                   value="{{ request('phone', old('phone', auth()->user()->phone ?? '')) }}"
+                                   value="{{ request('phone', old('phone', optional(auth()->user()?->userProfile)->phone ?? optional(auth()->user()?->addresses()->where('is_default', true)->first())->phone ?? '')) }}"
                                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
                                    placeholder="Nhập số điện thoại">
                             @error('phone')
@@ -215,15 +215,11 @@
                         <div class="space-y-4">
                             <div class="flex justify-between items-center py-3 border-b border-blue-100">
                                 <span class="font-semibold text-gray-700">Thứ 2 - Thứ 6</span>
-                                <span class="text-blue-600 font-semibold">8:00 - 18:00</span>
+                                <span class="text-blue-600 font-semibold">09:00 - 17:00</span>
                             </div>
                             <div class="flex justify-between items-center py-3 border-b border-blue-100">
-                                <span class="font-semibold text-gray-700">Thứ 7</span>
-                                <span class="text-blue-600 font-semibold">8:00 - 17:00</span>
-                            </div>
-                            <div class="flex justify-between items-center py-3 border-b border-blue-100">
-                                <span class="font-semibold text-gray-700">Chủ nhật</span>
-                                <span class="text-blue-600 font-semibold">9:00 - 16:00</span>
+                                <span class="font-semibold text-gray-700">Thứ 7, Chủ nhật</span>
+                                <span class="text-blue-600 font-semibold">Nghỉ</span>
                             </div>
                         </div>
                         
@@ -459,6 +455,17 @@ function showToast(message, type = 'success') {
 document.addEventListener('DOMContentLoaded', function() {
     
     const params = new URLSearchParams(window.location.search);
+    
+    // Show toast if coming from calculator
+    if (params.get('from') === 'calculator') {
+        setTimeout(() => {
+            if (typeof window.showMessage === 'function') {
+                window.showMessage('Thông tin tư vấn tài chính đã được điền sẵn vào form liên hệ', 'success');
+            } else {
+                showToast('Thông tin tư vấn tài chính đã được điền sẵn vào form liên hệ', 'success');
+            }
+        }, 500);
+    }
     
     if (params.get('subject')) {
         document.getElementById('subject').value = params.get('subject');

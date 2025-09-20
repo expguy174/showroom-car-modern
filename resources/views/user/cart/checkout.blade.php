@@ -77,7 +77,7 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Số điện thoại</label>
-                                <input type="text" name="phone" value="{{ old('phone', optional(($addresses ?? collect())->firstWhere('is_default', true) ?: ($addresses ?? collect())->first())->phone ?? optional($user?->userProfile)->phone) }}" required class="mt-1 block w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" />
+                                <input type="text" name="phone" value="{{ old('phone', optional($user?->userProfile)->phone ?? optional(($addresses ?? collect())->firstWhere('is_default', true) ?: ($addresses ?? collect())->first())->phone ?? '') }}" required class="mt-1 block w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" />
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Email</label>

@@ -25,7 +25,7 @@
 <div id="message-container" class="fixed top-4 right-4 z-50"></div>
 
 {{-- ===== Hero Section ===== --}}
-<section class="relative min-h-[70vh] sm:min-h-[65vh] lg:min-h-[60vh] bg-gradient-to-br from-neutral-950 via-slate-900 to-black overflow-hidden z-0 pt-16">
+<section class="relative min-h-[70vh] sm:min-h-[65vh] lg:min-h-[60vh] bg-slate-900 overflow-hidden z-0 pt-16">
     <!-- Background Pattern -->
     <div class="absolute inset-0 opacity-10 z-0">
         <div class="absolute inset-0" style="background-image: radial-gradient(circle at 25% 25%, white 2px, transparent 2px), radial-gradient(circle at 75% 75%, white 2px, transparent 2px); background-size: 50px 50px;"></div>
@@ -91,10 +91,10 @@
 {{-- Promotions moved below accessories --}}
 
 {{-- ===== Car Brands Section ===== --}}
-<section id="brands" class="py-16 sm:py-20 bg-slate-50">
+<section id="brands" class="py-16 sm:py-20 bg-gray-50">
     <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16 sm:mb-20">
-            <div class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full text-sm font-semibold mb-6 shadow-lg">
+            <div class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 rounded-full text-sm font-semibold mb-6">
                 <i class="fas fa-handshake mr-3"></i>
                 Đối tác chính thức
             </div>
@@ -123,10 +123,10 @@
 </section>
 
 {{-- ===== Featured Cars Section ===== --}}
-<section id="featured" class="py-16 sm:py-20 bg-indigo-50">
+<section id="featured" class="py-16 sm:py-20 bg-white">
     <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16 sm:mb-20">
-            <div class="inline-flex items-center px-4 py-2 bg-emerald-100 text-emerald-800 rounded-full text-sm font-medium mb-4">
+            <div class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 rounded-full text-sm font-medium mb-4">
                 <i class="fas fa-star mr-2"></i>
                 Xe nổi bật
             </div>
@@ -160,10 +160,10 @@
 
 {{-- ===== Featured Accessories Section ===== --}}
 @if(isset($featuredAccessories) && $featuredAccessories->count())
-<section id="featured-accessories" class="py-16 sm:py-20 bg-white">
+<section id="featured-accessories" class="py-16 sm:py-20 bg-blue-50">
     <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16 sm:mb-20">
-            <div class="inline-flex items-center px-4 py-2 bg-amber-100 text-amber-800 rounded-full text-sm font-medium mb-4">
+            <div class="inline-flex items-center px-4 py-2 bg-amber-100 text-amber-700 rounded-full text-sm font-medium mb-4">
                 <i class="fas fa-puzzle-piece mr-2"></i>
                 Phụ kiện nổi bật
             </div>
@@ -190,100 +190,54 @@
 </section>
 @endif
 
-{{-- ===== Promotions Section (after accessories) ===== --}}
-@if(isset($promotions) && $promotions->count())
-<section id="promotions" class="py-16 sm:py-20 bg-amber-50">
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex flex-col items-center text-center gap-4 mb-8 sm:mb-12">
-            <div>
-                <div class="inline-flex items-center px-4 py-2 bg-amber-100 text-amber-800 rounded-full text-sm font-medium mb-3">
-                    <i class="fas fa-tags mr-2"></i>
-                    Ưu đãi hiện hành
-                </div>
-                <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900">Khuyến mãi hấp dẫn</h2>
-                <p class="mt-2 text-gray-600 max-w-2xl leading-relaxed md:leading-loose">Tiết kiệm chi phí với các chương trình ưu đãi đang diễn ra. Áp dụng cho một số mẫu xe và phụ kiện.</p>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-            @foreach($promotions as $promo)
-            <article class="group card-surface overflow-hidden h-full flex flex-col min-h-fit rounded-2xl border border-amber-100 bg-white shadow transition-all duration-300 transform-gpu">
-                <div class="relative">
-                    <!-- Visual header to match blog card media area -->
-                    <div class="card-media w-full h-40 bg-gradient-to-br from-amber-100 via-amber-50 to-white">
-                        <span class="card-overlay"></span>
-                        <span class="card-sheen"></span>
-                        <div class="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium text-amber-700 inline-flex items-center gap-2">
-                            <i class="fas fa-tags"></i>
-                            <span>Khuyến mãi</span>
-                        </div>
-                        <div class="absolute top-4 right-4 inline-flex items-baseline gap-1 px-2.5 py-1.5 rounded-xl bg-amber-100 text-amber-700 font-extrabold">
-                            @if($promo->type === 'percentage')
-                                <span class="text-xl">-{{ (int) $promo->discount_value }}</span><span class="text-xs">%</span>
-                            @else
-                                <span class="text-xl">-{{ number_format((int) $promo->discount_value, 0, ',', '.') }}</span><span class="text-xs">₫</span>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-                <div class="p-6 flex-1 flex flex-col justify-between">
-                    <h3 class="font-extrabold text-lg text-gray-900 mb-2 line-clamp-2">{{ $promo->name }}</h3>
-                    @if($promo->code)
-                    <div class="mb-2 inline-flex items-center gap-2 text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
-                        <i class="fas fa-ticket-alt"></i>
-                        <span class="truncate max-w-[140px]">{{ $promo->code }}</span>
-                    </div>
-                    @endif
-                    <div class="text-[11px] text-gray-500">{{ optional($promo->start_date)->format('d/m') }} - {{ optional($promo->end_date)->format('d/m') }}</div>
-
-                    @if($promo->description)
-                    <p class="mt-3 text-sm text-gray-600 line-clamp-3">{{ $promo->description }}</p>
-                    @endif
-                    <div class="mt-4 flex items-center justify-between">
-                        <a href="{{ route('products.index') }}" class="inline-flex items-center text-amber-700 font-semibold">
-                            <span>Xem áp dụng</span>
-                            <i class="fas fa-arrow-right ml-2 text-xs"></i>
-                        </a>
-                        <span class="inline-flex items-center gap-1 text-[11px] text-gray-500"><i class="fas fa-info-circle"></i> Điều kiện kèm theo</span>
-                    </div>
-                </div>
-            </article>
-            @endforeach
-        </div>
-    </div>
-    </section>
-@endif
-
-{{-- ===== Reviews Section (moved) ===== --}}
+{{-- ===== Reviews Section (moved up before promotions) ===== --}}
 @if(isset($recentReviews) && $recentReviews->count())
-<section id="reviews" class="py-16 sm:py-20 bg-slate-100">
+<section id="reviews" class="py-16 sm:py-20 bg-white">
     <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-12 sm:mb-16">
-            <div class="inline-flex items-center px-4 py-2 bg-amber-100 text-amber-800 rounded-full text-sm font-medium mb-4">
+            <div class="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-700 rounded-full text-sm font-medium mb-4">
                 <i class="fas fa-star mr-2"></i>
                 Đánh giá mới nhất
             </div>
-            <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900">Khách hàng nói gì</h2>
+            <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4">Khách hàng nói gì</h2>
+            <p class="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+                Những đánh giá chân thực từ khách hàng đã sử dụng dịch vụ
+            </p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             @foreach($recentReviews as $review)
-            <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-                <div class="flex items-center justify-between mb-3">
+            <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
+                <!-- Header with user info and rating -->
+                <div class="flex items-center justify-between mb-4">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
-                            <i class="fas fa-user"></i>
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-semibold">
+                            {{ strtoupper(substr(optional(optional($review->user)->userProfile)->name ?? 'K', 0, 1)) }}
                         </div>
                         <div>
                             <div class="font-semibold text-gray-900">{{ optional(optional($review->user)->userProfile)->name ?? 'Khách hàng' }}</div>
-                            <div class="text-xs text-gray-500">{{ $review->created_at->format('d/m/Y') }}</div>
+                            <div class="text-xs text-gray-500 flex items-center gap-1">
+                                <i class="fas fa-calendar-alt"></i>
+                                {{ $review->created_at->format('d/m/Y') }}
+                            </div>
                         </div>
                     </div>
-                    <div class="text-yellow-400">
-                        {!! $review->stars !!}
+                    <div class="flex items-center gap-1">
+                        @for($i = 1; $i <= 5; $i++)
+                            <i class="fas fa-star text-sm {{ $i <= $review->rating ? 'text-yellow-400' : 'text-gray-300' }}"></i>
+                        @endfor
                     </div>
                 </div>
-                <div class="text-gray-700 line-clamp-3">{{ $review->comment }}</div>
+
+                <!-- Review title from database -->
+                @if($review->title)
+                <div class="mb-3">
+                    <h4 class="font-semibold text-gray-900 text-sm">"{{ $review->title }}"</h4>
+                </div>
+                @endif
+
+                <!-- Review content -->
+                <div class="text-gray-700 line-clamp-3 leading-relaxed text-sm mb-4">{{ $review->comment }}</div>
                 @php($rv = $review->reviewable)
                 @if($rv)
                 <div class="mt-4 text-sm text-gray-600">
@@ -326,52 +280,153 @@
             </div>
             @endforeach
         </div>
+
+        <!-- Explore products call-to-action -->
+        <div class="text-center mt-12">
+            <a href="{{ route('products.index') }}"
+                class="inline-flex items-center px-8 py-4 min-h-[48px] bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-full hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2">
+                <span>Khám phá sản phẩm</span>
+                <i class="fas fa-arrow-right ml-2"></i>
+            </a>
+        </div>
     </div>
 </section>
 @endif
 
-{{-- ===== Our Showrooms Section (moved before Services) ===== --}}
-@if(isset($showrooms) && $showrooms->count())
-<section id="showrooms" class="py-16 sm:py-20 bg-white">
+{{-- ===== Promotions Section (moved after reviews) ===== --}}
+@if(isset($promotions) && $promotions->count())
+<section id="promotions" class="py-16 sm:py-20 bg-indigo-50">
     <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="text-center mb-12">
-            <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4">Hệ thống Showroom</h2>
-            <p class="text-lg text-gray-600">Liên hệ tư vấn – lái thử – bảo dưỡng</p>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            @foreach($showrooms as $s)
-            <div class="bg-white rounded-2xl shadow p-6 border">
-                <h3 class="text-xl font-semibold text-gray-900">{{ $s->name }}</h3>
-                <p class="text-gray-600 mt-1">{{ $s->full_address ?? ( ($s->address ?? '') . ( $s->city ? ', '.$s->city : '') ) }}</p>
-                <div class="mt-3 text-sm text-gray-700 space-y-1">
-                    @if($s->phone)
-                    <div><i class="fas fa-phone mr-2 text-gray-500"></i>{{ $s->phone }}</div>
-                    @endif
-                    @if($s->email)
-                    <div><i class="fas fa-envelope mr-2 text-gray-500"></i>{{ $s->email }}</div>
-                    @endif
-                    @if($s->opening_time && $s->closing_time)
-                    <div><i class="fas fa-clock mr-2 text-gray-500"></i>Mở cửa: {{ $s->opening_time }} - {{ $s->closing_time }}</div>
-                    @endif
+        <div class="flex flex-col items-center text-center gap-4 mb-8 sm:mb-12">
+            <div>
+                <div class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-700 rounded-full text-sm font-medium mb-3">
+                    <i class="fas fa-tags mr-2"></i>
+                    Ưu đãi hiện hành
                 </div>
+                <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900">Khuyến mãi hấp dẫn</h2>
+                <p class="mt-2 text-gray-600 max-w-2xl leading-relaxed md:leading-loose">Tiết kiệm chi phí với các chương trình ưu đãi đang diễn ra.</p>
             </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            @foreach($promotions as $promotion)
+                <div class="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-6 text-white relative overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                    <!-- Background Pattern -->
+                    <div class="absolute inset-0 opacity-10">
+                        <svg class="w-full h-full" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <pattern id="pattern-{{ $promotion->id }}" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+                                    <circle cx="10" cy="10" r="2" fill="currentColor"/>
+                                </pattern>
+                            </defs>
+                            <rect width="100" height="100" fill="url(#pattern-{{ $promotion->id }})"/>
+                        </svg>
+                    </div>
+
+                    <div class="relative z-10">
+                        <!-- Type Badge -->
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="px-2 py-1 bg-white bg-opacity-20 rounded-full text-xs font-medium">
+                                @switch($promotion->type)
+                                    @case('percentage') 
+                                        Giảm {{ $promotion->discount_value }}%
+                                        @if($promotion->max_discount_amount)
+                                            <span class="block text-[10px] opacity-75">Tối đa {{ number_format($promotion->max_discount_amount, 0, ',', '.') }}đ</span>
+                                        @endif
+                                        @break
+                                    @case('fixed_amount') Giảm {{ number_format($promotion->discount_value, 0, ',', '.') }}đ @break
+                                    @case('free_shipping') Miễn phí ship @break
+                                    @case('brand_specific')
+                                        Giảm {{ $promotion->discount_value }}%
+                                        @if($promotion->max_discount_amount)
+                                            <span class="block text-[10px] opacity-75">Tối đa {{ number_format($promotion->max_discount_amount, 0, ',', '.') }}đ</span>
+                                        @endif
+                                        @break
+                                @endswitch
+                            </span>
+                            @if($promotion->usage_limit)
+                                <span class="text-xs opacity-75">
+                                    {{ $promotion->usage_limit - $promotion->usage_count }} lượt còn lại
+                                </span>
+                            @endif
+                        </div>
+
+                        <!-- Title -->
+                        <h3 class="text-xl font-bold mb-2">{{ $promotion->name }}</h3>
+                        
+                        <!-- Description -->
+                        @if($promotion->description)
+                            <p class="text-sm opacity-90 mb-4 line-clamp-2">{{ $promotion->description }}</p>
+                        @endif
+
+                        <!-- Code -->
+                        <div class="bg-white bg-opacity-20 rounded-lg p-3 mb-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-xs opacity-75 mb-1">Mã khuyến mãi</p>
+                                    <p class="font-mono font-bold text-lg">{{ $promotion->code }}</p>
+                                </div>
+                                <button onclick="copyCode('{{ $promotion->code }}')" 
+                                        class="p-2 bg-white bg-opacity-20 rounded-lg hover:bg-opacity-30 transition-colors">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Min Order & Expiry -->
+                        <div class="space-y-2 text-sm opacity-90">
+                            @if($promotion->min_order_amount)
+                                <p><i class="fas fa-shopping-cart w-4"></i> Đơn tối thiểu: {{ number_format($promotion->min_order_amount, 0, ',', '.') }}đ</p>
+                            @endif
+                            @if($promotion->end_date)
+                                <p><i class="fas fa-clock w-4"></i> Hết hạn: {{ $promotion->end_date->format('d/m/Y') }}</p>
+                            @endif
+                        </div>
+
+                        <!-- Status Badge -->
+                        <div class="mt-4 pt-4 border-t border-white border-opacity-20">
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="px-2 py-1 bg-white bg-opacity-20 rounded-full">
+                                Đang diễn ra
+                            </span>
+                                @if($promotion->usage_limit)
+                                    <span class="opacity-75">
+                                        Còn {{ $promotion->usage_limit - $promotion->usage_count }} lượt
+                                    </span>
+                                @else
+                                    <span class="opacity-75">Không giới hạn</span>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
             @endforeach
         </div>
+
+        <!-- View all promotions button -->
+        <div class="text-center mt-12">
+            <a href="{{ route('user.promotions.index') }}"
+                class="inline-flex items-center px-8 py-4 min-h-[48px] bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-full hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2">
+                <span>Xem tất cả khuyến mãi</span>
+                <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+            </a>
+        </div>
     </div>
-</section>
+    </section>
 @endif
 
+
 {{-- ===== Latest News Section ===== --}}
-<section class="py-16 sm:py-20 bg-indigo-50/60">
+<section class="py-16 sm:py-20 bg-gray-50">
     <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16 sm:mb-20">
-            <div class="inline-flex items-center px-4 py-2 bg-purple-100 text-purple-800 rounded-full text-sm font-medium mb-4">
+            <div class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 rounded-full text-sm font-medium mb-4">
                 <i class="fas fa-newspaper mr-2"></i>
-                Tin tức mới nhất
+                Bài viết
             </div>
-            <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4">Tin tức & Sự kiện</h2>
-            <p class="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed md:leading-loose">
-                Cập nhật những tin tức mới nhất về ngành ô tô, đánh giá xe mới và các sự kiện đặc biệt
+            <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4">Tin tức mới nhất</h2>
+            <p class="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+                Cập nhật những thông tin mới nhất về thế giới ô tô
             </p>
         </div>
 
@@ -396,7 +451,7 @@
 {{-- Promotions moved above; old block removed --}}
 
 {{-- ===== CTA Section ===== --}}
-<section class="py-16 sm:py-20 bg-gradient-to-br from-slate-900 via-neutral-900 to-black">
+<section class="py-16 sm:py-20 bg-slate-900">
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-6">
             Sẵn sàng sở hữu xe mơ ước?
@@ -531,6 +586,22 @@
     });
 
     // Test drive form removed
+
+    // Copy promotion code function
+    function copyCode(code) {
+        navigator.clipboard.writeText(code).then(function() {
+            showToast('Đã sao chép mã: ' + code, 'success');
+        }).catch(function() {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = code;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            showToast('Đã sao chép mã: ' + code, 'success');
+        });
+    }
 </script>
 @endpush
 
