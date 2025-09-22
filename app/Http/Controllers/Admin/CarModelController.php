@@ -11,13 +11,38 @@ class CarModelController extends Controller
 {
     public function index(Request $request)
     {
-        $query = CarModel::with('carBrand');
+        $query = CarModel::with(['carBrand', 'carVariants']);
 
-        if ($search = $request->input('search')) {
-            $query->where('name', 'like', '%' . $search . '%');
+        // Search functionality
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhereHas('carBrand', function($brand) use ($search) {
+                      $brand->where('name', 'like', "%{$search}%");
+                  });
+            });
         }
 
-        $carModels = $query->latest()->paginate(10);
+        // Brand filter
+        if ($request->filled('brand')) {
+            $query->where('car_brand_id', $request->brand);
+        }
+
+        // Status filter
+        if ($request->filled('status')) {
+            switch ($request->status) {
+                case 'active':
+                    $query->where('is_active', true);
+                    break;
+                case 'inactive':
+                    $query->where('is_active', false);
+                    break;
+            }
+        }
+
+        $carModels = $query->orderBy('name', 'asc')->paginate(15);
 
         return view('admin.carmodels.index', compact('carModels'));
     }

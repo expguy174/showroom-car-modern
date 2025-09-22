@@ -144,5 +144,64 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 
+    public function isManager()
+    {
+        return $this->role === 'manager';
+    }
+
+    public function isSalesPerson()
+    {
+        return $this->role === 'sales_person';
+    }
+
+    public function isTechnician()
+    {
+        return $this->role === 'technician';
+    }
+
+    public function isStaff()
+    {
+        return in_array($this->role, ['admin', 'manager', 'sales_person', 'technician']);
+    }
+
+    public function isUser()
+    {
+        return $this->role === 'user';
+    }
+
+    public function hasRole($role)
+    {
+        if (is_array($role)) {
+            return in_array($this->role, $role);
+        }
+        return $this->role === $role;
+    }
+
+    public function getRoleLabel()
+    {
+        $labels = [
+            'admin' => 'Quản trị viên',
+            'manager' => 'Quản lý',
+            'sales_person' => 'Nhân viên Kinh doanh',
+            'technician' => 'Kỹ thuật viên',
+            'user' => 'Người dùng'
+        ];
+        
+        return $labels[$this->role] ?? ucfirst($this->role);
+    }
+
+    public function getRoleColor()
+    {
+        $colors = [
+            'admin' => 'bg-red-100 text-red-800',
+            'manager' => 'bg-purple-100 text-purple-800',
+            'sales_person' => 'bg-blue-100 text-blue-800',
+            'technician' => 'bg-green-100 text-green-800',
+            'user' => 'bg-gray-100 text-gray-800'
+        ];
+        
+        return $colors[$this->role] ?? 'bg-gray-100 text-gray-800';
+    }
+
 
 }

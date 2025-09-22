@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\CarVariant;
 use App\Models\CarModel;
+use App\Models\CarBrand;
 
 use Illuminate\Http\Request;
 
@@ -12,17 +13,57 @@ class CarVariantController extends Controller
 {
     public function index(Request $request)
     {
-        $query = CarVariant::with(['carModel']);
+        $query = CarVariant::with(['carModel.carBrand']);
 
-        if ($request->has('search')) {
+        // Search functionality
+        if ($request->filled('search')) {
             $search = $request->search;
-            $query->where('name', 'like', "%{$search}%")
-                ->orWhereHas('carModel', fn($q) => $q->where('name', 'like', "%{$search}%"));
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('trim_level', 'like', "%{$search}%")
+                  ->orWhereHas('carModel', function($model) use ($search) {
+                      $model->where('name', 'like', "%{$search}%")
+                            ->orWhereHas('carBrand', function($brand) use ($search) {
+                                $brand->where('name', 'like', "%{$search}%");
+                            });
+                  });
+            });
         }
 
-        $carVariants = $query->orderByDesc('created_at')->paginate(10);
+        // Brand filter
+        if ($request->filled('brand')) {
+            $query->whereHas('carModel.carBrand', function($brand) use ($request) {
+                $brand->where('id', $request->brand);
+            });
+        }
 
-        return view('admin.carvariants.index', compact('carVariants'));
+        // Status filter
+        if ($request->filled('status')) {
+            switch ($request->status) {
+                case 'active':
+                    $query->where('is_active', true);
+                    break;
+                case 'inactive':
+                    $query->where('is_active', false);
+                    break;
+            }
+        }
+
+        $carVariants = $query->orderBy('name', 'asc')->paginate(15);
+
+        // Get brands for filter dropdown
+        $brands = CarBrand::orderBy('name')->get();
+
+        // Calculate stats
+        $allVariants = CarVariant::all();
+        $stats = [
+            'total' => $allVariants->count(),
+            'active' => $allVariants->where('is_active', true)->count(),
+            'inactive' => $allVariants->where('is_active', false)->count(),
+            'avg_price' => $allVariants->avg('price') ?? 0,
+        ];
+
+        return view('admin.carvariants.index', compact('carVariants', 'brands', 'stats'));
     }
 
     public function create()

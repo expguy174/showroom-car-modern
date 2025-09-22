@@ -21,6 +21,9 @@ use App\Http\Controllers\Admin\PaymentMethodController;
 use App\Http\Controllers\Admin\AnalyticsController;
 use App\Http\Controllers\Admin\UserProfileController;
 use App\Http\Controllers\Admin\ServiceAppointmentController;
+use App\Http\Controllers\Admin\PromotionController;
+use App\Http\Controllers\Admin\ServiceController as AdminServiceController;
+use App\Http\Controllers\Admin\ShowroomController;
 
 // Public Controllers
 use App\Http\Controllers\User\HomeController;
@@ -191,7 +194,7 @@ Route::middleware('auth')->group(function () {
 });
 
 // --- Admin routes ---
-Route::middleware(['auth', IsAdmin::class])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Car
@@ -265,6 +268,8 @@ Route::middleware(['auth', IsAdmin::class])->prefix('admin')->name('admin.')->gr
     // Users
     Route::prefix('users')->name('users.')->group(function () {
         Route::get('/', [UserController::class, 'index'])->name('index');
+        Route::get('/create', [UserController::class, 'create'])->name('create');
+        Route::post('/store', [UserController::class, 'store'])->name('store');
         Route::get('/edit/{user}', [UserController::class, 'edit'])->name('edit');
         Route::put('/update/{user}', [UserController::class, 'update'])->name('update');
         Route::delete('/delete/{user}', [UserController::class, 'destroy'])->name('destroy');
@@ -281,8 +286,11 @@ Route::middleware(['auth', IsAdmin::class])->prefix('admin')->name('admin.')->gr
     // Test Drives
     Route::prefix('test-drives')->name('test-drives.')->group(function () {
         Route::get('/', [TestDriveController::class, 'index'])->name('index');
+        Route::get('/export', [TestDriveController::class, 'export'])->name('export');
         Route::get('/{testDrive}', [TestDriveController::class, 'show'])->name('show');
         Route::put('/{testDrive}/status', [TestDriveController::class, 'updateStatus'])->name('update_status');
+        Route::put('/{testDrive}/confirm', [TestDriveController::class, 'confirm'])->name('confirm');
+        Route::put('/{testDrive}/cancel', [TestDriveController::class, 'cancel'])->name('cancel');
         Route::delete('/{testDrive}', [TestDriveController::class, 'destroy'])->name('destroy');
     });
 
@@ -301,6 +309,8 @@ Route::middleware(['auth', IsAdmin::class])->prefix('admin')->name('admin.')->gr
     // Service Appointments
     Route::prefix('service-appointments')->name('service-appointments.')->group(function () {
         Route::get('/', [ServiceAppointmentController::class, 'index'])->name('index');
+        Route::get('/create', [ServiceAppointmentController::class, 'create'])->name('create');
+        Route::post('/', [ServiceAppointmentController::class, 'store'])->name('store');
         Route::get('/dashboard', [ServiceAppointmentController::class, 'dashboard'])->name('dashboard');
         Route::get('/calendar', [ServiceAppointmentController::class, 'calendar'])->name('calendar');
         Route::get('/{appointment}', [ServiceAppointmentController::class, 'show'])->name('show');
@@ -309,6 +319,50 @@ Route::middleware(['auth', IsAdmin::class])->prefix('admin')->name('admin.')->gr
         Route::delete('/{appointment}', [ServiceAppointmentController::class, 'destroy'])->name('destroy');
         Route::put('/{appointment}/status', [ServiceAppointmentController::class, 'updateStatus'])->name('update-status');
         Route::get('/export', [ServiceAppointmentController::class, 'export'])->name('export');
+    });
+
+    // Promotions
+    Route::prefix('promotions')->name('promotions.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\PromotionController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Admin\PromotionController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Admin\PromotionController::class, 'store'])->name('store');
+        Route::get('/{promotion}', [\App\Http\Controllers\Admin\PromotionController::class, 'show'])->name('show');
+        Route::get('/{promotion}/edit', [\App\Http\Controllers\Admin\PromotionController::class, 'edit'])->name('edit');
+        Route::put('/{promotion}', [\App\Http\Controllers\Admin\PromotionController::class, 'update'])->name('update');
+        Route::delete('/{promotion}', [\App\Http\Controllers\Admin\PromotionController::class, 'destroy'])->name('destroy');
+    });
+
+    // Services
+    Route::prefix('services')->name('services.')->group(function () {
+        Route::get('/', [AdminServiceController::class, 'index'])->name('index');
+        Route::get('/create', [AdminServiceController::class, 'create'])->name('create');
+        Route::post('/', [AdminServiceController::class, 'store'])->name('store');
+        Route::get('/{service}', [AdminServiceController::class, 'show'])->name('show');
+        Route::get('/{service}/edit', [AdminServiceController::class, 'edit'])->name('edit');
+        Route::put('/{service}', [AdminServiceController::class, 'update'])->name('update');
+        Route::delete('/{service}', [AdminServiceController::class, 'destroy'])->name('destroy');
+    });
+
+    // Showrooms
+    Route::prefix('showrooms')->name('showrooms.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\ShowroomController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Admin\ShowroomController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Admin\ShowroomController::class, 'store'])->name('store');
+        Route::get('/{showroom}', [\App\Http\Controllers\Admin\ShowroomController::class, 'show'])->name('show');
+        Route::get('/{showroom}/edit', [\App\Http\Controllers\Admin\ShowroomController::class, 'edit'])->name('edit');
+        Route::put('/{showroom}', [\App\Http\Controllers\Admin\ShowroomController::class, 'update'])->name('update');
+        Route::delete('/{showroom}', [\App\Http\Controllers\Admin\ShowroomController::class, 'destroy'])->name('destroy');
+    });
+
+    // Dealerships
+    Route::prefix('dealerships')->name('dealerships.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\DealershipController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Admin\DealershipController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Admin\DealershipController::class, 'store'])->name('store');
+        Route::get('/{dealership}', [\App\Http\Controllers\Admin\DealershipController::class, 'show'])->name('show');
+        Route::get('/{dealership}/edit', [\App\Http\Controllers\Admin\DealershipController::class, 'edit'])->name('edit');
+        Route::put('/{dealership}', [\App\Http\Controllers\Admin\DealershipController::class, 'update'])->name('update');
+        Route::delete('/{dealership}', [\App\Http\Controllers\Admin\DealershipController::class, 'destroy'])->name('destroy');
     });
 
     // Payments

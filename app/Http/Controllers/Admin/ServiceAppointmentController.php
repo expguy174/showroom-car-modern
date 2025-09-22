@@ -8,13 +8,14 @@ use App\Models\ServiceAppointment;
 use App\Models\Showroom;
 use App\Models\CarBrand;
 use App\Models\User;
+use App\Models\Service;
 use Carbon\Carbon;
 
 class ServiceAppointmentController extends Controller
 {
     public function index(Request $request)
     {
-        $query = ServiceAppointment::with(['user', 'showroom', 'carVariant.carModel.carBrand']);
+        $query = ServiceAppointment::with(['user.userProfile', 'showroom', 'carVariant.carModel.carBrand', 'service']);
 
         // Filter by showroom
         if ($request->has('showroom_id') && $request->showroom_id) {
@@ -26,9 +27,9 @@ class ServiceAppointmentController extends Controller
             $query->where('status', $request->status);
         }
 
-        // Filter by appointment type
-        if ($request->has('appointment_type') && $request->appointment_type) {
-            $query->where('appointment_type', $request->appointment_type);
+        // Filter by service
+        if ($request->has('service_id') && $request->service_id) {
+            $query->where('service_id', $request->service_id);
         }
 
         // Filter by date range
@@ -53,11 +54,11 @@ class ServiceAppointmentController extends Controller
         }
 
         $appointments = $query->orderBy('appointment_date', 'asc')->paginate(15);
-        $showrooms = Showroom::all();
-        $statuses = \App\Models\ServiceAppointment::STATUSES;
-        $serviceTypes = \App\Models\ServiceAppointment::APPOINTMENT_TYPES;
+        $showrooms = Showroom::where('is_active', true)->get();
+        $services = Service::where('is_active', true)->get();
+        $statuses = ['pending', 'confirmed', 'in_progress', 'completed', 'cancelled'];
 
-        return view('admin.service-appointments.index', compact('appointments', 'showrooms', 'statuses', 'serviceTypes'));
+        return view('admin.service-appointments.index', compact('appointments', 'showrooms', 'services', 'statuses'));
     }
 
     public function show(ServiceAppointment $appointment)
@@ -69,39 +70,41 @@ class ServiceAppointmentController extends Controller
 
     public function edit(ServiceAppointment $appointment)
     {
-        $showrooms = Showroom::all();
-        $users = User::all();
-        $statuses = \App\Models\ServiceAppointment::STATUSES;
+        $appointment->load(['user.userProfile', 'showroom', 'service', 'carVariant.carModel.carBrand']);
+        $showrooms = Showroom::where('is_active', true)->get();
+        $services = Service::where('is_active', true)->get();
+        $users = User::with('userProfile')->get();
+        $statuses = ['pending', 'confirmed', 'in_progress', 'completed', 'cancelled'];
+        $priorities = ['low', 'medium', 'high', 'urgent'];
         
-        return view('admin.service-appointments.edit', compact('appointment', 'showrooms', 'users', 'statuses'));
+        return view('admin.service-appointments.edit', compact('appointment', 'showrooms', 'services', 'users', 'statuses', 'priorities'));
     }
 
     public function update(Request $request, ServiceAppointment $appointment)
     {
         $request->validate([
             'showroom_id' => 'required|exists:showrooms,id',
+            'service_id' => 'required|exists:services,id',
             'car_variant_id' => 'required|exists:car_variants,id',
-            'appointment_type' => 'required|in:' . implode(',', \App\Models\ServiceAppointment::APPOINTMENT_TYPES),
             'appointment_date' => 'required|date',
             'appointment_time' => 'required|string',
             'customer_name' => 'required|string|max:255',
             'customer_phone' => 'required|string|max:20',
             'customer_email' => 'required|email|max:255',
-            'current_mileage' => 'nullable|numeric|min:0',
-            'service_description' => 'nullable|string|max:1000',
-            'priority' => 'required|in:' . implode(',', \App\Models\ServiceAppointment::PRIORITIES),
-            'special_instructions' => 'nullable|string|max:500',
+            'current_mileage' => 'nullable|integer|min:0',
+            'service_description' => 'nullable|string|max:65535',
+            'priority' => 'nullable|in:low,medium,high,urgent',
+            'special_instructions' => 'nullable|string|max:65535',
             'estimated_cost' => 'nullable|numeric|min:0',
             'actual_cost' => 'nullable|numeric|min:0',
-            'payment_method' => 'nullable|in:' . implode(',', \App\Models\ServiceAppointment::PAYMENT_METHODS),
-            'status' => 'required|in:' . implode(',', \App\Models\ServiceAppointment::STATUSES),
-            'technician_notes' => 'nullable|string|max:1000',
+            'status' => 'required|in:pending,confirmed,in_progress,completed,cancelled',
+            'technician_notes' => 'nullable|string|max:65535',
         ]);
 
         $data = $request->only([
             'showroom_id',
+            'service_id',
             'car_variant_id',
-            'appointment_type',
             'appointment_date',
             'appointment_time',
             'customer_name',
@@ -113,7 +116,6 @@ class ServiceAppointmentController extends Controller
             'special_instructions',
             'estimated_cost',
             'actual_cost',
-            'payment_method',
             'status',
             'technician_notes',
         ]);

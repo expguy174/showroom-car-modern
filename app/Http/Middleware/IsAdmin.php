@@ -10,10 +10,10 @@ class IsAdmin
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (auth()->check() && auth()->user()->role === 'admin') {
+        if (auth()->check() && in_array(auth()->user()->role, ['admin', 'manager', 'sales_person', 'technician'])) {
             return $next($request);
         }
 
-        abort(403, 'Access denied – Admins only');
+        abort(403, 'Truy cập bị từ chối - Chỉ dành cho nhân viên');
     }
 }

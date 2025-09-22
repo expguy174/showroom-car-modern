@@ -262,6 +262,12 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                                     <div class="mt-3 border-t border-gray-100"></div>
                                 </div>
                             </div>
+                            @if(auth()->user()->isStaff())
+                            <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white">
+                                <span class="inline-flex items-center justify-center w-5"><i class="fas fa-briefcase text-gray-500 text-[14px]"></i></span>
+                                <span class="flex-1">Khu vực làm việc</span>
+                            </a>
+                            @endif
                             <a href="{{ route('user.profile.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white">
                                 <span class="inline-flex items-center justify-center w-5"><i class="fas fa-user text-gray-500 text-[14px]"></i></span>
                                 <span class="flex-1">Tài khoản</span>
@@ -278,12 +284,6 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                                 <span class="inline-flex items-center justify-center w-5"><i class="fas fa-car-side text-gray-500 text-[14px]"></i></span>
                                 <span class="flex-1">Lái thử</span>
                             </a>
-                            @if(auth()->user()->role === 'admin')
-                            <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white">
-                                <span class="inline-flex items-center justify-center w-5"><i class="fas fa-tachometer-alt text-gray-500 text-[14px]"></i></span>
-                                <span class="flex-1">Admin Dashboard</span>
-                            </a>
-                            @endif
                             <form method="POST" action="{{ route('logout') }}" class="mt-1">
                                 @csrf
                                 <button type="submit" class="w-full text-left flex items-center gap-2 px-3 py-2 rounded-md hover:bg-red-50 text-red-600">
@@ -423,6 +423,12 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                 <div class="pt-4 mt-2 border-t">
                     @auth
                     <div class="px-4 pb-2 text-sm text-gray-600">Xin chào, <span class="font-semibold text-gray-900">{{ optional(auth()->user()->userProfile)->name ?? 'Khách' }}</span></div>
+                    @if(auth()->user()->isStaff())
+                    <a href="{{ route('admin.dashboard') }}" class="block px-4 py-3 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                        <span class="inline-flex items-center justify-center w-5"><i class="fas fa-briefcase text-gray-500 text-[14px]"></i></span>
+                        <span class="flex-1">Khu vực làm việc</span>
+                    </a>
+                    @endif
                     <a href="{{ route('user.profile.index') }}" class="block px-4 py-3 rounded-lg hover:bg-gray-50 flex items-center gap-2">
                         <span class="inline-flex items-center justify-center w-5"><i class="fas fa-user text-gray-500 text-[14px]"></i></span>
                         <span class="flex-1">Tài khoản</span>

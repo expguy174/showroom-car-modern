@@ -79,11 +79,41 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        if (Auth::user() && Auth::user()->role === 'admin') {
-            return redirect()->intended('/admin/dashboard')->with('success', 'Đăng nhập thành công! Chào mừng quay trở lại.');
+        // Update last login time
+        if (Auth::user()) {
+            $user = Auth::user();
+            $user->last_login_at = now();
+            $user->save();
         }
 
-        return redirect()->intended('/dashboard')->with('success', 'Đăng nhập thành công! Chào mừng quay trở lại.');
+        // Role-based redirect after login
+        $user = Auth::user();
+        if ($user) {
+            switch ($user->role) {
+                case 'admin':
+                    return redirect()->intended('/admin/dashboard')
+                        ->with('success', 'Đăng nhập thành công! Chào mừng quản trị viên.');
+                
+                case 'manager':
+                    return redirect()->intended('/admin/dashboard')
+                        ->with('success', 'Đăng nhập thành công! Chào mừng quản lý.');
+                
+                case 'sales_person':
+                    return redirect()->intended('/admin/dashboard')
+                        ->with('success', 'Đăng nhập thành công! Chào mừng nhân viên kinh doanh.');
+                
+                case 'technician':
+                    return redirect()->intended('/admin/dashboard')
+                        ->with('success', 'Đăng nhập thành công! Chào mừng kỹ thuật viên.');
+                
+                case 'user':
+                default:
+                    return redirect()->intended('/dashboard')
+                        ->with('success', 'Đăng nhập thành công! Chào mừng quay trở lại.');
+            }
+        }
+
+        return redirect()->intended('/dashboard')->with('success', 'Đăng nhập thành công!');
     }
 
     /**

@@ -1,4 +1,4 @@
-@extends('admin.layouts.app')
+@extends('layouts.admin')
 @section('title', 'Phân tích khách hàng')
 @section('content')
 <div class="container-fluid">

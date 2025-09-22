@@ -13,10 +13,15 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
-            
+            // Rate limiting and security
             'rate.limit' => \App\Http\Middleware\RateLimitMiddleware::class,
             'security.headers' => \App\Http\Middleware\SecurityHeadersMiddleware::class,
             'performance' => \App\Http\Middleware\PerformanceOptimization::class,
+            
+            // Role-based middleware
+            'admin' => \App\Http\Middleware\IsAdmin::class,
+            'staff' => \App\Http\Middleware\IsStaff::class,
+            'role' => \App\Http\Middleware\RoleMiddleware::class,
         ]);
         
         // Global middleware
