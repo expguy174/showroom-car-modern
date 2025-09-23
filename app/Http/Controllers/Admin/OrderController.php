@@ -204,6 +204,75 @@ class OrderController extends Controller
         return redirect()->back()->with('error', 'Đơn hàng đã huỷ trước đó.');
     }
 
+    public function updateStatus(Request $request, Order $order)
+    {
+        $validated = $request->validate([
+            'status' => 'required|in:confirmed,shipping,delivered,cancelled'
+        ]);
+
+        $oldStatus = $order->status;
+        $newStatus = $validated['status'];
+
+        // Validate status transition logic
+        $allowedTransitions = [
+            'pending' => ['confirmed', 'cancelled'],
+            'confirmed' => ['shipping', 'cancelled'],
+            'shipping' => ['delivered', 'cancelled'],
+            'delivered' => [], // No transitions from delivered
+            'cancelled' => [], // No transitions from cancelled
+        ];
+
+        if (!in_array($newStatus, $allowedTransitions[$oldStatus] ?? [])) {
+            return redirect()->back()->with('error', 'Không thể chuyển từ trạng thái "' . $oldStatus . '" sang "' . $newStatus . '"');
+        }
+
+        $order->update(['status' => $newStatus]);
+
+        // Log the status change
+        OrderLog::create([
+            'order_id' => $order->id,
+            'user_id' => Auth::id(),
+            'action' => 'status_changed',
+            'details' => [
+                'from' => $oldStatus,
+                'to' => $newStatus,
+            ],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        // Send notification to user
+        try {
+            if ($order->user_id) {
+                $title = match($newStatus) {
+                    'confirmed' => 'Đơn hàng đã xác nhận',
+                    'shipping' => 'Đơn hàng đang giao',
+                    'delivered' => 'Đơn hàng đã giao thành công',
+                    'cancelled' => 'Đơn hàng đã bị hủy',
+                    default => 'Cập nhật đơn hàng',
+                };
+                
+                app(NotificationService::class)->send(
+                    $order->user_id,
+                    'order_status',
+                    $title,
+                    'Đơn hàng ' . ($order->order_number ?? '#'.$order->id) . ' đã chuyển sang trạng thái: ' . $title
+                );
+            }
+        } catch (\Throwable $e) {
+            // Log error but don't fail the status update
+        }
+
+        $statusLabels = [
+            'confirmed' => 'đã xác nhận',
+            'shipping' => 'đang giao hàng', 
+            'delivered' => 'đã giao thành công',
+            'cancelled' => 'đã hủy',
+        ];
+
+        return redirect()->back()->with('success', 'Đơn hàng ' . ($statusLabels[$newStatus] ?? $newStatus));
+    }
+
     public function logs($orderId)
     {
         $order = Order::findOrFail($orderId);

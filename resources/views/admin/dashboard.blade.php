@@ -9,13 +9,13 @@
 @endphp
 
 {{-- Welcome Header --}}
-<div class="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl p-6 text-white mb-6">
-    <div class="flex items-center justify-between">
-        <div>
-            <h1 class="text-2xl font-bold mb-2">
+<div class="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl p-4 sm:p-6 text-white mb-6">
+    <div class="flex items-start sm:items-center justify-between flex-col sm:flex-row gap-4 sm:gap-0">
+        <div class="flex-1">
+            <h1 class="text-xl sm:text-2xl font-bold mb-2">
                 👋 Xin chào, {{ $profile->name ?? 'Admin' }}!
             </h1>
-            <p class="text-blue-100 mb-3">
+            <p class="text-blue-100 mb-3 text-sm sm:text-base">
                 Chào mừng bạn đến với hệ thống quản trị Showroom
             </p>
             <div class="flex items-center gap-2">
@@ -29,139 +29,308 @@
                 @endif
             </div>
         </div>
-        <div class="text-right">
-            <div class="text-blue-100 text-sm">Lần đăng nhập cuối</div>
-            <div class="font-semibold">{{ $user->last_login_at ? $user->last_login_at->format('d/m/Y H:i') : 'Chưa có' }}</div>
+        <div class="text-left sm:text-right w-full sm:w-auto">
+            <div class="text-blue-100 text-xs sm:text-sm">Lần đăng nhập cuối</div>
+            <div class="font-semibold text-sm sm:text-base">{{ $user->last_login_at ? $user->last_login_at->format('d/m/Y H:i') : 'Chưa có' }}</div>
         </div>
     </div>
 </div>
 
-{{-- Statistics Cards --}}
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+{{-- Main Stats Grid --}}
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
     {{-- Users Stats --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-gray-600 text-sm font-medium">Tổng người dùng</p>
-                <p class="text-2xl font-bold text-gray-900">{{ \App\Models\User::count() }}</p>
-                <p class="text-xs text-green-600 mt-1">
-                    <i class="fas fa-user-plus mr-1"></i>
-                    {{ \App\Models\User::where('created_at', '>=', now()->subDays(7))->count() }} mới tuần này
-                </p>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex-1">
+                <div class="flex items-center justify-between">
+                    <p class="text-gray-600 text-sm font-medium">Người dùng</p>
+                    <a href="{{ route('admin.users.index') }}" class="text-blue-600 hover:text-blue-800 text-xs">
+                        <i class="fas fa-external-link-alt"></i>
+                    </a>
+                </div>
+                <p class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">{{ \App\Models\User::count() }}</p>
+                
+                {{-- Breakdown --}}
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs">
+                        <span class="text-gray-500">Khách hàng:</span>
+                        <span class="font-medium">{{ \App\Models\User::where('role', 'user')->count() }}</span>
+                    </div>
+                    <div class="flex justify-between text-xs">
+                        <span class="text-gray-500">Nhân viên:</span>
+                        <span class="font-medium">{{ \App\Models\User::whereIn('role', ['admin', 'manager', 'sales_person', 'technician'])->count() }}</span>
+                    </div>
+                </div>
+                
+                {{-- Trend --}}
+                @php
+                    $newUsersThisWeek = \App\Models\User::where('created_at', '>=', now()->subDays(7))->count();
+                    $newUsersLastWeek = \App\Models\User::whereBetween('created_at', [now()->subDays(14), now()->subDays(7)])->count();
+                    $userTrend = $newUsersLastWeek > 0 ? (($newUsersThisWeek - $newUsersLastWeek) / $newUsersLastWeek) * 100 : 0;
+                @endphp
+                <div class="flex items-center mt-2">
+                    @if($userTrend > 0)
+                        <i class="fas fa-arrow-up text-green-500 text-xs mr-1"></i>
+                        <span class="text-green-600 text-xs font-medium">+{{ number_format($userTrend, 1) }}%</span>
+                    @elseif($userTrend < 0)
+                        <i class="fas fa-arrow-down text-red-500 text-xs mr-1"></i>
+                        <span class="text-red-600 text-xs font-medium">{{ number_format($userTrend, 1) }}%</span>
+                    @else
+                        <i class="fas fa-minus text-gray-400 text-xs mr-1"></i>
+                        <span class="text-gray-500 text-xs">Không đổi</span>
+                    @endif
+                    <span class="text-gray-400 text-xs ml-1">so với tuần trước</span>
+                </div>
             </div>
-            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center ml-4">
                 <i class="fas fa-users text-blue-600 text-xl"></i>
             </div>
         </div>
     </div>
 
     {{-- Orders Stats --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-gray-600 text-sm font-medium">Đơn hàng</p>
-                <p class="text-2xl font-bold text-gray-900">{{ \App\Models\Order::count() }}</p>
-                <p class="text-xs text-green-600 mt-1">
-                    <i class="fas fa-shopping-cart mr-1"></i>
-                    {{ \App\Models\Order::where('created_at', '>=', now()->subDays(7))->count() }} mới tuần này
-                </p>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex-1">
+                <div class="flex items-center justify-between">
+                    <p class="text-gray-600 text-sm font-medium">Đơn hàng</p>
+                    <a href="{{ route('admin.orders.index') }}" class="text-green-600 hover:text-green-800 text-xs">
+                        <i class="fas fa-external-link-alt"></i>
+                    </a>
+                </div>
+                <p class="text-3xl font-bold text-gray-900 mb-2">{{ \App\Models\Order::count() }}</p>
+                
+                {{-- Status Breakdown --}}
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs">
+                        <span class="text-gray-500">Chờ xử lý:</span>
+                        <span class="font-medium text-yellow-600">{{ \App\Models\Order::where('status', 'pending')->count() }}</span>
+                    </div>
+                    <div class="flex justify-between text-xs">
+                        <span class="text-gray-500">Hoàn thành:</span>
+                        <span class="font-medium text-green-600">{{ \App\Models\Order::where('status', 'delivered')->count() }}</span>
+                    </div>
+                    <div class="flex justify-between text-xs">
+                        <span class="text-gray-500">Đang xử lý:</span>
+                        <span class="font-medium text-blue-600">{{ \App\Models\Order::whereIn('status', ['confirmed', 'shipping'])->count() }}</span>
+                    </div>
+                </div>
+                
+                {{-- Trend --}}
+                @php
+                    $newOrdersThisWeek = \App\Models\Order::where('created_at', '>=', now()->subDays(7))->count();
+                    $newOrdersLastWeek = \App\Models\Order::whereBetween('created_at', [now()->subDays(14), now()->subDays(7)])->count();
+                    $orderTrend = $newOrdersLastWeek > 0 ? (($newOrdersThisWeek - $newOrdersLastWeek) / $newOrdersLastWeek) * 100 : 0;
+                @endphp
+                <div class="flex items-center mt-2">
+                    @if($orderTrend > 0)
+                        <i class="fas fa-arrow-up text-green-500 text-xs mr-1"></i>
+                        <span class="text-green-600 text-xs font-medium">+{{ number_format($orderTrend, 1) }}%</span>
+                    @elseif($orderTrend < 0)
+                        <i class="fas fa-arrow-down text-red-500 text-xs mr-1"></i>
+                        <span class="text-red-600 text-xs font-medium">{{ number_format($orderTrend, 1) }}%</span>
+                    @else
+                        <i class="fas fa-minus text-gray-400 text-xs mr-1"></i>
+                        <span class="text-gray-500 text-xs">Không đổi</span>
+                    @endif
+                    <span class="text-gray-400 text-xs ml-1">so với tuần trước</span>
+                </div>
             </div>
-            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <i class="fas fa-shopping-bag text-green-600 text-xl"></i>
+            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center ml-4">
+                <i class="fas fa-receipt text-green-600 text-xl"></i>
             </div>
         </div>
     </div>
 
     {{-- Revenue Stats --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-gray-600 text-sm font-medium">Doanh thu tháng</p>
-                <p class="text-2xl font-bold text-gray-900">{{ number_format($monthlyRevenue / 1000000, 1) }}M</p>
-                <p class="text-xs text-purple-600 mt-1">
-                    <i class="fas fa-chart-line mr-1"></i>
-                    VNĐ
-                </p>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex-1">
+                <div class="flex items-center justify-between">
+                    <p class="text-gray-600 text-sm font-medium">Doanh thu tháng</p>
+                    <a href="{{ route('admin.orders.index') }}" class="text-purple-600 hover:text-purple-800 text-xs">
+                        <i class="fas fa-chart-line"></i>
+                    </a>
+                </div>
+                @php
+                    $monthlyRevenueValue = $monthlyRevenue ?? 0;
+                    if ($monthlyRevenueValue >= 1000000000) {
+                        $displayRevenue = number_format($monthlyRevenueValue / 1000000000, 1) . ' Tỷ Đ';
+                    } elseif ($monthlyRevenueValue >= 1000000) {
+                        $displayRevenue = number_format($monthlyRevenueValue / 1000000, 0) . ' Tr Đ';
+                    } else {
+                        $displayRevenue = number_format($monthlyRevenueValue) . ' Đ';
+                    }
+                @endphp
+                <p class="text-3xl font-bold text-gray-900 mb-2">{{ $displayRevenue }}</p>
+                
+                {{-- Breakdown --}}
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs">
+                        <span class="text-gray-500">Tuần này:</span>
+                        @php
+                            $weeklyRevenue = \App\Models\Order::where('created_at', '>=', now()->subDays(7))->where('status', 'delivered')->sum('grand_total');
+                            if ($weeklyRevenue >= 1000000000) {
+                                $weeklyDisplay = number_format($weeklyRevenue / 1000000000, 1) . ' Tỷ Đ';
+                            } elseif ($weeklyRevenue >= 1000000) {
+                                $weeklyDisplay = number_format($weeklyRevenue / 1000000, 0) . ' Tr Đ';
+                            } else {
+                                $weeklyDisplay = number_format($weeklyRevenue) . ' Đ';
+                            }
+                        @endphp
+                        <span class="font-medium">{{ $weeklyDisplay }}</span>
+                    </div>
+                    <div class="flex justify-between text-xs">
+                        <span class="text-gray-500">Hôm nay:</span>
+                        @php
+                            $dailyRevenue = \App\Models\Order::whereDate('created_at', today())->where('status', 'delivered')->sum('grand_total');
+                            if ($dailyRevenue >= 1000000000) {
+                                $dailyDisplay = number_format($dailyRevenue / 1000000000, 1) . ' Tỷ Đ';
+                            } elseif ($dailyRevenue >= 1000000) {
+                                $dailyDisplay = number_format($dailyRevenue / 1000000, 0) . ' Tr Đ';
+                            } else {
+                                $dailyDisplay = number_format($dailyRevenue) . ' Đ';
+                            }
+                        @endphp
+                        <span class="font-medium">{{ $dailyDisplay }}</span>
+                    </div>
+                </div>
+                
+                {{-- Trend --}}
+                @php
+                    $thisMonthRevenue = \App\Models\Order::whereMonth('created_at', now()->month)->where('status', 'delivered')->sum('grand_total');
+                    $lastMonthRevenue = \App\Models\Order::whereMonth('created_at', now()->subMonth()->month)->where('status', 'delivered')->sum('grand_total');
+                    $revenueTrend = $lastMonthRevenue > 0 ? (($thisMonthRevenue - $lastMonthRevenue) / $lastMonthRevenue) * 100 : 0;
+                @endphp
+                <div class="flex items-center mt-2">
+                    @if($revenueTrend > 0)
+                        <i class="fas fa-arrow-up text-green-500 text-xs mr-1"></i>
+                        <span class="text-green-600 text-xs font-medium">+{{ number_format($revenueTrend, 1) }}%</span>
+                    @elseif($revenueTrend < 0)
+                        <i class="fas fa-arrow-down text-red-500 text-xs mr-1"></i>
+                        <span class="text-red-600 text-xs font-medium">{{ number_format($revenueTrend, 1) }}%</span>
+                    @else
+                        <i class="fas fa-minus text-gray-400 text-xs mr-1"></i>
+                        <span class="text-gray-500 text-xs">Không đổi</span>
+                    @endif
+                    <span class="text-gray-400 text-xs ml-1">so với tháng trước</span>
+                </div>
             </div>
-            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <i class="fas fa-dollar-sign text-purple-600 text-xl"></i>
+            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center ml-4">
+                <i class="fas fa-chart-line text-purple-600 text-xl"></i>
             </div>
         </div>
     </div>
 
     {{-- Products Stats --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-gray-600 text-sm font-medium">Sản phẩm</p>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex-1">
+                <div class="flex items-center justify-between">
+                    <p class="text-gray-600 text-sm font-medium">Sản phẩm</p>
+                    <a href="{{ route('admin.carvariants.index') }}" class="text-orange-600 hover:text-orange-800 text-xs">
+                        <i class="fas fa-external-link-alt"></i>
+                    </a>
+                </div>
                 @php
+                    $totalCarVariants = \App\Models\CarVariant::count();
+                    $totalAccessories = \App\Models\Accessory::count() ?? 0;
                     $totalProducts = $totalCarVariants + $totalAccessories;
                 @endphp
-                <p class="text-2xl font-bold text-gray-900">{{ $totalProducts }}</p>
-                <p class="text-xs text-orange-600 mt-1">
-                    <i class="fas fa-car mr-1"></i>
-                    {{ $totalCarVariants }} xe, {{ $totalAccessories }} phụ kiện
-                </p>
+                <p class="text-3xl font-bold text-gray-900 mb-2">{{ $totalProducts }}</p>
+                
+                {{-- Breakdown --}}
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs">
+                        <span class="text-gray-500">Phiên bản xe:</span>
+                        <span class="font-medium">{{ $totalCarVariants }}</span>
+                    </div>
+                    <div class="flex justify-between text-xs">
+                        <span class="text-gray-500">Phụ kiện:</span>
+                        <span class="font-medium">{{ $totalAccessories }}</span>
+                    </div>
+                </div>
+                
+                {{-- Active vs Inactive --}}
+                @php
+                    $activeCarVariants = \App\Models\CarVariant::where('is_active', true)->count();
+                    $inactiveCarVariants = \App\Models\CarVariant::where('is_active', false)->count();
+                    $activeAccessories = \App\Models\Accessory::where('is_active', true)->count() ?? 0;
+                    $inactiveAccessories = \App\Models\Accessory::where('is_active', false)->count() ?? 0;
+                    
+                    $totalActive = $activeCarVariants + $activeAccessories;
+                    $totalInactive = $inactiveCarVariants + $inactiveAccessories;
+                @endphp
+                <div class="flex items-center mt-2">
+                    <div class="flex items-center">
+                        <div class="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
+                        <span class="text-green-600 text-xs font-medium">{{ $totalActive }} hoạt động</span>
+                    </div>
+                    <div class="flex items-center ml-3">
+                        <div class="w-2 h-2 bg-gray-400 rounded-full mr-1"></div>
+                        <span class="text-gray-500 text-xs">{{ $totalInactive }} tạm dừng</span>
+                    </div>
+                </div>
             </div>
-            <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                <i class="fas fa-box text-orange-600 text-xl"></i>
+            <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center ml-4">
+                <i class="fas fa-car text-orange-600 text-xl"></i>
             </div>
         </div>
     </div>
 </div>
 
 {{-- Quick Actions --}}
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-    {{-- Admin Actions --}}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mb-6">
+    {{-- Quản lý hệ thống --}}
     @if($user->hasRole(['admin', 'manager']))
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">
-            <i class="fas fa-bolt text-yellow-500 mr-2"></i>
-            Thao tác nhanh
+            <i class="fas fa-cogs text-purple-500 mr-2"></i>
+            Quản lý hệ thống
         </h3>
-        <div class="grid grid-cols-2 gap-3">
-            <a href="{{ route('admin.users.index') }}" class="flex items-center p-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
-                <i class="fas fa-users text-blue-600 mr-3"></i>
-                <span class="text-sm font-medium text-blue-900">Quản lý Users</span>
-            </a>
-            <a href="{{ route('admin.orders.index') }}" class="flex items-center p-3 bg-green-50 hover:bg-green-100 rounded-lg transition-colors">
-                <i class="fas fa-shopping-cart text-green-600 mr-3"></i>
-                <span class="text-sm font-medium text-green-900">Đơn hàng</span>
-            </a>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <a href="{{ route('admin.carvariants.index') }}" class="flex items-center p-3 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors">
-                <i class="fas fa-car text-purple-600 mr-3"></i>
+                <i class="fas fa-car text-purple-600 mr-3 sm:mr-4"></i>
                 <span class="text-sm font-medium text-purple-900">Xe hơi</span>
             </a>
             <a href="{{ route('admin.accessories.index') }}" class="flex items-center p-3 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors">
-                <i class="fas fa-puzzle-piece text-orange-600 mr-3"></i>
+                <i class="fas fa-puzzle-piece text-orange-600 mr-3 sm:mr-4"></i>
                 <span class="text-sm font-medium text-orange-900">Phụ kiện</span>
+            </a>
+            <a href="{{ route('admin.users.index') }}" class="flex items-center p-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
+                <i class="fas fa-users text-blue-600 mr-3 sm:mr-4"></i>
+                <span class="text-sm font-medium text-blue-900">Người dùng</span>
+            </a>
+            <a href="{{ route('admin.analytics.dashboard') }}" class="flex items-center p-3 bg-green-50 hover:bg-green-100 rounded-lg transition-colors">
+                <i class="fas fa-chart-bar text-green-600 mr-3 sm:mr-4"></i>
+                <span class="text-sm font-medium text-green-900">Báo cáo</span>
             </a>
         </div>
     </div>
     @endif
 
-    {{-- Sales Actions --}}
+    {{-- Dịch vụ khách hàng --}}
     @if($user->hasRole(['admin', 'manager', 'sales_person']))
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">
             <i class="fas fa-handshake text-blue-500 mr-2"></i>
-            Kinh doanh
+            Dịch vụ khách hàng
         </h3>
-        <div class="grid grid-cols-2 gap-3">
-            <a href="{{ route('admin.orders.create') }}" class="flex items-center p-3 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors">
-                <i class="fas fa-plus text-indigo-600 mr-3"></i>
-                <span class="text-sm font-medium text-indigo-900">Tạo đơn hàng</span>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <a href="{{ route('admin.orders.index') }}" class="flex items-center p-3 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors">
+                <i class="fas fa-receipt text-indigo-600 mr-3 sm:mr-4"></i>
+                <span class="text-sm font-medium text-indigo-900">Đơn hàng</span>
             </a>
             <a href="{{ route('admin.test-drives.index') }}" class="flex items-center p-3 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors">
-                <i class="fas fa-car-side text-teal-600 mr-3"></i>
+                <i class="fas fa-car-side text-teal-600 mr-3 sm:mr-4"></i>
                 <span class="text-sm font-medium text-teal-900">Lái thử</span>
             </a>
-            <a href="{{ route('admin.promotions.index') }}" class="flex items-center p-3 bg-pink-50 hover:bg-pink-100 rounded-lg transition-colors">
-                <i class="fas fa-tags text-pink-600 mr-3"></i>
-                <span class="text-sm font-medium text-pink-900">Khuyến mãi</span>
+            <a href="{{ route('admin.service-appointments.index') }}" class="flex items-center p-3 bg-pink-50 hover:bg-pink-100 rounded-lg transition-colors">
+                <i class="fas fa-calendar-check text-pink-600 mr-3 sm:mr-4"></i>
+                <span class="text-sm font-medium text-pink-900">Lịch hẹn</span>
             </a>
             <a href="{{ route('admin.service-appointments.index') }}" class="flex items-center p-3 bg-cyan-50 hover:bg-cyan-100 rounded-lg transition-colors">
-                <i class="fas fa-tools text-cyan-600 mr-3"></i>
+                <i class="fas fa-tools text-cyan-600 mr-3 sm:mr-4"></i>
                 <span class="text-sm font-medium text-cyan-900">Dịch vụ</span>
             </a>
         </div>
@@ -170,78 +339,306 @@
 </div>
 
 {{-- Recent Activities & System Info --}}
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    {{-- Recent Orders --}}
-    <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">
-            <i class="fas fa-clock text-gray-500 mr-2"></i>
-            Đơn hàng gần đây
-        </h3>
-        <div class="space-y-3">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+    {{-- Enhanced Recent Orders --}}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+        <div class="flex items-center justify-between mb-4 sm:mb-6">
+            <h3 class="text-base sm:text-lg font-semibold text-gray-900">
+                <i class="fas fa-shopping-cart text-blue-600 mr-2"></i>
+                <span class="hidden sm:inline">Đơn hàng gần đây</span>
+                <span class="sm:hidden">Đơn hàng</span>
+            </h3>
+            <a href="{{ route('admin.orders.index') }}" class="text-blue-600 hover:text-blue-800 text-xs sm:text-sm font-medium">
+                <span class="hidden sm:inline">Xem tất cả</span>
+                <span class="sm:hidden">Tất cả</span>
+                <i class="fas fa-arrow-right ml-1"></i>
+            </a>
+        </div>
+        
+        <div class="space-y-4">
             @forelse($recentOrders as $order)
-            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div class="flex items-center">
-                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                        <i class="fas fa-shopping-bag text-blue-600"></i>
+            <div class="border border-gray-200 rounded-lg p-3 sm:p-4 hover:bg-gray-50 transition-colors">
+                {{-- Mobile Layout --}}
+                <div class="block sm:hidden">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex items-center">
+                            @php
+                                $statusConfig = [
+                                    'pending' => ['color' => 'bg-yellow-100 text-yellow-600', 'icon' => 'fas fa-clock'],
+                                    'confirmed' => ['color' => 'bg-blue-100 text-blue-600', 'icon' => 'fas fa-check'],
+                                    'shipping' => ['color' => 'bg-purple-100 text-purple-600', 'icon' => 'fas fa-truck'],
+                                    'delivered' => ['color' => 'bg-green-100 text-green-600', 'icon' => 'fas fa-check-circle'],
+                                    'cancelled' => ['color' => 'bg-red-100 text-red-600', 'icon' => 'fas fa-times-circle']
+                                ];
+                                $config = $statusConfig[$order->status] ?? $statusConfig['pending'];
+                                $statusLabels = [
+                                    'pending' => 'Chờ xử lý',
+                                    'confirmed' => 'Đã xác nhận',
+                                    'shipping' => 'Đang giao',
+                                    'delivered' => 'Đã giao',
+                                    'cancelled' => 'Đã hủy'
+                                ];
+                            @endphp
+                            <div class="w-8 h-8 {{ $config['color'] }} rounded-full flex items-center justify-center mr-3">
+                                <i class="{{ $config['icon'] }} text-xs"></i>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-gray-900 text-sm">#{{ $order->order_number ?? $order->id }}</p>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $config['color'] }}">
+                                    {{ $statusLabels[$order->status] ?? ucfirst($order->status) }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-base text-gray-900">{{ number_format($order->grand_total ?: $order->total_price ?: 0) }} Đ</p>
+                            <p class="text-xs text-gray-500">{{ $order->created_at->format('d/m H:i') }}</p>
+                        </div>
                     </div>
-                    <div>
-                        <p class="font-medium text-gray-900">#{{ $order->order_number }}</p>
-                        <p class="text-sm text-gray-600">{{ optional($order->user->userProfile)->name ?? 'Khách hàng' }}</p>
+                    
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center text-sm text-gray-600">
+                            <i class="fas fa-user mr-2"></i>
+                            <span class="truncate">{{ optional($order->user->userProfile)->name ?? optional($order->billingAddress)->contact_name ?? 'Khách vãng lai' }}</span>
+                        </div>
+                        @if($order->payment_status)
+                            @php
+                                $paymentConfig = [
+                                    'pending' => ['label' => 'Chờ TT', 'color' => 'text-yellow-600 bg-yellow-50'],
+                                    'processing' => ['label' => 'Xử lý', 'color' => 'text-blue-600 bg-blue-50'],
+                                    'completed' => ['label' => 'Đã TT', 'color' => 'text-green-600 bg-green-50'],
+                                    'failed' => ['label' => 'Lỗi', 'color' => 'text-red-600 bg-red-50'],
+                                    'cancelled' => ['label' => 'Hủy', 'color' => 'text-gray-600 bg-gray-50']
+                                ];
+                                $payConfig = $paymentConfig[$order->payment_status] ?? ['label' => 'N/A', 'color' => 'text-gray-600 bg-gray-50'];
+                            @endphp
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $payConfig['color'] }}">
+                                {{ $payConfig['label'] }}
+                            </span>
+                        @endif
+                    </div>
+                    
+                    <div class="flex items-center justify-between mt-3">
+                        @if($order->items && $order->items->count() > 0)
+                            <p class="text-xs text-gray-400">{{ $order->items->count() }} sản phẩm</p>
+                        @else
+                            <span></span>
+                        @endif
+                        <a href="{{ route('admin.orders.show', $order) }}" 
+                           class="inline-flex items-center px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-medium hover:bg-blue-100 transition-colors">
+                            <i class="fas fa-eye mr-1"></i>
+                            Xem
+                        </a>
                     </div>
                 </div>
-                <div class="text-right">
-                    <p class="font-semibold text-gray-900">{{ number_format($order->grand_total) }}đ</p>
-                    <p class="text-xs text-gray-500">{{ $order->created_at->diffForHumans() }}</p>
+
+                {{-- Desktop Layout --}}
+                <div class="hidden sm:flex items-center justify-between">
+                    <div class="flex items-center flex-1">
+                        {{-- Order Status Icon --}}
+                        <div class="flex-shrink-0 mr-4">
+                            <div class="w-10 h-10 {{ $config['color'] }} rounded-full flex items-center justify-center">
+                                <i class="{{ $config['icon'] }}"></i>
+                            </div>
+                        </div>
+                        
+                        {{-- Order Info --}}
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center mb-1">
+                                <p class="font-semibold text-gray-900 mr-2">#{{ $order->order_number ?? $order->id }}</p>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $config['color'] }}">
+                                    {{ $statusLabels[$order->status] ?? ucfirst($order->status) }}
+                                </span>
+                            </div>
+                            
+                            <div class="flex items-center text-sm text-gray-600 mb-1">
+                                <i class="fas fa-user mr-2"></i>
+                                <span class="truncate">{{ optional($order->user->userProfile)->name ?? optional($order->billingAddress)->contact_name ?? 'Khách vãng lai' }}</span>
+                            </div>
+                            
+                            @if($order->user && $order->user->userProfile && $order->user->userProfile->phone)
+                            <div class="flex items-center text-sm text-gray-500">
+                                <i class="fas fa-phone mr-2"></i>
+                                <span>{{ $order->user->userProfile->phone }}</span>
+                            </div>
+                            @endif
+                        </div>
+                    </div>
+                    
+                    {{-- Order Value & Actions --}}
+                    <div class="flex items-center space-x-4">
+                        <div class="text-right">
+                            <p class="font-bold text-lg text-gray-900">{{ number_format($order->grand_total ?: $order->total_price ?: 0) }} Đ</p>
+                            {{-- Payment Status ngay sau giá tiền --}}
+                            @if($order->payment_status)
+                                @php
+                                    $paymentConfig = [
+                                        'pending' => ['label' => 'Chờ thanh toán', 'color' => 'text-yellow-600 bg-yellow-50'],
+                                        'processing' => ['label' => 'Đang xử lý', 'color' => 'text-blue-600 bg-blue-50'],
+                                        'completed' => ['label' => 'Đã thanh toán', 'color' => 'text-green-600 bg-green-50'],
+                                        'failed' => ['label' => 'Thất bại', 'color' => 'text-red-600 bg-red-50'],
+                                        'cancelled' => ['label' => 'Đã hủy', 'color' => 'text-gray-600 bg-gray-50']
+                                    ];
+                                    $payConfig = $paymentConfig[$order->payment_status] ?? ['label' => ucfirst($order->payment_status), 'color' => 'text-gray-600 bg-gray-50'];
+                                @endphp
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $payConfig['color'] }} mt-1">
+                                    {{ $payConfig['label'] }}
+                                </span>
+                            @endif
+                            <p class="text-xs text-gray-500 mt-1">{{ $order->created_at->format('d/m/Y H:i') }}</p>
+                            @if($order->items && $order->items->count() > 0)
+                                <p class="text-xs text-gray-400">{{ $order->items->count() }} sản phẩm</p>
+                            @endif
+                        </div>
+                        
+                        {{-- Quick Actions --}}
+                        <div class="flex items-center space-x-2">
+                            <a href="{{ route('admin.orders.show', $order) }}" 
+                               class="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-full transition-colors"
+                               title="Xem chi tiết">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
             @empty
-            <div class="text-center py-8 text-gray-500">
-                <i class="fas fa-inbox text-4xl mb-2"></i>
-                <p>Chưa có đơn hàng nào</p>
+            <div class="text-center py-12">
+                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-shopping-cart text-gray-400 text-2xl"></i>
+                </div>
+                <h4 class="text-lg font-medium text-gray-900 mb-2">Chưa có đơn hàng nào</h4>
+                <p class="text-gray-500">Các đơn hàng mới sẽ hiển thị ở đây</p>
             </div>
             @endforelse
         </div>
+        
     </div>
 
     {{-- System Info --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+        <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-4">
             <i class="fas fa-info-circle text-gray-500 mr-2"></i>
-            Thông tin hệ thống
+            <span class="hidden sm:inline">Thông tin hệ thống</span>
+            <span class="sm:hidden">Hệ thống</span>
         </h3>
         <div class="space-y-4">
-            <div class="flex justify-between">
-                <span class="text-gray-600">Phiên bản</span>
-                <span class="font-medium">v1.0.0</span>
-            </div>
-            <div class="flex justify-between">
-                <span class="text-gray-600">Laravel</span>
-                <span class="font-medium">{{ app()->version() }}</span>
-            </div>
-            <div class="flex justify-between">
-                <span class="text-gray-600">PHP</span>
-                <span class="font-medium">{{ PHP_VERSION }}</span>
-            </div>
-            <div class="flex justify-between">
-                <span class="text-gray-600">Múi giờ</span>
-                <span class="font-medium">{{ config('app.timezone') }}</span>
+            
+            {{-- System Info --}}
+            <div class="space-y-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600 text-sm sm:text-base">Phiên bản hệ thống</span>
+                    <span class="font-medium text-sm sm:text-base">v1.0.0</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600 text-sm sm:text-base">Môi trường</span>
+                    <span class="font-medium text-sm sm:text-base {{ config('app.env') === 'production' ? 'text-green-600' : 'text-yellow-600' }}">
+                        {{ config('app.env') === 'production' ? 'Sản xuất' : 'Phát triển' }}
+                    </span>
+                </div>
+                
+                {{-- Role-specific info --}}
+                @if($user->employee_id)
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Mã nhân viên</span>
+                    <span class="font-medium">{{ $user->employee_id }}</span>
+                </div>
+                @endif
+                @if($user->hire_date)
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Ngày bắt đầu làm việc</span>
+                    <span class="font-medium">{{ \Carbon\Carbon::parse($user->hire_date)->format('d/m/Y') }}</span>
+                </div>
+                @endif
             </div>
             
-            {{-- Role-specific info --}}
-            @if($user->employee_id)
-            <hr class="my-3">
-            <div class="flex justify-between">
-                <span class="text-gray-600">Mã NV</span>
-                <span class="font-medium">{{ $user->employee_id }}</span>
+            {{-- Business Overview --}}
+            <div class="mt-6 pt-4 border-t border-gray-200">
+                <h4 class="font-medium text-gray-900 mb-3">Tổng quan kinh doanh</h4>
+                <div class="space-y-3">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Showroom hoạt động</span>
+                        <span class="font-medium text-green-600">
+                            <i class="fas fa-store text-green-500 text-xs mr-1"></i>
+                            {{ \App\Models\Showroom::where('is_active', true)->count() ?? 3 }} chi nhánh
+                        </span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Nhân viên hệ thống</span>
+                        <span class="font-medium text-blue-600">
+                            <i class="fas fa-users text-blue-500 text-xs mr-1"></i>
+                            {{ \App\Models\User::whereIn('role', ['admin', 'manager', 'sales_person', 'technician'])->count() ?? 6 }} người
+                        </span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Xe sẵn sàng</span>
+                        <span class="font-medium text-purple-600">
+                            <i class="fas fa-car text-purple-500 text-xs mr-1"></i>
+                            {{ \App\Models\CarVariant::where('is_active', true)->count() ?? 45 }} phiên bản
+                        </span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Dịch vụ bảo dưỡng</span>
+                        <span class="font-medium text-orange-600">
+                            <i class="fas fa-tools text-orange-500 text-xs mr-1"></i>
+                            {{ \App\Models\Service::where('is_active', true)->where('category', 'maintenance')->count() ?? 5 }} dịch vụ
+                        </span>
+                    </div>
+                </div>
             </div>
-            @endif
-            @if($user->hire_date)
-            <div class="flex justify-between">
-                <span class="text-gray-600">Ngày vào làm</span>
-                <span class="font-medium">{{ \Carbon\Carbon::parse($user->hire_date)->format('d/m/Y') }}</span>
+            
+            {{-- User Session Info --}}
+            <div class="mt-6 pt-4 border-t border-gray-200">
+                <h4 class="font-medium text-gray-900 mb-3">Phiên làm việc</h4>
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-gray-600">Trạng thái:</span>
+                        <span class="font-medium text-green-600">
+                            <i class="fas fa-circle text-green-500 text-xs mr-1"></i>
+                            Đang hoạt động
+                        </span>
+                    </div>
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-gray-600">Quyền truy cập:</span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $user->getRoleColor() }}">
+                            {{ $user->getRoleLabel() }}
+                        </span>
+                    </div>
+                    @if($user->department)
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-gray-600">Phòng ban:</span>
+                        <span class="font-medium">{{ $user->department }}</span>
+                    </div>
+                    @endif
+                </div>
             </div>
-            @endif
         </div>
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+// Dashboard real-time updates
+function updateDashboardStats() {
+    fetch('{{ route("admin.dashboard.stats") }}')
+        .then(response => response.json())
+        .then(data => {
+            console.log('Dashboard stats updated:', data);
+            // Update stats elements here if needed
+        })
+        .catch(error => console.error('Error updating stats:', error));
+}
+
+// Update stats every 5 minutes
+setInterval(updateDashboardStats, 300000);
+
+// Add loading states for better UX
+document.addEventListener('DOMContentLoaded', function() {
+    // Add shimmer effect to stats cards while loading
+    const statsCards = document.querySelectorAll('.bg-white.rounded-xl.shadow-sm');
+    statsCards.forEach(card => {
+        card.classList.add('transition-all', 'duration-200', 'hover:shadow-md');
+    });
+});
+</script>
+@endpush

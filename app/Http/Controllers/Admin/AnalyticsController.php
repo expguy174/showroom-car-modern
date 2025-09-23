@@ -90,7 +90,7 @@ class AnalyticsController extends Controller
             ->join('car_brands', 'car_models.car_brand_id', '=', 'car_brands.id')
             ->where('order_items.item_type', 'car_variant')
             ->selectRaw('car_brands.name as brand, car_models.name as model, car_variants.name as variant, COUNT(*) as sales_count')
-            ->groupBy('car_brands.id', 'car_models.id', 'car_variants.id')
+            ->groupBy('car_brands.id', 'car_models.id', 'car_variants.id', 'car_brands.name', 'car_models.name', 'car_variants.name')
             ->orderBy('sales_count', 'desc')
             ->limit(10)
             ->get();
@@ -175,7 +175,7 @@ class AnalyticsController extends Controller
 
         $convertedTestDrives = TestDrive::whereMonth('created_at', $currentMonth)
             ->whereYear('created_at', $currentYear)
-            ->where('result', 'purchased')
+            ->where('status', 'completed')
             ->count();
 
         $conversionRate = $totalTestDrives > 0 ? 
@@ -184,20 +184,22 @@ class AnalyticsController extends Controller
         // Average order value
         $averageOrderValue = Order::whereMonth('created_at', $currentMonth)
             ->whereYear('created_at', $currentYear)
-            ->where('status', 'completed')
-            ->avg('total_amount') ?? 0;
+            ->where('status', 'delivered')
+            ->avg('grand_total') ?? 0;
 
         // Customer satisfaction (based on reviews)
         $averageRating = DB::table('reviews')
             ->whereMonth('created_at', $currentMonth)
             ->whereYear('created_at', $currentYear)
+            ->where('is_approved', true)
             ->avg('rating') ?? 0;
 
-        // Response time (test drive requests)
+        // Response time (test drive requests) - calculated from created_at to confirmed_at
         $avgResponseTime = TestDrive::whereMonth('created_at', $currentMonth)
             ->whereYear('created_at', $currentYear)
-            ->whereNotNull('response_time')
-            ->avg('response_time') ?? 0;
+            ->whereNotNull('confirmed_at')
+            ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, created_at, confirmed_at)) as avg_hours')
+            ->value('avg_hours') ?? 0;
 
         return [
             'conversion_rate' => round($conversionRate, 2),
@@ -217,19 +219,19 @@ class AnalyticsController extends Controller
 
         // Sales summary
         $salesSummary = Order::whereBetween('created_at', [$startDate, $endDate])
-            ->where('status', 'completed')
+            ->where('status', 'delivered')
             ->selectRaw('
                 COUNT(*) as total_orders,
-                SUM(total_amount) as total_revenue,
-                AVG(total_amount) as average_order_value,
+                SUM(grand_total) as total_revenue,
+                AVG(grand_total) as average_order_value,
                 COUNT(DISTINCT user_id) as unique_customers
             ')
             ->first();
 
         // Daily sales trend
         $dailySales = Order::whereBetween('created_at', [$startDate, $endDate])
-            ->where('status', 'completed')
-            ->selectRaw('DATE(created_at) as date, SUM(total_amount) as daily_revenue, COUNT(*) as daily_orders')
+            ->where('status', 'delivered')
+            ->selectRaw('DATE(created_at) as date, SUM(grand_total) as daily_revenue, COUNT(*) as daily_orders')
             ->groupBy('date')
             ->orderBy('date')
             ->get();
@@ -250,7 +252,7 @@ class AnalyticsController extends Controller
                 COUNT(*) as units_sold,
                 SUM(order_items.price * order_items.quantity) as revenue
             ')
-            ->groupBy('car_brands.id', 'car_models.id', 'car_variants.id')
+            ->groupBy('car_brands.id', 'car_models.id', 'car_variants.id', 'car_brands.name', 'car_models.name', 'car_variants.name')
             ->orderBy('revenue', 'desc')
             ->get();
 
@@ -286,8 +288,8 @@ class AnalyticsController extends Controller
             ->selectRaw('
                 user_id,
                 COUNT(*) as total_orders,
-                SUM(total_amount) as total_spent,
-                AVG(total_amount) as average_order_value
+                SUM(grand_total) as total_spent,
+                AVG(grand_total) as average_order_value
             ')
             ->groupBy('user_id')
             ->orderBy('total_spent', 'desc')
@@ -298,8 +300,7 @@ class AnalyticsController extends Controller
         $engagementMetrics = [
             'test_drives' => TestDrive::count(),
             'service_appointments' => ServiceAppointment::count(),
-            'reviews' => DB::table('reviews')->count(),
-
+            'reviews' => DB::table('reviews')->where('is_approved', true)->count(),
         ];
 
         // Customer retention rate
@@ -331,26 +332,18 @@ class AnalyticsController extends Controller
      */
     public function staffPerformance()
     {
-        // Sales staff performance
-        $salesStaffPerformance = Order::where('status', 'completed')
-            ->selectRaw('
-                sales_staff_id,
-                COUNT(*) as orders_handled,
-                SUM(total_amount) as total_sales,
-                AVG(total_amount) as average_sale
-            ')
-            ->groupBy('sales_staff_id')
-            ->orderBy('total_sales', 'desc')
-            ->get();
+        // Sales staff performance - using user_id as proxy since no sales_staff_id
+        $salesStaffPerformance = collect(); // Empty collection since no sales_staff_id field
 
-        // Test drive performance
+        // Test drive performance - by showroom since no staff_id
         $testDrivePerformance = TestDrive::selectRaw('
-            staff_id,
+            showroom_id,
             COUNT(*) as test_drives_handled,
-            COUNT(CASE WHEN result = "purchased" THEN 1 END) as conversions,
-            (COUNT(CASE WHEN result = "purchased" THEN 1 END) / COUNT(*)) * 100 as conversion_rate
+            COUNT(CASE WHEN status = "completed" THEN 1 END) as conversions,
+            (COUNT(CASE WHEN status = "completed" THEN 1 END) / COUNT(*)) * 100 as conversion_rate
         ')
-        ->groupBy('staff_id')
+        ->whereNotNull('showroom_id')
+        ->groupBy('showroom_id')
         ->orderBy('conversion_rate', 'desc')
         ->get();
 
@@ -387,8 +380,8 @@ class AnalyticsController extends Controller
     private function exportSalesReport($startDate, $endDate)
     {
         $data = Order::whereBetween('created_at', [$startDate, $endDate])
-            ->where('status', 'completed')
-            ->with(['user', 'items.carVariant.carModel.carBrand'])
+            ->where('status', 'delivered')
+            ->with(['user'])
             ->get();
 
         $filename = "sales_report_{$startDate->format('Y-m-d')}_{$endDate->format('Y-m-d')}.csv";
@@ -410,7 +403,7 @@ class AnalyticsController extends Controller
                     $order->id,
                     $order->user->name ?? 'N/A',
                     $order->created_at->format('Y-m-d H:i:s'),
-                    number_format($order->total_amount),
+                    number_format($order->grand_total),
                     $order->status
                 ]);
             }
@@ -448,7 +441,7 @@ class AnalyticsController extends Controller
             
             // CSV data
             foreach ($data as $customer) {
-                $totalSpent = $customer->orders->where('status', 'completed')->sum('total_amount');
+                $totalSpent = $customer->orders->where('status', 'delivered')->sum('grand_total');
                 fputcsv($file, [
                     $customer->id,
                     $customer->name,

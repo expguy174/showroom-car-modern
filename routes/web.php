@@ -196,6 +196,8 @@ Route::middleware('auth')->group(function () {
 // --- Admin routes ---
 Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/stats', [DashboardController::class, 'getStats'])->name('dashboard.stats');
+    Route::post('/dashboard/clear-cache', [DashboardController::class, 'clearCache'])->name('dashboard.clear-cache');
 
     // Car
     Route::prefix('cars')->name('cars.')->group(function () {
@@ -230,13 +232,12 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     // Orders
     Route::prefix('orders')->name('orders.')->group(function () {
         Route::get('/', [OrderController::class, 'index'])->name('index');
-        Route::get('/create', [OrderController::class, 'create'])->name('create');
-        Route::post('/store', [OrderController::class, 'store'])->name('store');
         Route::get('/edit/{order}', [OrderController::class, 'edit'])->name('edit');
         Route::put('/update/{order}', [OrderController::class, 'update'])->name('update');
         Route::delete('/delete/{order}', [OrderController::class, 'destroy'])->name('destroy');
         Route::get('/{order}', [OrderController::class, 'show'])->name('show');
         // Chuyển trạng thái đơn
+        Route::patch('/{order}/update-status', [OrderController::class, 'updateStatus'])->name('update-status');
         Route::post('/{order}/next-status', [OrderController::class, 'nextStatus'])->name('nextStatus');
         Route::post('/{order}/cancel', [OrderController::class, 'cancel'])->name('cancel');
 
@@ -497,5 +498,11 @@ Route::prefix('wishlist')->name('wishlist.')->group(function () {
     Route::post('/migrate-session', [WishlistController::class, 'migrateSessionWishlist'])->name('migrate-session');
 });
 
-
-
+// --- Analytics routes (Admin & Manager only) ---
+Route::middleware(['auth', 'staff'])->prefix('admin/analytics')->name('admin.analytics.')->group(function () {
+    Route::get('/dashboard', [AnalyticsController::class, 'dashboard'])->name('dashboard');
+    Route::get('/sales-report', [AnalyticsController::class, 'salesReport'])->name('sales-report');
+    Route::get('/customer-analytics', [AnalyticsController::class, 'customerAnalytics'])->name('customer-analytics');
+    Route::get('/staff-performance', [AnalyticsController::class, 'staffPerformance'])->name('staff-performance');
+    Route::get('/export-report', [AnalyticsController::class, 'exportReport'])->name('export-report');
+});

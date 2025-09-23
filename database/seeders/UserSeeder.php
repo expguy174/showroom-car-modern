@@ -146,8 +146,17 @@ class UserSeeder extends Seeder
         }
 
         // Thêm nhiều user ngẫu nhiên để test tải
+        $customerNames = [
+            'Nguyễn Văn', 'Trần Thị', 'Lê Minh', 'Phạm Thu', 'Hoàng Đức', 'Vũ Thị', 'Đặng Văn', 'Bùi Minh',
+            'Dương Thị', 'Ngô Văn', 'Lý Thị', 'Võ Minh', 'Phan Thu', 'Tạ Văn', 'Lưu Thị', 'Mai Đức'
+        ];
+        $lastNames = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P'];
+        
         for ($i = 1; $i <= 30; $i++) {
             $email = "user{$i}@example.vn";
+            $fullName = $customerNames[array_rand($customerNames)] . ' ' . $lastNames[array_rand($lastNames)];
+            $phoneNumber = '09' . str_pad((string) rand(10000000, 99999999), 8, '0', STR_PAD_LEFT);
+            
             $user = User::updateOrCreate(['email' => $email], [
                 'password' => Hash::make('password'),
                 'role' => 'user',
@@ -163,40 +172,40 @@ class UserSeeder extends Seeder
             $profile = [
                 'user_id' => $user->id,
                 'profile_type' => 'customer',
-                'name' => 'Khách hàng #' . $i,
-                'phone' => '09' . str_pad((string) rand(10000000, 99999999), 8, '0', STR_PAD_LEFT),
+                'name' => $fullName,
+                'phone' => $phoneNumber, // Đảm bảo phone luôn có
                 'birth_date' => now()->subYears(rand(20,55))->format('Y-m-d'),
                 'gender' => rand(0,1) ? 'male' : 'female',
-                'driver_license_number' => null,
-                'driver_license_issue_date' => null,
-                'driver_license_expiry_date' => null,
-                'driver_license_class' => null,
+                'driver_license_number' => rand(0,1) ? 'B' . rand(100000000, 999999999) : null,
+                'driver_license_issue_date' => rand(0,1) ? now()->subYears(rand(1,5))->format('Y-m-d') : null,
+                'driver_license_expiry_date' => rand(0,1) ? now()->addYears(rand(5,10))->format('Y-m-d') : null,
+                'driver_license_class' => rand(0,1) ? 'B' : null,
                 'driving_experience_years' => rand(0,15),
                 'preferred_car_types' => json_encode(['suv','sedan']),
-                'preferred_brands' => json_encode(['Toyota','Hyundai','Kia']),
-                'preferred_colors' => json_encode(['Trắng','Đen','Đỏ']),
+                'preferred_brands' => json_encode(['Toyota','Hyundai','Kia','VinFast']),
+                'preferred_colors' => json_encode(['Trắng','Đen','Đỏ','Xanh']),
                 'budget_min' => rand(400,800) * 1000000,
                 'budget_max' => rand(900,1800) * 1000000,
-                'purchase_purpose' => 'Cá nhân',
-                'customer_type' => 'new',
+                'purchase_purpose' => rand(0,1) ? 'Gia đình' : 'Cá nhân',
+                'customer_type' => ['new', 'returning', 'prospect'][rand(0,2)],
                 'employee_salary' => null,
                 'employee_skills' => null,
-                'is_vip' => false,
+                'is_vip' => rand(0,10) === 0, // 10% chance VIP
             ];
             UserProfile::updateOrCreate(['user_id' => $user->id], $profile);
 
             Address::create([
                 'user_id' => $user->id,
                 'type' => 'home',
-                'contact_name' => 'Khách hàng #' . $i,
-                'phone' => '09' . str_pad((string) rand(10000000, 99999999), 8, '0', STR_PAD_LEFT),
-                'address' => rand(1,99) . ' Đường Số ' . rand(1,30),
-                'city' => 'TP. Hồ Chí Minh',
+                'contact_name' => $fullName,
+                'phone' => $phoneNumber, // Consistent phone
+                'address' => rand(1,99) . ' Đường Số ' . rand(1,30) . ', Phường ' . rand(1,20),
+                'city' => ['TP. Hồ Chí Minh', 'Hà Nội', 'Đà Nẵng', 'Cần Thơ'][rand(0,3)],
                 'state' => 'Quận ' . rand(1,12),
                 'postal_code' => '700000',
                 'country' => 'Vietnam',
                 'is_default' => true,
-                'notes' => null,
+                'notes' => rand(0,1) ? 'Giao giờ hành chính' : null,
             ]);
         }
 
