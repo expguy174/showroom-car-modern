@@ -4,6 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    
+    
 
     <title>@yield('title', 'Admin Dashboard') - {{ config('app.name', 'AutoLux Showroom') }}</title>
 
@@ -394,6 +396,14 @@
             </div>
             @endif
 
+            @if(session('warning'))
+            <div class="mx-6 mt-4">
+                <div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative" role="alert">
+                    <span class="block sm:inline">{{ session('warning') }}</span>
+                </div>
+            </div>
+            @endif
+
             {{-- Main Content Area --}}
             <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
                 <div class="p-4 md:p-6">
@@ -541,6 +551,30 @@
             };
         });
 
+    </script>
+
+    <!-- User Toast System already loaded via main vite -->
+    
+    <!-- Admin Toast Integration -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Clean messages - remove emojis
+            const originalShowMessage = window.showMessage;
+            window.showMessage = function(message, type = 'info') {
+                // Clean message - remove emojis and extra symbols
+                const cleanMessage = message.replace(/[✅❌⚠️ℹ️]/g, '').trim();
+                
+                // Call original user toast function with clean message
+                originalShowMessage(cleanMessage, type);
+            };
+            
+            // Session flash messages disabled - only use toast from AJAX responses
+            
+            // Test function
+            window.testToast = function() {
+                showMessage('Test notification!', 'success');
+            };
+        });
     </script>
 
     @stack('scripts')

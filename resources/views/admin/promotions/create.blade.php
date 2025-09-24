@@ -41,7 +41,7 @@
                             </label>
                             <input type="text" name="name" id="name" 
                                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('name') border-red-300 @enderror" 
-                                   value="{{ old('name') }}" required placeholder="Ví dụ: Giảm giá mùa hè...">
+                                   value="{{ old('name') }}" placeholder="Ví dụ: Giảm giá mùa hè...">
                             @error('name')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -53,7 +53,7 @@
                             </label>
                             <input type="text" name="code" id="code" 
                                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('code') border-red-300 @enderror" 
-                                   value="{{ old('code') }}" required placeholder="SUMMER2024" style="text-transform: uppercase;">
+                                   value="{{ old('code') }}" placeholder="SUMMER2024" style="text-transform: uppercase;">
                             @error('code')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -74,8 +74,7 @@
                                 Loại khuyến mãi <span class="text-red-500">*</span>
                             </label>
                             <select name="type" id="type" 
-                                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('type') border-red-300 @enderror" 
-                                    required>
+                                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('type') border-red-300 @enderror">
                                 <option value="">Chọn loại khuyến mãi...</option>
                                 <option value="percentage" {{ old('type') == 'percentage' ? 'selected' : '' }}>Giảm theo phần trăm (%)</option>
                                 <option value="fixed_amount" {{ old('type') == 'fixed_amount' ? 'selected' : '' }}>Giảm số tiền cố định</option>

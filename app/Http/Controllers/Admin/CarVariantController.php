@@ -6,8 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\CarVariant;
 use App\Models\CarModel;
 use App\Models\CarBrand;
-
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 class CarVariantController extends Controller
 {
@@ -128,8 +129,49 @@ class CarVariantController extends Controller
 
     public function destroy(CarVariant $carvariant)
     {
-        $carvariant->delete();
+        // Check for orders (if orders table exists and has proper structure)
+        $ordersCount = 0;
+        try {
+            if (Schema::hasTable('orders') && Schema::hasColumn('orders', 'car_variant_id')) {
+                $ordersCount = DB::table('orders')
+                    ->where('car_variant_id', $carvariant->id)
+                    ->count();
+            }
+        } catch (\Exception $e) {
+            $ordersCount = 0;
+        }
 
-        return redirect()->route('admin.carvariants.index')->with('success', 'Đã xoá phiên bản xe thành công.');
+        // Business logic validation - NEVER delete variants with orders
+        if ($ordersCount > 0) {
+            return redirect()->route('admin.carvariants.index')->with('error', 
+                "⚠️ KHÔNG THỂ XÓA phiên bản xe \"{$carvariant->name}\" vì đã có {$ordersCount} đơn hàng. " .
+                "Đây là dữ liệu giao dịch quan trọng! Bạn chỉ có thể 'Ngừng bán' thay vì xóa."
+            );
+        }
+
+        // Safe to delete - no orders
+        $carvariant->delete();
+        
+        return redirect()->route('admin.carvariants.index')->with('success', 
+            "✅ Đã xóa phiên bản xe \"{$carvariant->name}\" thành công!"
+        );
+    }
+
+    public function toggleStatus(Request $request, CarVariant $carvariant)
+    {
+        $request->validate([
+            'is_active' => 'required|boolean'
+        ]);
+
+        $newStatus = $request->is_active;
+        $carvariant->update(['is_active' => $newStatus]);
+
+        $statusText = $newStatus ? 'kích hoạt' : 'ngừng bán';
+        
+        return response()->json([
+            'success' => true,
+            'message' => "Đã {$statusText} phiên bản xe \"{$carvariant->name}\" thành công!",
+            'is_active' => $newStatus
+        ]);
     }
 }

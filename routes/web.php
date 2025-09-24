@@ -204,9 +204,11 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/', [CarController::class, 'index'])->name('index');
         Route::get('/create', [CarController::class, 'create'])->name('create');
         Route::post('/store', [CarController::class, 'store'])->name('store');
+        Route::get('/show/{car}', [CarController::class, 'show'])->name('show');
         Route::get('/edit/{car}', [CarController::class, 'edit'])->name('edit');
         Route::put('/update/{car}', [CarController::class, 'update'])->name('update');
         Route::delete('/delete/{car}', [CarController::class, 'destroy'])->name('destroy');
+        Route::post('/{car}/toggle-status', [CarController::class, 'toggleStatus'])->name('toggle-status');
     });
 
     // Car Models
@@ -214,9 +216,11 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/', [CarModelController::class, 'index'])->name('index');
         Route::get('/create', [CarModelController::class, 'create'])->name('create');
         Route::post('/store', [CarModelController::class, 'store'])->name('store');
+        Route::get('/show/{carmodel}', [CarModelController::class, 'show'])->name('show');
         Route::get('/edit/{carmodel}', [CarModelController::class, 'edit'])->name('edit');
         Route::put('/update/{carmodel}', [CarModelController::class, 'update'])->name('update');
         Route::delete('/delete/{carmodel}', [CarModelController::class, 'destroy'])->name('destroy');
+        Route::post('/{carmodel}/toggle-status', [CarModelController::class, 'toggleStatus'])->name('toggle-status');
     });
 
     // Car Variants
@@ -227,6 +231,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/edit/{carvariant}', [CarVariantController::class, 'edit'])->name('edit');
         Route::put('/update/{carvariant}', [CarVariantController::class, 'update'])->name('update');
         Route::delete('/delete/{carvariant}', [CarVariantController::class, 'destroy'])->name('destroy');
+        Route::post('/{carvariant}/toggle-status', [CarVariantController::class, 'toggleStatus'])->name('toggle-status');
     });
 
     // Orders
@@ -254,6 +259,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/edit/{accessory}', [AccessoryController::class, 'edit'])->name('edit');
         Route::put('/update/{accessory}', [AccessoryController::class, 'update'])->name('update');
         Route::delete('/delete/{accessory}', [AccessoryController::class, 'destroy'])->name('destroy');
+        Route::post('/{accessory}/toggle-status', [AccessoryController::class, 'toggleStatus'])->name('toggle-status');
     });
 
     // Blogs

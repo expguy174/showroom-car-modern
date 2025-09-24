@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Accessory;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class AccessoryController extends Controller
 {
@@ -82,8 +85,57 @@ class AccessoryController extends Controller
     public function destroy($id)
     {
         $accessory = Accessory::findOrFail($id);
-        $accessory->delete();
+        
+        // Check for orders (if orders table exists and has accessory_id)
+        $ordersCount = 0;
+        try {
+            if (Schema::hasTable('orders') && Schema::hasColumn('orders', 'accessory_id')) {
+                $ordersCount = DB::table('orders')
+                    ->where('accessory_id', $accessory->id)
+                    ->count();
+            }
+        } catch (\Exception $e) {
+            $ordersCount = 0;
+        }
 
-        return redirect()->route('admin.accessories.index')->with('success', 'Xoá phụ kiện thành công!');
+        // Business logic validation - NEVER delete accessories with orders
+        if ($ordersCount > 0) {
+            return redirect()->route('admin.accessories.index')->with('error', 
+                "⚠️ KHÔNG THỂ XÓA phụ kiện \"{$accessory->name}\" vì đã có {$ordersCount} đơn hàng. " .
+                "Đây là dữ liệu giao dịch quan trọng! Bạn chỉ có thể 'Ngừng bán' thay vì xóa."
+            );
+        }
+
+        // Delete image if exists
+        if ($accessory->image_path && Storage::disk('public')->exists($accessory->image_path)) {
+            Storage::disk('public')->delete($accessory->image_path);
+        }
+
+        // Safe to delete - no orders
+        $accessory->delete();
+        
+        return redirect()->route('admin.accessories.index')->with('success', 
+            "✅ Đã xóa phụ kiện \"{$accessory->name}\" thành công!"
+        );
+    }
+
+    public function toggleStatus(Request $request, $id)
+    {
+        $accessory = Accessory::findOrFail($id);
+        
+        $request->validate([
+            'is_active' => 'required|boolean'
+        ]);
+
+        $newStatus = $request->is_active;
+        $accessory->update(['is_active' => $newStatus]);
+
+        $statusText = $newStatus ? 'kích hoạt' : 'ngừng bán';
+        
+        return response()->json([
+            'success' => true,
+            'message' => "Đã {$statusText} phụ kiện \"{$accessory->name}\" thành công!",
+            'is_active' => $newStatus
+        ]);
     }
 }

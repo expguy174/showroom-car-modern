@@ -42,7 +42,7 @@
                             </label>
                             <input type="text" name="name" id="name" 
                                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('name') border-red-300 @enderror" 
-                                   value="{{ old('name', $user->name) }}" required placeholder="Nhập họ và tên">
+                                   value="{{ old('name', $user->name) }}" placeholder="Nhập họ và tên">
                             @error('name')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -54,7 +54,7 @@
                             </label>
                             <input type="email" name="email" id="email" 
                                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('email') border-red-300 @enderror" 
-                                   value="{{ old('email', $user->email) }}" required placeholder="example@email.com">
+                                   value="{{ old('email', $user->email) }}" placeholder="example@email.com">
                             @error('email')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -130,8 +130,7 @@
                                 Vai trò <span class="text-red-500">*</span>
                             </label>
                             <select name="role" id="role" 
-                                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('role') border-red-300 @enderror" 
-                                    required>
+                                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('role') border-red-300 @enderror">
                                 <option value="">Chọn vai trò...</option>
                                 <option value="user" {{ old('role', $user->role) == 'user' ? 'selected' : '' }}>Người dùng</option>
                                 <option value="admin" {{ old('role', $user->role) == 'admin' ? 'selected' : '' }}>Quản trị viên</option>
