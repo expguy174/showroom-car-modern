@@ -22,6 +22,7 @@ class CarBrandController extends Controller
                   ->whereHas('carVariants', function($q2){ $q2->where('is_active', 1); });
             }])
             ->where('is_active', 1)
+            ->orderBy('sort_order')
             ->orderBy('name')
             ->get();
 
@@ -67,6 +68,7 @@ class CarBrandController extends Controller
                     $q->where('is_active', 1)
                       ->with(['images', 'reviews', 'carModel.carBrand']);
                 }])
+                ->orderBy('sort_order')
                 ->orderBy('name')
                 ->get();
 

@@ -54,12 +54,13 @@ class AppServiceProvider extends ServiceProvider
                 $navBrands = collect();
             } else {
                 // Include logo_path so accessor logo_url can compute correctly; bump cache key
-                $navBrands = Cache::remember('nav_brands_active_12_v5', now()->addHours(24), function () {
+                $navBrands = Cache::remember('nav_brands_active_12_v6', now()->addHours(24), function () {
                     return CarBrand::where('is_active', 1)
-                        ->select('id', 'name', 'logo_path', 'slug', 'country')
+                        ->select('id', 'name', 'logo_path', 'slug', 'country', 'sort_order')
                         ->withCount(['carModels' => function($q){
                             // Count all models regardless of active variants to match brand-card and brand pages
                         }])
+                        ->orderBy('sort_order')
                         ->orderBy('name')
                         ->take(12)
                         ->get();

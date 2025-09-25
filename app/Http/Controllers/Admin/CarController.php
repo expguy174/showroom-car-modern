@@ -471,7 +471,7 @@ class CarController extends Controller
         $newStatus = $request->is_active;
         $car->update(['is_active' => $newStatus]);
 
-        $statusText = $newStatus ? 'kích hoạt' : 'ngừng hoạt động';
+        $statusText = $newStatus ? 'kích hoạt' : 'tạm dừng';
         
         // Get updated stats
         $totalCars = CarBrand::count();

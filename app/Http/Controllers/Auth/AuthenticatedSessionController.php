@@ -86,34 +86,29 @@ class AuthenticatedSessionController extends Controller
             $user->save();
         }
 
-        // Role-based redirect after login
+        // Role-based redirect after login (no session flash messages)
         $user = Auth::user();
         if ($user) {
             switch ($user->role) {
                 case 'admin':
-                    return redirect()->intended('/admin/dashboard')
-                        ->with('success', 'Đăng nhập thành công! Chào mừng quản trị viên.');
+                    return redirect()->intended('/admin/dashboard');
                 
                 case 'manager':
-                    return redirect()->intended('/admin/dashboard')
-                        ->with('success', 'Đăng nhập thành công! Chào mừng quản lý.');
+                    return redirect()->intended('/admin/dashboard');
                 
                 case 'sales_person':
-                    return redirect()->intended('/admin/dashboard')
-                        ->with('success', 'Đăng nhập thành công! Chào mừng nhân viên kinh doanh.');
+                    return redirect()->intended('/admin/dashboard');
                 
                 case 'technician':
-                    return redirect()->intended('/admin/dashboard')
-                        ->with('success', 'Đăng nhập thành công! Chào mừng kỹ thuật viên.');
+                    return redirect()->intended('/admin/dashboard');
                 
                 case 'user':
                 default:
-                    return redirect()->intended('/dashboard')
-                        ->with('success', 'Đăng nhập thành công! Chào mừng quay trở lại.');
+                    return redirect()->intended('/dashboard');
             }
         }
 
-        return redirect()->intended('/dashboard')->with('success', 'Đăng nhập thành công!');
+        return redirect()->intended('/dashboard');
     }
 
     /**

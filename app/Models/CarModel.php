@@ -69,6 +69,7 @@ class CarModel extends Model
         // Removed recalculation of totals since brand table does not track these numbers
 
         static::creating(function (CarModel $model) {
+            // Only generate slug if not already set by Controller
             if (empty($model->slug) && !empty($model->name)) {
                 $model->slug = static::generateUniqueSlug($model->name);
             }

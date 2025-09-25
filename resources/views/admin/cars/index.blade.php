@@ -310,17 +310,18 @@ document.addEventListener('DOMContentLoaded', function() {
             showDeleteModal(carId, carName, modelsCount, variantsCount);
         });
     });
-    
+});
+
+// Use event delegation to avoid duplicate listeners when table reloads
+document.addEventListener('click', function(e) {
     // Status toggle buttons
-    const statusButtons = document.querySelectorAll('.status-toggle');
-    statusButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const carId = this.dataset.carId;
-            const newStatus = this.dataset.status === 'true';
-            
-            toggleCarStatus(carId, newStatus, this);
-        });
-    });
+    if (e.target.closest('.status-toggle')) {
+        const button = e.target.closest('.status-toggle');
+        const carId = button.dataset.carId;
+        const newStatus = button.dataset.status === 'true';
+        
+        toggleCarStatus(carId, newStatus, button);
+    }
 });
 
 function showDeleteModal(carId, carName, modelsCount, variantsCount) {
@@ -353,9 +354,9 @@ function showDeleteModal(carId, carName, modelsCount, variantsCount) {
 }
 
 function toggleCarStatus(carId, newStatus, button) {
-    // Add loading state
+    // Add loading state with fixed width to prevent layout shift
     const originalHTML = button.innerHTML;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    button.innerHTML = '<i class="fas fa-spinner fa-spin w-4 h-4 inline-block"></i>';
     button.disabled = true;
     
     // Make AJAX request
@@ -372,16 +373,16 @@ function toggleCarStatus(carId, newStatus, button) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Update button appearance
+            // Update button appearance with fixed dimensions
             if (newStatus) {
-                button.className = 'text-orange-600 hover:text-orange-900 status-toggle';
-                button.title = 'Ngừng hoạt động';
-                button.innerHTML = '<i class="fas fa-pause"></i>';
+                button.className = 'text-orange-600 hover:text-orange-900 status-toggle w-4 h-4 flex items-center justify-center';
+                button.title = 'Tạm dừng';
+                button.innerHTML = '<i class="fas fa-pause w-4 h-4"></i>';
                 button.dataset.status = 'false';
             } else {
-                button.className = 'text-green-600 hover:text-green-900 status-toggle';
+                button.className = 'text-green-600 hover:text-green-900 status-toggle w-4 h-4 flex items-center justify-center';
                 button.title = 'Kích hoạt';
-                button.innerHTML = '<i class="fas fa-play"></i>';
+                button.innerHTML = '<i class="fas fa-play w-4 h-4"></i>';
                 button.dataset.status = 'true';
             }
             
@@ -443,11 +444,11 @@ function updateTableRowStatus(carId, isActive) {
             
             if (statusBadge) {
                 if (isActive) {
-                    statusBadge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800';
-                    statusBadge.innerHTML = '<i class="fas fa-check-circle mr-1"></i>Hoạt động';
+                    statusBadge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium w-full bg-green-100 text-green-800';
+                    statusBadge.innerHTML = '<i class="fas fa-check-circle mr-1"></i><span class="truncate">Hoạt động</span>';
                 } else {
-                    statusBadge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800';
-                    statusBadge.innerHTML = '<i class="fas fa-times-circle mr-1"></i>Ngừng hoạt động';
+                    statusBadge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium w-full bg-red-100 text-red-800';
+                    statusBadge.innerHTML = '<i class="fas fa-times-circle mr-1"></i><span class="truncate">Tạm dừng</span>';
                 }
             }
         }
@@ -495,16 +496,26 @@ document.getElementById('confirmDelete').addEventListener('click', function() {
                 // Hide modal
                 document.getElementById('deleteModal').classList.add('hidden');
                 
-                // Reload the cars table
-                setTimeout(() => {
-                    loadCars(window.location.href);
-                }, 1000);
+                // Update stats if provided
+                if (data.stats) {
+                    updateStatsCards(data.stats);
+                }
+                
+                // Remove the deleted row from table
+                const carId = deleteFormId.replace('delete-form-', '');
+                const rowToRemove = document.querySelector(`[data-car-id="${carId}"]`).closest('tr');
+                if (rowToRemove) {
+                    rowToRemove.remove();
+                }
+                
+                // Reset deleteFormId only on success
+                deleteFormId = null;
             } else {
                 throw new Error(data.message || 'Có lỗi xảy ra');
             }
         })
         .catch(error => {
-            console.error('Error:', error);
+            console.error('Delete error:', error);
             
             // Show error toast
             if (error.data && error.data.message) {
@@ -512,14 +523,23 @@ document.getElementById('confirmDelete').addEventListener('click', function() {
             } else {
                 showMessage(error.message || 'Có lỗi xảy ra khi xóa hãng xe', 'error');
             }
+            
+            // Keep modal open for error cases - user can retry or cancel
+            // Don't hide modal on error, let user decide
         })
         .finally(() => {
             // Reset button state
-            confirmBtn.innerHTML = 'Xác nhận xóa';
+            confirmBtn.innerHTML = '<i class="fas fa-trash mr-2"></i>Xóa';
             confirmBtn.disabled = false;
-            deleteFormId = null;
+            // Don't reset deleteFormId here - only reset on success or modal close
         });
     }
+});
+
+// Cancel button event listener
+document.getElementById('cancelDelete').addEventListener('click', function() {
+    document.getElementById('deleteModal').classList.add('hidden');
+    deleteFormId = null;
 });
 
 // Close modal when clicking outside

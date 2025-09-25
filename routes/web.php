@@ -222,6 +222,12 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::delete('/delete/{carmodel}', [CarModelController::class, 'destroy'])->name('destroy');
         Route::post('/{carmodel}/toggle-status', [CarModelController::class, 'toggleStatus'])->name('toggle-status');
     });
+    
+    // Car Model Images
+    Route::delete('/car-model-images/{imageId}', [CarModelController::class, 'deleteImage'])->name('car-model-images.delete');
+    Route::post('/car-model-images/{imageId}/set-main', [CarModelController::class, 'setMainImage'])->name('car-model-images.set-main');
+    Route::put('/car-model-images/{imageId}/update', [CarModelController::class, 'updateImage'])->name('car-model-images.update');
+    Route::post('/car-model-images/cleanup', [CarModelController::class, 'cleanupImageData'])->name('car-model-images.cleanup');
 
     // Car Variants
     Route::prefix('carvariants')->name('carvariants.')->group(function () {

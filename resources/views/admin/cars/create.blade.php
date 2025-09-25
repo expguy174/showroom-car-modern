@@ -130,6 +130,46 @@
                         </div>
                     </div>
                 </div>
+
+                {{-- SEO Settings --}}
+                <div class="bg-gray-50 rounded-lg p-5">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">
+                        <i class="fas fa-search text-blue-600 mr-2"></i>
+                        Tối ưu SEO
+                    </h3>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label for="meta_title" class="block text-sm font-medium text-gray-700 mb-2">Meta Title</label>
+                            <input type="text" name="meta_title" id="meta_title" 
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('meta_title') border-red-300 @enderror" 
+                                   value="{{ old('meta_title') }}" maxlength="255" placeholder="Tiêu đề trang cho SEO">
+                            @error('meta_title')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="meta_description" class="block text-sm font-medium text-gray-700 mb-2">Meta Description</label>
+                            <textarea name="meta_description" id="meta_description" rows="3" 
+                                      class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('meta_description') border-red-300 @enderror" 
+                                      maxlength="500" placeholder="Mô tả trang cho SEO">{{ old('meta_description') }}</textarea>
+                            @error('meta_description')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="keywords" class="block text-sm font-medium text-gray-700 mb-2">Keywords</label>
+                            <input type="text" name="keywords" id="keywords" 
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('keywords') border-red-300 @enderror" 
+                                   value="{{ old('keywords') }}" placeholder="từ khóa, phân cách, bằng dấu phẩy">
+                            @error('keywords')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {{-- Right Column - Settings & Logo --}}
@@ -181,7 +221,7 @@
                 </div>
 
                 {{-- Settings --}}
-                <div class="bg-blue-50 rounded-lg p-5">
+                <div class="bg-gray-50 rounded-lg p-5">
                     <h3 class="text-lg font-medium text-gray-900 mb-4">
                         <i class="fas fa-cog text-blue-600 mr-2"></i>
                         Cài đặt hiển thị
@@ -189,89 +229,48 @@
                     
                     <div class="space-y-4">
 
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label for="sort_order" class="block text-sm font-medium text-gray-700 mb-2">Thứ tự sắp xếp</label>
-                                <input type="number" name="sort_order" id="sort_order" 
-                                       class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('sort_order') border-red-300 @enderror" 
-                                       value="{{ old('sort_order', 0) }}" min="0" placeholder="0">
-                                @error('sort_order')
-                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <div class="flex items-center pt-8">
-                                <div class="flex items-center">
-                                    <input type="hidden" name="is_featured" value="0">
-                                    <input type="checkbox" name="is_featured" id="is_featured" value="1" 
-                                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
-                                           {{ old('is_featured') ? 'checked' : '' }}>
-                                    <label for="is_featured" class="ml-2 block text-sm text-gray-900">
-                                        <i class="fas fa-star text-yellow-500 mr-1"></i>
-                                        Nổi bật
-                                    </label>
-                                </div>
-                            </div>
+                        <div>
+                            <label for="sort_order" class="block text-sm font-medium text-gray-700 mb-2">Thứ tự sắp xếp</label>
+                            <input type="number" name="sort_order" id="sort_order" 
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('sort_order') border-red-300 @enderror" 
+                                   value="{{ old('sort_order', 0) }}" min="0" placeholder="0">
+                            @error('sort_order')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
                         </div>
 
-                        <div class="flex items-center">
-                            <input type="hidden" name="is_active" value="0">
-                            <input type="checkbox" name="is_active" id="is_active" value="1" 
-                                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
-                                   {{ old('is_active', true) ? 'checked' : '' }}>
-                            <label for="is_active" class="ml-2 block text-sm text-gray-900">
-                                <i class="fas fa-eye text-green-500 mr-1"></i>
-                                Hiển thị công khai
-                            </label>
+                        <div class="grid grid-cols-2 gap-6">
+                            <div class="flex items-center">
+                                <input type="hidden" name="is_active" value="0">
+                                <input type="checkbox" name="is_active" id="is_active" value="1" 
+                                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
+                                       {{ old('is_active', true) ? 'checked' : '' }}>
+                                <label for="is_active" class="ml-2 block text-sm text-gray-900">
+                                    <i class="fas fa-check-circle text-green-500 mr-1"></i>
+                                    Hoạt động
+                                </label>
+                            </div>
+
+                            <div class="flex items-center">
+                                <input type="hidden" name="is_featured" value="0">
+                                <input type="checkbox" name="is_featured" id="is_featured" value="1" 
+                                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
+                                       {{ old('is_featured') ? 'checked' : '' }}>
+                                <label for="is_featured" class="ml-2 block text-sm text-gray-900">
+                                    <i class="fas fa-star text-yellow-500 mr-1"></i>
+                                    Nổi bật
+                                </label>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                {{-- SEO Settings --}}
-                <div>
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">
-                        <i class="fas fa-search text-blue-600 mr-2"></i>
-                        Tối ưu SEO
-                    </h3>
-                    
-                    <div class="space-y-4">
-                        <div>
-                            <label for="meta_title" class="block text-sm font-medium text-gray-700 mb-2">Meta Title</label>
-                            <input type="text" name="meta_title" id="meta_title" 
-                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('meta_title') border-red-300 @enderror" 
-                                   value="{{ old('meta_title') }}" maxlength="255" placeholder="Tiêu đề trang cho SEO">
-                            @error('meta_title')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div>
-                            <label for="meta_description" class="block text-sm font-medium text-gray-700 mb-2">Meta Description</label>
-                            <textarea name="meta_description" id="meta_description" rows="3" 
-                                      class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('meta_description') border-red-300 @enderror" 
-                                      maxlength="500" placeholder="Mô tả trang cho SEO">{{ old('meta_description') }}</textarea>
-                            @error('meta_description')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div>
-                            <label for="keywords" class="block text-sm font-medium text-gray-700 mb-2">Keywords</label>
-                            <input type="text" name="keywords" id="keywords" 
-                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('keywords') border-red-300 @enderror" 
-                                   value="{{ old('keywords') }}" placeholder="từ khóa, phân cách, bằng dấu phẩy">
-                            @error('keywords')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
 
         {{-- Action Buttons --}}
         <div class="mt-8 pt-6 border-t border-gray-200">
-            <div class="flex items-center justify-end gap-4">
+            <div class="flex items-center justify-between">
                 <a href="{{ route('admin.cars.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
                     <i class="fas fa-times mr-2"></i>
                     Hủy bỏ

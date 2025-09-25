@@ -2,6 +2,20 @@
 
 @section('title', 'Quản lý dòng xe')
 
+{{-- Session Flash Messages --}}
+@if(session('success'))
+    <meta name="flash-success" content="{{ session('success') }}">
+@endif
+@if(session('error'))
+    <meta name="flash-error" content="{{ session('error') }}">
+@endif
+@if(session('warning'))
+    <meta name="flash-warning" content="{{ session('warning') }}">
+@endif
+@if(session('info'))
+    <meta name="flash-info" content="{{ session('info') }}">
+@endif
+
 @section('content')
 <div class="space-y-6">
     {{-- Header --}}
@@ -74,7 +88,7 @@
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6" data-stat="new">
             <div class="flex items-center">
                 <div class="p-3 rounded-full bg-purple-100">
-                    <i class="fas fa-sparkles text-purple-600 text-xl"></i>
+                    <i class="fas fa-certificate text-purple-600 text-xl"></i>
                 </div>
                 <div class="ml-4">
                     <p class="text-sm font-medium text-gray-600">Mới</p>
@@ -143,31 +157,49 @@
 
 {{-- Delete Confirmation Modal --}}
 <div id="deleteModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden flex items-center justify-center">
-    <div class="relative p-5 border w-96 shadow-lg rounded-md bg-white max-h-[90vh] overflow-y-auto">
-        <div class="mt-3 text-center">
-            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
-                <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
-            </div>
-            <h3 class="text-lg font-medium text-gray-900 mt-4">Xác nhận xóa dòng xe</h3>
-            <div class="mt-2 px-7 py-3">
+    <div class="relative p-4 w-full max-w-md max-h-full">
+        <div class="relative bg-white rounded-lg shadow">
+            <div class="p-6 text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                    <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+                </div>
+                <h3 class="mb-5 text-lg font-normal text-gray-500">
+                    Xác nhận xóa dòng xe
+                </h3>
                 <p class="text-sm text-gray-500 mb-3">
-                    Bạn có chắc chắn muốn xóa dòng xe <strong id="delete-model-name"></strong> 
+                    Bạn có chắc chắn muốn xóa dòng xe 
+                    <strong id="delete-model-name"></strong> 
                     của hãng <strong id="delete-brand-name"></strong>?
                 </p>
-                <div id="delete-warning" class="hidden bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-3">
-                    <p class="text-sm text-yellow-800"></p>
+                
+                {{-- Impact Analysis --}}
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-3">
+                    <h4 class="text-sm font-medium text-yellow-800 mb-2">
+                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                        Phân tích tác động:
+                    </h4>
+                    <div class="text-xs text-yellow-700 space-y-1">
+                        <div>• <span id="variantsCount">0</span> phiên bản xe sẽ bị xóa</div>
+                        <div class="text-red-600 font-medium mt-2">
+                            <i class="fas fa-warning mr-1"></i>
+                            Tất cả dữ liệu liên quan sẽ bị xóa vĩnh viễn!
+                        </div>
+                    </div>
                 </div>
-                <p class="text-xs text-gray-400">
+                
+                <p class="text-xs text-red-500 mt-3">
+                    <i class="fas fa-info-circle mr-1"></i>
                     Hành động này không thể hoàn tác!
                 </p>
-            </div>
-            <div class="flex items-center justify-center space-x-4 mt-4">
-                <button onclick="hideDeleteModal()" class="px-4 py-2 bg-gray-300 text-gray-800 text-base font-medium rounded-md shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300">
-                    Hủy
-                </button>
-                <button onclick="confirmDelete()" class="px-4 py-2 bg-red-600 text-white text-base font-medium rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
-                    Xóa
-                </button>
+                
+                <div class="flex space-x-3 mt-6">
+                    <button id="cancelDelete" class="flex-1 px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-colors">
+                        <i class="fas fa-times mr-2"></i>Hủy
+                    </button>
+                    <button id="confirmDelete" class="flex-1 px-4 py-2 bg-red-600 text-white text-base font-medium rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors">
+                        <i class="fas fa-trash mr-2"></i>Xóa
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -176,6 +208,29 @@
 @push('scripts')
 <script>
 let deleteFormId = null;
+
+// Handle Laravel session flash messages from meta tags
+document.addEventListener('DOMContentLoaded', function() {
+    const flashSuccess = document.querySelector('meta[name="flash-success"]');
+    if (flashSuccess) {
+        showMessage(flashSuccess.getAttribute('content').replace(/[✅❌⚠️ℹ️]/g, '').trim(), 'success');
+    }
+    
+    const flashError = document.querySelector('meta[name="flash-error"]');
+    if (flashError) {
+        showMessage(flashError.getAttribute('content').replace(/[✅❌⚠️ℹ️]/g, '').trim(), 'error');
+    }
+    
+    const flashWarning = document.querySelector('meta[name="flash-warning"]');
+    if (flashWarning) {
+        showMessage(flashWarning.getAttribute('content').replace(/[✅❌⚠️ℹ️]/g, '').trim(), 'warning');
+    }
+    
+    const flashInfo = document.querySelector('meta[name="flash-info"]');
+    if (flashInfo) {
+        showMessage(flashInfo.getAttribute('content').replace(/[✅❌⚠️ℹ️]/g, '').trim(), 'info');
+    }
+});
 
 // AJAX Functions
 function showLoading() {
@@ -300,6 +355,32 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// Event listeners for modal buttons
+document.getElementById('confirmDelete').addEventListener('click', function() {
+    confirmDelete();
+});
+
+document.getElementById('cancelDelete').addEventListener('click', function() {
+    document.getElementById('deleteModal').classList.add('hidden');
+    deleteFormId = null;
+});
+
+// Close modal when clicking outside
+document.getElementById('deleteModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        this.classList.add('hidden');
+        deleteFormId = null;
+    }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        document.getElementById('deleteModal').classList.add('hidden');
+        deleteFormId = null;
+    }
+});
+
 // Function to update stats cards
 function updateStatsCards(stats) {
     // Update Total Models
@@ -400,13 +481,8 @@ function showDeleteModal(modelId, modelName, brandName, variantsCount) {
     document.getElementById('delete-model-name').textContent = modelName;
     document.getElementById('delete-brand-name').textContent = brandName;
     
-    const warningText = document.getElementById('delete-warning');
-    if (variantsCount > 0) {
-        warningText.innerHTML = `<strong>Cảnh báo:</strong> Dòng xe này có ${variantsCount} phiên bản. Việc xóa sẽ ảnh hưởng đến tất cả phiên bản liên quan.`;
-        warningText.classList.remove('hidden');
-    } else {
-        warningText.classList.add('hidden');
-    }
+    // Update impact analysis
+    document.getElementById('variantsCount').textContent = variantsCount;
     
     document.getElementById('deleteModal').classList.remove('hidden');
 }
@@ -418,7 +494,194 @@ function hideDeleteModal() {
 
 function confirmDelete() {
     if (deleteFormId) {
-        document.getElementById(deleteFormId).submit();
+        const confirmBtn = document.getElementById('confirmDelete');
+        
+        // Show loading state
+        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Đang xóa...';
+        confirmBtn.disabled = true;
+        
+        // Get form and extract model ID
+        const form = document.getElementById(deleteFormId);
+        const formAction = form.getAttribute('action');
+        
+        // Make AJAX request
+        fetch(formAction, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                _method: 'DELETE'
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw { status: response.status, data: data };
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Show success toast
+                showMessage(data.message, 'success');
+                
+                // Hide modal
+                document.getElementById('deleteModal').classList.add('hidden');
+                
+                // Update stats if provided
+                if (data.stats) {
+                    updateStatsCards(data.stats);
+                }
+                
+                // Remove the deleted row from table
+                const modelId = deleteFormId.replace('delete-form-', '');
+                const rowToRemove = document.querySelector(`[data-model-id="${modelId}"]`).closest('tr');
+                if (rowToRemove) {
+                    rowToRemove.remove();
+                }
+                
+                // Reset deleteFormId only on success
+                deleteFormId = null;
+            } else {
+                throw new Error(data.message || 'Có lỗi xảy ra');
+            }
+        })
+        .catch(error => {
+            console.error('Delete error:', error);
+            
+            // Show error toast
+            if (error.data && error.data.message) {
+                showMessage(error.data.message, 'error');
+            } else {
+                showMessage(error.message || 'Có lỗi xảy ra khi xóa dòng xe', 'error');
+            }
+            
+            // Keep modal open for error cases - user can retry or cancel
+            // Don't hide modal on error, let user decide
+        })
+        .finally(() => {
+            // Reset button state
+            confirmBtn.innerHTML = '<i class="fas fa-trash mr-2"></i>Xóa';
+            confirmBtn.disabled = false;
+            // Don't reset deleteFormId here - only reset on success or modal close
+        });
+    }
+}
+
+// Function to update stats cards
+function updateStatsCards(stats) {
+    // Update Total Models
+    const totalElement = document.querySelector('[data-stat="total"] .text-2xl');
+    if (totalElement) totalElement.textContent = stats.totalModels;
+    
+    // Update Active Models
+    const activeElement = document.querySelector('[data-stat="active"] .text-2xl');
+    if (activeElement) activeElement.textContent = stats.activeModels;
+    
+    // Update Inactive Models
+    const inactiveElement = document.querySelector('[data-stat="inactive"] .text-2xl');
+    if (inactiveElement) inactiveElement.textContent = stats.inactiveModels;
+    
+    // Update Featured Models
+    const featuredElement = document.querySelector('[data-stat="featured"] .text-2xl');
+    if (featuredElement) featuredElement.textContent = stats.featuredModels;
+    
+    // Update New Models
+    const newElement = document.querySelector('[data-stat="new"] .text-2xl');
+    if (newElement) newElement.textContent = stats.newModels;
+}
+
+// Status toggle functionality
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.status-toggle')) {
+        const button = e.target.closest('.status-toggle');
+        const modelId = button.dataset.modelId;
+        const newStatus = button.dataset.status === 'true';
+        
+        toggleModelStatus(modelId, newStatus, button);
+    }
+});
+
+function toggleModelStatus(modelId, newStatus, button) {
+    // Add loading state with fixed width to prevent layout shift
+    const originalHTML = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin w-4 h-4 inline-block"></i>';
+    button.disabled = true;
+    
+    // Make AJAX request
+    fetch(`/admin/carmodels/${modelId}/toggle-status`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({
+            is_active: newStatus
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update button appearance with fixed dimensions
+            if (newStatus) {
+                button.className = 'text-orange-600 hover:text-orange-900 status-toggle w-4 h-4 flex items-center justify-center';
+                button.title = 'Tạm dừng';
+                button.innerHTML = '<i class="fas fa-pause w-4 h-4"></i>';
+                button.dataset.status = 'false';
+            } else {
+                button.className = 'text-green-600 hover:text-green-900 status-toggle w-4 h-4 flex items-center justify-center';
+                button.title = 'Kích hoạt';
+                button.innerHTML = '<i class="fas fa-play w-4 h-4"></i>';
+                button.dataset.status = 'true';
+            }
+            
+            // Update status badge in table row
+            updateModelRowStatus(modelId, newStatus);
+            
+            // Show success toast
+            showMessage(data.message, 'success');
+        } else {
+            // Restore original state on error
+            button.innerHTML = originalHTML;
+            showMessage('Có lỗi xảy ra: ' + data.message, 'error');
+        }
+    })
+    .catch(error => {
+        // Restore original state on error
+        button.innerHTML = originalHTML;
+        showMessage('Có lỗi xảy ra khi cập nhật trạng thái', 'error');
+        console.error('Error:', error);
+    })
+    .finally(() => {
+        button.disabled = false;
+    });
+}
+
+// Function to update table row status badge
+function updateModelRowStatus(modelId, isActive) {
+    const button = document.querySelector(`[data-model-id="${modelId}"]`);
+    if (button) {
+        const row = button.closest('tr');
+        if (row) {
+            // Find the status badge (first span with inline-flex in the status column)
+            const statusColumn = row.querySelector('td:nth-child(4)'); // Status column is 4th
+            const statusBadge = statusColumn ? statusColumn.querySelector('span.inline-flex.items-center') : null;
+            
+            if (statusBadge) {
+                if (isActive) {
+                    statusBadge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium w-full bg-green-100 text-green-800';
+                    statusBadge.innerHTML = '<i class="fas fa-check-circle mr-1"></i><span class="truncate">Hoạt động</span>';
+                } else {
+                    statusBadge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium w-full bg-red-100 text-red-800';
+                    statusBadge.innerHTML = '<i class="fas fa-times-circle mr-1"></i><span class="truncate">Tạm dừng</span>';
+                }
+            }
+        }
     }
 }
 </script>

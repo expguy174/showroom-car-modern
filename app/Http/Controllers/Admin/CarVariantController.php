@@ -14,14 +14,15 @@ class CarVariantController extends Controller
 {
     public function index(Request $request)
     {
-        $query = CarVariant::with(['carModel.carBrand']);
+        $query = CarVariant::with(['carModel.carBrand', 'colors', 'images']);
 
         // Search functionality
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('trim_level', 'like', "%{$search}%")
+                  ->orWhere('sku', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
                   ->orWhereHas('carModel', function($model) use ($search) {
                       $model->where('name', 'like', "%{$search}%")
                             ->orWhereHas('carBrand', function($brand) use ($search) {
@@ -31,11 +32,9 @@ class CarVariantController extends Controller
             });
         }
 
-        // Brand filter
-        if ($request->filled('brand')) {
-            $query->whereHas('carModel.carBrand', function($brand) use ($request) {
-                $brand->where('id', $request->brand);
-            });
+        // Car Model filter
+        if ($request->filled('car_model_id')) {
+            $query->where('car_model_id', $request->car_model_id);
         }
 
         // Status filter
@@ -47,24 +46,46 @@ class CarVariantController extends Controller
                 case 'inactive':
                     $query->where('is_active', false);
                     break;
+                case 'featured':
+                    $query->where('is_featured', true);
+                    break;
+                case 'on_sale':
+                    $query->where('is_on_sale', true);
+                    break;
+                case 'new_arrival':
+                    $query->where('is_new_arrival', true);
+                    break;
             }
         }
 
-        $carVariants = $query->orderBy('name', 'asc')->paginate(15);
+        $carVariants = $query->orderBy('created_at', 'desc')->paginate(15);
 
-        // Get brands for filter dropdown
-        $brands = CarBrand::orderBy('name')->get();
+        // Get car models for filter dropdown
+        $carModels = CarModel::with('carBrand')->orderBy('name')->get();
 
         // Calculate stats
-        $allVariants = CarVariant::all();
-        $stats = [
-            'total' => $allVariants->count(),
-            'active' => $allVariants->where('is_active', true)->count(),
-            'inactive' => $allVariants->where('is_active', false)->count(),
-            'avg_price' => $allVariants->avg('price') ?? 0,
-        ];
+        $totalVariants = CarVariant::count();
+        $activeVariants = CarVariant::where('is_active', true)->count();
+        $inactiveVariants = CarVariant::where('is_active', false)->count();
+        $featuredVariants = CarVariant::where('is_featured', true)->count();
+        $onSaleVariants = CarVariant::where('is_on_sale', true)->count();
+        $newArrivalVariants = CarVariant::where('is_new_arrival', true)->count();
 
-        return view('admin.carvariants.index', compact('carVariants', 'brands', 'stats'));
+        // If this is an AJAX request, return only the table partial
+        if ($request->ajax()) {
+            return view('admin.carvariants.partials.table', compact('carVariants'))->render();
+        }
+
+        return view('admin.carvariants.index', compact(
+            'carVariants', 
+            'carModels', 
+            'totalVariants',
+            'activeVariants',
+            'inactiveVariants',
+            'featuredVariants',
+            'onSaleVariants',
+            'newArrivalVariants'
+        ));
     }
 
     public function create()
@@ -143,18 +164,52 @@ class CarVariantController extends Controller
 
         // Business logic validation - NEVER delete variants with orders
         if ($ordersCount > 0) {
-            return redirect()->route('admin.carvariants.index')->with('error', 
-                "⚠️ KHÔNG THỂ XÓA phiên bản xe \"{$carvariant->name}\" vì đã có {$ordersCount} đơn hàng. " .
-                "Đây là dữ liệu giao dịch quan trọng! Bạn chỉ có thể 'Ngừng bán' thay vì xóa."
-            );
+            $errorMessage = "KHÔNG THỂ XÓA phiên bản xe \"{$carvariant->name}\" vì đã có {$ordersCount} đơn hàng. " .
+                "Đây là dữ liệu giao dịch quan trọng! Bạn chỉ có thể 'Tạm dừng' thay vì xóa.";
+            
+            if (request()->wantsJson() || request()->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMessage
+                ], 422);
+            }
+            
+            return redirect()->route('admin.carvariants.index')->with('error', $errorMessage);
         }
+
+        // Check for related data
+        $colorsCount = $carvariant->colors()->count();
+        $imagesCount = $carvariant->images()->count();
 
         // Safe to delete - no orders
         $carvariant->delete();
         
-        return redirect()->route('admin.carvariants.index')->with('success', 
-            "✅ Đã xóa phiên bản xe \"{$carvariant->name}\" thành công!"
-        );
+        $successMessage = "Đã xóa phiên bản xe \"{$carvariant->name}\" thành công!";
+        
+        if (request()->wantsJson() || request()->ajax()) {
+            // Calculate updated stats
+            $totalVariants = CarVariant::count();
+            $activeVariants = CarVariant::where('is_active', true)->count();
+            $inactiveVariants = CarVariant::where('is_active', false)->count();
+            $featuredVariants = CarVariant::where('is_featured', true)->count();
+            $onSaleVariants = CarVariant::where('is_on_sale', true)->count();
+            $newArrivalVariants = CarVariant::where('is_new_arrival', true)->count();
+            
+            return response()->json([
+                'success' => true,
+                'message' => $successMessage,
+                'stats' => [
+                    'totalVariants' => $totalVariants,
+                    'activeVariants' => $activeVariants,
+                    'inactiveVariants' => $inactiveVariants,
+                    'featuredVariants' => $featuredVariants,
+                    'onSaleVariants' => $onSaleVariants,
+                    'newArrivalVariants' => $newArrivalVariants,
+                ]
+            ]);
+        }
+        
+        return redirect()->route('admin.carvariants.index')->with('success', $successMessage);
     }
 
     public function toggleStatus(Request $request, CarVariant $carvariant)
@@ -166,12 +221,28 @@ class CarVariantController extends Controller
         $newStatus = $request->is_active;
         $carvariant->update(['is_active' => $newStatus]);
 
-        $statusText = $newStatus ? 'kích hoạt' : 'ngừng bán';
+        $statusText = $newStatus ? 'kích hoạt' : 'tạm dừng';
+        
+        // Calculate updated stats
+        $totalVariants = CarVariant::count();
+        $activeVariants = CarVariant::where('is_active', true)->count();
+        $inactiveVariants = CarVariant::where('is_active', false)->count();
+        $featuredVariants = CarVariant::where('is_featured', true)->count();
+        $onSaleVariants = CarVariant::where('is_on_sale', true)->count();
+        $newArrivalVariants = CarVariant::where('is_new_arrival', true)->count();
         
         return response()->json([
             'success' => true,
             'message' => "Đã {$statusText} phiên bản xe \"{$carvariant->name}\" thành công!",
-            'is_active' => $newStatus
+            'is_active' => $newStatus,
+            'stats' => [
+                'totalVariants' => $totalVariants,
+                'activeVariants' => $activeVariants,
+                'inactiveVariants' => $inactiveVariants,
+                'featuredVariants' => $featuredVariants,
+                'onSaleVariants' => $onSaleVariants,
+                'newArrivalVariants' => $newArrivalVariants,
+            ]
         ]);
     }
 }
