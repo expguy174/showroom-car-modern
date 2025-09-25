@@ -2,7 +2,7 @@
     <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
             <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 280px;">Dòng xe</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 200px;">Dòng xe</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 140px;">Hãng xe</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 200px;">Thông tin</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 140px;">Trạng thái</th>
@@ -13,7 +13,7 @@
         <tbody class="bg-white divide-y divide-gray-200">
             @forelse($carModels as $model)
             <tr class="hover:bg-gray-50 transition-colors">
-                <td class="px-6 py-4 whitespace-nowrap" style="width: 280px;">
+                <td class="px-6 py-4 whitespace-nowrap" style="width: 200px;">
                     <div class="flex items-center">
                         <div class="flex-shrink-0 h-16 w-16">
                             <img class="h-16 w-16 rounded-lg object-cover border border-gray-200 bg-white p-1 shadow-sm" 
@@ -22,12 +22,6 @@
                         <div class="ml-4 min-w-0 flex-1">
                             <div class="text-sm font-medium text-gray-900 truncate">{{ $model->name }}</div>
                             <div class="text-sm text-gray-500 truncate">{{ $model->slug }}</div>
-                            @if($model->is_featured)
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
-                                    <i class="fas fa-star mr-1"></i>
-                                    Nổi bật
-                                </span>
-                            @endif
                         </div>
                     </div>
                 </td>
