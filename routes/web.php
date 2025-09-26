@@ -6,7 +6,7 @@ use App\Http\Middleware\IsAdmin;
 
 // Admin Controllers
 use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\Admin\CarController;
+use App\Http\Controllers\Admin\CarBrandController;
 use App\Http\Controllers\Admin\CarModelController;
 use App\Http\Controllers\Admin\CarVariantController;
 use App\Http\Controllers\Admin\OrderController;
@@ -199,16 +199,16 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/dashboard/stats', [DashboardController::class, 'getStats'])->name('dashboard.stats');
     Route::post('/dashboard/clear-cache', [DashboardController::class, 'clearCache'])->name('dashboard.clear-cache');
 
-    // Car
-    Route::prefix('cars')->name('cars.')->group(function () {
-        Route::get('/', [CarController::class, 'index'])->name('index');
-        Route::get('/create', [CarController::class, 'create'])->name('create');
-        Route::post('/store', [CarController::class, 'store'])->name('store');
-        Route::get('/show/{car}', [CarController::class, 'show'])->name('show');
-        Route::get('/edit/{car}', [CarController::class, 'edit'])->name('edit');
-        Route::put('/update/{car}', [CarController::class, 'update'])->name('update');
-        Route::delete('/delete/{car}', [CarController::class, 'destroy'])->name('destroy');
-        Route::post('/{car}/toggle-status', [CarController::class, 'toggleStatus'])->name('toggle-status');
+    // Car Brands
+    Route::prefix('carbrands')->name('carbrands.')->group(function () {
+        Route::get('/', [CarBrandController::class, 'index'])->name('index');
+        Route::get('/create', [CarBrandController::class, 'create'])->name('create');
+        Route::post('/store', [CarBrandController::class, 'store'])->name('store');
+        Route::get('/show/{car}', [CarBrandController::class, 'show'])->name('show');
+        Route::get('/edit/{car}', [CarBrandController::class, 'edit'])->name('edit');
+        Route::put('/update/{car}', [CarBrandController::class, 'update'])->name('update');
+        Route::delete('/delete/{car}', [CarBrandController::class, 'destroy'])->name('destroy');
+        Route::post('/{car}/toggle-status', [CarBrandController::class, 'toggleStatus'])->name('toggle-status');
     });
 
     // Car Models
@@ -234,6 +234,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/', [CarVariantController::class, 'index'])->name('index');
         Route::get('/create', [CarVariantController::class, 'create'])->name('create');
         Route::post('/store', [CarVariantController::class, 'store'])->name('store');
+        Route::get('/show/{carvariant}', [CarVariantController::class, 'show'])->name('show');
         Route::get('/edit/{carvariant}', [CarVariantController::class, 'edit'])->name('edit');
         Route::put('/update/{carvariant}', [CarVariantController::class, 'update'])->name('update');
         Route::delete('/delete/{carvariant}', [CarVariantController::class, 'destroy'])->name('destroy');

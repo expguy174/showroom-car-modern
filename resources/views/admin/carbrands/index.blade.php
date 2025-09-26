@@ -18,7 +18,7 @@ use Illuminate\Support\Str;
                 </h1>
                 <p class="text-gray-600 mt-1">Quản lý tất cả thương hiệu xe hơi trong hệ thống</p>
             </div>
-            <a href="{{ route('admin.cars.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+            <a href="{{ route('admin.carbrands.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
                 <i class="fas fa-plus mr-2"></i>
                 Thêm hãng xe
             </a>
@@ -86,7 +86,7 @@ use Illuminate\Support\Str;
             </div>
         </div>
         
-        <form id="search-form" method="GET" action="{{ route('admin.cars.index') }}" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <form id="search-form" method="GET" action="{{ route('admin.carbrands.index') }}" class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
                 <label for="search" class="block text-sm font-medium text-gray-700 mb-2">Tìm kiếm</label>
                 <input type="text" name="search" id="search" value="{{ request('search') }}" 
@@ -123,7 +123,7 @@ use Illuminate\Support\Str;
 
     {{-- Car Brands Table --}}
     <div id="cars-content" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        @include('admin.cars.partials.table', ['cars' => $cars])
+        @include('admin.carbrands.partials.table', ['carbrands' => $carbrands])
     </div>
 </div>
 
@@ -195,7 +195,7 @@ function hideLoading() {
 function loadCars(url = null, formData = null) {
     showLoading();
     
-    const requestUrl = url || '{{ route("admin.cars.index") }}';
+    const requestUrl = url || '{{ route("admin.carbrands.index") }}';
     const options = {
         method: formData ? 'POST' : 'GET',
         headers: {
@@ -273,7 +273,7 @@ document.addEventListener('DOMContentLoaded', function() {
         searchForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const formData = new FormData(this);
-            loadCars('{{ route("admin.cars.index") }}?' + new URLSearchParams(formData).toString());
+            loadCars('{{ route("admin.carbrands.index") }}?' + new URLSearchParams(formData).toString());
         });
     }
     
@@ -285,7 +285,7 @@ document.addEventListener('DOMContentLoaded', function() {
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(() => {
                 const formData = new FormData(searchForm);
-                loadCars('{{ route("admin.cars.index") }}?' + new URLSearchParams(formData).toString());
+                loadCars('{{ route("admin.carbrands.index") }}?' + new URLSearchParams(formData).toString());
             }, 500);
         });
     }
@@ -295,19 +295,19 @@ document.addEventListener('DOMContentLoaded', function() {
     if (statusSelect) {
         statusSelect.addEventListener('change', function() {
             const formData = new FormData(searchForm);
-            loadCars('{{ route("admin.cars.index") }}?' + new URLSearchParams(formData).toString());
+            loadCars('{{ route("admin.carbrands.index") }}?' + new URLSearchParams(formData).toString());
         });
     }
     // Delete buttons
     const deleteButtons = document.querySelectorAll('.delete-btn');
     deleteButtons.forEach(button => {
         button.addEventListener('click', function() {
-            const carId = this.dataset.carId;
-            const carName = this.dataset.carName;
+            const carbrandId = this.dataset.carbrandId;
+            const carbrandName = this.dataset.carbrandName;
             const modelsCount = parseInt(this.dataset.modelsCount) || 0;
             const variantsCount = parseInt(this.dataset.variantsCount) || 0;
             
-            showDeleteModal(carId, carName, modelsCount, variantsCount);
+            showDeleteModal(carbrandId, carbrandName, modelsCount, variantsCount);
         });
     });
 });
@@ -317,18 +317,18 @@ document.addEventListener('click', function(e) {
     // Status toggle buttons
     if (e.target.closest('.status-toggle')) {
         const button = e.target.closest('.status-toggle');
-        const carId = button.dataset.carId;
+        const carbrandId = button.dataset.carbrandId;
         const newStatus = button.dataset.status === 'true';
         
-        toggleCarStatus(carId, newStatus, button);
+        toggleCarbrandStatus(carbrandId, newStatus, button);
     }
 });
 
-function showDeleteModal(carId, carName, modelsCount, variantsCount) {
-    deleteFormId = 'delete-form-' + carId;
+function showDeleteModal(carbrandId, carbrandName, modelsCount, variantsCount) {
+    deleteFormId = 'delete-form-' + carbrandId;
     
     // Update modal content
-    document.getElementById('brandName').textContent = carName;
+    document.getElementById('brandName').textContent = carbrandName;
     document.getElementById('modelsCount').textContent = modelsCount;
     document.getElementById('variantsCount').textContent = variantsCount;
     
@@ -353,14 +353,14 @@ function showDeleteModal(carId, carName, modelsCount, variantsCount) {
     document.getElementById('deleteModal').classList.remove('hidden');
 }
 
-function toggleCarStatus(carId, newStatus, button) {
+function toggleCarbrandStatus(carbrandId, newStatus, button) {
     // Add loading state with fixed width to prevent layout shift
     const originalHTML = button.innerHTML;
     button.innerHTML = '<i class="fas fa-spinner fa-spin w-4 h-4 inline-block"></i>';
     button.disabled = true;
     
     // Make AJAX request
-    fetch(`/admin/cars/${carId}/toggle-status`, {
+    fetch(`/admin/carbrands/${carbrandId}/toggle-status`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -392,7 +392,7 @@ function toggleCarStatus(carId, newStatus, button) {
             }
             
             // Update status badge in table row
-            updateTableRowStatus(carId, newStatus);
+            updateTableRowStatus(carbrandId, newStatus);
             
             // Show success toast
             showMessage(data.message, 'success');
@@ -433,8 +433,8 @@ function updateStatsCards(stats) {
 }
 
 // Function to update table row status badge
-function updateTableRowStatus(carId, isActive) {
-    const button = document.querySelector(`[data-car-id="${carId}"]`);
+function updateTableRowStatus(carbrandId, isActive) {
+    const button = document.querySelector(`[data-carbrand-id="${carbrandId}"]`);
     if (button) {
         const row = button.closest('tr');
         if (row) {
@@ -502,8 +502,8 @@ document.getElementById('confirmDelete').addEventListener('click', function() {
                 }
                 
                 // Remove the deleted row from table
-                const carId = deleteFormId.replace('delete-form-', '');
-                const rowToRemove = document.querySelector(`[data-car-id="${carId}"]`).closest('tr');
+                const carbrandId = deleteFormId.replace('delete-form-', '');
+                const rowToRemove = document.querySelector(`[data-carbrand-id="${carbrandId}"]`).closest('tr');
                 if (rowToRemove) {
                     rowToRemove.remove();
                 }

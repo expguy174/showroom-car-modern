@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Cập nhật hãng xe')
+@section('title', 'Thêm hãng xe mới')
 
 @section('content')
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 max-w-7xl mx-auto">
@@ -9,12 +9,12 @@
         <div class="flex items-center justify-between">
             <div>
                 <h1 class="text-xl font-semibold text-gray-900">
-                    <i class="fas fa-edit text-blue-600 mr-3"></i>
-                    Cập nhật hãng xe: {{ $car->name }}
+                    <i class="fas fa-plus-circle text-blue-600 mr-3"></i>
+                    Thêm hãng xe mới
                 </h1>
-                <p class="text-sm text-gray-600 mt-1">Chỉnh sửa thông tin hãng xe trong hệ thống</p>
+                <p class="text-sm text-gray-600 mt-1">Tạo hãng xe mới trong hệ thống</p>
             </div>
-            <a href="{{ route('admin.cars.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors">
+            <a href="{{ route('admin.carbrands.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors">
                 <i class="fas fa-arrow-left mr-2"></i>
                 Quay lại
             </a>
@@ -22,9 +22,8 @@
     </div>
 
     {{-- Form --}}
-    <form id="carBrandEditForm" action="{{ route('admin.cars.update', $car) }}" method="POST" enctype="multipart/form-data" class="p-6">
+    <form id="carBrandForm" action="{{ route('admin.carbrands.store') }}" method="POST" enctype="multipart/form-data" class="p-6">
         @csrf
-        @method('PUT')
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {{-- Left Column - Basic Info --}}
@@ -42,7 +41,7 @@
                             </label>
                             <input type="text" name="name" id="name" 
                                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('name') border-red-300 @enderror" 
-                                   value="{{ old('name', $car->name) }}" placeholder="Ví dụ: Toyota, Honda...">
+                                   value="{{ old('name') }}" placeholder="Ví dụ: Toyota, Honda...">
                             @error('name')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -52,7 +51,7 @@
                             <label for="country" class="block text-sm font-medium text-gray-700 mb-2">Quốc gia</label>
                             <input type="text" name="country" id="country" 
                                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('country') border-red-300 @enderror" 
-                                   value="{{ old('country', $car->country) }}" placeholder="Ví dụ: Nhật Bản, Hàn Quốc...">
+                                   value="{{ old('country') }}" placeholder="Ví dụ: Nhật Bản, Hàn Quốc...">
                             @error('country')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -62,7 +61,7 @@
                             <label for="founded_year" class="block text-sm font-medium text-gray-700 mb-2">Năm thành lập</label>
                             <input type="number" name="founded_year" id="founded_year" 
                                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('founded_year') border-red-300 @enderror" 
-                                   value="{{ old('founded_year', $car->founded_year) }}" min="1800" max="{{ date('Y') + 1 }}" placeholder="Ví dụ: 1937">
+                                   value="{{ old('founded_year') }}" min="1800" max="{{ date('Y') + 1 }}" placeholder="Ví dụ: 1937">
                             @error('founded_year')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -72,7 +71,7 @@
                             <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Mô tả</label>
                             <textarea name="description" id="description" rows="4" 
                                       class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('description') border-red-300 @enderror" 
-                                      placeholder="Mô tả về hãng xe...">{{ old('description', $car->description) }}</textarea>
+                                      placeholder="Mô tả về hãng xe...">{{ old('description') }}</textarea>
                             @error('description')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -92,7 +91,7 @@
                             <label for="website" class="block text-sm font-medium text-gray-700 mb-2">Website</label>
                             <input type="url" name="website" id="website" 
                                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('website') border-red-300 @enderror" 
-                                   value="{{ old('website', $car->website) }}" placeholder="https://example.com">
+                                   value="{{ old('website') }}" placeholder="https://example.com">
                             @error('website')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -103,7 +102,7 @@
                                 <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">Số điện thoại</label>
                                 <input type="tel" name="phone" id="phone" 
                                        class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('phone') border-red-300 @enderror" 
-                                       value="{{ old('phone', $car->phone) }}" placeholder="+84 xxx xxx xxx">
+                                       value="{{ old('phone') }}" placeholder="+84 xxx xxx xxx">
                                 @error('phone')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
@@ -113,7 +112,7 @@
                                 <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
                                 <input type="email" name="email" id="email" 
                                        class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('email') border-red-300 @enderror" 
-                                       value="{{ old('email', $car->email) }}" placeholder="contact@example.com">
+                                       value="{{ old('email') }}" placeholder="contact@example.com">
                                 @error('email')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
@@ -124,7 +123,7 @@
                             <label for="address" class="block text-sm font-medium text-gray-700 mb-2">Địa chỉ</label>
                             <textarea name="address" id="address" rows="3" 
                                       class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('address') border-red-300 @enderror" 
-                                      placeholder="Địa chỉ trụ sở chính...">{{ old('address', $car->address) }}</textarea>
+                                      placeholder="Địa chỉ trụ sở chính...">{{ old('address') }}</textarea>
                             @error('address')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -144,7 +143,7 @@
                             <label for="meta_title" class="block text-sm font-medium text-gray-700 mb-2">Meta Title</label>
                             <input type="text" name="meta_title" id="meta_title" 
                                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('meta_title') border-red-300 @enderror" 
-                                   value="{{ old('meta_title', $car->meta_title) }}" maxlength="255" placeholder="Tiêu đề trang cho SEO">
+                                   value="{{ old('meta_title') }}" maxlength="255" placeholder="Tiêu đề trang cho SEO">
                             @error('meta_title')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -154,7 +153,7 @@
                             <label for="meta_description" class="block text-sm font-medium text-gray-700 mb-2">Meta Description</label>
                             <textarea name="meta_description" id="meta_description" rows="3" 
                                       class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('meta_description') border-red-300 @enderror" 
-                                      maxlength="500" placeholder="Mô tả trang cho SEO">{{ old('meta_description', $car->meta_description) }}</textarea>
+                                      maxlength="500" placeholder="Mô tả trang cho SEO">{{ old('meta_description') }}</textarea>
                             @error('meta_description')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -164,7 +163,7 @@
                             <label for="keywords" class="block text-sm font-medium text-gray-700 mb-2">Keywords</label>
                             <input type="text" name="keywords" id="keywords" 
                                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('keywords') border-red-300 @enderror" 
-                                   value="{{ old('keywords', $car->keywords) }}" placeholder="từ khóa, phân cách, bằng dấu phẩy">
+                                   value="{{ old('keywords') }}" placeholder="từ khóa, phân cách, bằng dấu phẩy">
                             @error('keywords')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -173,32 +172,18 @@
                 </div>
             </div>
 
-            {{-- Right Column - Current Logo & Settings --}}
+            {{-- Right Column - Settings & Logo --}}
             <div class="space-y-6">
-                {{-- Logo Management --}}
+                {{-- Logo Upload --}}
                 <div class="bg-gray-50 rounded-lg p-5">
                     <h3 class="text-lg font-medium text-gray-900 mb-4">
                         <i class="fas fa-image text-blue-600 mr-2"></i>
-                        Quản lý logo
+                        Logo hãng xe
                     </h3>
                     
                     <div class="space-y-4">
-                        {{-- Current Logo --}}
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-3">
-                                <i class="fas fa-eye text-blue-600 mr-2"></i>
-                                Logo hiện tại
-                            </label>
-                            <div class="flex items-center justify-center w-32 h-32 bg-white border border-gray-200 rounded-lg p-2">
-                                <img src="{{ $car->logo_url }}" alt="Current Logo" class="max-w-full max-h-full object-contain">
-                            </div>
-                        </div>
-
-                        {{-- New Logo Upload --}}
-                        <div>
-                            <label for="logo_path" class="block text-sm font-medium text-gray-700 mb-2">
-                                {{ $car->logo_path ? 'Thay đổi logo' : 'Tải lên logo' }}
-                            </label>
+                            <label for="logo_path" class="block text-sm font-medium text-gray-700 mb-2">Upload logo</label>
                             <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-blue-400 transition-colors">
                                 <div class="space-y-1 text-center">
                                     <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
@@ -206,7 +191,7 @@
                                     </svg>
                                     <div class="flex text-sm text-gray-600">
                                         <label for="logo_path" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
-                                            <span>{{ $car->logo_path ? 'Chọn logo mới' : 'Chọn logo' }}</span>
+                                            <span>Chọn logo</span>
                                             <input id="logo_path" name="logo_path" type="file" class="sr-only" accept="image/*" onchange="previewLogo(this)">
                                         </label>
                                         <p class="pl-1">hoặc kéo thả vào đây</p>
@@ -219,15 +204,15 @@
                             @enderror
                         </div>
 
-                        {{-- New Logo Preview --}}
+                        {{-- Logo Preview --}}
                         <div id="logoPreview" class="hidden">
                             <label class="block text-sm font-medium text-gray-700 mb-3">
                                 <i class="fas fa-eye text-blue-600 mr-2"></i>
-                                Xem trước logo mới
+                                Xem trước logo
                             </label>
-                            <div class="relative">
-                                <img id="logoPreviewImage" src="" alt="New logo preview" class="w-32 h-32 object-contain border border-gray-200 rounded-lg bg-white p-2">
-                                <button type="button" onclick="removeLogo()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600">
+                            <div class="relative inline-block">
+                                <img id="logoPreviewImage" src="" alt="Logo preview" class="w-32 h-32 object-contain border border-gray-200 rounded-lg bg-white p-2">
+                                <button type="button" onclick="removeLogo()" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 shadow-lg">
                                     <i class="fas fa-times"></i>
                                 </button>
                             </div>
@@ -248,7 +233,7 @@
                             <label for="sort_order" class="block text-sm font-medium text-gray-700 mb-2">Thứ tự sắp xếp</label>
                             <input type="number" name="sort_order" id="sort_order" 
                                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('sort_order') border-red-300 @enderror" 
-                                   value="{{ old('sort_order', $car->sort_order ?? 0) }}" min="0" placeholder="0">
+                                   value="{{ old('sort_order', 0) }}" min="0" placeholder="0">
                             @error('sort_order')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -259,7 +244,7 @@
                                 <input type="hidden" name="is_active" value="0">
                                 <input type="checkbox" name="is_active" id="is_active" value="1" 
                                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
-                                       {{ old('is_active', $car->is_active) ? 'checked' : '' }}>
+                                       {{ old('is_active', true) ? 'checked' : '' }}>
                                 <label for="is_active" class="ml-2 block text-sm text-gray-900">
                                     <i class="fas fa-check-circle text-green-500 mr-1"></i>
                                     Hoạt động
@@ -270,7 +255,7 @@
                                 <input type="hidden" name="is_featured" value="0">
                                 <input type="checkbox" name="is_featured" id="is_featured" value="1" 
                                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
-                                       {{ old('is_featured', $car->is_featured) ? 'checked' : '' }}>
+                                       {{ old('is_featured') ? 'checked' : '' }}>
                                 <label for="is_featured" class="ml-2 block text-sm text-gray-900">
                                     <i class="fas fa-star text-yellow-500 mr-1"></i>
                                     Nổi bật
@@ -286,13 +271,13 @@
         {{-- Action Buttons --}}
         <div class="mt-8 pt-6 border-t border-gray-200">
             <div class="flex items-center justify-between">
-                <a href="{{ route('admin.cars.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                <a href="{{ route('admin.carbrands.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
                     <i class="fas fa-times mr-2"></i>
                     Hủy bỏ
                 </a>
                 <button type="submit" class="inline-flex items-center px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
                     <i class="fas fa-save mr-2"></i>
-                    Cập nhật hãng xe
+                    Lưu hãng xe
                 </button>
             </div>
         </div>
@@ -316,7 +301,7 @@ document.getElementById('logo_path').addEventListener('change', function(e) {
             }
             preview.innerHTML = `
                 <div class="flex items-center justify-center">
-                    <img src="${e.target.result}" alt="New logo preview" class="h-20 w-20 object-contain border border-gray-200 rounded-lg">
+                    <img src="${e.target.result}" alt="Logo preview" class="h-20 w-20 object-contain border border-gray-200 rounded-lg">
                 </div>
             `;
         };
@@ -324,21 +309,19 @@ document.getElementById('logo_path').addEventListener('change', function(e) {
     }
 });
 
-// AJAX Form Submission for Edit
-document.getElementById('carBrandEditForm').addEventListener('submit', function(e) {
+// AJAX Form Submission
+document.getElementById('carBrandForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
     const form = this;
     const formData = new FormData(form);
-    formData.append('_method', 'PUT'); // Laravel method spoofing
-    
     const submitBtn = form.querySelector('button[type="submit"]');
     const submitText = submitBtn.querySelector('.submit-text') || submitBtn;
     const originalText = submitText.textContent;
     
     // Show loading state
     submitBtn.disabled = true;
-    submitText.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Đang cập nhật...';
+    submitText.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Đang xử lý...';
     
     // Clear previous errors
     document.querySelectorAll('.error-message').forEach(el => el.remove());
@@ -366,11 +349,11 @@ document.getElementById('carBrandEditForm').addEventListener('submit', function(
     .then(data => {
         if (data.success) {
             // Show success message
-            showMessage('Cập nhật hãng xe thành công!', 'success');
+            showMessage('Thêm hãng xe thành công!', 'success');
             
             // Redirect after delay
             setTimeout(() => {
-                window.location.href = data.redirect || '/admin/cars';
+                window.location.href = data.redirect || '/admin/carbrands';
             }, 1500);
         } else {
             throw new Error(data.message || 'Có lỗi xảy ra');
@@ -384,7 +367,7 @@ document.getElementById('carBrandEditForm').addEventListener('submit', function(
             displayValidationErrors(error.data.errors);
             showMessage(error.data.message || 'Vui lòng kiểm tra lại thông tin', 'error');
         } else {
-            showMessage(error.message || 'Có lỗi xảy ra khi cập nhật hãng xe', 'error');
+            showMessage(error.message || 'Có lỗi xảy ra khi thêm hãng xe', 'error');
         }
     })
     .finally(() => {

@@ -38,11 +38,11 @@
                 </div>
             </div>
             <div class="flex items-center space-x-3">
-                <a href="{{ route('admin.cars.edit', $car) }}" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+                <a href="{{ route('admin.carbrands.edit', $car) }}" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
                     <i class="fas fa-edit mr-2"></i>
                     Chỉnh sửa
                 </a>
-                <a href="{{ route('admin.cars.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors">
+                <a href="{{ route('admin.carbrands.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors">
                     <i class="fas fa-arrow-left mr-2"></i>
                     Quay lại
                 </a>
@@ -53,18 +53,54 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {{-- Main Information --}}
         <div class="lg:col-span-2 space-y-6">
-            {{-- Description --}}
-            @if($car->description)
+            {{-- Contact Info --}}
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                    <i class="fas fa-info-circle text-blue-600 mr-2"></i>
-                    Mô tả
+                    <i class="fas fa-address-book text-blue-600 mr-2"></i>
+                    Thông tin liên hệ
                 </h3>
-                <div class="prose prose-sm max-w-none text-gray-700">
-                    {!! nl2br(e($car->description)) !!}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    @if($car->website)
+                    <div>
+                        <span class="text-gray-600 block mb-1">Website:</span>
+                        <a href="{{ $car->website }}" target="_blank" class="text-blue-600 hover:text-blue-800 font-medium">
+                            {{ $car->website }} <i class="fas fa-external-link-alt text-xs ml-1"></i>
+                        </a>
+                    </div>
+                    @endif
+                    
+                    @if($car->phone)
+                    <div>
+                        <span class="text-gray-600 block mb-1">Điện thoại:</span>
+                        <a href="tel:{{ $car->phone }}" class="text-blue-600 hover:text-blue-800 font-medium">
+                            {{ $car->phone }}
+                        </a>
+                    </div>
+                    @endif
+                    
+                    @if($car->email)
+                    <div>
+                        <span class="text-gray-600 block mb-1">Email:</span>
+                        <a href="mailto:{{ $car->email }}" class="text-blue-600 hover:text-blue-800 font-medium">
+                            {{ $car->email }}
+                        </a>
+                    </div>
+                    @endif
+                    
+                    @if($car->address)
+                    <div class="md:col-span-2">
+                        <span class="text-gray-600 block mb-1">Địa chỉ:</span>
+                        <p class="font-medium">{{ $car->address }}</p>
+                    </div>
+                    @endif
+                    
+                    @if(!$car->website && !$car->phone && !$car->email && !$car->address)
+                        <div class="md:col-span-2">
+                            <p class="text-gray-500 text-sm">Chưa có thông tin liên hệ</p>
+                        </div>
+                    @endif
                 </div>
             </div>
-            @endif
 
             {{-- Car Models --}}
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -143,7 +179,28 @@
                     @if($car->country)
                     <div class="flex items-center justify-between">
                         <span class="text-gray-600">Quốc gia:</span>
-                        <span class="font-medium">{{ $car->country }}</span>
+                        <span class="font-medium">
+                            @php
+                                $countries = [
+                                    'Japan' => 'Nhật Bản',
+                                    'Germany' => 'Đức',
+                                    'USA' => 'Mỹ',
+                                    'South Korea' => 'Hàn Quốc',
+                                    'France' => 'Pháp',
+                                    'Italy' => 'Ý',
+                                    'United Kingdom' => 'Anh',
+                                    'Sweden' => 'Thụy Điển',
+                                    'Czech Republic' => 'Séc',
+                                    'Spain' => 'Tây Ban Nha',
+                                    'China' => 'Trung Quốc',
+                                    'India' => 'Ấn Độ',
+                                    'Malaysia' => 'Malaysia',
+                                    'Thailand' => 'Thái Lan',
+                                    'Vietnam' => 'Việt Nam'
+                                ];
+                            @endphp
+                            {{ $countries[$car->country] ?? $car->country }}
+                        </span>
                     </div>
                     @endif
                     
@@ -168,53 +225,6 @@
                         <span class="text-gray-600">Cập nhật cuối:</span>
                         <span class="font-medium">{{ $car->updated_at->format('d/m/Y H:i') }}</span>
                     </div>
-                </div>
-            </div>
-
-            {{-- Contact Info --}}
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                    <i class="fas fa-address-book text-blue-600 mr-2"></i>
-                    Thông tin liên hệ
-                </h3>
-                <div class="space-y-3">
-                    @if($car->website)
-                    <div>
-                        <span class="text-gray-600 block mb-1">Website:</span>
-                        <a href="{{ $car->website }}" target="_blank" class="text-blue-600 hover:text-blue-800 font-medium">
-                            {{ $car->website }} <i class="fas fa-external-link-alt text-xs ml-1"></i>
-                        </a>
-                    </div>
-                    @endif
-                    
-                    @if($car->phone)
-                    <div>
-                        <span class="text-gray-600 block mb-1">Điện thoại:</span>
-                        <a href="tel:{{ $car->phone }}" class="text-blue-600 hover:text-blue-800 font-medium">
-                            {{ $car->phone }}
-                        </a>
-                    </div>
-                    @endif
-                    
-                    @if($car->email)
-                    <div>
-                        <span class="text-gray-600 block mb-1">Email:</span>
-                        <a href="mailto:{{ $car->email }}" class="text-blue-600 hover:text-blue-800 font-medium">
-                            {{ $car->email }}
-                        </a>
-                    </div>
-                    @endif
-                    
-                    @if($car->address)
-                    <div>
-                        <span class="text-gray-600 block mb-1">Địa chỉ:</span>
-                        <p class="font-medium">{{ $car->address }}</p>
-                    </div>
-                    @endif
-                    
-                    @if(!$car->website && !$car->phone && !$car->email && !$car->address)
-                        <p class="text-gray-500 text-sm">Chưa có thông tin liên hệ</p>
-                    @endif
                 </div>
             </div>
 
@@ -252,6 +262,19 @@
                         </div>
                     </div>
                     @endif
+                </div>
+            </div>
+            @endif
+
+            {{-- Description --}}
+            @if($car->description)
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-info-circle text-blue-600 mr-2"></i>
+                    Mô tả
+                </h3>
+                <div class="prose prose-sm max-w-none text-gray-700">
+                    {!! nl2br(e($car->description)) !!}
                 </div>
             </div>
             @endif

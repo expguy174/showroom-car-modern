@@ -118,6 +118,37 @@ class CarVariantController extends Controller
         return redirect()->route('admin.carvariants.index')->with('success', 'Đã thêm phiên bản xe thành công.');
     }
 
+    public function show(CarVariant $carvariant)
+    {
+        // Load all related data
+        $carvariant->load([
+            'carModel.carBrand',
+            'colors',
+            'images',
+            'specifications',
+            'featuresRelation',
+            'reviews.user',
+            'approvedReviews.user'
+        ]);
+
+        // Get recent orders for this variant (if orders table exists)
+        $recentOrders = collect(); // Placeholder - implement if needed
+        
+        // Get related variants from same model
+        $relatedVariants = CarVariant::where('car_model_id', $carvariant->car_model_id)
+            ->where('id', '!=', $carvariant->id)
+            ->where('is_active', true)
+            ->with('colors', 'images')
+            ->limit(6)
+            ->get();
+
+        return view('admin.carvariants.show', compact(
+            'carvariant', 
+            'recentOrders', 
+            'relatedVariants'
+        ));
+    }
+
     public function edit(CarVariant $carvariant)
     {
         $carModels = CarModel::all();

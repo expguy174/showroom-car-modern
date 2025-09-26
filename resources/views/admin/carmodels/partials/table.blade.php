@@ -1,19 +1,19 @@
 <div class="overflow-x-auto">
-    <table class="min-w-full divide-y divide-gray-200">
+    <table class="min-w-full divide-y divide-gray-200" style="table-layout: fixed;">
         <thead class="bg-gray-50">
             <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 200px;">Dòng xe</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 140px;">Hãng xe</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 200px;">Thông tin</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 140px;">Trạng thái</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 100px;">Phiên bản</th>
-                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 140px;">Thao tác</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 25%;">Dòng xe</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 15%;">Hãng xe</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 25%;">Thông tin</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 15%;">Trạng thái</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 10%;">Phiên bản</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 10%;">Thao tác</th>
             </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
             @forelse($carModels as $model)
             <tr class="hover:bg-gray-50 transition-colors">
-                <td class="px-6 py-4 whitespace-nowrap" style="width: 200px;">
+                <td class="px-6 py-4 whitespace-nowrap">
                     <div class="flex items-center">
                         <div class="flex-shrink-0 h-16 w-16">
                             <img class="h-16 w-16 rounded-lg object-cover border border-gray-200 bg-white p-1 shadow-sm" 
@@ -25,7 +25,7 @@
                         </div>
                     </div>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap" style="width: 140px;">
+                <td class="px-6 py-4 whitespace-nowrap">
                     <div class="flex items-center">
                         <div class="flex-shrink-0 h-8 w-8">
                             <img class="h-8 w-8 rounded object-contain border border-gray-200 bg-white p-1" 
@@ -58,7 +58,7 @@
                         </div>
                     </div>
                 </td>
-                <td class="px-6 py-4" style="width: 200px;">
+                <td class="px-6 py-4">
                     <div class="text-sm text-gray-900">
                         @if($model->body_type)
                             <div class="flex items-center mb-1">
@@ -121,39 +121,42 @@
                         @endif
                     </div>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap" style="width: 140px;">
-                    <div class="flex flex-col space-y-1">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium w-full {{ $model->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                <td class="px-6 py-4">
+                    <div class="flex flex-col gap-1">
+                        <!-- Main Status -->
+                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium {{ $model->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
                             <i class="fas {{ $model->is_active ? 'fa-check-circle' : 'fa-times-circle' }} mr-1"></i>
-                            <span class="truncate">{{ $model->is_active ? 'Hoạt động' : 'Tạm dừng' }}</span>
+                            {{ $model->is_active ? 'Hoạt động' : 'Tạm dừng' }}
                         </span>
+                        
+                        <!-- Additional Badges -->
                         @if($model->is_featured)
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
                                 <i class="fas fa-star mr-1"></i>
                                 Nổi bật
                             </span>
                         @endif
                         @if($model->is_new)
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
                                 <i class="fas fa-certificate mr-1"></i>
                                 Mới
                             </span>
                         @endif
                         @if($model->is_discontinued)
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
                                 <i class="fas fa-ban mr-1"></i>
-                                Ngừng sản xuất
+                                Ngừng SX
                             </span>
                         @endif
                         @if($model->sort_order > 0)
-                            <span class="text-xs text-gray-500">
+                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
                                 <i class="fas fa-sort-numeric-down mr-1"></i>
-                                Thứ tự: {{ $model->sort_order }}
+                                #{{ $model->sort_order }}
                             </span>
                         @endif
                     </div>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" style="width: 100px;">
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <div class="flex items-center">
                         <i class="fas fa-cogs text-gray-400 mr-2 flex-shrink-0"></i>
                         <span class="truncate">{{ $model->carVariants()->count() }} phiên bản</span>
@@ -164,9 +167,9 @@
                         </div>
                     @endif
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium" style="width: 140px;">
-                    <div class="flex items-center justify-center space-x-3">
-                        <a href="{{ route('admin.carmodels.show', $model) }}" class="text-blue-600 hover:text-blue-900 w-4 h-4 flex items-center justify-center" title="Xem chi tiết">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div class="flex items-center space-x-3">
+                        <a href="{{ route('admin.carmodels.show', $model) }}" class="text-green-600 hover:text-green-900 w-4 h-4 flex items-center justify-center" title="Xem chi tiết">
                             <i class="fas fa-eye w-4 h-4"></i>
                         </a>
                         <a href="{{ route('admin.carmodels.edit', $model) }}" class="text-indigo-600 hover:text-indigo-900 w-4 h-4 flex items-center justify-center" title="Chỉnh sửa">
