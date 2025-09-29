@@ -1,6 +1,44 @@
-@props(['title', 'value', 'icon', 'color', 'clickAction', 'description', 'trend', 'trendColor', 'size'])
+@props(['title', 'value', 'icon', 'color' => 'blue', 'clickAction' => null, 'description' => null, 'trend' => null, 'trendColor' => 'green', 'size' => 'normal', 'dataStat' => null])
 
 @php
+    // Define color classes function
+    $getColorClasses = function() use ($color) {
+        switch($color) {
+            case 'blue':
+                return ['light' => 'bg-blue-100', 'text' => 'text-blue-600'];
+            case 'green':
+                return ['light' => 'bg-green-100', 'text' => 'text-green-600'];
+            case 'red':
+                return ['light' => 'bg-red-100', 'text' => 'text-red-600'];
+            case 'yellow':
+                return ['light' => 'bg-yellow-100', 'text' => 'text-yellow-600'];
+            case 'orange':
+                return ['light' => 'bg-orange-100', 'text' => 'text-orange-600'];
+            case 'purple':
+                return ['light' => 'bg-purple-100', 'text' => 'text-purple-600'];
+            case 'pink':
+                return ['light' => 'bg-pink-100', 'text' => 'text-pink-600'];
+            case 'gray':
+                return ['light' => 'bg-gray-100', 'text' => 'text-gray-600'];
+            default:
+                return ['light' => 'bg-blue-100', 'text' => 'text-blue-600'];
+        }
+    };
+
+    // Define trend color classes function
+    $getTrendColorClasses = function() use ($trendColor) {
+        switch($trendColor) {
+            case 'green':
+                return 'text-green-600';
+            case 'red':
+                return 'text-red-600';
+            case 'yellow':
+                return 'text-yellow-600';
+            default:
+                return 'text-green-600';
+        }
+    };
+
     $colorClasses = $getColorClasses();
     $trendColorClass = $getTrendColorClasses();
     $isClickable = !empty($clickAction);
@@ -10,7 +48,7 @@
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 {{ $cardClasses }} {{ $sizeClasses }}"
      @if($isClickable) onclick="{{ $clickAction }}()" @endif
-     data-stat="{{ strtolower(str_replace(' ', '-', $title)) }}">
+     data-stat="{{ $dataStat ?? strtolower(str_replace(' ', '-', $title)) }}">
     
     <div class="flex items-center">
         {{-- Icon --}}
@@ -21,10 +59,10 @@
         </div>
         
         {{-- Content --}}
-        <div class="ml-4 flex-1">
+        <div class="ml-4 flex-1 min-w-0">
             <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-gray-600">{{ $title }}</p>
+                <div class="min-w-0 flex-1">
+                    <p class="text-sm font-medium text-gray-600 whitespace-nowrap truncate" title="{{ $title }}">{{ $title }}</p>
                     <p class="text-2xl font-bold text-gray-900">{{ $value }}</p>
                 </div>
                 
@@ -47,7 +85,7 @@
             
             {{-- Description --}}
             @if($description)
-            <p class="text-xs text-gray-500 mt-1">{{ $description }}</p>
+            <p class="text-xs text-gray-500 mt-1 whitespace-nowrap truncate" title="{{ $description }}">{{ $description }}</p>
             @endif
         </div>
     </div>

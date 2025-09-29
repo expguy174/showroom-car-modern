@@ -1,22 +1,22 @@
-<div class="overflow-x-auto -mx-4 sm:mx-0">
+<div class="overflow-x-auto">
     <div class="inline-block min-w-full align-middle">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
                 <tr>
-                    <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th style="width: 30%" class="px-2 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         <span class="lg:hidden">Sản phẩm</span>
                         <span class="hidden lg:inline">Phiên bản xe</span>
                     </th>
-                    <th class="hidden md:table-cell px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dòng xe</th>
-                    <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Giá bán</th>
-                    <th class="hidden sm:table-cell px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
-                    <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
+                    <th style="width: 20%" class="hidden md:table-cell px-2 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dòng xe</th>
+                    <th style="width: 20%" class="px-2 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Giá bán</th>
+                    <th style="width: 15%" class="hidden sm:table-cell px-2 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Trạng thái</th>
+                    <th style="width: 15%" class="px-2 sm:px-4 lg:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
                 </tr>
             </thead>
         <tbody class="bg-white divide-y divide-gray-200">
             @forelse($carVariants as $variant)
             <tr class="hover:bg-gray-50 transition-colors">
-                <td class="px-3 sm:px-6 py-4">
+                <td class="px-2 sm:px-4 lg:px-6 py-4">
                     <div class="flex items-center">
                         <div class="flex-shrink-0 h-10 w-10 sm:h-12 sm:w-12">
                             @if($variant->images->where('is_main', true)->first())
@@ -47,30 +47,20 @@
                                 </div>
                             </div>
                             {{-- Mobile: Show status badges --}}
-                            <div class="sm:hidden mt-1 flex flex-wrap gap-1">
-                                <x-status-toggle 
-                                    :item-id="$variant->id"
-                                    :current-status="$variant->is_active" />
-                                @if($variant->is_featured)
-                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
-                                        Nổi bật
-                                    </span>
-                                @endif
-                                @if($variant->is_on_sale)
-                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
-                                        KM
-                                    </span>
-                                @endif
-                                @if($variant->is_new_arrival)
-                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
-                                        Mới
-                                    </span>
-                                @endif
+                            <div class="sm:hidden mt-1">
+                                <div class="flex flex-wrap items-center gap-1">
+                                    <x-admin.status-toggle 
+                                        :item-id="$variant->id"
+                                        :current-status="$variant->is_active" />
+                                    <x-admin.status-badges 
+                                        :item="$variant"
+                                        size="small" />
+                                </div>
                             </div>
                         </div>
                     </div>
                 </td>
-                <td class="hidden md:table-cell px-3 sm:px-6 py-4">
+                <td class="hidden md:table-cell px-2 sm:px-4 lg:px-6 py-4">
                     <div class="flex items-center">
                         <div class="flex-shrink-0 h-8 w-8">
                             <img class="h-8 w-8 rounded object-contain bg-white p-1 border border-gray-200" 
@@ -83,7 +73,7 @@
                         </div>
                     </div>
                 </td>
-                <td class="px-3 sm:px-6 py-4">
+                <td class="px-2 sm:px-4 lg:px-6 py-4">
                     <div class="text-sm text-gray-900">
                         <div class="font-semibold text-base sm:text-lg text-blue-600">
                             {{ number_format($variant->current_price ?: $variant->base_price) }}đ
@@ -99,94 +89,28 @@
                         @endif
                     </div>
                 </td>
-                <td class="hidden sm:table-cell px-3 sm:px-6 py-4">
-                    <div class="flex flex-col gap-1">
+                <td class="hidden sm:table-cell px-2 sm:px-4 lg:px-6 py-4">
+                    <div class="flex flex-col items-start gap-1 w-full">
                         <!-- Main Status - Using StatusToggle Component -->
-                        <x-status-toggle 
-                            :item-id="$variant->id"
-                            :current-status="$variant->is_active" />
+                        <div class="w-full">
+                            <x-admin.status-toggle 
+                                :item-id="$variant->id"
+                                :current-status="$variant->is_active" />
+                        </div>
                         
-                        <!-- Additional Badges -->
-                        @if($variant->is_featured)
-                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
-                                <i class="fas fa-star mr-1"></i>
-                                <span class="hidden lg:inline">Nổi bật</span>
-                                <span class="lg:hidden">⭐</span>
-                            </span>
-                        @endif
-                        @if($variant->is_on_sale)
-                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
-                                <i class="fas fa-tags mr-1"></i>
-                                KM
-                            </span>
-                        @endif
-                        @if($variant->is_new_arrival)
-                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
-                                <i class="fas fa-certificate mr-1"></i>
-                                <span class="hidden lg:inline">Mới</span>
-                                <span class="lg:hidden">🆕</span>
-                            </span>
-                        @endif
-                        @if($variant->is_bestseller)
-                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-pink-100 text-pink-800">
-                                <i class="fas fa-fire mr-1"></i>
-                                <span class="hidden lg:inline">Hot</span>
-                                <span class="lg:hidden">🔥</span>
-                            </span>
-                        @endif
+                        <!-- Additional Badges - Always vertical -->
+                        <div class="w-full">
+                            <x-admin.status-badges :item="$variant" />
+                        </div>
                     </div>
                 </td>
-                <td class="px-3 sm:px-6 py-4 text-sm font-medium">
-                    <div class="flex items-center space-x-1 sm:space-x-2">
-                        <!-- View Button -->
-                        <a href="{{ route('admin.carvariants.show', $variant) }}" 
-                           class="text-green-600 hover:text-green-900 w-4 h-4 flex items-center justify-center" 
-                           title="Xem chi tiết">
-                            <i class="fas fa-eye w-4 h-4"></i>
-                        </a>
-                        
-                        <!-- Edit Button -->
-                        <a href="{{ route('admin.carvariants.edit', $variant) }}" 
-                           class="text-blue-600 hover:text-blue-900 w-4 h-4 flex items-center justify-center" 
-                           title="Chỉnh sửa">
-                            <i class="fas fa-edit w-4 h-4"></i>
-                        </a>
-                        
-                        <!-- Toggle Status Button -->
-                        @if($variant->is_active)
-                            <button class="text-orange-600 hover:text-orange-900 status-toggle w-4 h-4 flex items-center justify-center" 
-                                    title="Tạm dừng" 
-                                    data-variant-id="{{ $variant->id }}" 
-                                    data-status="false">
-                                <i class="fas fa-pause w-4 h-4"></i>
-                            </button>
-                        @else
-                            <button class="text-green-600 hover:text-green-900 status-toggle w-4 h-4 flex items-center justify-center" 
-                                    title="Kích hoạt" 
-                                    data-variant-id="{{ $variant->id }}" 
-                                    data-status="true">
-                                <i class="fas fa-play w-4 h-4"></i>
-                            </button>
-                        @endif
-                        
-                        <!-- Delete Button -->
-                        <button 
-                            class="text-red-600 hover:text-red-900 delete-btn w-4 h-4 flex items-center justify-center" 
-                            title="Xóa"
-                            data-variant-id="{{ $variant->id }}"
-                            data-variant-name="{{ $variant->name }}"
-                            data-model-name="{{ $variant->carModel->carBrand->name }} {{ $variant->carModel->name }}"
-                            data-colors-count="{{ $variant->colors()->count() }}"
-                            data-images-count="{{ $variant->images()->count() }}">
-                            <i class="fas fa-trash w-4 h-4"></i>
-                        </button>
-                        
-                        <!-- Hidden Delete Form -->
-                        <form id="delete-form-{{ $variant->id }}" action="{{ route('admin.carvariants.destroy', $variant) }}" method="POST" class="hidden">
-                            @csrf
-                            @method('DELETE')
-                        </form>
-                    </div>
+                <td class="px-2 sm:px-4 lg:px-6 py-4 text-sm font-medium text-center">
+                    <x-admin.table-actions 
+                        :item="$variant"
+                        show-route="admin.carvariants.show"
+                        edit-route="admin.carvariants.edit"
+                        delete-route="admin.carvariants.destroy"
+                        :has-toggle="true" />
                 </td>
             </tr>
             @empty

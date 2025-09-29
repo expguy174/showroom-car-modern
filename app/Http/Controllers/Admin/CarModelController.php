@@ -596,57 +596,85 @@ class CarModelController extends Controller
         $variantsCount = $carmodel->carVariants()->count();
         $activeVariantsCount = $carmodel->carVariants()->where('is_active', true)->count();
         
-        // Check for orders (if orders table exists and has proper structure)
+        // Check for orders (via order_items polymorphic relationship)
         $ordersCount = 0;
         try {
-            if (Schema::hasTable('orders') && Schema::hasColumn('orders', 'car_variant_id')) {
-                $ordersCount = DB::table('orders')
-                    ->join('car_variants', 'orders.car_variant_id', '=', 'car_variants.id')
+            if (Schema::hasTable('order_items') && Schema::hasTable('orders')) {
+                $ordersCount = DB::table('order_items')
+                    ->join('orders', 'order_items.order_id', '=', 'orders.id')
+                    ->join('car_variants', 'order_items.item_id', '=', 'car_variants.id')
+                    ->where('order_items.item_type', 'car_variant')
                     ->where('car_variants.car_model_id', $carmodel->id)
+                    ->whereNull('orders.deleted_at')
                     ->count();
             }
         } catch (\Exception $e) {
             $ordersCount = 0;
         }
 
-        // Business logic validation with detailed messages
-        if ($ordersCount > 0) {
-            $errorMessage = "Không thể xóa dòng xe \"{$carmodel->name}\" vì đã có {$ordersCount} đơn hàng. " .
-                "Bạn có thể 'Ngừng hoạt động' thay vì xóa để giữ lịch sử đơn hàng.";
-            
-            if (request()->wantsJson() || request()->ajax()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => $errorMessage
-                ], 422);
+        // Check for service appointments
+        $serviceAppointmentsCount = 0;
+        try {
+            if (Schema::hasTable('service_appointments')) {
+                $serviceAppointmentsCount = DB::table('service_appointments')
+                    ->join('car_variants', 'service_appointments.car_variant_id', '=', 'car_variants.id')
+                    ->where('car_variants.car_model_id', $carmodel->id)
+                    ->count();
             }
-            
-            return redirect()->route('admin.carmodels.index')->with('error', $errorMessage);
+        } catch (\Exception $e) {
+            $serviceAppointmentsCount = 0;
         }
 
+        // Check if model has active variants (first priority)
         if ($activeVariantsCount > 0) {
-            $errorMessage = "Không thể xóa dòng xe \"{$carmodel->name}\" vì đang có {$activeVariantsCount} phiên bản đang bán. " .
-                "Vui lòng ngừng bán tất cả phiên bản trước khi xóa dòng xe.";
+            $message = "Không thể xóa dòng xe \"{$carmodel->name}\" vì đang có {$activeVariantsCount} phiên bản đang bán. Vui lòng tạm dừng tất cả phiên bản trước khi xóa dòng xe.";
             
             if (request()->wantsJson() || request()->ajax()) {
                 return response()->json([
                     'success' => false,
-                    'message' => $errorMessage
-                ], 422);
+                    'message' => $message,
+                    'action_suggestion' => 'deactivate',
+                    'show_deactivate_button' => true
+                ], 400);
             }
             
-            return redirect()->route('admin.carmodels.index')->with('error', $errorMessage);
+            return redirect()->route('admin.carmodels.index')->with('error', $message);
+        }
+
+        // CRITICAL: Never delete if has business transaction data (second priority)
+        if ($ordersCount > 0 || $serviceAppointmentsCount > 0) {
+            $businessData = [];
+            if ($ordersCount > 0) {
+                $businessData[] = "{$ordersCount} đơn hàng";
+            }
+            if ($serviceAppointmentsCount > 0) {
+                $businessData[] = "{$serviceAppointmentsCount} lịch bảo dưỡng";
+            }
+            
+            $message = "KHÔNG THỂ XÓA dòng xe \"{$carmodel->name}\" vì có " . implode(', ', $businessData) . ". " .
+                      "Đây là dữ liệu giao dịch quan trọng! Bạn chỉ có thể 'Tạm dừng' để ngừng hoạt động nhưng vẫn giữ lịch sử.";
+            
+            if (request()->wantsJson() || request()->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $message,
+                    'action_suggestion' => 'deactivate',
+                    'show_deactivate_button' => true
+                ], 422); // Unprocessable Entity
+            }
+            
+            return redirect()->route('admin.carmodels.index')->with('error', $message);
         }
 
         if ($variantsCount > 0) {
-            $warningMessage = "Dòng xe \"{$carmodel->name}\" có {$variantsCount} phiên bản (đã ngừng hoạt động). " .
-                "Bạn có chắc muốn xóa? Điều này sẽ xóa luôn tất cả phiên bản liên quan.";
+            $warningMessage = "Bạn có chắc muốn xóa dòng xe \"{$carmodel->name}\"? Hành động này sẽ xóa vĩnh viễn {$variantsCount} phiên bản xe (đã ngừng hoạt động) cùng tất cả dữ liệu liên quan.";
             
             if (request()->wantsJson() || request()->ajax()) {
                 return response()->json([
                     'success' => false,
-                    'message' => $warningMessage
-                ], 422);
+                    'message' => $warningMessage,
+                    'requires_confirmation' => true
+                ], 400);
             }
             
             return redirect()->route('admin.carmodels.index')->with('warning', $warningMessage)

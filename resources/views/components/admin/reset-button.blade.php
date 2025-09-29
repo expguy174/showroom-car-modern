@@ -1,6 +1,10 @@
-@props(['formId', 'callbackName', 'text', 'icon', 'classes'])
+@props(['formId', 'callbackName', 'text' => 'Đặt lại', 'icon' => 'fas fa-undo', 'classes' => 'px-4 py-2 h-10 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center'])
 
-<button type="button" id="resetBtn_{{ str_replace(['-', '_', '#'], '', $formId) }}" class="{{ $classes }}">
+@php
+    $cleanId = str_replace(['-', '_', '#'], '', $formId);
+@endphp
+
+<button type="button" id="resetBtn_{{ $cleanId }}" class="{{ $classes }}">
     <i class="{{ $icon }} mr-2"></i>
     {{ $text }}
 </button>
@@ -80,15 +84,15 @@ class FormResetManager {
     }
 }
 
-// Initialize Form Reset Manager for {{ $formId }}
+// Initialize Form Reset Manager
 document.addEventListener('DOMContentLoaded', function() {
-    const formResetManager_{{ str_replace(['-', '_', '#'], '', $formId) }} = new FormResetManager({
+    const formResetManager_{{ $cleanId }} = new FormResetManager({
         form: document.querySelector('{{ $formId }}'),
-        resetButton: document.getElementById('resetBtn_{{ str_replace(['-', '_', '#'], '', $formId) }}'),
+        resetButton: document.getElementById('resetBtn_{{ $cleanId }}'),
         callbackName: '{{ $callbackName }}'
     });
     
-    formResetManager_{{ str_replace(['-', '_', '#'], '', $formId) }}.init();
+    formResetManager_{{ $cleanId }}.init();
 });
 </script>
 @endpush

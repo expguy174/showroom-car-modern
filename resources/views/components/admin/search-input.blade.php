@@ -1,7 +1,34 @@
-@props(['name', 'placeholder', 'value', 'callbackName', 'debounceTime', 'size', 'showIcon', 'showClearButton'])
+@props([
+    'name' => 'search', 
+    'placeholder' => 'Tìm kiếm...', 
+    'value' => '', 
+    'callbackName' => 'loadData', 
+    'debounceTime' => 300, 
+    'size' => 'normal', 
+    'showIcon' => true, 
+    'showClearButton' => true
+])
 
 @php
-    $sizeClasses = $getSizeClasses();
+    $sizeOptions = [
+        'small' => [
+            'padding' => 'pl-9 pr-3 py-2 h-10',
+            'input' => 'text-sm',
+            'icon' => 'text-sm'
+        ],
+        'normal' => [
+            'padding' => 'pl-10 pr-3 py-2 h-10',
+            'input' => 'text-base',
+            'icon' => 'text-base'
+        ],
+        'large' => [
+            'padding' => 'pl-12 pr-4 py-2 h-10',
+            'input' => 'text-lg',
+            'icon' => 'text-lg'
+        ]
+    ];
+    
+    $sizeClasses = $sizeOptions[$size] ?? $sizeOptions['normal'];
     $inputId = 'search_input_' . str_replace(['[', ']', '.'], '_', $name);
 @endphp
 
@@ -32,10 +59,6 @@
     </button>
     @endif
     
-    {{-- Loading Indicator --}}
-    <div id="{{ $inputId }}_loading" class="absolute inset-y-0 right-0 pr-3 flex items-center hidden">
-        <i class="fas fa-spinner fa-spin text-gray-400 {{ $sizeClasses['icon'] }}"></i>
-    </div>
 </div>
 
 @push('scripts')
@@ -46,7 +69,6 @@ class SearchInputManager {
         this.inputId = inputId;
         this.input = document.getElementById(inputId);
         this.clearButton = document.getElementById(inputId + '_clear');
-        this.loadingIndicator = document.getElementById(inputId + '_loading');
         this.callbackName = options.callbackName || '{{ $callbackName }}';
         this.debounceTime = options.debounceTime || {{ $debounceTime }};
         this.timeout = null;
@@ -89,9 +111,6 @@ class SearchInputManager {
             clearTimeout(this.timeout);
         }
         
-        // Show loading indicator
-        this.setLoadingState(true);
-        
         // Set new timeout
         this.timeout = setTimeout(() => {
             this.search(value);
@@ -99,12 +118,23 @@ class SearchInputManager {
     }
     
     search(value) {
-        // Hide loading indicator
-        this.setLoadingState(false);
+        // Update the input value in the form
+        this.input.value = value;
         
-        // Call the callback function
+        // Trigger form submission via the callback
         if (window[this.callbackName]) {
-            window[this.callbackName](value, this.input);
+            // For AjaxTable integration, we need to trigger form-based search
+            const form = this.input.closest('form');
+            if (form) {
+                // Create URL with form data
+                const formData = new FormData(form);
+                const baseUrl = form.dataset.baseUrl || window.location.pathname;
+                const url = baseUrl + '?' + new URLSearchParams(formData).toString();
+                window[this.callbackName](url);
+            } else {
+                // Fallback: call with value directly
+                window[this.callbackName](value, this.input);
+            }
         } else {
             console.warn(`Search callback function '${this.callbackName}' not found`);
         }
@@ -124,20 +154,6 @@ class SearchInputManager {
             this.clearButton.classList.remove('hidden');
         } else {
             this.clearButton.classList.add('hidden');
-        }
-    }
-    
-    setLoadingState(loading) {
-        if (!this.loadingIndicator) return;
-        
-        if (loading) {
-            this.loadingIndicator.classList.remove('hidden');
-            if (this.clearButton) {
-                this.clearButton.classList.add('hidden');
-            }
-        } else {
-            this.loadingIndicator.classList.add('hidden');
-            this.toggleClearButton();
         }
     }
     

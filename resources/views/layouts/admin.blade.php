@@ -39,12 +39,6 @@
             font-family: "Font Awesome 6 Brands", "Font Awesome 5 Brands" !important;
             font-weight: 400 !important;
         }
-        
-        /* Fix flash messages positioning */
-        #flash-messages-container,
-        #dynamic-flash-messages {
-            z-index: 9999 !important;
-        }
     </style>
 </head>
 <body class="font-sans antialiased bg-gray-50">

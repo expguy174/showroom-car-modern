@@ -1,11 +1,11 @@
-@props(['modalId', 'title', 'entityName', 'warningText', 'confirmText', 'cancelText', 'deleteCallbackName'])
+@props(['modalId', 'title', 'entityName', 'warningText' => 'Bạn có chắc chắn muốn xóa', 'confirmText' => 'Xóa', 'cancelText' => 'Hủy', 'callbackName'])
 
 {{-- Delete Modal --}}
 <div id="{{ $modalId }}" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-xl max-w-md w-full p-6">
         {{-- Header --}}
         <div class="flex items-center mb-4">
-            <div class="flex-shrink-0 w-10 h-10 mx-auto bg-red-100 rounded-full flex items-center justify-center">
+            <div class="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
                 <i class="fas fa-exclamation-triangle text-red-600"></i>
             </div>
             <div class="ml-4">
@@ -25,15 +25,15 @@
         {{-- Actions --}}
         <div class="flex space-x-3">
             <button type="button" 
+                    id="{{ $modalId }}_cancel" 
+                    class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors">
+                {{ $cancelText }}
+            </button>
+            <button type="button" 
                     id="{{ $modalId }}_confirm" 
                     class="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
                 <i class="fas fa-trash mr-2"></i>
                 {{ $confirmText }}
-            </button>
-            <button type="button" 
-                    id="{{ $modalId }}_cancel" 
-                    class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors">
-                {{ $cancelText }}
             </button>
         </div>
     </div>
@@ -149,7 +149,7 @@ class DeleteModalManager {
 document.addEventListener('DOMContentLoaded', function() {
     const deleteModal_{{ str_replace(['-', '_'], '', $modalId) }} = new DeleteModalManager({
         modalId: '{{ $modalId }}',
-        deleteCallbackName: '{{ $deleteCallbackName }}'
+        deleteCallbackName: '{{ $callbackName }}'
     });
     
     deleteModal_{{ str_replace(['-', '_'], '', $modalId) }}.init();

@@ -1,4 +1,26 @@
-@props(['showIcons', 'dismissible', 'position', 'autoHide'])
+@props(['showIcons' => true, 'dismissible' => true, 'position' => 'top-right', 'autoHide' => 5000])
+
+@php
+    // Define position classes function
+    $getPositionClasses = function() use ($position) {
+        switch($position ?? 'top-right') {
+            case 'top-left':
+                return 'top-4 left-4';
+            case 'top-center':
+                return 'top-4 left-1/2 transform -translate-x-1/2';
+            case 'top-right':
+                return 'top-4 right-4';
+            case 'bottom-left':
+                return 'bottom-4 left-4';
+            case 'bottom-center':
+                return 'bottom-4 left-1/2 transform -translate-x-1/2';
+            case 'bottom-right':
+                return 'bottom-4 right-4';
+            default:
+                return 'top-4 right-4';
+        }
+    };
+@endphp
 
 {{-- Meta tags for JavaScript access --}}
 @if(session('success'))

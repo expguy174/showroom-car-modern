@@ -1,8 +1,24 @@
-@props(['name', 'options', 'placeholder', 'optionValue', 'optionText', 'optionSubtext', 'selected', 'onchange', 'maxVisible', 'searchable', 'width'])
+@props(['name', 'options', 'placeholder' => 'Chọn...', 'optionValue' => 'id', 'optionText' => 'name', 'optionSubtext' => null, 'selected' => null, 'onchange' => null, 'maxVisible' => 5, 'searchable' => true, 'width' => 'w-full'])
 
 @php
     $componentId = 'dropdown_' . str_replace(['[', ']', '.'], '_', $name) . '_' . uniqid();
     $containerHeight = $maxVisible * 60;
+    
+    // Function to get selected text
+    $getSelectedText = function() use ($options, $selected, $optionValue, $optionText, $placeholder) {
+        if (!$selected) {
+            return $placeholder;
+        }
+        
+        foreach ($options as $option) {
+            $value = is_array($option) ? data_get($option, $optionValue) : $option->{$optionValue};
+            if ($value == $selected) {
+                return is_array($option) ? data_get($option, $optionText) : $option->{$optionText};
+            }
+        }
+        
+        return $placeholder;
+    };
 @endphp
 
 <div class="{{ $width }} relative" data-component="custom-dropdown">
@@ -13,17 +29,17 @@
     <div class="custom-dropdown relative">
         <button type="button" 
                 id="{{ $componentId }}_btn" 
-                class="w-full px-3 py-2 text-left bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex items-center justify-between">
-            <span id="{{ $componentId }}_text" class="text-gray-900">
+                class="w-full px-3 py-2 h-10 text-left bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex items-center justify-between whitespace-nowrap">
+            <span id="{{ $componentId }}_text" class="text-gray-900 truncate">
                 {{ $getSelectedText() }}
             </span>
-            <i class="fas fa-chevron-down text-gray-400 transition-transform duration-200" 
+            <i class="fas fa-chevron-down text-gray-400 transition-transform duration-200 ml-2 flex-shrink-0" 
                id="{{ $componentId }}_icon"></i>
         </button>
         
-        {{-- Dropdown Menu --}}
+        {{-- Dropdown Menu - Always dropdown --}}
         <div id="{{ $componentId }}_menu" 
-             class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg hidden">
+             class="absolute z-50 w-max min-w-full mt-1 top-full bg-white border border-gray-300 rounded-lg shadow-lg hidden">
             
             @if($searchable)
             {{-- Search Input --}}
@@ -46,7 +62,7 @@
                  style="max-height: {{ $containerHeight }}px;">
                 
                 {{-- Default option --}}
-                <div class="dropdown-option px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 {{ !$selected ? 'bg-blue-50' : '' }}" 
+                <div class="dropdown-option px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 whitespace-nowrap {{ !$selected ? 'bg-blue-50' : '' }}" 
                      data-value="" 
                      data-text="{{ $placeholder }}">
                     <div class="font-medium text-gray-900">{{ $placeholder }}</div>
@@ -62,7 +78,7 @@
                         $isSelected = $selected == $value;
                     @endphp
                     
-                    <div class="dropdown-option px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 {{ $isSelected ? 'bg-blue-50' : '' }}" 
+                    <div class="dropdown-option px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 whitespace-nowrap {{ $isSelected ? 'bg-blue-50' : '' }}" 
                          data-value="{{ $value }}" 
                          data-text="{{ $displayText }}"
                          data-search="{{ strtolower($text . ' ' . ($subtext ?? '')) }}">
@@ -150,7 +166,6 @@ document.addEventListener('DOMContentLoaded', function() {
         isOpen = true;
         menu.classList.remove('hidden');
         icon.style.transform = 'rotate(180deg)';
-        positionDropdown();
     }
     
     // Close dropdown
@@ -158,27 +173,6 @@ document.addEventListener('DOMContentLoaded', function() {
         isOpen = false;
         menu.classList.add('hidden');
         icon.style.transform = 'rotate(0deg)';
-    }
-    
-    // Position dropdown
-    function positionDropdown() {
-        const rect = button.getBoundingClientRect();
-        const spaceBelow = window.innerHeight - rect.bottom;
-        const dropdownHeight = {{ $containerHeight }};
-        
-        if (spaceBelow < dropdownHeight && rect.top > dropdownHeight) {
-            // Open upward
-            menu.style.bottom = '100%';
-            menu.style.top = 'auto';
-            menu.style.marginBottom = '4px';
-            menu.style.marginTop = '0';
-        } else {
-            // Open downward (default)
-            menu.style.top = '100%';
-            menu.style.bottom = 'auto';
-            menu.style.marginTop = '4px';
-            menu.style.marginBottom = '0';
-        }
     }
     
     // Handle option clicks

@@ -9,6 +9,7 @@ use App\Models\CarBrand;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class CarVariantController extends Controller
 {
@@ -55,8 +56,12 @@ class CarVariantController extends Controller
                 case 'new_arrival':
                     $query->where('is_new_arrival', true);
                     break;
+                case 'bestseller':
+                    $query->where('is_bestseller', true);
+                    break;
             }
         }
+
 
         $carVariants = $query->orderBy('created_at', 'desc')->paginate(15);
 
@@ -70,6 +75,7 @@ class CarVariantController extends Controller
         $featuredVariants = CarVariant::where('is_featured', true)->count();
         $onSaleVariants = CarVariant::where('is_on_sale', true)->count();
         $newArrivalVariants = CarVariant::where('is_new_arrival', true)->count();
+        $bestsellerVariants = CarVariant::where('is_bestseller', true)->count();
 
         // If this is an AJAX request, return only the table partial
         if ($request->ajax()) {
@@ -84,7 +90,8 @@ class CarVariantController extends Controller
             'inactiveVariants',
             'featuredVariants',
             'onSaleVariants',
-            'newArrivalVariants'
+            'newArrivalVariants',
+            'bestsellerVariants'
         ));
     }
 
@@ -179,41 +186,187 @@ class CarVariantController extends Controller
         return redirect()->route('admin.carvariants.index')->with('success', 'Cập nhật phiên bản xe thành công.');
     }
 
-    public function destroy(CarVariant $carvariant)
+    public function destroy(Request $request, CarVariant $carvariant)
     {
-        // Check for orders (if orders table exists and has proper structure)
+        // Detailed dependency analysis
+        $colorsCount = $carvariant->colors()->count();
+        $imagesCount = $carvariant->images()->count();
+        
+        // Check for orders (critical business data) - via order_items polymorphic
         $ordersCount = 0;
+        $pendingOrdersCount = 0;
+        $completedOrdersCount = 0;
+        
         try {
-            if (Schema::hasTable('orders') && Schema::hasColumn('orders', 'car_variant_id')) {
-                $ordersCount = DB::table('orders')
+            if (Schema::hasTable('order_items') && Schema::hasTable('orders')) {
+                // Count orders that contain this car variant
+                $ordersCount = DB::table('order_items')
+                    ->join('orders', 'order_items.order_id', '=', 'orders.id')
+                    ->where('order_items.item_type', 'car_variant')
+                    ->where('order_items.item_id', $carvariant->id)
+                    ->whereNull('orders.deleted_at') // Exclude soft deleted orders
+                    ->count();
+                    
+                // Check order statuses
+                $pendingOrdersCount = DB::table('order_items')
+                    ->join('orders', 'order_items.order_id', '=', 'orders.id')
+                    ->where('order_items.item_type', 'car_variant')
+                    ->where('order_items.item_id', $carvariant->id)
+                    ->whereIn('orders.status', ['pending', 'confirmed', 'shipping'])
+                    ->whereNull('orders.deleted_at')
+                    ->count();
+                        
+                $completedOrdersCount = DB::table('order_items')
+                    ->join('orders', 'order_items.order_id', '=', 'orders.id')
+                    ->where('order_items.item_type', 'car_variant')
+                    ->where('order_items.item_id', $carvariant->id)
+                    ->whereIn('orders.status', ['delivered'])
+                    ->whereNull('orders.deleted_at')
+                    ->count();
+            }
+        } catch (\Exception $e) {
+            // If tables don't exist or have different structure, skip check
+            $ordersCount = 0;
+        }
+
+        // Check for service appointments (critical business data)
+        $serviceAppointmentsCount = 0;
+        $activeServiceCount = 0;
+        try {
+            if (Schema::hasTable('service_appointments')) {
+                $serviceAppointmentsCount = DB::table('service_appointments')
+                    ->where('car_variant_id', $carvariant->id)
+                    ->count();
+                    
+                $activeServiceCount = DB::table('service_appointments')
+                    ->where('car_variant_id', $carvariant->id)
+                    ->whereIn('status', ['scheduled', 'confirmed', 'in_progress'])
+                    ->count();
+            }
+        } catch (\Exception $e) {
+            $serviceAppointmentsCount = 0;
+        }
+
+        // Check for test drives (if exists)
+        $testDrivesCount = 0;
+        try {
+            if (Schema::hasTable('test_drives') && Schema::hasColumn('test_drives', 'car_variant_id')) {
+                $testDrivesCount = DB::table('test_drives')
                     ->where('car_variant_id', $carvariant->id)
                     ->count();
             }
         } catch (\Exception $e) {
-            $ordersCount = 0;
+            $testDrivesCount = 0;
         }
 
-        // Business logic validation - NEVER delete variants with orders
-        if ($ordersCount > 0) {
-            $errorMessage = "KHÔNG THỂ XÓA phiên bản xe \"{$carvariant->name}\" vì đã có {$ordersCount} đơn hàng. " .
-                "Đây là dữ liệu giao dịch quan trọng! Bạn chỉ có thể 'Tạm dừng' thay vì xóa.";
+        // Check for reviews (polymorphic relationship)
+        $reviewsCount = 0;
+        try {
+            if (Schema::hasTable('reviews')) {
+                $reviewsCount = DB::table('reviews')
+                    ->where('reviewable_type', 'App\\Models\\CarVariant')
+                    ->where('reviewable_id', $carvariant->id)
+                    ->whereNull('deleted_at') // Exclude soft deleted reviews
+                    ->count();
+            }
+        } catch (\Exception $e) {
+            $reviewsCount = 0;
+        }
+
+        // Check if variant is currently active (first priority)
+        if ($carvariant->is_active) {
+            $message = "Không thể xóa phiên bản xe \"{$carvariant->name}\" vì đang ở trạng thái hoạt động. Vui lòng tạm dừng phiên bản trước khi xóa.";
             
-            if (request()->wantsJson() || request()->ajax()) {
+            if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => $errorMessage
-                ], 422);
+                    'message' => $message,
+                    'action_suggestion' => 'deactivate',
+                    'show_deactivate_button' => true
+                ], 400);
             }
-            
-            return redirect()->route('admin.carvariants.index')->with('error', $errorMessage);
+            return redirect()->route('admin.carvariants.index')->with('error', $message);
         }
 
-        // Check for related data
-        $colorsCount = $carvariant->colors()->count();
-        $imagesCount = $carvariant->images()->count();
+        // CRITICAL: Never delete if has business transaction data (second priority)
+        if ($ordersCount > 0 || $serviceAppointmentsCount > 0 || $testDrivesCount > 0 || $reviewsCount > 0) {
+            $businessData = [];
+            if ($ordersCount > 0) {
+                $businessData[] = "{$ordersCount} đơn hàng";
+                if ($pendingOrdersCount > 0) {
+                    $businessData[] = "({$pendingOrdersCount} đang xử lý)";
+                }
+                if ($completedOrdersCount > 0) {
+                    $businessData[] = "({$completedOrdersCount} đã giao)";
+                }
+            }
+            if ($serviceAppointmentsCount > 0) {
+                $businessData[] = "{$serviceAppointmentsCount} lịch bảo dưỡng";
+                if ($activeServiceCount > 0) {
+                    $businessData[] = "({$activeServiceCount} đang hoạt động)";
+                }
+            }
+            if ($testDrivesCount > 0) {
+                $businessData[] = "{$testDrivesCount} lịch lái thử";
+            }
+            if ($reviewsCount > 0) {
+                $businessData[] = "{$reviewsCount} đánh giá";
+            }
+            
+            $message = "KHÔNG THỂ XÓA phiên bản xe \"{$carvariant->name}\" vì có " . implode(', ', $businessData) . ". " .
+                      "Đây là dữ liệu giao dịch quan trọng! Bạn chỉ có thể 'Tạm dừng' để ngừng bán nhưng vẫn giữ lịch sử.";
+            
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $message,
+                    'action_suggestion' => 'deactivate',
+                    'show_deactivate_button' => true,
+                    'business_data' => [
+                        'orders_count' => $ordersCount,
+                        'pending_orders' => $pendingOrdersCount,
+                        'completed_orders' => $completedOrdersCount,
+                        'service_appointments_count' => $serviceAppointmentsCount,
+                        'active_service_count' => $activeServiceCount,
+                        'test_drives_count' => $testDrivesCount,
+                        'reviews_count' => $reviewsCount
+                    ]
+                ], 422); // Unprocessable Entity
+            }
+            return redirect()->route('admin.carvariants.index')->with('error', $message);
+        }
 
-        // Safe to delete - no orders
-        $carvariant->delete();
+        // Only allow deletion of "clean" variants with no business impact
+        // Warn about non-critical data that will be deleted
+        $warnings = [];
+        if ($colorsCount > 0) {
+            $warnings[] = "{$colorsCount} màu sắc";
+        }
+        if ($imagesCount > 0) {
+            $warnings[] = "{$imagesCount} hình ảnh";
+        }
+
+        if (!empty($warnings)) {
+            $warningMessage = "Bạn có chắc muốn xóa phiên bản xe \"{$carvariant->name}\"? Hành động này sẽ xóa vĩnh viễn " . implode(', ', $warnings) . " liên quan.";
+            
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $warningMessage,
+                    'requires_confirmation' => true,
+                    'details' => [
+                        'colors_count' => $colorsCount,
+                        'images_count' => $imagesCount
+                    ]
+                ], 400);
+            }
+            return redirect()->route('admin.carvariants.index')
+                           ->with('warning', $warningMessage)
+                           ->with('confirm_delete', $carvariant->id);
+        }
+
+        // Safe to delete - no critical dependencies
+        $this->performVariantDeletion($carvariant);
         
         $successMessage = "Đã xóa phiên bản xe \"{$carvariant->name}\" thành công!";
         
@@ -225,6 +378,7 @@ class CarVariantController extends Controller
             $featuredVariants = CarVariant::where('is_featured', true)->count();
             $onSaleVariants = CarVariant::where('is_on_sale', true)->count();
             $newArrivalVariants = CarVariant::where('is_new_arrival', true)->count();
+            $bestsellerVariants = CarVariant::where('is_bestseller', true)->count();
             
             return response()->json([
                 'success' => true,
@@ -236,11 +390,43 @@ class CarVariantController extends Controller
                     'featuredVariants' => $featuredVariants,
                     'onSaleVariants' => $onSaleVariants,
                     'newArrivalVariants' => $newArrivalVariants,
+                    'bestsellerVariants' => $bestsellerVariants,
                 ]
             ]);
         }
         
         return redirect()->route('admin.carvariants.index')->with('success', $successMessage);
+    }
+
+    /**
+     * Perform the actual deletion of variant and related NON-CRITICAL data only
+     * This method should only be called after ensuring no business transaction data exists
+     */
+    private function performVariantDeletion(CarVariant $carvariant)
+    {
+        // Only delete non-critical data - business data should never reach this point
+        
+        // 1. Delete colors (pivot table - non-critical)
+        $carvariant->colors()->detach();
+        
+        // 2. Delete images and their physical files (non-critical)
+        foreach ($carvariant->images as $image) {
+            // Delete physical file if exists
+            if ($image->image_path && Storage::disk('public')->exists($image->image_path)) {
+                Storage::disk('public')->delete($image->image_path);
+            }
+            $image->delete();
+        }
+        
+        // 3. Delete the variant itself
+        $carvariant->delete();
+        
+        // NOTE: We do NOT delete business transaction data here:
+        // - Orders (should never be deleted)
+        // - Test drives (important customer interaction history)  
+        // - Reviews (valuable customer feedback)
+        // - Service records (maintenance history)
+        // These should be preserved for business continuity and reporting
     }
 
     public function toggleStatus(Request $request, CarVariant $carvariant)
@@ -261,6 +447,7 @@ class CarVariantController extends Controller
         $featuredVariants = CarVariant::where('is_featured', true)->count();
         $onSaleVariants = CarVariant::where('is_on_sale', true)->count();
         $newArrivalVariants = CarVariant::where('is_new_arrival', true)->count();
+        $bestsellerVariants = CarVariant::where('is_bestseller', true)->count();
         
         return response()->json([
             'success' => true,
@@ -273,6 +460,7 @@ class CarVariantController extends Controller
                 'featuredVariants' => $featuredVariants,
                 'onSaleVariants' => $onSaleVariants,
                 'newArrivalVariants' => $newArrivalVariants,
+                'bestsellerVariants' => $bestsellerVariants,
             ]
         ]);
     }

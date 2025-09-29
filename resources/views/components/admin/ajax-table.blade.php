@@ -1,4 +1,4 @@
-@props(['tableId', 'loadingId', 'formId', 'baseUrl', 'callbackName', 'emptyMessage', 'emptyIcon'])
+@props(['tableId', 'loadingId', 'formId', 'baseUrl', 'callbackName', 'emptyMessage' => 'Không có dữ liệu', 'emptyIcon' => 'fas fa-inbox'])
 
 {{-- Table Container --}}
 <div id="{{ $tableId }}">
