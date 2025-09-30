@@ -1,4 +1,4 @@
-@props(['item', 'badges' => ['featured', 'on_sale', 'new_arrival', 'bestseller'], 'size' => 'normal'])
+@props(['item', 'badges' => ['featured', 'on_sale', 'new_arrival', 'bestseller', 'sort_order'], 'size' => 'normal'])
 
 @php
     $sizeClasses = $size === 'small' ? 'px-1 py-0.5 text-xs' : 'px-1.5 py-0.5 text-xs';
@@ -31,6 +31,13 @@
         <span class="flex items-center {{ $sizeClasses }} rounded font-medium bg-pink-100 text-pink-800 leading-none w-auto sm:w-full whitespace-nowrap">
             <i class="fas fa-crown mr-1 {{ $iconSize }} flex-shrink-0"></i>
             <span class="leading-none">Bán chạy</span>
+        </span>
+    @endif
+    
+    @if(in_array('sort_order', $badges) && isset($item->sort_order) && $item->sort_order > 0)
+        <span class="flex items-center {{ $sizeClasses }} rounded font-medium bg-gray-100 text-gray-700 leading-none w-auto sm:w-full whitespace-nowrap">
+            <i class="fas fa-sort-numeric-down mr-1 {{ $iconSize }} flex-shrink-0"></i>
+            <span class="leading-none">#{{ $item->sort_order }}</span>
         </span>
     @endif
 </div>

@@ -92,11 +92,11 @@
                     name="search"
                     placeholder="Tìm kiếm..."
                     :value="request('search')"
-                    callback-name="loadCarVariants"
-                    :debounce-time="500"
+                    callbackName="handleSearch"
+                    :debounceTime="500"
                     size="small"
-                    :show-icon="true"
-                    :show-clear-button="true" />
+                    :showIcon="true"
+                    :showClearButton="true" />
             </div>
             
             {{-- Dòng xe --}}
@@ -106,12 +106,12 @@
                     name="car_model_id"
                     :options="$carModels"
                     placeholder="Tất cả"
-                    option-value="id"
-                    option-text="name"
-                    option-subtext="carBrand.name"
+                    optionValue="id"
+                    optionText="name"
+                    optionSubtext="carBrand"
                     :selected="request('car_model_id')"
                     onchange="loadCarVariantsFromDropdown"
-                    :max-visible="6"
+                    :maxVisible="6"
                     :searchable="false"
                     width="w-full" />
             </div>
@@ -121,20 +121,20 @@
                 <label class="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label>
                 <x-admin.custom-dropdown 
                     name="status"
-                    :options="collect([
+                    :options="[
                         ['value' => 'active', 'label' => 'Hoạt động'],
                         ['value' => 'inactive', 'label' => 'Tạm dừng'],
                         ['value' => 'featured', 'label' => 'Nổi bật'],
                         ['value' => 'on_sale', 'label' => 'Khuyến mãi'],
                         ['value' => 'new_arrival', 'label' => 'Mới về'],
                         ['value' => 'bestseller', 'label' => 'Bán chạy']
-                    ])"
+                    ]"
                     placeholder="Tất cả"
-                    option-value="value"
-                    option-text="label"
+                    optionValue="value"
+                    optionText="label"
                     :selected="request('status')"
                     onchange="loadCarVariantsFromDropdown"
-                    :max-visible="6"
+                    :maxVisible="6"
                     :searchable="false"
                     width="w-full" />
             </div>
@@ -142,8 +142,8 @@
             {{-- Reset --}}
             <div>
                 <x-admin.reset-button 
-                    form-id="#filterForm" 
-                    callback-name="loadCarVariants" />
+                    formId="#filterForm" 
+                    callback="loadCarVariants" />
             </div>
         </form>
     </div>
@@ -154,7 +154,8 @@
         loading-id="loading-state"
         form-id="#filterForm"
         base-url="{{ route('admin.carvariants.index') }}"
-        callback-name="loadCarVariants">
+        callback-name="loadCarVariants"
+        after-load-callback="initializeEventListeners">
         <div class="bg-white rounded-xl shadow-sm border border-gray-200">
             @include('admin.carvariants.partials.table', ['carVariants' => $carVariants])
         </div>
@@ -185,36 +186,38 @@ function initializeEventListeners() {
     document.querySelectorAll('.delete-btn').forEach(button => {
         button.addEventListener('click', function(e) {
             e.preventDefault();
-            const variantId = this.dataset.variantId;
-            const variantName = this.dataset.variantName;
+            const variantId = this.dataset.carvariantId;
+            const variantName = this.dataset.carvariantName;
             const modelName = this.dataset.modelName;
             const colorsCount = parseInt(this.dataset.colorsCount) || 0;
             const imagesCount = parseInt(this.dataset.imagesCount) || 0;
             
-            // Use component's show function
-            showDeleteModal({
-                variantId: variantId,
-                entityName: `${variantName} (${modelName})`,
-                details: `
-                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-3">
-                        <h4 class="text-sm font-medium text-yellow-800 mb-2">
-                            <i class="fas fa-exclamation-triangle mr-1"></i>
-                            Phân tích tác động:
-                        </h4>
-                        <div class="text-xs text-yellow-700 space-y-1">
-                            <div>• ${colorsCount} màu sắc sẽ bị xóa</div>
-                            <div>• ${imagesCount} hình ảnh sẽ bị xóa</div>
+            // Show delete modal with variant info
+            if (window.deleteModalManager_deleteModal) {
+                // Clear any previous modal content first
+                window.deleteModalManager_deleteModal.reset();
+                
+                window.deleteModalManager_deleteModal.show({
+                    entityName: `${variantName} (${modelName})`,
+                    details: `<div class="text-sm">
+                        <p><strong>Tác động:</strong></p>
+                        <ul class="list-disc list-inside mt-2 space-y-1">
+                            <li>${colorsCount} màu sắc sẽ bị xóa</li>
+                            <li>${imagesCount} hình ảnh sẽ bị xóa</li>
+                            <li>Tất cả dữ liệu liên quan sẽ bị xóa vĩnh viễn</li>
+                        </ul>
+                    </div>`,
+                    warnings: colorsCount > 0 || imagesCount > 0 ? `<div class="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                        <div class="flex">
+                            <i class="fas fa-exclamation-triangle text-yellow-400 mr-2 mt-0.5"></i>
+                            <div class="text-sm text-yellow-800">
+                                <strong>Cảnh báo:</strong> Phiên bản xe này có ${colorsCount} màu sắc và ${imagesCount} hình ảnh. Việc xóa sẽ ảnh hưởng đến dữ liệu hiển thị.
+                            </div>
                         </div>
-                    </div>
-                `,
-                warnings: `
-                    <div class="text-red-600 font-medium text-sm">
-                        <i class="fas fa-warning mr-1"></i>
-                        Tất cả dữ liệu liên quan sẽ bị xóa vĩnh viễn!
-                    </div>
-                `,
-                deleteUrl: `{{ url('admin/carvariants/delete') }}/${variantId}`
-            });
+                    </div>` : '',
+                    deleteUrl: `/admin/carvariants/delete/${variantId}`
+                });
+            }
         });
     });
     
@@ -222,7 +225,7 @@ function initializeEventListeners() {
     document.querySelectorAll('.status-toggle').forEach(button => {
         button.addEventListener('click', async function(e) {
             e.preventDefault();
-            const variantId = this.dataset.variantId;
+            const variantId = this.dataset.carvariantId;
             const newStatus = this.dataset.status === 'true';
             const buttonElement = this;
             
@@ -232,7 +235,7 @@ function initializeEventListeners() {
             buttonElement.disabled = true;
             
             try {
-                const response = await fetch(`{{ url('admin/carvariants') }}/${variantId}/toggle-status`, {
+                const response = await fetch(`/admin/carvariants/${variantId}/toggle-status`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -241,25 +244,36 @@ function initializeEventListeners() {
                     body: JSON.stringify({ is_active: newStatus })
                 });
                 
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
                 const data = await response.json();
                 
                 if (data.success) {
-                    // Update button appearance
+                    // Update button appearance based on NEW status
                     if (newStatus) {
+                        // Now active -> show pause button
                         buttonElement.className = 'text-orange-600 hover:text-orange-900 status-toggle w-4 h-4 flex items-center justify-center';
                         buttonElement.title = 'Tạm dừng';
-                        buttonElement.dataset.status = 'false';
+                        buttonElement.dataset.status = 'false'; // Next click will deactivate
                         buttonElement.querySelector('i').className = 'fas fa-pause w-4 h-4';
                     } else {
+                        // Now inactive -> show play button
                         buttonElement.className = 'text-green-600 hover:text-green-900 status-toggle w-4 h-4 flex items-center justify-center';
                         buttonElement.title = 'Kích hoạt';
-                        buttonElement.dataset.status = 'true';
+                        buttonElement.dataset.status = 'true'; // Next click will activate
                         buttonElement.querySelector('i').className = 'fas fa-play w-4 h-4';
                     }
                     
-                    // Update status badges using component function
+                    // Update status badge using component function
                     if (window.updateStatusBadge) {
-                        window.updateStatusBadge(variantId, newStatus);
+                        window.updateStatusBadge(variantId, newStatus, 'carvariant');
+                    }
+                    
+                    // Update stats cards if provided
+                    if (data.stats && window.updateStatsFromServer) {
+                        window.updateStatsFromServer(data.stats);
                     }
                     
                     // Show flash message from server response
@@ -284,38 +298,133 @@ function initializeEventListeners() {
     
 }
 
+// Dropdown callback function
+window.loadCarVariantsFromDropdown = function() {
+    console.log('Dropdown callback triggered');
+    const searchForm = document.getElementById('filterForm');
+    if (searchForm && window.loadCarVariants) {
+        const formData = new FormData(searchForm);
+        const url = '{{ route("admin.carvariants.index") }}?' + new URLSearchParams(formData).toString();
+        console.log('Loading URL:', url);
+        window.loadCarVariants(url);
+    }
+};
+
+// Search input callback function
+window.handleSearch = function(searchTerm, inputElement) {
+    console.log('Search callback triggered:', searchTerm);
+    const searchForm = document.getElementById('filterForm');
+    if (searchForm && window.loadCarVariants) {
+        const formData = new FormData(searchForm);
+        const url = '{{ route("admin.carvariants.index") }}?' + new URLSearchParams(formData).toString();
+        console.log('Search URL:', url);
+        window.loadCarVariants(url);
+    }
+};
+
+
+// Delete confirmation function
+window.confirmDelete = function(data) {
+    if (!data || !data.deleteUrl) return;
+    
+    // Show loading state on delete button
+    if (window.deleteModalManager_deleteModal) {
+        window.deleteModalManager_deleteModal.setLoading(true);
+    }
+    
+    fetch(data.deleteUrl, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // 1. Close modal immediately
+            if (window.deleteModalManager_deleteModal) {
+                window.deleteModalManager_deleteModal.hide();
+            }
+            
+            // 2. Update stats cards if provided
+            if (data.stats && window.updateStatsFromServer) {
+                window.updateStatsFromServer(data.stats);
+            }
+            
+            // 3. Reload table
+            if (window.loadCarVariants) {
+                window.loadCarVariants();
+            }
+            
+            // 4. Show success message
+            if (window.showMessage) {
+                window.showMessage(data.message || 'Đã xóa phiên bản xe thành công!', 'success');
+            }
+        } else {
+            throw new Error(data.message || 'Có lỗi xảy ra khi xóa');
+        }
+    })
+    .catch(error => {
+        console.error('Delete error:', error);
+        
+        // Reset loading state on error
+        if (window.deleteModalManager_deleteModal) {
+            window.deleteModalManager_deleteModal.setLoading(false);
+        }
+        
+        if (window.showMessage) {
+            window.showMessage(error.message || 'Có lỗi xảy ra khi xóa', 'error');
+        }
+    });
+};
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     initializeEventListeners();
     
-    // Real-time search
-    const searchForm = document.getElementById('filterForm');
-    const searchInput = document.getElementById('search');
-    let searchTimeout;
+    // Simple re-initialization - no wrapper needed
+    // The AJAX table component will handle reloading
     
-    if (searchInput && searchForm) {
-        searchInput.addEventListener('input', function() {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                const formData = new FormData(searchForm);
-                const url = '{{ route("admin.carvariants.index") }}?' + new URLSearchParams(formData).toString();
-                if (window.loadCarVariants) {
-                    window.loadCarVariants(url);
-                }
-            }, 500);
-        });
-    }
-    
-    // Callback for custom dropdown components
-    window.loadCarVariantsFromDropdown = function() {
-        const formData = new FormData(searchForm);
-        const url = '{{ route("admin.carvariants.index") }}?' + new URLSearchParams(formData).toString();
-        if (window.loadCarVariants) {
-            window.loadCarVariants(url);
+    // Function to update stats cards from server data (delete/toggle)
+    window.updateStatsFromServer = function(stats) {
+        // Update all stats cards with server data
+        const totalCard = document.querySelector('[data-stat="total"] .text-2xl');
+        const activeCard = document.querySelector('[data-stat="active"] .text-2xl');
+        const inactiveCard = document.querySelector('[data-stat="inactive"] .text-2xl');
+        const featuredCard = document.querySelector('[data-stat="featured"] .text-2xl');
+        const onSaleCard = document.querySelector('[data-stat="on_sale"] .text-2xl');
+        const newArrivalCard = document.querySelector('[data-stat="new_arrival"] .text-2xl');
+        
+        // Update cards directly without animation
+        if (totalCard && stats.totalVariants !== undefined) {
+            totalCard.textContent = stats.totalVariants;
+        }
+        if (activeCard && stats.activeVariants !== undefined) {
+            activeCard.textContent = stats.activeVariants;
+        }
+        if (inactiveCard && stats.inactiveVariants !== undefined) {
+            inactiveCard.textContent = stats.inactiveVariants;
+        }
+        if (featuredCard && stats.featuredVariants !== undefined) {
+            featuredCard.textContent = stats.featuredVariants;
+        }
+        if (onSaleCard && stats.onSaleVariants !== undefined) {
+            onSaleCard.textContent = stats.onSaleVariants;
+        }
+        if (newArrivalCard && stats.newArrivalVariants !== undefined) {
+            newArrivalCard.textContent = stats.newArrivalVariants;
+        }
+        
+        // Also handle bestseller if exists
+        const bestsellerCard = document.querySelector('[data-stat="bestseller"] .text-2xl');
+        if (bestsellerCard && stats.bestsellerVariants !== undefined) {
+            bestsellerCard.textContent = stats.bestsellerVariants;
         }
     };
     
-    // Function to update stats cards when toggle status changes
+    // Function to update stats cards when toggle status changes (manual calculation)
     window.updateStatsCards = function(wasActive, newStatus) {
         const activeCard = document.querySelector('[data-stat="active"] .text-2xl');
         const inactiveCard = document.querySelector('[data-stat="inactive"] .text-2xl');
@@ -355,192 +464,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 });
-
-// Delete confirmation function for DeleteModal component
-window.confirmDelete = function(data) {
-    if (!data || !data.deleteUrl) return;
-    
-    const deleteUrl = data.deleteUrl;
-    
-    fetch(deleteUrl, {
-        method: 'DELETE',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showMessage(data.message.replace(/[✅❌⚠️ℹ️]/g, '').trim(), 'success');
-            
-            // Reload table using component's function
-            if (window.loadCarVariants) {
-                loadCarVariants();
-            }
-            
-            // Hide modal
-            document.getElementById('deleteModal').classList.add('hidden');
-        } else {
-            throw new Error(data.message || 'Có lỗi xảy ra');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showMessage(error.message || 'Có lỗi xảy ra khi xóa', 'error');
-    });
-};
-
-// Function to update stats cards
-function updateStatsCards(stats) {
-    // Update Total Variants
-    const totalElement = document.querySelector('[data-stat="total"] .text-2xl');
-    if (totalElement) totalElement.textContent = stats.totalVariants;
-    
-    // Update Active Variants
-    const activeElement = document.querySelector('[data-stat="active"] .text-2xl');
-    if (activeElement) activeElement.textContent = stats.activeVariants;
-    
-    // Update Inactive Variants
-    const inactiveElement = document.querySelector('[data-stat="inactive"] .text-2xl');
-    if (inactiveElement) inactiveElement.textContent = stats.inactiveVariants;
-    
-    // Update Featured Variants
-    const featuredElement = document.querySelector('[data-stat="featured"] .text-2xl');
-    if (featuredElement) featuredElement.textContent = stats.featuredVariants;
-    
-    // Update On Sale Variants
-    const onSaleElement = document.querySelector('[data-stat="on_sale"] .text-2xl');
-    if (onSaleElement) onSaleElement.textContent = stats.onSaleVariants;
-    
-    // Update New Arrival Variants
-    const newArrivalElement = document.querySelector('[data-stat="new_arrival"] .text-2xl');
-    if (newArrivalElement) newArrivalElement.textContent = stats.newArrivalVariants;
-    
-    // Update Bestseller Variants
-    const bestsellerElement = document.querySelector('[data-stat="bestseller"] .text-2xl');
-    if (bestsellerElement) bestsellerElement.textContent = stats.bestsellerVariants;
-}
-
-// Duplicate event listener removed - using the one in initializeEventListeners() instead
-
-// Function to update table row status badge
-function updateVariantRowStatus(variantId, isActive) {
-    const button = document.querySelector(`[data-variant-id="${variantId}"]`);
-    if (button) {
-        const row = button.closest('tr');
-        if (row) {
-            // Find the status badge (first span with inline-flex in the status column)
-            const statusColumn = row.querySelector('td:nth-child(4)'); // Status column is 4th
-            const statusBadge = statusColumn ? statusColumn.querySelector('span.inline-flex.items-center') : null;
-            
-            if (statusBadge) {
-                if (isActive) {
-                    statusBadge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium w-full bg-green-100 text-green-800';
-                    statusBadge.innerHTML = '<i class="fas fa-check-circle mr-1"></i><span class="truncate">Hoạt động</span>';
-                } else {
-                    statusBadge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium w-full bg-red-100 text-red-800';
-                    statusBadge.innerHTML = '<i class="fas fa-times-circle mr-1"></i><span class="truncate">Tạm dừng</span>';
-                }
-            }
-        }
-    }
-}
-
-// Delete modal functions
-function showDeleteModal(variantId, variantName, modelName, colorsCount, imagesCount) {
-    deleteFormId = `delete-form-${variantId}`;
-    
-    document.getElementById('delete-variant-name').textContent = variantName;
-    document.getElementById('delete-model-name').textContent = modelName;
-    
-    // Update impact analysis
-    document.getElementById('colorsCount').textContent = colorsCount;
-    document.getElementById('imagesCount').textContent = imagesCount;
-    
-    document.getElementById('deleteModal').classList.remove('hidden');
-}
-
-function confirmDelete() {
-    if (deleteFormId) {
-        const confirmBtn = document.getElementById('confirmDelete');
-        
-        // Show loading state
-        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Đang xóa...';
-        confirmBtn.disabled = true;
-        
-        // Get form and extract variant ID
-        const form = document.getElementById(deleteFormId);
-        const formAction = form.getAttribute('action');
-        
-        // Make AJAX request
-        fetch(formAction, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: JSON.stringify({
-                _method: 'DELETE'
-            })
-        })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(data => {
-                    throw { status: response.status, data: data };
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                // Show success toast
-                showMessage(data.message, 'success');
-                
-                // Hide modal
-                document.getElementById('deleteModal').classList.add('hidden');
-                
-                // Update stats if provided
-                if (data.stats) {
-                    updateStatsCards(data.stats);
-                }
-                
-                // Remove the deleted row from table
-                const variantId = deleteFormId.replace('delete-form-', '');
-                const rowToRemove = document.querySelector(`[data-variant-id="${variantId}"]`).closest('tr');
-                if (rowToRemove) {
-                    rowToRemove.remove();
-                }
-                
-                // Reset deleteFormId only on success
-                deleteFormId = null;
-            } else {
-                throw new Error(data.message || 'Có lỗi xảy ra');
-            }
-        })
-        .catch(error => {
-            console.error('Delete error:', error);
-            
-            // Show error toast
-            if (error.data && error.data.message) {
-                showMessage(error.data.message, 'error');
-            } else {
-                showMessage(error.message || 'Có lỗi xảy ra khi xóa phiên bản xe', 'error');
-            }
-            
-            // Keep modal open for error cases - user can retry or cancel
-            // Don't hide modal on error, let user decide
-        })
-        .finally(() => {
-            // Reset button state
-            confirmBtn.innerHTML = '<i class="fas fa-trash mr-2"></i>Xóa';
-            confirmBtn.disabled = false;
-            // Don't reset deleteFormId here - only reset on success or modal close
-        });
-    }
-}
 </script>
 @endpush
 @endsection

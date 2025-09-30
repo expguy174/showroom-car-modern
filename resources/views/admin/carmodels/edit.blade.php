@@ -3,6 +3,13 @@
 @section('title', 'Cập nhật dòng xe')
 
 @section('content')
+{{-- Flash Messages Component --}}
+<x-admin.flash-messages 
+    :show-icons="true"
+    :dismissible="true"
+    position="top-right"
+    :auto-dismiss="5000" />
+
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 max-w-7xl mx-auto">
     {{-- Header --}}
     <div class="px-6 py-4 border-b border-gray-200">
@@ -396,7 +403,6 @@
                             <input type="checkbox" name="is_active" id="is_active" value="1" {{ old('is_active', $carModel->is_active) ? 'checked' : '' }}
                                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                             <label for="is_active" class="ml-2 block text-sm text-gray-900">
-                                <i class="fas fa-check-circle text-green-600 mr-1"></i>
                                 Hoạt động
                             </label>
                         </div>
@@ -406,7 +412,6 @@
                             <input type="checkbox" name="is_featured" id="is_featured" value="1" {{ old('is_featured', $carModel->is_featured) ? 'checked' : '' }} 
                                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                             <label for="is_featured" class="ml-2 block text-sm text-gray-900">
-                                <i class="fas fa-star text-yellow-600 mr-1"></i>
                                 Nổi bật
                             </label>
                         </div>
@@ -416,7 +421,6 @@
                             <input type="checkbox" name="is_new" id="is_new" value="1" {{ old('is_new', $carModel->is_new) ? 'checked' : '' }} 
                                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                             <label for="is_new" class="ml-2 block text-sm text-gray-900">
-                                <i class="fas fa-certificate text-purple-600 mr-1"></i>
                                 Mới
                             </label>
                         </div>
@@ -426,7 +430,6 @@
                             <input type="checkbox" name="is_discontinued" id="is_discontinued" value="1" {{ old('is_discontinued', $carModel->is_discontinued) ? 'checked' : '' }} 
                                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                             <label for="is_discontinued" class="ml-2 block text-sm text-gray-900">
-                                <i class="fas fa-ban text-gray-600 mr-1"></i>
                                 Ngừng SX
                             </label>
                         </div>
@@ -1228,6 +1231,73 @@ function updateMainImageBadges(selectedIndex) {
         selectedBadge.classList.remove('hidden');
     }
 }
+
+// AJAX Form Submission for Edit Form
+document.getElementById('carModelEditForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const form = this;
+    const formData = new FormData(form);
+    const submitButton = form.querySelector('button[type="submit"]');
+    const originalText = submitButton.innerHTML;
+    
+    // Show loading state
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Đang cập nhật...';
+    
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(data => {
+                throw { status: response.status, data: data };
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            showMessage(data.message || 'Cập nhật dòng xe thành công!', 'success');
+            
+            // Redirect after delay (2.5s as requested)
+            setTimeout(() => {
+                window.location.href = data.redirect || '/admin/carmodels';
+            }, 2500);
+        } else {
+            throw new Error(data.message || 'Có lỗi xảy ra');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        
+        // Handle validation errors (422)
+        if (error.status === 422 && error.data && error.data.errors) {
+            const errors = error.data.errors;
+            let errorMessage = 'Dữ liệu không hợp lệ:\n';
+            
+            for (const field in errors) {
+                errorMessage += `• ${errors[field][0]}\n`;
+            }
+            
+            showMessage(errorMessage, 'error');
+        } else if (error.data && error.data.message) {
+            showMessage(error.data.message, 'error');
+        } else {
+            showMessage(error.message || 'Có lỗi xảy ra khi cập nhật dòng xe', 'error');
+        }
+        
+        // Reset button state
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalText;
+    });
+});
 
 </script>
 @endsection

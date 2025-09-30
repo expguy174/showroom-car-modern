@@ -11,7 +11,7 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('car_brand_id')->constrained('car_brands')->onDelete('cascade');
             $table->string('name');
-            $table->string('slug')->unique()->nullable();
+            $table->string('slug')->nullable();
             $table->text('description')->nullable();
             
             // Phân loại xe

@@ -41,13 +41,12 @@
 
     $colorClasses = $getColorClasses();
     $trendColorClass = $getTrendColorClasses();
-    $isClickable = !empty($clickAction);
-    $cardClasses = $isClickable ? 'cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105' : '';
+    $isClickable = false; // Disabled click functionality
+    $cardClasses = '';
     $sizeClasses = $size === 'large' ? 'p-8' : 'p-6';
 @endphp
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 {{ $cardClasses }} {{ $sizeClasses }}"
-     @if($isClickable) onclick="{{ $clickAction }}()" @endif
      data-stat="{{ $dataStat ?? strtolower(str_replace(' ', '-', $title)) }}">
     
     <div class="flex items-center">
@@ -90,32 +89,4 @@
         </div>
     </div>
     
-    {{-- Click indicator --}}
-    @if($isClickable)
-    <div class="mt-3 flex items-center text-xs text-gray-400">
-        <i class="fas fa-mouse-pointer mr-1"></i>
-        <span>Click để xem chi tiết</span>
-    </div>
-    @endif
 </div>
-
-@if($isClickable)
-@push('scripts')
-<script>
-// Stats card click handlers
-document.addEventListener('DOMContentLoaded', function() {
-    // Add hover effects for clickable cards
-    const clickableCards = document.querySelectorAll('[data-stat][onclick]');
-    clickableCards.forEach(card => {
-        card.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-2px)';
-        });
-        
-        card.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0)';
-        });
-    });
-});
-</script>
-@endpush
-@endif

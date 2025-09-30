@@ -2,12 +2,12 @@
     <table class="min-w-full divide-y divide-gray-200" style="table-layout: fixed;">
         <thead class="bg-gray-50">
             <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 25%;">Dòng xe</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 15%;">Hãng xe</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 25%;">Thông tin</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 20%;">Dòng xe</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 20%;">Hãng xe</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 20%;">Thông tin</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 15%;">Trạng thái</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 10%;">Phiên bản</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 10%;">Thao tác</th>
+                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 10%;">Phiên bản</th>
+                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 15%;">Thao tác</th>
             </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
@@ -102,7 +102,7 @@
                             </div>
                         @endif
                         @if($model->fuel_type)
-                            <div class="flex items-center text-gray-500">
+                            <div class="flex items-center">
                                 <i class="fas fa-gas-pump text-gray-400 mr-2 flex-shrink-0"></i>
                                 <span class="truncate">
                                     @php
@@ -122,84 +122,55 @@
                     </div>
                 </td>
                 <td class="px-6 py-4">
-                    <div class="flex flex-col gap-1">
-                        <!-- Main Status -->
-                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium {{ $model->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                            <i class="fas {{ $model->is_active ? 'fa-check-circle' : 'fa-times-circle' }} mr-1"></i>
-                            {{ $model->is_active ? 'Hoạt động' : 'Tạm dừng' }}
-                        </span>
-                        
-                        <!-- Additional Badges -->
-                        @if($model->is_featured)
-                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
-                                <i class="fas fa-star mr-1"></i>
-                                Nổi bật
-                            </span>
-                        @endif
-                        @if($model->is_new)
-                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
-                                <i class="fas fa-certificate mr-1"></i>
-                                Mới
-                            </span>
-                        @endif
-                        @if($model->is_discontinued)
-                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
-                                <i class="fas fa-ban mr-1"></i>
-                                Ngừng SX
-                            </span>
-                        @endif
-                        @if($model->sort_order > 0)
-                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                                <i class="fas fa-sort-numeric-down mr-1"></i>
-                                #{{ $model->sort_order }}
-                            </span>
-                        @endif
-                    </div>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <div class="flex items-center">
-                        <i class="fas fa-cogs text-gray-400 mr-2 flex-shrink-0"></i>
-                        <span class="truncate">{{ $model->carVariants()->count() }} phiên bản</span>
-                    </div>
-                    @if($model->carVariants()->count() > 0)
-                        <div class="text-xs text-gray-400 mt-1 truncate">
-                            {{ $model->carVariants()->where('is_active', true)->count() }} hoạt động
+                    <div class="flex flex-col items-start gap-1 w-full">
+                        <!-- Main Status - Using StatusToggle Component -->
+                        <div class="w-full">
+                            <x-admin.status-toggle 
+                                :item-id="$model->id"
+                                :current-status="$model->is_active"
+                                entity-type="carmodel" />
                         </div>
-                    @endif
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div class="flex items-center space-x-3">
-                        <a href="{{ route('admin.carmodels.show', $model) }}" class="text-green-600 hover:text-green-900 w-4 h-4 flex items-center justify-center" title="Xem chi tiết">
-                            <i class="fas fa-eye w-4 h-4"></i>
-                        </a>
-                        <a href="{{ route('admin.carmodels.edit', $model) }}" class="text-indigo-600 hover:text-indigo-900 w-4 h-4 flex items-center justify-center" title="Chỉnh sửa">
-                            <i class="fas fa-edit w-4 h-4"></i>
-                        </a>
                         
-                        <!-- Quick Status Toggle -->
-                        @if($model->is_active)
-                            <button class="text-orange-600 hover:text-orange-900 status-toggle w-4 h-4 flex items-center justify-center" title="Tạm dừng" data-model-id="{{ $model->id }}" data-status="false">
-                                <i class="fas fa-pause w-4 h-4"></i>
-                            </button>
-                        @else
-                            <button class="text-green-600 hover:text-green-900 status-toggle w-4 h-4 flex items-center justify-center" title="Kích hoạt" data-model-id="{{ $model->id }}" data-status="true">
-                                <i class="fas fa-play w-4 h-4"></i>
-                            </button>
+                        <!-- Additional Badges - Uniform height and spacing -->
+                        @if($model->is_featured)
+                            <span class="inline-flex items-center px-2 py-1 text-xs rounded-md font-medium bg-yellow-100 text-yellow-800 whitespace-nowrap min-h-[20px]">
+                                <i class="fas fa-star mr-1.5 w-3 h-3 flex-shrink-0"></i>
+                                <span>Nổi bật</span>
+                            </span>
                         @endif
-                        <button 
-                            class="text-red-600 hover:text-red-900 delete-btn" 
-                            title="Xóa"
-                            data-model-id="{{ $model->id }}"
-                            data-model-name="{{ $model->name }}"
-                            data-brand-name="{{ $model->carBrand->name }}"
-                            data-variants-count="{{ $model->carVariants()->count() }}">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                        <form id="delete-form-{{ $model->id }}" action="{{ route('admin.carmodels.destroy', $model) }}" method="POST" class="hidden">
-                            @csrf
-                            @method('DELETE')
-                        </form>
+                        
+                        @if($model->is_discontinued)
+                            <span class="inline-flex items-center px-2 py-1 text-xs rounded-md font-medium bg-red-100 text-red-800 whitespace-nowrap min-h-[20px]">
+                                <i class="fas fa-ban mr-1.5 w-3 h-3 flex-shrink-0"></i>
+                                <span>Ngừng SX</span>
+                            </span>
+                        @endif
                     </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                    <div class="flex flex-col items-center">
+                        <div class="flex items-center">
+                            <i class="fas fa-cogs text-gray-400 mr-2 flex-shrink-0"></i>
+                            <span class="truncate">{{ $model->carVariants()->count() }} phiên bản</span>
+                        </div>
+                        @if($model->carVariants()->count() > 0)
+                            <div class="text-xs text-gray-400 mt-1 truncate">
+                                {{ $model->carVariants()->where('is_active', true)->count() }} hoạt động
+                            </div>
+                        @endif
+                    </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">
+                    <x-admin.table-actions 
+                        :item="$model"
+                        show-route="admin.carmodels.show"
+                        edit-route="admin.carmodels.edit"
+                        delete-route="admin.carmodels.destroy"
+                        :has-toggle="true"
+                        :delete-data="[
+                            'brand-name' => $model->carBrand->name ?? '',
+                            'variants-count' => $model->carVariants()->count()
+                        ]" />
                 </td>
             </tr>
             @empty

@@ -107,6 +107,9 @@ class CarBrandController extends Controller
                 'is_active', 'is_featured', 'sort_order'
             ]);
             
+            // Generate simple slug from name
+            $data['slug'] = Str::slug($request->name);
+            
             // Handle logo upload
             if ($request->hasFile('logo_path')) {
                 $file = $request->file('logo_path');
@@ -126,13 +129,12 @@ class CarBrandController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Đã khôi phục và cập nhật hãng xe thành công!',
-                    'redirect' => route('admin.carbrands.show', $softDeletedBrand),
+                    'redirect' => route('admin.carbrands.index'),
                     'car' => $softDeletedBrand
                 ]);
             }
             
-            return redirect()->route('admin.carbrands.show', $softDeletedBrand)
-                           ->with('success', 'Đã khôi phục và cập nhật hãng xe thành công!');
+            return redirect()->route('admin.carbrands.index');
         }
         
         $request->validate([
@@ -213,7 +215,7 @@ class CarBrandController extends Controller
             ]);
         }
         
-        return redirect()->route('admin.carbrands.index')->with('success', 'Thêm hãng xe thành công!');
+        return redirect()->route('admin.carbrands.index');
     }
 
     public function show(CarBrand $car)
@@ -338,7 +340,7 @@ class CarBrandController extends Controller
             ]);
         }
         
-        return redirect()->route('admin.carbrands.index')->with('success', 'Cập nhật hãng xe thành công!');
+        return redirect()->route('admin.carbrands.index');
     }
 
     public function destroy(Request $request, CarBrand $car)
@@ -395,7 +397,22 @@ class CarBrandController extends Controller
             $serviceAppointmentsCount = 0;
         }
 
-        // Check if brand has active models or variants (first priority)
+        // FIRST: Check if brand itself is active
+        if ($car->is_active) {
+            $message = "Không thể xóa hãng xe \"{$car->name}\" vì đang ở trạng thái HOẠT ĐỘNG. Vui lòng tạm dừng hãng xe trước khi xóa.";
+            
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $message,
+                    'action_suggestion' => 'deactivate_brand',
+                    'show_deactivate_button' => true
+                ], 400);
+            }
+            return redirect()->route('admin.carbrands.index')->with('error', $message);
+        }
+
+        // SECOND: Check if brand has active models or variants
         if ($activeModelsCount > 0) {
             $message = "Không thể xóa hãng xe \"{$car->name}\" vì đang có {$activeModelsCount} dòng xe đang hoạt động. Vui lòng tạm dừng tất cả dòng xe trước khi xóa hãng xe.";
             
@@ -467,9 +484,21 @@ class CarBrandController extends Controller
         $message = "Đã xóa hãng xe \"{$car->name}\" thành công!";
         
         if ($request->expectsJson()) {
+            // Get updated stats after deletion
+            $totalCars = CarBrand::count();
+            $activeCars = CarBrand::where('is_active', true)->count();
+            $inactiveCars = CarBrand::where('is_active', false)->count();
+            $featuredCars = CarBrand::where('is_featured', true)->count();
+            
             return response()->json([
                 'success' => true,
-                'message' => $message
+                'message' => $message,
+                'stats' => [
+                    'totalCars' => $totalCars,
+                    'activeCars' => $activeCars,
+                    'inactiveCars' => $inactiveCars,
+                    'featuredCars' => $featuredCars
+                ]
             ]);
         }
         

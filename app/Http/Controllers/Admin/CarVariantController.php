@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class CarVariantController extends Controller
 {
@@ -65,17 +66,23 @@ class CarVariantController extends Controller
 
         $carVariants = $query->orderBy('created_at', 'desc')->paginate(15);
 
-        // Get car models for filter dropdown
-        $carModels = CarModel::with('carBrand')->orderBy('name')->get();
+        // Get car models for filter dropdown - format for dropdown component
+        $carModels = CarModel::with('carBrand')->orderBy('name')->get()->map(function($model) {
+            return [
+                'id' => $model->id,
+                'name' => $model->name,
+                'carBrand' => $model->carBrand ? $model->carBrand->name : ''
+            ];
+        });
 
-        // Calculate stats
-        $totalVariants = CarVariant::count();
-        $activeVariants = CarVariant::where('is_active', true)->count();
-        $inactiveVariants = CarVariant::where('is_active', false)->count();
-        $featuredVariants = CarVariant::where('is_featured', true)->count();
-        $onSaleVariants = CarVariant::where('is_on_sale', true)->count();
-        $newArrivalVariants = CarVariant::where('is_new_arrival', true)->count();
-        $bestsellerVariants = CarVariant::where('is_bestseller', true)->count();
+        // Calculate stats - ensure all are integers
+        $totalVariants = (int) CarVariant::count();
+        $activeVariants = (int) CarVariant::where('is_active', true)->count();
+        $inactiveVariants = (int) CarVariant::where('is_active', false)->count();
+        $featuredVariants = (int) CarVariant::where('is_featured', true)->count();
+        $onSaleVariants = (int) CarVariant::where('is_on_sale', true)->count();
+        $newArrivalVariants = (int) CarVariant::where('is_new_arrival', true)->count();
+        $bestsellerVariants = (int) CarVariant::where('is_bestseller', true)->count();
 
         // If this is an AJAX request, return only the table partial
         if ($request->ajax()) {
@@ -103,6 +110,44 @@ class CarVariantController extends Controller
 
     public function store(Request $request)
     {
+        // Check for soft deleted variant - restore if exists
+        $softDeletedVariant = CarVariant::withTrashed()
+                                       ->where('name', $request->name)
+                                       ->where('car_model_id', $request->car_model_id)
+                                       ->whereNotNull('deleted_at')
+                                       ->first();
+        
+        if ($softDeletedVariant) {
+            // Restore and update the soft deleted record
+            $softDeletedVariant->restore();
+            
+            // Update with new data
+            $data = $request->only([
+                'description', 'price', 'is_active'
+            ]);
+            
+            // Generate simple slug from name
+            $data['slug'] = Str::slug($request->name);
+            
+            // Set defaults for boolean fields
+            $data['is_active'] = $request->boolean('is_active', true);
+            
+            $softDeletedVariant->update($data);
+            
+            $successMessage = '✅ Đã khôi phục và cập nhật phiên bản xe thành công!';
+            
+            // Check if this is an AJAX request
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $successMessage,
+                    'redirect' => route('admin.carvariants.index')
+                ]);
+            }
+            
+            return redirect()->route('admin.carvariants.index')->with('success', $successMessage);
+        }
+
         $validated = $request->validate([
             'car_model_id' => 'required|exists:car_models,id',
             'name' => 'required|string|max:255',
@@ -117,6 +162,7 @@ class CarVariantController extends Controller
         $carVariant = CarVariant::create([
             'car_model_id' => $validated['car_model_id'],
             'name' => $validated['name'],
+            'slug' => Str::slug($validated['name']),
             'description' => $validated['description'],
             'price' => $validated['price'],
             'is_active' => $validated['is_active'],
@@ -175,13 +221,20 @@ class CarVariantController extends Controller
         $validated['is_active'] = $request->boolean('is_active');
 
         // Cập nhật CarVariant
-        $carvariant->update([
+        $updateData = [
             'car_model_id' => $validated['car_model_id'],
             'name' => $validated['name'],
             'description' => $validated['description'],
             'price' => $validated['price'],
             'is_active' => $validated['is_active'],
-        ]);
+        ];
+        
+        // Update slug if name changed
+        if ($validated['name'] !== $carvariant->name) {
+            $updateData['slug'] = Str::slug($validated['name']);
+        }
+        
+        $carvariant->update($updateData);
 
         return redirect()->route('admin.carvariants.index')->with('success', 'Cập nhật phiên bản xe thành công.');
     }
@@ -406,8 +459,8 @@ class CarVariantController extends Controller
     {
         // Only delete non-critical data - business data should never reach this point
         
-        // 1. Delete colors (pivot table - non-critical)
-        $carvariant->colors()->detach();
+        // 1. Delete colors (HasMany relationship - non-critical)
+        $carvariant->colors()->delete();
         
         // 2. Delete images and their physical files (non-critical)
         foreach ($carvariant->images as $image) {

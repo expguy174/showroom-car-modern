@@ -2,44 +2,53 @@
 
 @php
     $componentId = 'dropdown_' . str_replace(['[', ']', '.'], '_', $name) . '_' . uniqid();
-    $containerHeight = $maxVisible * 60;
+    $containerHeight = min($maxVisible * 60, 240);
     
     // Function to get selected text
-    $getSelectedText = function() use ($options, $selected, $optionValue, $optionText, $placeholder) {
+    $getSelectedText = function() use ($options, $selected, $placeholder, $optionValue, $optionText) {
         if (!$selected) {
             return $placeholder;
         }
         
-        foreach ($options as $option) {
-            $value = is_array($option) ? data_get($option, $optionValue) : $option->{$optionValue};
-            if ($value == $selected) {
-                return is_array($option) ? data_get($option, $optionText) : $option->{$optionText};
+        // Handle array/collection options
+        if (is_array($options) || $options instanceof \Illuminate\Support\Collection) {
+            foreach ($options as $option) {
+                if (is_array($option) && isset($option[$optionValue]) && $option[$optionValue] == $selected) {
+                    return (string) ($option[$optionText] ?? $placeholder);
+                } elseif (is_object($option) && $option->{$optionValue} == $selected) {
+                    return (string) ($option->{$optionText} ?? $placeholder);
+                }
             }
+        } else {
+            // Handle simple key-value array
+            return (string) ($options[$selected] ?? $placeholder);
         }
         
-        return $placeholder;
+        return (string) $placeholder;
     };
 @endphp
 
 <div class="{{ $width }} relative" data-component="custom-dropdown">
     {{-- Hidden input to store selected value --}}
-    <input type="hidden" name="{{ $name }}" id="{{ $name }}" value="{{ $selected }}">
+    <input type="hidden" name="{{ $name }}" id="{{ $componentId }}_input" value="{{ $selected }}">
     
     {{-- Custom Dropdown --}}
     <div class="custom-dropdown relative">
         <button type="button" 
-                id="{{ $componentId }}_btn" 
-                class="w-full px-3 py-2 h-10 text-left bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex items-center justify-between whitespace-nowrap">
-            <span id="{{ $componentId }}_text" class="text-gray-900 truncate">
+                id="{{ $componentId }}_btn"
+                class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 pr-8 text-left shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-400 transition-colors">
+            <span id="{{ $componentId }}_text" class="block truncate text-gray-900">
                 {{ $getSelectedText() }}
             </span>
-            <i class="fas fa-chevron-down text-gray-400 transition-transform duration-200 ml-2 flex-shrink-0" 
-               id="{{ $componentId }}_icon"></i>
+            <span class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                <i id="{{ $componentId }}_icon" class="fas fa-chevron-down text-gray-400 transition-transform duration-200"></i>
+            </span>
         </button>
         
         {{-- Dropdown Menu - Always dropdown --}}
         <div id="{{ $componentId }}_menu" 
-             class="absolute z-50 w-max min-w-full mt-1 top-full bg-white border border-gray-300 rounded-lg shadow-lg hidden">
+             class="absolute z-50 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg focus:outline-none hidden"
+             style="min-width: 100%; width: max-content; max-width: 400px;">
             
             @if($searchable)
             {{-- Search Input --}}
@@ -61,36 +70,69 @@
                  id="{{ $componentId }}_options"
                  style="max-height: {{ $containerHeight }}px;">
                 
-                {{-- Default option --}}
-                <div class="dropdown-option px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 whitespace-nowrap {{ !$selected ? 'bg-blue-50' : '' }}" 
+                {{-- Empty option for "Tất cả" --}}
+                <div class="dropdown-option px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 {{ !$selected ? 'bg-blue-50' : '' }}" 
                      data-value="" 
                      data-text="{{ $placeholder }}">
-                    <div class="font-medium text-gray-900">{{ $placeholder }}</div>
+                    <div class="font-medium text-gray-900 whitespace-nowrap">{{ $placeholder }}</div>
                 </div>
                 
                 {{-- Dynamic options --}}
-                @foreach($options as $option)
-                    @php
-                        $value = data_get($option, $optionValue);
-                        $text = data_get($option, $optionText);
-                        $subtext = $optionSubtext ? data_get($option, $optionSubtext) : null;
-                        $displayText = $subtext ? "$subtext - $text" : $text;
-                        $isSelected = $selected == $value;
-                    @endphp
-                    
-                    <div class="dropdown-option px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 whitespace-nowrap {{ $isSelected ? 'bg-blue-50' : '' }}" 
-                         data-value="{{ $value }}" 
-                         data-text="{{ $displayText }}"
-                         data-search="{{ strtolower($text . ' ' . ($subtext ?? '')) }}">
+                @if(is_array($options) || $options instanceof \Illuminate\Support\Collection)
+                    @foreach($options as $option)
+                        @php
+                            if (is_array($option)) {
+                                $value = $option[$optionValue] ?? '';
+                                $text = $option[$optionText] ?? '';
+                                $subtext = $optionSubtext ? ($option[$optionSubtext] ?? '') : '';
+                            } elseif (is_object($option)) {
+                                $value = $option->{$optionValue} ?? '';
+                                $text = $option->{$optionText} ?? '';
+                                $subtext = $optionSubtext ? ($option->{$optionSubtext} ?? '') : '';
+                            } else {
+                                $value = $option;
+                                $text = $option;
+                                $subtext = '';
+                            }
+                            
+                            // Ensure all values are strings
+                            $value = (string) $value;
+                            $text = (string) $text;
+                            $subtext = (string) $subtext;
+                            
+                            $isSelected = $selected == $value;
+                        @endphp
                         
-                        @if($optionSubtext)
-                            <div class="font-medium text-gray-900">{{ $text }}</div>
-                            <div class="text-sm text-gray-500">{{ $subtext }}</div>
-                        @else
-                            <div class="font-medium text-gray-900">{{ $text }}</div>
-                        @endif
+                        <div class="dropdown-option px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 {{ $isSelected ? 'bg-blue-50' : '' }}" 
+                             data-value="{{ $value }}" 
+                             data-text="{{ $text }}">
+                            <div class="font-medium text-gray-900 whitespace-nowrap">{{ $text }}</div>
+                            @if($subtext)
+                                <div class="text-sm text-gray-500 whitespace-nowrap">{{ $subtext }}</div>
+                            @endif
+                        </div>
+                    @endforeach
+                @else
+                    {{-- Empty option for simple arrays --}}
+                    <div class="dropdown-option px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 {{ !$selected ? 'bg-blue-50' : '' }}" 
+                         data-value="" 
+                         data-text="{{ $placeholder }}">
+                        <div class="font-medium text-gray-900 whitespace-nowrap">{{ $placeholder }}</div>
                     </div>
-                @endforeach
+                    
+                    {{-- Handle simple key-value array --}}
+                    @foreach($options as $value => $text)
+                        @php
+                            $isSelected = $selected == $value;
+                        @endphp
+                        
+                        <div class="dropdown-option px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 {{ $isSelected ? 'bg-blue-50' : '' }}" 
+                             data-value="{{ $value }}" 
+                             data-text="{{ $text }}">
+                            <div class="font-medium text-gray-900 whitespace-nowrap">{{ $text }}</div>
+                        </div>
+                    @endforeach
+                @endif
             </div>
         </div>
     </div>
@@ -142,7 +184,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const button = document.getElementById(componentId + '_btn');
     const menu = document.getElementById(componentId + '_menu');
     const icon = document.getElementById(componentId + '_icon');
-    const hiddenInput = document.getElementById('{{ $name }}');
+    const hiddenInput = document.getElementById(componentId + '_input');
     const displayText = document.getElementById(componentId + '_text');
     
     if (!button || !menu) return;

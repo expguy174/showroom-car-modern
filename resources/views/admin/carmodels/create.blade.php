@@ -3,6 +3,13 @@
 @section('title', 'Thêm dòng xe')
 
 @section('content')
+{{-- Flash Messages Component --}}
+<x-admin.flash-messages 
+    :show-icons="true"
+    :dismissible="true"
+    position="top-right"
+    :auto-dismiss="5000" />
+
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 max-w-7xl mx-auto">
     {{-- Header --}}
     <div class="px-6 py-4 border-b border-gray-200">

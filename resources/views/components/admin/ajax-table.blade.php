@@ -1,4 +1,4 @@
-@props(['tableId', 'loadingId', 'formId', 'baseUrl', 'callbackName', 'emptyMessage' => 'Không có dữ liệu', 'emptyIcon' => 'fas fa-inbox'])
+@props(['tableId', 'loadingId', 'formId' => null, 'baseUrl' => null, 'callbackName' => null, 'emptyMessage' => 'Không có dữ liệu', 'emptyIcon' => 'fas fa-inbox'])
 
 {{-- Table Container --}}
 <div id="{{ $tableId }}">
@@ -26,6 +26,8 @@ class AjaxTableManager {
         this.baseUrl = options.baseUrl;
         this.callbackName = options.callbackName || 'loadTableData';
         this.afterLoadCallback = options.afterLoadCallback;
+        this.emptyMessage = options.emptyMessage || 'Không có dữ liệu';
+        this.emptyIcon = options.emptyIcon || 'fas fa-inbox';
     }
     
     init() {
@@ -52,7 +54,38 @@ class AjaxTableManager {
         fetch(requestUrl, options)
             .then(response => response.text())
             .then(html => {
-                document.getElementById(this.tableContainer.replace('#', '')).innerHTML = html;
+                const tableContainer = document.getElementById(this.tableContainer.replace('#', ''));
+                tableContainer.innerHTML = html;
+                
+                // Check if result is empty (no data rows) - only once
+                const tbody = tableContainer.querySelector('tbody');
+                if (tbody && !tbody.dataset.emptyChecked) {
+                    tbody.dataset.emptyChecked = 'true';
+                    
+                    const dataRows = tbody.querySelectorAll('tr:not(.empty-state)');
+                    const hasRealData = Array.from(dataRows).some(row => {
+                        const cells = row.querySelectorAll('td');
+                        // Check if it's not an empty state row (has colspan)
+                        return cells.length > 1 || (cells.length === 1 && !cells[0].hasAttribute('colspan'));
+                    });
+                    
+                    if (!hasRealData && dataRows.length === 0) {
+                        // No real data - create empty state
+                        const colCount = tableContainer.querySelector('thead tr')?.children.length || 5;
+                        tbody.innerHTML = 
+                            '<tr class="empty-state">' +
+                                '<td colspan="' + colCount + '" class="px-3 sm:px-6 py-12 text-center">' +
+                                    '<div class="flex flex-col items-center">' +
+                                        '<i class="' + this.emptyIcon + ' text-gray-400 text-3xl sm:text-4xl mb-4"></i>' +
+                                        '<p class="text-gray-500 text-base sm:text-lg">' + this.emptyMessage + '</p>' +
+                                        '<p class="text-gray-400 text-xs sm:text-sm mt-1">Thử thay đổi bộ lọc hoặc tìm kiếm</p>' +
+                                    '</div>' +
+                                '</td>' +
+                            '</tr>';
+                        console.log('Empty state created for search with no results');
+                    }
+                }
+                
                 this.hideLoading();
                 
                 // Re-initialize pagination for new content
@@ -120,21 +153,38 @@ class AjaxTableManager {
 
 // Initialize AJAX Table Manager for {{ $tableId }}
 document.addEventListener('DOMContentLoaded', function() {
-    const ajaxTable_{{ str_replace(['-', '_'], '', $tableId) }} = new AjaxTableManager({
+    const config = {
         tableContainer: '#{{ $tableId }}',
         loadingContainer: '#{{ $loadingId }}',
-        searchForm: '#{{ $formId }}',
-        baseUrl: '{{ $baseUrl }}',
-        callbackName: '{{ $callbackName }}',
         afterLoadCallback: function() {
             // Re-initialize any event listeners for new content
             if (window.initializeEventListeners) {
                 window.initializeEventListeners();
             }
         }
-    });
+    };
     
-    ajaxTable_{{ str_replace(['-', '_'], '', $tableId) }}.init();
+    @if($formId)
+        config.searchForm = '#{{ $formId }}';
+    @endif
+    
+    @if($baseUrl)
+        config.baseUrl = '{{ $baseUrl }}';
+    @endif
+    
+    @if($callbackName)
+        config.callbackName = '{{ $callbackName }}';
+    @endif
+    
+    @php
+        $cleanTableId = str_replace(['-', '_'], '', $tableId);
+    @endphp
+    
+    const ajaxTable_{{ $cleanTableId }} = new AjaxTableManager(config);
+    ajaxTable_{{ $cleanTableId }}.init();
+    
+    // Make it globally accessible
+    window.ajaxTableManager_{{ $cleanTableId }} = ajaxTable_{{ $cleanTableId }};
 });
 </script>
 @endpush

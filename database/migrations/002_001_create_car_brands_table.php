@@ -9,7 +9,7 @@ return new class extends Migration {
         Schema::create('car_brands', function (Blueprint $table) {
             $table->id();
             $table->string('name')->unique();
-            $table->string('slug')->unique()->nullable();
+            $table->string('slug')->nullable();
 			$table->string('logo_path', 2048)->nullable();
             $table->string('country')->nullable();
             $table->text('description')->nullable();

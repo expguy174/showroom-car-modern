@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class CarModelController extends Controller
 {
@@ -102,6 +103,9 @@ class CarModelController extends Controller
                 'meta_title', 'meta_description', 'keywords',
                 'is_active', 'is_featured', 'is_new', 'is_discontinued', 'sort_order'
             ]);
+            
+            // Generate simple slug from name
+            $data['slug'] = Str::slug($request->name);
             
             // Set defaults for boolean fields
             $data['is_active'] = $request->boolean('is_active', true);
@@ -244,8 +248,8 @@ class CarModelController extends Controller
             'is_active', 'is_featured', 'is_new', 'is_discontinued', 'sort_order'
         ]);
         
-        // Generate unique slug
-        $data['slug'] = $this->generateUniqueSlug($data['name']);
+        // Generate simple slug (no uniqueness check needed)
+        $data['slug'] = Str::slug($data['name']);
 
         // Set defaults for boolean fields
         $data['is_active'] = $request->boolean('is_active', true);
@@ -474,10 +478,29 @@ class CarModelController extends Controller
             'is_active', 'is_featured', 'is_new', 'is_discontinued', 'sort_order'
         ]);
         
-        // Generate unique slug only if name changed
+        // Check if name is being changed and already exists
         if (!empty($data['name']) && $data['name'] !== $carmodel->name) {
-            $data['slug'] = $this->generateUniqueSlug($data['name'], $carmodel->id);
+            $existingModel = CarModel::where('name', $data['name'])
+                                   ->where('car_brand_id', $data['car_brand_id'])
+                                   ->where('id', '!=', $carmodel->id)
+                                   ->whereNull('deleted_at')
+                                   ->first();
+            
+            if ($existingModel) {
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Tên dòng xe \"{$data['name']}\" đã tồn tại trong hãng này.",
+                        'errors' => ['name' => ["Tên dòng xe \"{$data['name']}\" đã tồn tại trong hãng này."]]
+                    ], 422);
+                }
+                return back()->withErrors(['name' => "Tên dòng xe \"{$data['name']}\" đã tồn tại trong hãng này."])->withInput();
+            }
+            
+            // Generate simple slug if name changed
+            $data['slug'] = Str::slug($data['name']);
         }
+        
 
         // Set defaults for boolean fields
         $data['is_active'] = $request->boolean('is_active', true);
@@ -590,7 +613,7 @@ class CarModelController extends Controller
         }
     }
 
-    public function destroy(CarModel $carmodel)
+    public function destroy(Request $request, CarModel $carmodel)
     {
         // Detailed dependency analysis
         $variantsCount = $carmodel->carVariants()->count();
@@ -625,11 +648,26 @@ class CarModelController extends Controller
             $serviceAppointmentsCount = 0;
         }
 
-        // Check if model has active variants (first priority)
+        // FIRST: Check if model itself is active
+        if ($carmodel->is_active) {
+            $message = "Không thể xóa dòng xe \"{$carmodel->name}\" vì đang ở trạng thái HOẠT ĐỘNG. Vui lòng tạm dừng dòng xe trước khi xóa.";
+            
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $message,
+                    'action_suggestion' => 'deactivate_model',
+                    'show_deactivate_button' => true
+                ], 400);
+            }
+            return redirect()->route('admin.carmodels.index')->with('error', $message);
+        }
+
+        // SECOND: Check if model has active variants
         if ($activeVariantsCount > 0) {
             $message = "Không thể xóa dòng xe \"{$carmodel->name}\" vì đang có {$activeVariantsCount} phiên bản đang bán. Vui lòng tạm dừng tất cả phiên bản trước khi xóa dòng xe.";
             
-            if (request()->wantsJson() || request()->ajax()) {
+            if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,
                     'message' => $message,
@@ -637,11 +675,10 @@ class CarModelController extends Controller
                     'show_deactivate_button' => true
                 ], 400);
             }
-            
             return redirect()->route('admin.carmodels.index')->with('error', $message);
         }
 
-        // CRITICAL: Never delete if has business transaction data (second priority)
+        // CRITICAL: Never delete if has business transaction data (third priority)
         if ($ordersCount > 0 || $serviceAppointmentsCount > 0) {
             $businessData = [];
             if ($ordersCount > 0) {
@@ -654,7 +691,7 @@ class CarModelController extends Controller
             $message = "KHÔNG THỂ XÓA dòng xe \"{$carmodel->name}\" vì có " . implode(', ', $businessData) . ". " .
                       "Đây là dữ liệu giao dịch quan trọng! Bạn chỉ có thể 'Tạm dừng' để ngừng hoạt động nhưng vẫn giữ lịch sử.";
             
-            if (request()->wantsJson() || request()->ajax()) {
+            if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,
                     'message' => $message,
@@ -662,53 +699,47 @@ class CarModelController extends Controller
                     'show_deactivate_button' => true
                 ], 422); // Unprocessable Entity
             }
-            
             return redirect()->route('admin.carmodels.index')->with('error', $message);
         }
 
         if ($variantsCount > 0) {
-            $warningMessage = "Bạn có chắc muốn xóa dòng xe \"{$carmodel->name}\"? Hành động này sẽ xóa vĩnh viễn {$variantsCount} phiên bản xe (đã ngừng hoạt động) cùng tất cả dữ liệu liên quan.";
+            $message = "Bạn có chắc muốn xóa dòng xe \"{$carmodel->name}\"? Hành động này sẽ xóa vĩnh viễn {$variantsCount} phiên bản xe (đã ngừng hoạt động) cùng tất cả dữ liệu liên quan.";
             
-            if (request()->wantsJson() || request()->ajax()) {
+            if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => $warningMessage,
+                    'message' => $message,
                     'requires_confirmation' => true
                 ], 400);
             }
-            
-            return redirect()->route('admin.carmodels.index')->with('warning', $warningMessage)
-                ->with('confirm_delete', $carmodel->id);
+            return redirect()->route('admin.carmodels.index')->with('warning', $message)->with('confirm_delete', $carmodel->id);
         }
 
         // Safe to delete - no dependencies
         $this->performModelDeletion($carmodel);
         
-        // Get updated stats
-        $totalModels = CarModel::count();
-        $activeModels = CarModel::where('is_active', true)->count();
-        $inactiveModels = CarModel::where('is_active', false)->count();
-        $featuredModels = CarModel::where('is_featured', true)->count();
-        $newModels = CarModel::where('is_new', true)->count();
+        $message = "Đã xóa dòng xe \"{$carmodel->name}\" thành công!";
         
-        // Return JSON response for AJAX requests
-        if (request()->wantsJson() || request()->ajax()) {
+        if ($request->expectsJson()) {
+            // Get updated stats after deletion
+            $totalModels = CarModel::count();
+            $activeModels = CarModel::where('is_active', true)->count();
+            $inactiveModels = CarModel::where('is_active', false)->count();
+            $featuredModels = CarModel::where('is_featured', true)->count();
+            
             return response()->json([
                 'success' => true,
-                'message' => "Đã xóa dòng xe \"{$carmodel->name}\" thành công!",
+                'message' => $message,
                 'stats' => [
                     'totalModels' => $totalModels,
                     'activeModels' => $activeModels,
                     'inactiveModels' => $inactiveModels,
-                    'featuredModels' => $featuredModels,
-                    'newModels' => $newModels
+                    'featuredModels' => $featuredModels
                 ]
             ]);
         }
         
-        return redirect()->route('admin.carmodels.index')->with('success', 
-            "Đã xóa dòng xe \"{$carmodel->name}\" thành công!"
-        );
+        return redirect()->route('admin.carmodels.index')->with('success', $message);
     }
 
     private function performModelDeletion(CarModel $carmodel)
@@ -760,33 +791,6 @@ class CarModelController extends Controller
                 'newModels' => $newModels
             ]
         ]);
-    }
-    
-    /**
-     * Generate unique slug for CarModel
-     */
-    private function generateUniqueSlug(string $name, ?int $ignoreId = null): string
-    {
-        $baseSlug = \Illuminate\Support\Str::slug($name);
-        $slug = $baseSlug;
-        $counter = 2;
-        
-        $query = CarModel::where('slug', $slug);
-        if ($ignoreId) {
-            $query->where('id', '!=', $ignoreId);
-        }
-        
-        while ($query->exists()) {
-            $slug = $baseSlug . '-' . $counter;
-            $counter++;
-            
-            $query = CarModel::where('slug', $slug);
-            if ($ignoreId) {
-                $query->where('id', '!=', $ignoreId);
-            }
-        }
-        
-        return $slug;
     }
     
     /**

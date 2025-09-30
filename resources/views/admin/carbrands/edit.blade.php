@@ -3,6 +3,13 @@
 @section('title', 'Cập nhật hãng xe')
 
 @section('content')
+{{-- Flash Messages Component --}}
+<x-admin.flash-messages 
+    :show-icons="true"
+    :dismissible="true"
+    position="top-right"
+    :auto-dismiss="5000" />
+
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 max-w-7xl mx-auto">
     {{-- Header --}}
     <div class="px-6 py-4 border-b border-gray-200">
@@ -244,16 +251,6 @@
                     
                     <div class="space-y-4">
 
-                        <div>
-                            <label for="sort_order" class="block text-sm font-medium text-gray-700 mb-2">Thứ tự sắp xếp</label>
-                            <input type="number" name="sort_order" id="sort_order" 
-                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('sort_order') border-red-300 @enderror" 
-                                   value="{{ old('sort_order', $car->sort_order ?? 0) }}" min="0" placeholder="0">
-                            @error('sort_order')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-
                         <div class="grid grid-cols-2 gap-6">
                             <div class="flex items-center">
                                 <input type="hidden" name="is_active" value="0">
@@ -261,7 +258,6 @@
                                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
                                        {{ old('is_active', $car->is_active) ? 'checked' : '' }}>
                                 <label for="is_active" class="ml-2 block text-sm text-gray-900">
-                                    <i class="fas fa-check-circle text-green-500 mr-1"></i>
                                     Hoạt động
                                 </label>
                             </div>
@@ -272,10 +268,19 @@
                                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
                                        {{ old('is_featured', $car->is_featured) ? 'checked' : '' }}>
                                 <label for="is_featured" class="ml-2 block text-sm text-gray-900">
-                                    <i class="fas fa-star text-yellow-500 mr-1"></i>
                                     Nổi bật
                                 </label>
                             </div>
+                        </div>
+
+                        <div>
+                            <label for="sort_order" class="block text-sm font-medium text-gray-700 mb-2">Thứ tự sắp xếp</label>
+                            <input type="number" name="sort_order" id="sort_order" 
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('sort_order') border-red-300 @enderror" 
+                                   value="{{ old('sort_order', $car->sort_order ?? 0) }}" min="0" placeholder="0">
+                            @error('sort_order')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
                         </div>
                     </div>
                 </div>
@@ -324,7 +329,7 @@ document.getElementById('logo_path').addEventListener('change', function(e) {
     }
 });
 
-// AJAX Form Submission for Edit
+// AJAX Form submission with flash message
 document.getElementById('carBrandEditForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
@@ -365,13 +370,15 @@ document.getElementById('carBrandEditForm').addEventListener('submit', function(
     })
     .then(data => {
         if (data.success) {
-            // Show success message
-            showMessage('Cập nhật hãng xe thành công!', 'success');
+            // Show success flash message on current page
+            if (window.showMessage) {
+                window.showMessage(data.message || 'Cập nhật hãng xe thành công!', 'success');
+            }
             
-            // Redirect after delay
+            // Wait 2.5 seconds then redirect
             setTimeout(() => {
                 window.location.href = data.redirect || '/admin/carbrands';
-            }, 1500);
+            }, 2500);
         } else {
             throw new Error(data.message || 'Có lỗi xảy ra');
         }
@@ -382,9 +389,13 @@ document.getElementById('carBrandEditForm').addEventListener('submit', function(
         // Handle validation errors (422)
         if (error.status === 422 && error.data && error.data.errors) {
             displayValidationErrors(error.data.errors);
-            showMessage(error.data.message || 'Vui lòng kiểm tra lại thông tin', 'error');
+            if (window.showMessage) {
+                window.showMessage(error.data.message || 'Vui lòng kiểm tra lại thông tin', 'error');
+            }
         } else {
-            showMessage(error.message || 'Có lỗi xảy ra khi cập nhật hãng xe', 'error');
+            if (window.showMessage) {
+                window.showMessage(error.message || 'Có lỗi xảy ra khi cập nhật hãng xe', 'error');
+            }
         }
     })
     .finally(() => {
@@ -411,38 +422,6 @@ function displayValidationErrors(errors) {
     });
 }
 
-// Logo preview functions
-function previewLogo(input) {
-    if (input.files && input.files[0]) {
-        const file = input.files[0];
-        
-        // Validate file size (2MB)
-        if (file.size > 2 * 1024 * 1024) {
-            showMessage('Kích thước file không được vượt quá 2MB', 'error');
-            input.value = '';
-            return;
-        }
-        
-        // Validate file type
-        if (!file.type.match('image.*')) {
-            showMessage('Vui lòng chọn file hình ảnh', 'error');
-            input.value = '';
-            return;
-        }
-        
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            document.getElementById('logoPreviewImage').src = e.target.result;
-            document.getElementById('logoPreview').classList.remove('hidden');
-        };
-        reader.readAsDataURL(file);
-    }
-}
-
-function removeLogo() {
-    document.getElementById('logo_path').value = '';
-    document.getElementById('logoPreview').classList.add('hidden');
-    document.getElementById('logoPreviewImage').src = '';
-}
+// Clean JavaScript - no toast messages needed, using flash messages instead
 </script>
 @endsection

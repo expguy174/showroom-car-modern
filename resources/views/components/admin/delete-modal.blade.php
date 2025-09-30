@@ -1,6 +1,6 @@
-@props(['modalId', 'title', 'entityName', 'warningText' => 'Bạn có chắc chắn muốn xóa', 'confirmText' => 'Xóa', 'cancelText' => 'Hủy', 'callbackName'])
+@props(['modalId', 'title' => 'Xác nhận xóa', 'confirmText' => 'Xóa', 'cancelText' => 'Hủy', 'deleteCallbackName' => 'confirmDelete', 'entityType' => 'item'])
 
-{{-- Delete Modal --}}
+{{-- Delete Modal Component --}}
 <div id="{{ $modalId }}" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-xl max-w-md w-full p-6">
         {{-- Header --}}
@@ -16,7 +16,7 @@
         {{-- Content --}}
         <div class="mb-6">
             <p class="text-gray-600" id="{{ $modalId }}_message">
-                {{ $warningText }} <span id="{{ $modalId }}_entityName" class="font-semibold">{{ $entityName }}</span>?
+                Bạn có chắc chắn muốn xóa <span id="{{ $modalId }}_entityName" class="font-semibold"></span>?
             </p>
             <div id="{{ $modalId }}_details" class="mt-3 text-sm text-gray-500"></div>
             <div id="{{ $modalId }}_warnings" class="mt-3"></div>
@@ -132,6 +132,14 @@ class DeleteModalManager {
         }
     }
     
+    reset() {
+        // Clear all content elements
+        if (this.entityNameEl) this.entityNameEl.textContent = '';
+        if (this.detailsEl) this.detailsEl.innerHTML = '';
+        if (this.warningsEl) this.warningsEl.innerHTML = '';
+        this.currentDeleteData = null;
+    }
+    
     setLoading(loading = true) {
         if (!this.confirmBtn) return;
         
@@ -147,12 +155,13 @@ class DeleteModalManager {
 
 // Initialize Delete Modal Manager for {{ $modalId }}
 document.addEventListener('DOMContentLoaded', function() {
-    const deleteModal_{{ str_replace(['-', '_'], '', $modalId) }} = new DeleteModalManager({
+    const modalManagerName = 'deleteModalManager_{{ str_replace(["-", "_"], "", $modalId) }}';
+    window[modalManagerName] = new DeleteModalManager({
         modalId: '{{ $modalId }}',
-        deleteCallbackName: '{{ $callbackName }}'
+        deleteCallbackName: '{{ $deleteCallbackName }}'
     });
     
-    deleteModal_{{ str_replace(['-', '_'], '', $modalId) }}.init();
+    window[modalManagerName].init();
 });
 </script>
 @endpush
