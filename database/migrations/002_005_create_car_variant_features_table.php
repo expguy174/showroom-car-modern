@@ -26,8 +26,6 @@ return new class extends Migration {
             $table->boolean('is_included')->default(true)->comment('Tính năng có sẵn trong giá xe không');
             
             // Thông tin bổ sung
-            $table->string('icon_path')->nullable(); // Icon tính năng
-            $table->string('image_path', 2048)->nullable(); // Ảnh tính năng (nếu cần)
             $table->boolean('is_active')->default(true); // Tính năng có hiển thị không
             $table->boolean('is_featured')->default(false); // Tính năng nổi bật
             $table->boolean('is_popular')->default(false); // Tính năng phổ biến

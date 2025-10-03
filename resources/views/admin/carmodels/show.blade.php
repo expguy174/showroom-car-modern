@@ -86,7 +86,8 @@
                 @php
                     $imageTypes = $carModel->images->groupBy('image_type');
                     $allImages = $carModel->images->sortBy('sort_order');
-                    $perPage = 3;
+                    // Default to desktop size (4), JavaScript will handle responsive
+                    $perPage = 4;
                     
                     // Initial load - first page of all images
                     $initialImages = $allImages->take($perPage);
@@ -132,79 +133,56 @@
                         </div>
                     </div>
                     
-                    <div id="imageGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div id="imageGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                         @foreach($initialImages as $image)
-                            <div class="image-item bg-gray-50 rounded-lg p-3 border border-gray-200 hover:border-blue-300 transition-colors" 
+                            <div class="image-item relative bg-gray-50 rounded-lg overflow-hidden border border-gray-200 hover:border-blue-300 transition-colors" 
                                  data-type="{{ $image->image_type }}">
-                                <div class="relative group cursor-pointer thumbnail-item mb-3" 
+                                
+                                {{-- Image --}}
+                                <div class="relative cursor-pointer" 
                                      onclick="changeMainImage('{{ $image->image_url }}', '{{ $image->alt_text ?? $carModel->name }}')">
                                     <img src="{{ $image->image_url }}" 
                                          alt="{{ $image->alt_text ?? $carModel->name }}"
-                                         class="w-full h-24 object-cover rounded-lg border-2 border-gray-200 group-hover:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md {{ $image->is_main ? 'border-blue-500 ring-2 ring-blue-200' : '' }}">
-                                    
-                                    {{-- Image Badges --}}
-                                    <div class="absolute top-1 left-1 flex flex-col gap-1">
-                                        @if($image->is_main)
-                                            <span class="inline-flex items-center justify-center px-1.5 py-0.5 bg-blue-600 text-white text-xs rounded-full font-medium">
-                                                <i class="fas fa-star mr-1"></i>Chính
-                                            </span>
-                                        @endif
-                                        @if(!$image->is_active)
-                                            <span class="inline-flex items-center justify-center px-1.5 py-0.5 bg-red-500 text-white text-xs rounded-full">
-                                                <i class="fas fa-eye-slash"></i>
-                                            </span>
-                                        @endif
-                                    </div>
-                                    
-                                    {{-- Image Type Badge --}}
-                                    <div class="absolute top-1 right-1">
-                                        @php
-                                            $typeConfig = [
-                                                'gallery' => ['icon' => 'fas fa-images', 'color' => 'bg-purple-500', 'text' => 'Tổng quan'],
-                                                'exterior' => ['icon' => 'fas fa-car', 'color' => 'bg-green-500', 'text' => 'Ngoại thất'],
-                                                'interior' => ['icon' => 'fas fa-couch', 'color' => 'bg-orange-500', 'text' => 'Nội thất']
-                                            ];
-                                            $config = $typeConfig[$image->image_type] ?? $typeConfig['gallery'];
-                                        @endphp
-                                        <span class="inline-flex items-center justify-center w-6 h-6 {{ $config['color'] }} text-white text-xs rounded-full" 
-                                              title="{{ $config['text'] }}">
-                                            <i class="{{ $config['icon'] }}"></i>
-                                        </span>
-                                    </div>
+                                         class="w-full h-32 object-cover hover:opacity-90 transition-opacity">
                                 </div>
                                 
-                                {{-- Image Info --}}
-                                <div class="space-y-1">
-                                    <div class="flex items-center justify-between">
-                                        <h4 class="text-sm font-medium text-gray-900 truncate">
-                                            {{ $image->title ?: 'Ảnh ' . $loop->iteration }}
-                                        </h4>
-                                        <span class="text-xs text-gray-500">#{{ $image->sort_order }}</span>
-                                    </div>
-                                    
+                                {{-- Top badges --}}
+                                <div class="absolute top-2 left-2 flex flex-wrap gap-1">
+                                    @if($image->is_main)
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            <i class="fas fa-star mr-1"></i>Chính
+                                        </span>
+                                    @endif
+                                </div>
+                                
+                                {{-- Image info --}}
+                                <div class="p-2">
+                                    @if($image->title)
+                                        <p class="text-xs font-medium text-gray-900 truncate mb-1">{{ $image->title }}</p>
+                                    @endif
                                     @if($image->alt_text)
-                                        <p class="text-xs text-gray-600 truncate" title="{{ $image->alt_text }}">
-                                            <i class="fas fa-search mr-1"></i>{{ $image->alt_text }}
-                                        </p>
+                                        <p class="text-xs text-gray-600 truncate">{{ $image->alt_text }}</p>
                                     @endif
-                                    
-                                    @if($image->description)
-                                        <p class="text-xs text-gray-500 line-clamp-2" title="{{ $image->description }}">
-                                            {{ $image->description }}
-                                        </p>
-                                    @endif
-                                    
-                                    <div class="flex items-center justify-between text-xs text-gray-400 pt-1 border-t border-gray-200">
-                                        <span>{{ $image->created_at->format('d/m/Y') }}</span>
-                                        <div class="flex items-center gap-2">
-                                            @if($image->is_active)
-                                                <span class="text-green-600"><i class="fas fa-eye"></i></span>
-                                            @else
-                                                <span class="text-red-600"><i class="fas fa-eye-slash"></i></span>
-                                            @endif
-                                            <span>{{ $config['text'] }}</span>
+                                    <div class="flex items-center justify-between mt-1">
+                                        <div class="flex items-center space-x-2">
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                                @switch($image->image_type)
+                                                    @case('gallery') Thư viện @break
+                                                    @case('interior') Nội thất @break
+                                                    @case('exterior') Ngoại thất @break
+                                                    @default {{ ucfirst($image->image_type) }}
+                                                @endswitch
+                                            </span>
                                         </div>
+                                        @if(!$image->is_active)
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                                                Ẩn
+                                            </span>
+                                        @endif
                                     </div>
+                                    @if($image->description)
+                                        <p class="text-xs text-gray-500 mt-1 truncate" title="{{ $image->description }}">{{ $image->description }}</p>
+                                    @endif
                                 </div>
                             </div>
                         @endforeach
@@ -213,7 +191,7 @@
                     {{-- Image Pagination --}}
                     <div id="imagePagination" class="flex items-center justify-between pt-4 border-t border-gray-200">
                         <div id="imageInfo" class="text-sm text-gray-600">
-                            Hiển thị 1-{{ min(3, $allImages->count()) }} trong {{ $allImages->count() }} ảnh
+                            Hiển thị 1-{{ min(4, $allImages->count()) }} trong {{ $allImages->count() }} ảnh
                         </div>
                         
                         <div id="paginationControls" class="flex items-center space-x-1">
@@ -464,8 +442,16 @@ let currentFilter = 'all';
 let currentPage = 1;
 let totalPages = 1;
 let totalImages = {{ $allImages->count() }};
-const perPage = 3;
+let perPage = getPerPageByScreenSize();
 const carModelId = {{ $carModel->id }};
+
+// Function to get items per page based on screen size
+function getPerPageByScreenSize() {
+    const width = window.innerWidth;
+    if (width >= 1024) return 4; // lg: 4 ảnh
+    if (width >= 768) return 3;  // md: 3 ảnh  
+    return 2; // sm: 2 ảnh
+}
 
 // Image data from server
 const allImagesData = @json($allImages->values());
@@ -543,48 +529,33 @@ function renderImages(images) {
         const config = typeConfig[image.image_type] || typeConfig['gallery'];
         
         const imageItem = document.createElement('div');
-        imageItem.className = 'image-item bg-gray-50 rounded-lg p-3 border border-gray-200 hover:border-blue-300 transition-colors';
+        imageItem.className = 'image-item relative bg-gray-50 rounded-lg overflow-hidden border border-gray-200 hover:border-blue-300 transition-colors';
         imageItem.setAttribute('data-type', image.image_type);
         
         imageItem.innerHTML = `
-            <div class="relative group cursor-pointer thumbnail-item mb-3" 
+            <div class="relative cursor-pointer" 
                  onclick="changeMainImage('${image.image_url}', '${image.alt_text || ''}')">
                 <img src="${image.image_url}" 
                      alt="${image.alt_text || ''}"
-                     class="w-full h-24 object-cover rounded-lg border-2 border-gray-200 group-hover:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md ${image.is_main ? 'border-blue-500 ring-2 ring-blue-200' : ''}">
-                
-                <div class="absolute top-1 left-1 flex flex-col gap-1">
-                    ${image.is_main ? '<span class="inline-flex items-center justify-center px-1.5 py-0.5 bg-blue-600 text-white text-xs rounded-full font-medium"><i class="fas fa-star mr-1"></i>Chính</span>' : ''}
-                    ${!image.is_active ? '<span class="inline-flex items-center justify-center px-1.5 py-0.5 bg-red-500 text-white text-xs rounded-full"><i class="fas fa-eye-slash"></i></span>' : ''}
-                </div>
-                
-                <div class="absolute top-1 right-1">
-                    <span class="inline-flex items-center justify-center w-6 h-6 ${config.color} text-white text-xs rounded-full" 
-                          title="${config.text}">
-                        <i class="${config.icon}"></i>
-                    </span>
-                </div>
+                     class="w-full h-32 object-cover hover:opacity-90 transition-opacity">
             </div>
             
-            <div class="space-y-1">
-                <div class="flex items-center justify-between">
-                    <h4 class="text-sm font-medium text-gray-900 truncate">
-                        ${image.title || 'Ảnh ' + (index + 1)}
-                    </h4>
-                    <span class="text-xs text-gray-500">#${image.sort_order}</span>
-                </div>
-                
-                ${image.alt_text ? `<p class="text-xs text-gray-600 truncate" title="${image.alt_text}"><i class="fas fa-search mr-1"></i>${image.alt_text}</p>` : ''}
-                
-                ${image.description ? `<p class="text-xs text-gray-500 line-clamp-2" title="${image.description}">${image.description}</p>` : ''}
-                
-                <div class="flex items-center justify-between text-xs text-gray-400 pt-1 border-t border-gray-200">
-                    <span>${new Date(image.created_at).toLocaleDateString('vi-VN')}</span>
-                    <div class="flex items-center gap-2">
-                        ${image.is_active ? '<span class="text-green-600"><i class="fas fa-eye"></i></span>' : '<span class="text-red-600"><i class="fas fa-eye-slash"></i></span>'}
-                        <span>${config.text}</span>
+            <div class="absolute top-2 left-2 flex flex-wrap gap-1">
+                ${image.is_main ? '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"><i class="fas fa-star mr-1"></i>Chính</span>' : ''}
+            </div>
+            
+            <div class="p-2">
+                ${image.title ? `<p class="text-xs font-medium text-gray-900 truncate mb-1">${image.title}</p>` : ''}
+                ${image.alt_text ? `<p class="text-xs text-gray-600 truncate">${image.alt_text}</p>` : ''}
+                <div class="flex items-center justify-between mt-1">
+                    <div class="flex items-center space-x-2">
+                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                            ${image.image_type === 'gallery' ? 'Thư viện' : image.image_type === 'interior' ? 'Nội thất' : image.image_type === 'exterior' ? 'Ngoại thất' : image.image_type}
+                        </span>
                     </div>
+                    ${!image.is_active ? '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">Ẩn</span>' : ''}
                 </div>
+                ${image.description ? `<p class="text-xs text-gray-500 mt-1 truncate" title="${image.description}">${image.description}</p>` : ''}
             </div>
         `;
         
@@ -672,6 +643,17 @@ document.addEventListener('DOMContentLoaded', function() {
     totalImages = allImagesData.length;
     totalPages = Math.ceil(totalImages / perPage);
     updatePagination();
+});
+
+// Handle window resize to update perPage
+window.addEventListener('resize', function() {
+    const newPerPage = getPerPageByScreenSize();
+    if (newPerPage !== perPage) {
+        perPage = newPerPage;
+        // Reset to page 1 and recalculate
+        currentPage = 1;
+        filterImages(currentFilter);
+    }
 });
 </script>
 @endsection

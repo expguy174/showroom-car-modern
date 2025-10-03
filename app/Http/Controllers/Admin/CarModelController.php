@@ -138,7 +138,7 @@ class CarModelController extends Controller
                 }
             }
             
-            $successMessage = '✅ Đã khôi phục và cập nhật dòng xe thành công!';
+            $successMessage = 'Đã khôi phục và cập nhật dòng xe thành công!';
             
             // Check if this is an AJAX request
             if ($request->wantsJson() || $request->ajax()) {
@@ -316,7 +316,7 @@ class CarModelController extends Controller
             }
         }
 
-        $successMessage = '✅ Thêm dòng xe thành công!';
+        $successMessage = 'Thêm dòng xe thành công!';
         
         // Check if this is an AJAX request
         if ($request->wantsJson() || $request->ajax()) {
@@ -572,7 +572,7 @@ class CarModelController extends Controller
             }
         }
 
-        $successMessage = '✅ Cập nhật dòng xe thành công!';
+        $successMessage = 'Cập nhật dòng xe thành công!';
         
         // Check if this is an AJAX request
         if ($request->wantsJson() || $request->ajax()) {
@@ -781,7 +781,7 @@ class CarModelController extends Controller
         
         return response()->json([
             'success' => true,
-            'message' => "✅ Đã {$statusText} dòng xe \"{$carmodel->name}\" thành công!",
+            'message' => "Đã {$statusText} dòng xe \"{$carmodel->name}\" thành công!",
             'is_active' => $newStatus,
             'stats' => [
                 'totalModels' => $totalModels,

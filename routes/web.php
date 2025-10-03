@@ -239,6 +239,27 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::put('/update/{carvariant}', [CarVariantController::class, 'update'])->name('update');
         Route::delete('/delete/{carvariant}', [CarVariantController::class, 'destroy'])->name('destroy');
         Route::post('/{carvariant}/toggle-status', [CarVariantController::class, 'toggleStatus'])->name('toggle-status');
+        
+        // Color Management Routes
+        Route::post('/{carvariant}/colors', [CarVariantController::class, 'addColor'])->name('colors.add');
+        Route::put('/{carvariant}/colors/{colorId}', [CarVariantController::class, 'updateColor'])->name('colors.update');
+        Route::delete('/{carvariant}/colors/{colorId}', [CarVariantController::class, 'deleteColor'])->name('colors.delete');
+        
+        // Specification Management Routes
+        Route::post('/{carvariant}/specifications', [CarVariantController::class, 'addSpecification'])->name('specifications.add');
+        Route::put('/{carvariant}/specifications/{specId}', [CarVariantController::class, 'updateSpecification'])->name('specifications.update');
+        Route::delete('/{carvariant}/specifications/{specId}', [CarVariantController::class, 'deleteSpecification'])->name('specifications.delete');
+        
+        // Feature Management Routes
+        Route::post('/{carvariant}/features', [CarVariantController::class, 'addFeature'])->name('features.add');
+        Route::put('/{carvariant}/features/{featureId}', [CarVariantController::class, 'updateFeature'])->name('features.update');
+        Route::delete('/{carvariant}/features/{featureId}', [CarVariantController::class, 'deleteFeature'])->name('features.delete');
+        
+        // Image Management Routes
+        Route::post('/{carvariant}/images', [CarVariantController::class, 'uploadImages'])->name('images.upload');
+        Route::put('/{carvariant}/images/{imageId}', [CarVariantController::class, 'updateImage'])->name('images.update');
+        Route::delete('/{carvariant}/images/{imageId}', [CarVariantController::class, 'deleteImage'])->name('images.delete');
+        Route::post('/{carvariant}/images/{imageId}/set-main', [CarVariantController::class, 'setMainImage'])->name('images.set-main');
     });
 
     // Orders

@@ -115,7 +115,7 @@ class AccessoryController extends Controller
         $accessory->delete();
         
         return redirect()->route('admin.accessories.index')->with('success', 
-            "✅ Đã xóa phụ kiện \"{$accessory->name}\" thành công!"
+            "Đã xóa phụ kiện \"{$accessory->name}\" thành công!"
         );
     }
 

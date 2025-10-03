@@ -48,7 +48,7 @@
                                 Hãng xe <span class="text-red-500">*</span>
                             </label>
                             <select name="car_brand_id" id="car_brand_id" 
-                                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('car_brand_id') border-red-300 @enderror">
+                                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ">
                                 <option value="">Chọn hãng xe...</option>
                                 @foreach($carBrands as $brand)
                                     <option value="{{ $brand->id }}" {{ old('car_brand_id', request('brand_id')) == $brand->id ? 'selected' : '' }}>
@@ -56,9 +56,6 @@
                                     </option>
                                 @endforeach
                             </select>
-                            @error('car_brand_id')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
                         </div>
 
                         <div>
@@ -66,21 +63,15 @@
                                 Tên mẫu xe <span class="text-red-500">*</span>
                             </label>
                             <input type="text" name="name" id="name" 
-                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('name') border-red-300 @enderror" 
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 " 
                                    value="{{ old('name') }}" placeholder="Ví dụ: Camry, Civic, Vios...">
-                            @error('name')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
                         </div>
 
                         <div>
                             <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Mô tả</label>
                             <textarea name="description" id="description" rows="4" 
-                                      class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('description') border-red-300 @enderror" 
+                                      class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 " 
                                       placeholder="Mô tả về dòng xe...">{{ old('description') }}</textarea>
-                            @error('description')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
                         </div>
                     </div>
                 </div>
@@ -96,7 +87,7 @@
                         <div>
                             <label for="body_type" class="block text-sm font-medium text-gray-700 mb-2">Kiểu dáng</label>
                             <select name="body_type" id="body_type" 
-                                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('body_type') border-red-300 @enderror">
+                                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ">
                                 <option value="">-- Chọn kiểu dáng --</option>
                                 <option value="sedan" {{ old('body_type') == 'sedan' ? 'selected' : '' }}>Sedan</option>
                                 <option value="suv" {{ old('body_type') == 'suv' ? 'selected' : '' }}>SUV</option>
@@ -108,15 +99,12 @@
                                 <option value="van" {{ old('body_type') == 'van' ? 'selected' : '' }}>Van</option>
                                 <option value="minivan" {{ old('body_type') == 'minivan' ? 'selected' : '' }}>Minivan</option>
                             </select>
-                            @error('body_type')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
                         </div>
 
                         <div>
                             <label for="segment" class="block text-sm font-medium text-gray-700 mb-2">Phân khúc</label>
                             <select name="segment" id="segment" 
-                                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('segment') border-red-300 @enderror">
+                                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ">
                                 <option value="">-- Chọn phân khúc --</option>
                                 <option value="economy" {{ old('segment') == 'economy' ? 'selected' : '' }}>Economy - Xe tiết kiệm</option>
                                 <option value="compact" {{ old('segment') == 'compact' ? 'selected' : '' }}>Compact - Xe nhỏ gọn</option>
@@ -127,15 +115,12 @@
                                 <option value="sports" {{ old('segment') == 'sports' ? 'selected' : '' }}>Sports - Xe thể thao</option>
                                 <option value="exotic" {{ old('segment') == 'exotic' ? 'selected' : '' }}>Exotic - Xe siêu sang</option>
                             </select>
-                            @error('segment')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
                         </div>
 
                         <div>
                             <label for="fuel_type" class="block text-sm font-medium text-gray-700 mb-2">Loại nhiên liệu</label>
                             <select name="fuel_type" id="fuel_type" 
-                                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('fuel_type') border-red-300 @enderror">
+                                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ">
                                 <option value="">-- Chọn loại nhiên liệu --</option>
                                 <option value="gasoline" {{ old('fuel_type') == 'gasoline' ? 'selected' : '' }}>Gasoline - Xăng</option>
                                 <option value="diesel" {{ old('fuel_type') == 'diesel' ? 'selected' : '' }}>Diesel - Dầu</option>
@@ -144,39 +129,27 @@
                                 <option value="plug-in_hybrid" {{ old('fuel_type') == 'plug-in_hybrid' ? 'selected' : '' }}>Plug-in Hybrid - Lai sạc điện</option>
                                 <option value="hydrogen" {{ old('fuel_type') == 'hydrogen' ? 'selected' : '' }}>Hydrogen - Hydro</option>
                             </select>
-                            @error('fuel_type')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
                         </div>
 
                         <div>
                             <label for="generation" class="block text-sm font-medium text-gray-700 mb-2">Thế hệ</label>
                             <input type="text" name="generation" id="generation" 
-                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('generation') border-red-300 @enderror" 
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 " 
                                    value="{{ old('generation') }}" placeholder="VD: Gen 10, Thế hệ 3...">
-                            @error('generation')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
                         </div>
 
                         <div>
                             <label for="production_start_year" class="block text-sm font-medium text-gray-700 mb-2">Năm bắt đầu SX</label>
                             <input type="number" name="production_start_year" id="production_start_year" 
-                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('production_start_year') border-red-300 @enderror" 
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 " 
                                    value="{{ old('production_start_year') }}" min="1900" max="{{ date('Y') + 5 }}">
-                            @error('production_start_year')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
                         </div>
 
                         <div>
                             <label for="production_end_year" class="block text-sm font-medium text-gray-700 mb-2">Năm kết thúc SX</label>
                             <input type="number" name="production_end_year" id="production_end_year" 
-                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('production_end_year') border-red-300 @enderror" 
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 " 
                                    value="{{ old('production_end_year') }}" min="1900" max="{{ date('Y') + 10 }}">
-                            @error('production_end_year')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
                         </div>
                     </div>
                 </div>
@@ -192,31 +165,22 @@
                         <div>
                             <label for="meta_title" class="block text-sm font-medium text-gray-700 mb-2">Meta Title</label>
                             <input type="text" name="meta_title" id="meta_title" 
-                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('meta_title') border-red-300 @enderror" 
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 " 
                                    value="{{ old('meta_title') }}" placeholder="Tiêu đề SEO...">
-                            @error('meta_title')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
                         </div>
 
                         <div>
                             <label for="meta_description" class="block text-sm font-medium text-gray-700 mb-2">Meta Description</label>
                             <textarea name="meta_description" id="meta_description" rows="3" 
-                                      class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('meta_description') border-red-300 @enderror" 
+                                      class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 " 
                                       placeholder="Mô tả SEO...">{{ old('meta_description') }}</textarea>
-                            @error('meta_description')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
                         </div>
 
                         <div>
                             <label for="keywords" class="block text-sm font-medium text-gray-700 mb-2">Keywords</label>
                             <input type="text" name="keywords" id="keywords" 
-                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('keywords') border-red-300 @enderror" 
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 " 
                                    value="{{ old('keywords') }}" placeholder="từ khóa, phân cách, bằng dấu phẩy">
-                            @error('keywords')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
                         </div>
                     </div>
                 </div>
@@ -251,12 +215,6 @@
                                     <p class="text-xs text-gray-500">PNG, JPG, GIF tối đa 10MB mỗi ảnh</p>
                                 </div>
                             </div>
-                            @error('images')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                            @error('images.*')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
                         </div>
 
                         {{-- Image Preview --}}
@@ -324,11 +282,8 @@
                     <div class="mt-4">
                         <label for="sort_order" class="block text-sm font-medium text-gray-700 mb-2">Thứ tự sắp xếp</label>
                         <input type="number" name="sort_order" id="sort_order" 
-                               class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('sort_order') border-red-300 @enderror" 
+                               class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 " 
                                value="{{ old('sort_order', 0) }}" min="0">
-                        @error('sort_order')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
                     </div>
                 </div>
             </div>
@@ -521,6 +476,22 @@ function removePreview(button, index) {
 document.getElementById('carModelForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
+    // Client-side validation first
+    const validationResult = validateCarModelForm();
+    if (!validationResult.isValid) {
+        // Focus the field with error
+        if (validationResult.element) {
+            validationResult.element.focus();
+            validationResult.element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        
+        // Show specific flash message
+        if (window.showMessage) {
+            window.showMessage(validationResult.message, 'error');
+        }
+        return; // Stop submission
+    }
+    
     const form = this;
     const formData = new FormData(form);
     const submitBtn = form.querySelector('button[type="submit"]');
@@ -570,10 +541,12 @@ document.getElementById('carModelForm').addEventListener('submit', function(e) {
     .catch(error => {
         console.error('Error:', error);
         
-        // Handle validation errors (422)
+        // Handle validation errors (422) - Show direct error message
         if (error.status === 422 && error.data && error.data.errors) {
-            displayValidationErrors(error.data.errors);
-            showMessage(error.data.message, 'error');
+            const errors = error.data.errors;
+            // Get first error message directly
+            const firstError = Object.values(errors)[0][0];
+            showMessage(firstError, 'error');
         } else if (error.data && error.data.message) {
             showMessage(error.data.message, 'error');
         } else {
@@ -587,20 +560,78 @@ document.getElementById('carModelForm').addEventListener('submit', function(e) {
     });
 });
 
-function displayValidationErrors(errors) {
-    Object.keys(errors).forEach(field => {
-        const input = document.querySelector(`[name="${field}"]`);
-        if (input) {
-            // Add error border
-            input.classList.remove('border-gray-300');
-            input.classList.add('border-red-300');
-            // Add error message
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'error-message mt-1 text-sm text-red-600';
-            errorDiv.textContent = errors[field][0];
-            input.parentNode.appendChild(errorDiv);
+// Removed displayValidationErrors function - using flash messages only
+
+// Client-side validation function
+function validateCarModelForm() {
+    // 1. Validate required car brand selection
+    const carBrandField = document.getElementById('car_brand_id');
+    if (!carBrandField.value.trim()) {
+        return {
+            isValid: false,
+            element: carBrandField,
+            message: 'Vui lòng chọn hãng xe trước khi tiếp tục.'
+        };
+    }
+    
+    // 2. Validate required model name
+    const nameField = document.getElementById('name');
+    if (!nameField.value.trim()) {
+        return {
+            isValid: false,
+            element: nameField,
+            message: 'Vui lòng nhập tên mẫu xe.'
+        };
+    }
+    
+    if (nameField.value.trim().length < 2) {
+        return {
+            isValid: false,
+            element: nameField,
+            message: 'Tên mẫu xe phải có ít nhất 2 ký tự.'
+        };
+    }
+    
+    // 3. Validate production years if provided
+    const startYearField = document.getElementById('production_start_year');
+    const endYearField = document.getElementById('production_end_year');
+    const currentYear = new Date().getFullYear();
+    
+    if (startYearField.value.trim()) {
+        const startYear = parseInt(startYearField.value);
+        if (startYear < 1900 || startYear > currentYear + 5) {
+            return {
+                isValid: false,
+                element: startYearField,
+                message: `Năm bắt đầu sản xuất phải từ 1900 đến ${currentYear + 5}.`
+            };
         }
-    });
+        
+        // Check end year vs start year
+        if (endYearField.value.trim()) {
+            const endYear = parseInt(endYearField.value);
+            if (endYear < startYear) {
+                return {
+                    isValid: false,
+                    element: endYearField,
+                    message: 'Năm kết thúc sản xuất không thể nhỏ hơn năm bắt đầu.'
+                };
+            }
+        }
+    }
+    
+    if (endYearField.value.trim()) {
+        const endYear = parseInt(endYearField.value);
+        if (endYear < 1900 || endYear > currentYear + 10) {
+            return {
+                isValid: false,
+                element: endYearField,
+                message: `Năm kết thúc sản xuất phải từ 1900 đến ${currentYear + 10}.`
+            };
+        }
+    }
+    
+    return { isValid: true };
 }
 
 // Auto-fill image information based on car model name and image type

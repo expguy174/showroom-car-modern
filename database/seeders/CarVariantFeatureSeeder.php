@@ -31,8 +31,6 @@ class CarVariantFeatureSeeder extends Seeder
                     'importance' => $f['importance'],
                     'price' => $f['price'],
                     'is_included' => $f['price'] == 0,
-                    'icon_path' => null,
-                    'image_path' => null,
                     'is_active' => true,
                     'is_featured' => $f['is_featured'],
                     'is_popular' => false,

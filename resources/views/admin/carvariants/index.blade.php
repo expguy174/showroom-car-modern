@@ -338,7 +338,10 @@ window.confirmDelete = function(data) {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
             'Accept': 'application/json'
-        }
+        },
+        body: JSON.stringify({
+            confirmed: true
+        })
     })
     .then(response => response.json())
     .then(data => {

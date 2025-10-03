@@ -28,6 +28,7 @@ class CarVariant extends Model
         'is_on_sale',
         'color_inventory',
         'is_active',
+        'sort_order',
         'is_featured',
         'is_available',
         'is_new_arrival',
@@ -47,7 +48,40 @@ class CarVariant extends Model
         'is_available' => 'boolean',
         'is_new_arrival' => 'boolean',
         'is_bestseller' => 'boolean',
+        'sort_order' => 'integer',
     ];
+    
+    /**
+     * Boot the model.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+        
+        // When soft deleting CarVariant, also delete related records
+        static::deleting(function ($carVariant) {
+            // Only delete related records if this is a soft delete
+            if (!$carVariant->isForceDeleting()) {
+                // Hard delete related records to avoid constraint violations
+                // since most related models don't use SoftDeletes
+                $carVariant->specifications()->forceDelete();
+                $carVariant->featuresRelation()->forceDelete();
+                
+                // For models that might use SoftDeletes, check first
+                if (method_exists($carVariant->colors()->getModel(), 'bootSoftDeletes')) {
+                    $carVariant->colors()->delete();
+                } else {
+                    $carVariant->colors()->forceDelete();
+                }
+                
+                if (method_exists($carVariant->images()->getModel(), 'bootSoftDeletes')) {
+                    $carVariant->images()->delete();
+                } else {
+                    $carVariant->images()->forceDelete();
+                }
+            }
+        });
+    }
 
     public function carModel()
     {
@@ -82,7 +116,7 @@ class CarVariant extends Model
 
     public function specifications()
     {
-        return $this->hasMany(CarSpecification::class);
+        return $this->hasMany(CarVariantSpecification::class);
     }
 
     public function featuresRelation()

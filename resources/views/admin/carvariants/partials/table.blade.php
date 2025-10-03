@@ -27,7 +27,34 @@
                         </div>
                         <div class="ml-4 min-w-0 flex-1">
                             <div class="text-sm font-medium text-gray-900 truncate">{{ $variant->name }}</div>
-                            <div class="text-sm text-gray-500 truncate">{{ $variant->engine_type ?? 'Chưa cập nhật' }}</div>
+                            <div class="text-sm text-gray-500 truncate">
+                                @php
+                                    $engineType = $variant->specifications->where('spec_name', 'engine_type')->first();
+                                    $fuelType = $variant->specifications->where('spec_name', 'fuel_type')->first();
+                                    $displacement = $variant->specifications->where('spec_name', 'engine_displacement')->first();
+                                    
+                                    $engineInfo = [];
+                                    if ($displacement && $displacement->spec_value) {
+                                        $cc = (float) $displacement->spec_value;
+                                        if ($cc > 0) {
+                                            $engineInfo[] = $cc >= 1000 ? number_format($cc/1000, 1) . 'L' : $cc . 'cc';
+                                        }
+                                    }
+                                    if ($engineType && $engineType->spec_value) {
+                                        $engineInfo[] = $engineType->spec_value;
+                                    }
+                                    if ($fuelType && $fuelType->spec_value) {
+                                        $fuelTypes = [
+                                            'gasoline' => 'Xăng',
+                                            'diesel' => 'Dầu',
+                                            'hybrid' => 'Hybrid',
+                                            'electric' => 'Điện'
+                                        ];
+                                        $engineInfo[] = $fuelTypes[$fuelType->spec_value] ?? ucfirst($fuelType->spec_value);
+                                    }
+                                @endphp
+                                {{ !empty($engineInfo) ? implode(' ', $engineInfo) : 'Chưa cập nhật' }}
+                            </div>
                             @if($variant->sku)
                                 <div class="text-xs text-gray-500 mt-1">
                                     <span class="inline-flex items-center">

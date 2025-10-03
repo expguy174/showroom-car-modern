@@ -887,31 +887,9 @@ class CarVariantSeeder extends Seeder
             ]);
         }
 
-        foreach ($variants as $data) {
-            CarVariant::updateOrCreate([
-                'car_model_id' => $data['car_model_id'],
-                'name' => $data['name'],
-            ], $data);
-        }
-
-        // Populate color_inventory per variant if colors already exist
-        $variantsWithColors = CarVariant::with('colors')->get();
-        foreach ($variantsWithColors as $variant) {
-            if ($variant->colors && $variant->colors->count() > 0) {
-                $inventory = [];
-                foreach ($variant->colors as $color) {
-                    // Default seed: 5 units available per color
-                    $inventory[$color->id] = [
-                        'quantity' => 5,
-                        'reserved' => 0,
-                        'available' => 5,
-                    ];
-                }
-                $variant->color_inventory = $inventory;
-                $variant->save();
-            }
+        // Create all variants
+        foreach ($variants as $variantData) {
+            CarVariant::create($variantData);
         }
     }
 }
-
-

@@ -48,41 +48,29 @@
                                 Tên hãng xe <span class="text-red-500">*</span>
                             </label>
                             <input type="text" name="name" id="name" 
-                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('name') border-red-300 @enderror" 
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 " 
                                    value="{{ old('name', $car->name) }}" placeholder="Ví dụ: Toyota, Honda...">
-                            @error('name')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
                         </div>
 
                         <div>
                             <label for="country" class="block text-sm font-medium text-gray-700 mb-2">Quốc gia</label>
                             <input type="text" name="country" id="country" 
-                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('country') border-red-300 @enderror" 
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 " 
                                    value="{{ old('country', $car->country) }}" placeholder="Ví dụ: Nhật Bản, Hàn Quốc...">
-                            @error('country')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
                         </div>
 
                         <div>
                             <label for="founded_year" class="block text-sm font-medium text-gray-700 mb-2">Năm thành lập</label>
                             <input type="number" name="founded_year" id="founded_year" 
-                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('founded_year') border-red-300 @enderror" 
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 " 
                                    value="{{ old('founded_year', $car->founded_year) }}" min="1800" max="{{ date('Y') + 1 }}" placeholder="Ví dụ: 1937">
-                            @error('founded_year')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
                         </div>
 
                         <div>
                             <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Mô tả</label>
                             <textarea name="description" id="description" rows="4" 
-                                      class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('description') border-red-300 @enderror" 
+                                      class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 " 
                                       placeholder="Mô tả về hãng xe...">{{ old('description', $car->description) }}</textarea>
-                            @error('description')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
                         </div>
                     </div>
                 </div>
@@ -98,43 +86,31 @@
                         <div>
                             <label for="website" class="block text-sm font-medium text-gray-700 mb-2">Website</label>
                             <input type="url" name="website" id="website" 
-                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('website') border-red-300 @enderror" 
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 " 
                                    value="{{ old('website', $car->website) }}" placeholder="https://example.com">
-                            @error('website')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">Số điện thoại</label>
                                 <input type="tel" name="phone" id="phone" 
-                                       class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('phone') border-red-300 @enderror" 
+                                       class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 " 
                                        value="{{ old('phone', $car->phone) }}" placeholder="+84 xxx xxx xxx">
-                                @error('phone')
-                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
                             </div>
 
                             <div>
                                 <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
                                 <input type="email" name="email" id="email" 
-                                       class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('email') border-red-300 @enderror" 
+                                       class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 " 
                                        value="{{ old('email', $car->email) }}" placeholder="contact@example.com">
-                                @error('email')
-                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
                             </div>
                         </div>
 
                         <div>
                             <label for="address" class="block text-sm font-medium text-gray-700 mb-2">Địa chỉ</label>
                             <textarea name="address" id="address" rows="3" 
-                                      class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('address') border-red-300 @enderror" 
+                                      class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 " 
                                       placeholder="Địa chỉ trụ sở chính...">{{ old('address', $car->address) }}</textarea>
-                            @error('address')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
                         </div>
                     </div>
                 </div>
@@ -150,31 +126,22 @@
                         <div>
                             <label for="meta_title" class="block text-sm font-medium text-gray-700 mb-2">Meta Title</label>
                             <input type="text" name="meta_title" id="meta_title" 
-                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('meta_title') border-red-300 @enderror" 
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 " 
                                    value="{{ old('meta_title', $car->meta_title) }}" maxlength="255" placeholder="Tiêu đề trang cho SEO">
-                            @error('meta_title')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
                         </div>
 
                         <div>
                             <label for="meta_description" class="block text-sm font-medium text-gray-700 mb-2">Meta Description</label>
                             <textarea name="meta_description" id="meta_description" rows="3" 
-                                      class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('meta_description') border-red-300 @enderror" 
+                                      class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 " 
                                       maxlength="500" placeholder="Mô tả trang cho SEO">{{ old('meta_description', $car->meta_description) }}</textarea>
-                            @error('meta_description')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
                         </div>
 
                         <div>
                             <label for="keywords" class="block text-sm font-medium text-gray-700 mb-2">Keywords</label>
                             <input type="text" name="keywords" id="keywords" 
-                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('keywords') border-red-300 @enderror" 
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 " 
                                    value="{{ old('keywords', $car->keywords) }}" placeholder="từ khóa, phân cách, bằng dấu phẩy">
-                            @error('keywords')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
                         </div>
                     </div>
                 </div>
@@ -333,6 +300,22 @@ document.getElementById('logo_path').addEventListener('change', function(e) {
 document.getElementById('carBrandEditForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
+    // Client-side validation first
+    const validationResult = validateCarBrandEditForm();
+    if (!validationResult.isValid) {
+        // Focus the field with error
+        if (validationResult.element) {
+            validationResult.element.focus();
+            validationResult.element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        
+        // Show specific flash message
+        if (window.showMessage) {
+            window.showMessage(validationResult.message, 'error');
+        }
+        return; // Stop submission
+    }
+    
     const form = this;
     const formData = new FormData(form);
     formData.append('_method', 'PUT'); // Laravel method spoofing
@@ -386,11 +369,13 @@ document.getElementById('carBrandEditForm').addEventListener('submit', function(
     .catch(error => {
         console.error('Error:', error);
         
-        // Handle validation errors (422)
+        // Handle validation errors (422) - Show direct error message
         if (error.status === 422 && error.data && error.data.errors) {
-            displayValidationErrors(error.data.errors);
+            const errors = error.data.errors;
+            // Get first error message directly
+            const firstError = Object.values(errors)[0][0];
             if (window.showMessage) {
-                window.showMessage(error.data.message || 'Vui lòng kiểm tra lại thông tin', 'error');
+                window.showMessage(firstError, 'error');
             }
         } else {
             if (window.showMessage) {
@@ -405,21 +390,69 @@ document.getElementById('carBrandEditForm').addEventListener('submit', function(
     });
 });
 
-function displayValidationErrors(errors) {
-    Object.keys(errors).forEach(field => {
-        const input = document.querySelector(`[name="${field}"]`);
-        if (input) {
-            // Add error border
-            input.classList.remove('border-gray-300');
-            input.classList.add('border-red-300');
-            
-            // Add error message
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'error-message mt-1 text-sm text-red-600';
-            errorDiv.textContent = errors[field][0];
-            input.parentNode.appendChild(errorDiv);
+// Removed displayValidationErrors function - using flash messages only
+
+// Client-side validation function for edit form
+function validateCarBrandEditForm() {
+    // 1. Validate required name field
+    const nameField = document.getElementById('name');
+    if (!nameField.value.trim()) {
+        return {
+            isValid: false,
+            element: nameField,
+            message: 'Vui lòng nhập tên hãng xe.'
+        };
+    }
+    
+    if (nameField.value.trim().length < 2) {
+        return {
+            isValid: false,
+            element: nameField,
+            message: 'Tên hãng xe phải có ít nhất 2 ký tự.'
+        };
+    }
+    
+    // 2. Validate website URL format if provided
+    const websiteField = document.getElementById('website');
+    if (websiteField.value.trim()) {
+        const urlPattern = /^https?:\/\/.+/;
+        if (!urlPattern.test(websiteField.value.trim())) {
+            return {
+                isValid: false,
+                element: websiteField,
+                message: 'Website phải bắt đầu với http:// hoặc https://'
+            };
         }
-    });
+    }
+    
+    // 3. Validate email format if provided
+    const emailField = document.getElementById('email');
+    if (emailField.value.trim()) {
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailPattern.test(emailField.value.trim())) {
+            return {
+                isValid: false,
+                element: emailField,
+                message: 'Vui lòng nhập địa chỉ email hợp lệ.'
+            };
+        }
+    }
+    
+    // 4. Validate founded year if provided
+    const foundedYearField = document.getElementById('founded_year');
+    if (foundedYearField.value.trim()) {
+        const year = parseInt(foundedYearField.value);
+        const currentYear = new Date().getFullYear();
+        if (year < 1800 || year > currentYear + 1) {
+            return {
+                isValid: false,
+                element: foundedYearField,
+                message: `Năm thành lập phải từ 1800 đến ${currentYear + 1}.`
+            };
+        }
+    }
+    
+    return { isValid: true };
 }
 
 // Clean JavaScript - no toast messages needed, using flash messages instead

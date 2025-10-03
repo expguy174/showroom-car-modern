@@ -19,8 +19,6 @@ class CarVariantFeature extends Model
         'importance',
         'price',
         'is_included',
-        'icon_path',
-        'image_path',
         'is_active',
         'is_featured',
         'is_popular',
@@ -42,14 +40,6 @@ class CarVariantFeature extends Model
     }
 
     // Removed featurePackages relationship as CarFeaturePackage model doesn't exist
-
-    public function getIconUrlAttribute()
-    {
-        if ($this->icon_path) {
-            return asset('storage/' . $this->icon_path);
-        }
-        return null;
-    }
 
     public function getFormattedPriceAttribute()
     {

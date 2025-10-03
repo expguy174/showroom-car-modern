@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             CarModelSeeder::class,
             CarVariantSeeder::class,
             CarVariantColorSeeder::class,
+            UpdateColorInventorySeeder::class,
             CarVariantFeatureSeeder::class,
             CarVariantSpecificationSeeder::class,
             CarModelImageSeeder::class,
