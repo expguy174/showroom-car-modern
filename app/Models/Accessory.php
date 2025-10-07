@@ -197,4 +197,114 @@ class Accessory extends Model
         }
         return ($this->stock_quantity ?? 0) > 0;
     }
+
+    /**
+     * Get Vietnamese translation for category
+     */
+    public static function getCategoryTranslations()
+    {
+        return [
+            // Standard format
+            'interior' => 'Nội thất',
+            'exterior' => 'Ngoại thất',
+            'electronics' => 'Điện tử',
+            'engine' => 'Động cơ',
+            'wheels' => 'Bánh xe',
+            'tires' => 'Lốp xe',
+            'lighting' => 'Đèn chiếu sáng',
+            'audio' => 'Âm thanh',
+            'navigation' => 'Định vị',
+            'safety' => 'An toàn',
+            'performance' => 'Hiệu suất',
+            'maintenance' => 'Bảo dưỡng',
+            'tools' => 'Dụng cụ',
+            'accessories' => 'Phụ kiện',
+            'decoration' => 'Trang trí',
+            'comfort' => 'Tiện nghi',
+            'protection' => 'Bảo vệ',
+            'cleaning' => 'Vệ sinh',
+            'storage' => 'Lưu trữ',
+            'utility' => 'Tiện ích',
+            'car_care' => 'Chăm sóc xe',
+            'other' => 'Khác',
+            
+            // Underscore format (tên_tên)
+            'noi_that' => 'Nội thất',
+            'ngoai_that' => 'Ngoại thất',
+            'dien_tu' => 'Điện tử',
+            'dong_co' => 'Động cơ',
+            'banh_xe' => 'Bánh xe',
+            'lop_xe' => 'Lốp xe',
+            'den_chieu_sang' => 'Đèn chiếu sáng',
+            'am_thanh' => 'Âm thanh',
+            'dinh_vi' => 'Định vị',
+            'an_toan' => 'An toàn',
+            'hieu_suat' => 'Hiệu suất',
+            'bao_duong' => 'Bảo dưỡng',
+            'dung_cu' => 'Dụng cụ',
+            'phu_kien' => 'Phụ kiện',
+            'trang_tri' => 'Trang trí',
+            'tien_nghi' => 'Tiện nghi',
+            'bao_ve' => 'Bảo vệ',
+            've_sinh' => 'Vệ sinh',
+            'luu_tru' => 'Lưu trữ',
+            'tien_ich' => 'Tiện ích',
+            'cham_soc_xe' => 'Chăm sóc xe',
+            'khac' => 'Khác',
+            
+            // Mixed formats
+            'car_interior' => 'Nội thất xe',
+            'car_exterior' => 'Ngoại thất xe',
+            'car_electronics' => 'Điện tử xe',
+            'engine_parts' => 'Phụ tùng động cơ',
+            'wheel_accessories' => 'Phụ kiện bánh xe',
+            'tire_accessories' => 'Phụ kiện lốp xe',
+            'lighting_system' => 'Hệ thống chiếu sáng',
+            'audio_system' => 'Hệ thống âm thanh',
+            'navigation_system' => 'Hệ thống định vị',
+            'safety_equipment' => 'Thiết bị an toàn',
+            'performance_parts' => 'Phụ tùng hiệu suất',
+            'maintenance_tools' => 'Dụng cụ bảo dưỡng',
+            'utility_accessories' => 'Phụ kiện tiện ích',
+            'decorative_items' => 'Đồ trang trí',
+            'comfort_accessories' => 'Phụ kiện tiện nghi',
+            'protective_gear' => 'Thiết bị bảo vệ',
+            'cleaning_supplies' => 'Vật tư vệ sinh',
+            'storage_solutions' => 'Giải pháp lưu trữ',
+            'car_care_products' => 'Sản phẩm chăm sóc xe',
+            'car_care_tools' => 'Dụng cụ chăm sóc xe',
+            
+            // Specific accessory types
+            'trunk_organizer' => 'Hộp đựng đồ cốp xe',
+            'phone_holder' => 'Giá đỡ điện thoại',
+            'seat_cover' => 'Bọc ghế',
+            'tire_pressure_monitor' => 'Cảm biến áp suất lốp',
+            'seat_back_hook' => 'Móc treo sau ghế',
+            'sunshade' => 'Tấm che nắng',
+            'shampoo' => 'Dầu gội xe',
+            'charger' => 'Sạc điện thoại',
+            'dash_cam' => 'Camera hành trình',
+            'blind_spot_mirror' => 'Gương điểm mù',
+            'microfiber_towel' => 'Khăn microfiber'
+        ];
+    }
+
+    /**
+     * Get Vietnamese category name
+     */
+    public function getVietnameseCategoryAttribute()
+    {
+        $translations = self::getCategoryTranslations();
+        return $translations[$this->category] ?? ucfirst($this->category);
+    }
+
+    /**
+     * Get Vietnamese subcategory name
+     */
+    public function getVietnameseSubcategoryAttribute()
+    {
+        if (!$this->subcategory) return null;
+        $translations = self::getCategoryTranslations();
+        return $translations[$this->subcategory] ?? ucfirst($this->subcategory);
+    }
 }

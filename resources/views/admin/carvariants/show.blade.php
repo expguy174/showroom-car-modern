@@ -37,30 +37,30 @@
                         @endif
 
                         @if($carvariant->is_featured)
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                <i class="fas fa-star mr-1"></i>
-                                Nổi bật
+                            <span class="inline-flex items-center px-2 py-1 text-xs rounded-md font-medium bg-yellow-100 text-yellow-800 whitespace-nowrap min-h-[20px]">
+                                <i class="fas fa-star mr-1.5 w-3 h-3 flex-shrink-0"></i>
+                                <span>Nổi bật</span>
                             </span>
                         @endif
 
                         @if($carvariant->is_on_sale)
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                                <i class="fas fa-tags mr-1"></i>
-                                Khuyến mãi
+                            <span class="inline-flex items-center px-2 py-1 text-xs rounded-md font-medium bg-orange-100 text-orange-800 whitespace-nowrap min-h-[20px]">
+                                <i class="fas fa-percentage mr-1.5 w-3 h-3 flex-shrink-0"></i>
+                                <span>Khuyến mãi</span>
                             </span>
                         @endif
 
                         @if($carvariant->is_new_arrival)
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                                <i class="fas fa-certificate mr-1"></i>
-                                Mới về
+                            <span class="inline-flex items-center px-2 py-1 text-xs rounded-md font-medium bg-blue-100 text-blue-800 whitespace-nowrap min-h-[20px]">
+                                <i class="fas fa-plus-circle mr-1.5 w-3 h-3 flex-shrink-0"></i>
+                                <span>Mới</span>
                             </span>
                         @endif
 
                         @if($carvariant->is_bestseller)
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                <i class="fas fa-crown mr-1"></i>
-                                Bán chạy
+                            <span class="inline-flex items-center px-2 py-1 text-xs rounded-md font-medium bg-purple-100 text-purple-800 whitespace-nowrap min-h-[20px]">
+                                <i class="fas fa-fire mr-1.5 w-3 h-3 flex-shrink-0"></i>
+                                <span>Bán chạy</span>
                             </span>
                         @endif
                     </div>
@@ -105,78 +105,144 @@
                 </div>
             </div>
 
-            {{-- Description --}}
-            @if($carvariant->description)
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                    <i class="fas fa-info-circle text-blue-600 mr-2"></i>
-                    Mô tả chi tiết
-                </h3>
-                <div class="prose prose-sm max-w-none text-gray-700">
-                    {!! nl2br(e($carvariant->description)) !!}
-                </div>
-            </div>
-            @endif
 
-            {{-- Images Gallery --}}
+            {{-- Images Gallery with Slider --}}
             @if($carvariant->images->count() > 0)
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">
                     <i class="fas fa-images text-purple-600 mr-2"></i>
                     Thư viện ảnh ({{ $carvariant->images->count() }})
                 </h3>
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    @foreach($carvariant->images as $image)
+                
+                @php
+                    $mainImage = $carvariant->images->where('is_main', true)->first() ?? $carvariant->images->first();
+                    $imageTypes = $carvariant->images->groupBy('image_type');
+                    $allImages = $carvariant->images->sortBy('sort_order');
+                    // Default to desktop size (4), JavaScript will handle responsive
+                    $perPage = 4;
+                    
+                    // Initial load - first page of all images
+                    $initialImages = $allImages->take($perPage);
+                @endphp
+                
+                {{-- Main Image Display with Navigation --}}
+                <div class="mb-4 max-w-2xl mx-auto">
                     <div class="relative group">
-                        <img src="{{ $image->image_url }}" alt="{{ $image->alt_text }}" 
-                             class="w-full h-32 object-cover rounded-lg border border-gray-200">
-                        @if($image->is_main)
-                            <div class="absolute top-2 left-2">
-                                <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                                    <i class="fas fa-star mr-1"></i>
-                                    Chính
-                                </span>
-                            </div>
+                        <img id="mainImage" 
+                             src="{{ $mainImage->image_url }}" 
+                             alt="{{ $mainImage->alt_text ?? $carvariant->name }}"
+                             class="w-full h-64 md:h-80 object-cover rounded-lg border border-gray-200 shadow-sm cursor-pointer"
+                             onclick="viewImage('{{ $mainImage->image_url }}', '{{ $mainImage->title ?? $carvariant->name }}')">
+                    
+                    {{-- Navigation Arrows --}}
+                    @if($carvariant->images->count() > 1)
+                    <button id="prevBtn" onclick="previousImage()" 
+                            class="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button id="nextBtn" onclick="nextImage()" 
+                            class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                    @endif
+                    
+                        {{-- Image Counter --}}
+                        @if($carvariant->images->count() > 1)
+                        <div class="absolute bottom-4 right-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
+                            <span id="currentImageIndex">1</span> / {{ $carvariant->images->count() }}
+                        </div>
                         @endif
-                        <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all rounded-lg flex items-center justify-center">
-                            <button onclick="viewImage('{{ $image->image_url }}', '{{ $image->title }}')" 
-                                    class="opacity-0 group-hover:opacity-100 bg-white text-gray-800 px-3 py-1 rounded text-sm font-medium transition-all">
-                                <i class="fas fa-eye mr-1"></i>
-                                Xem
-                            </button>
+                    </div>
+                </div>
+                
+                {{-- Image Filter Tabs --}}
+                @if($imageTypes->count() > 1)
+                <div class="flex flex-wrap gap-2 mb-4 border-b border-gray-200 pb-3">
+                    <button onclick="filterImages('all')" class="filter-btn active px-3 py-1.5 text-sm font-medium rounded-lg bg-blue-100 text-blue-700 border border-blue-200" data-type="all">
+                        <i class="fas fa-th mr-1"></i>Tất cả ({{ $allImages->count() }})
+                    </button>
+                    @foreach($imageTypes as $type => $images)
+                        @php
+                            $typeConfig = [
+                                'gallery' => ['icon' => 'fas fa-images', 'text' => 'Thư viện'],
+                                'exterior' => ['icon' => 'fas fa-car', 'text' => 'Ngoại thất'],
+                                'interior' => ['icon' => 'fas fa-couch', 'text' => 'Nội thất'],
+                                'engine' => ['icon' => 'fas fa-cog', 'text' => 'Động cơ'],
+                                'wheel' => ['icon' => 'fas fa-circle', 'text' => 'Bánh xe'],
+                                'detail' => ['icon' => 'fas fa-search-plus', 'text' => 'Chi tiết']
+                            ];
+                            $config = $typeConfig[$type] ?? ['icon' => 'fas fa-images', 'text' => ucfirst($type)];
+                        @endphp
+                        <button onclick="filterImages('{{ $type }}')" class="filter-btn px-3 py-1.5 text-sm font-medium rounded-lg bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200" data-type="{{ $type }}">
+                            <i class="{{ $config['icon'] }} mr-1"></i>{{ $config['text'] }} ({{ $images->count() }})
+                        </button>
+                    @endforeach
+                </div>
+                @endif
+
+                {{-- Card Gallery with Pagination --}}
+                <div class="space-y-4">
+                    <div id="imageGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        @foreach($initialImages as $index => $image)
+                            <div class="image-item relative bg-gray-50 rounded-lg overflow-hidden border border-gray-200 hover:border-blue-300 transition-colors thumbnail-item {{ $loop->first ? 'active' : '' }}" 
+                                 data-type="{{ $image->image_type }}" data-index="{{ $index }}">
+                                
+                                {{-- Image --}}
+                                <div class="relative cursor-pointer" onclick="changeMainImageByIndex({{ $index }})">
+                                    <img src="{{ $image->image_url }}" alt="{{ $image->alt_text ?? $carvariant->name }}"
+                                         class="w-full h-32 object-cover hover:opacity-90 transition-opacity">
+                                </div>
+                                
+                                {{-- Top badges --}}
+                                <div class="absolute top-2 left-2 flex flex-wrap gap-1">
+                                    @if($image->is_main)
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            <i class="fas fa-star mr-1"></i>Chính
+                                        </span>
+                                    @endif
+                                </div>
+                                
+                                {{-- Image info --}}
+                                <div class="p-2">
+                                    @if($image->title)
+                                        <p class="text-xs font-medium text-gray-900 truncate mb-1">{{ $image->title }}</p>
+                                    @endif
+                                    @if($image->alt_text)
+                                        <p class="text-xs text-gray-600 truncate">{{ $image->alt_text }}</p>
+                                    @endif
+                                    <div class="flex items-center justify-between mt-1">
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                            @switch($image->image_type)
+                                                @case('gallery') Thư viện @break
+                                                @case('interior') Nội thất @break
+                                                @case('exterior') Ngoại thất @break
+                                                @case('engine') Động cơ @break
+                                                @case('wheel') Bánh xe @break
+                                                @default {{ ucfirst($image->image_type) }}
+                                            @endswitch
+                                        </span>
+                                    </div>
+                                    @if($image->description)
+                                        <p class="text-xs text-gray-500 mt-1 truncate" title="{{ $image->description }}">{{ $image->description }}</p>
+                                    @endif
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                    
+                    {{-- Image Pagination --}}
+                    <div id="imagePagination" class="flex items-center justify-between pt-4 border-t border-gray-200">
+                        <div id="imageInfo" class="text-sm text-gray-600">
+                            Hiển thị 1-{{ min(4, $allImages->count()) }} trong {{ $allImages->count() }} ảnh
+                        </div>
+                        <div id="paginationControls" class="flex items-center space-x-1">
+                            {{-- Pagination buttons will be generated by JavaScript --}}
                         </div>
                     </div>
-                    @endforeach
                 </div>
             </div>
             @endif
 
-            {{-- Colors --}}
-            @if($carvariant->colors->count() > 0)
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                    <i class="fas fa-palette text-pink-600 mr-2"></i>
-                    Màu sắc có sẵn ({{ $carvariant->colors->count() }})
-                </h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    @foreach($carvariant->colors as $color)
-                    <div class="flex items-center p-3 border border-gray-200 rounded-lg">
-                        <div class="w-8 h-8 rounded-full border border-gray-300 mr-3" 
-                             style="background-color: {{ $color->hex_code }}"></div>
-                        <div class="flex-1">
-                            <div class="font-medium text-gray-900">{{ $color->name }}</div>
-                            <div class="text-sm text-gray-500">{{ $color->hex_code }}</div>
-                        </div>
-                        @if($color->stock_quantity !== null)
-                        <div class="text-sm text-gray-600">
-                            Tồn kho: {{ $color->stock_quantity }}
-                        </div>
-                        @endif
-                    </div>
-                    @endforeach
-                </div>
-            </div>
-            @endif
 
             {{-- Specifications --}}
             @if($carvariant->specifications->count() > 0)
@@ -185,39 +251,206 @@
                     <i class="fas fa-cogs text-gray-600 mr-2"></i>
                     Thông số kỹ thuật ({{ $carvariant->specifications->count() }})
                 </h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    @foreach($carvariant->specifications as $spec)
-                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                        <span class="font-medium text-gray-700">{{ $spec->name }}</span>
-                        <span class="text-gray-900">{{ $spec->value }} {{ $spec->unit }}</span>
-                    </div>
-                    @endforeach
-                </div>
-            </div>
-            @endif
-
-            {{-- Features --}}
-            @if($carvariant->featuresRelation->count() > 0)
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                    <i class="fas fa-list-check text-green-600 mr-2"></i>
-                    Tính năng nổi bật ({{ $carvariant->featuresRelation->count() }})
-                </h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    @foreach($carvariant->featuresRelation as $feature)
-                    <div class="flex items-center p-3 bg-green-50 rounded-lg">
-                        <i class="fas fa-check-circle text-green-600 mr-3"></i>
-                        <div>
-                            <div class="font-medium text-gray-900">{{ $feature->name }}</div>
-                            @if($feature->description)
-                                <div class="text-sm text-gray-600">{{ $feature->description }}</div>
-                            @endif
+                @php
+                    $specsByCategory = $carvariant->specifications->groupBy('category');
+                    $categoryNames = [
+                        'engine' => 'Động cơ',
+                        'performance' => 'Hiệu suất',
+                        'dimensions' => 'Kích thước',
+                        'weight' => 'Trọng lượng',
+                        'fuel' => 'Nhiên liệu',
+                        'transmission' => 'Hộp số',
+                        'suspension' => 'Hệ thống treo',
+                        'brakes' => 'Phanh',
+                        'brake' => 'Phanh',
+                        'wheels' => 'Bánh xe',
+                        'safety' => 'An toàn',
+                        'comfort' => 'Tiện nghi',
+                        'technology' => 'Công nghệ',
+                        'chassis' => 'Khung gầm',
+                        'seating' => 'Ghế ngồi',
+                        'warranty' => 'Bảo hành',
+                        'other' => 'Khác'
+                    ];
+                    
+                    // Vietnamese translation for spec names
+                    $specNameTranslations = [
+                        // Engine specs
+                        'Engine Type' => 'Loại động cơ',
+                        'Displacement' => 'Dung tích xi-lanh',
+                        'Max Power' => 'Công suất tối đa',
+                        'Max Torque' => 'Mô-men xoắn tối đa',
+                        'Cylinders' => 'Số xi-lanh',
+                        'Valves' => 'Số van',
+                        'Compression Ratio' => 'Tỷ số nén',
+                        'Fuel System' => 'Hệ thống nhiên liệu',
+                        
+                        // Performance specs
+                        'Top Speed' => 'Tốc độ tối đa',
+                        'Acceleration 0-100' => 'Tăng tốc 0-100km/h',
+                        'Fuel Consumption City' => 'Tiêu hao nhiên liệu trong thành phố',
+                        'Fuel Consumption Highway' => 'Tiêu hao nhiên liệu trên cao tốc',
+                        'Fuel Consumption Combined' => 'Tiêu hao nhiên liệu kết hợp',
+                        
+                        // Dimensions specs
+                        'Length' => 'Chiều dài',
+                        'Width' => 'Chiều rộng',
+                        'Height' => 'Chiều cao',
+                        'Wheelbase' => 'Chiều dài cơ sở',
+                        'Ground Clearance' => 'Khoảng sáng gầm xe',
+                        'Turning Radius' => 'Bán kính quay vòng',
+                        
+                        // Weight specs
+                        'Curb Weight' => 'Trọng lượng không tải',
+                        'Gross Weight' => 'Trọng lượng toàn tải',
+                        'Payload' => 'Tải trọng',
+                        
+                        // Transmission specs
+                        'Transmission Type' => 'Loại hộp số',
+                        'Gears' => 'Số cấp',
+                        'Drive Type' => 'Hệ dẫn động',
+                        
+                        // Suspension specs
+                        'Front Suspension' => 'Hệ thống treo trước',
+                        'Rear Suspension' => 'Hệ thống treo sau',
+                        
+                        // Brakes specs
+                        'Front Brakes' => 'Phanh trước',
+                        'Rear Brakes' => 'Phanh sau',
+                        'ABS' => 'Hệ thống chống bó cứng phanh',
+                        'EBD' => 'Phân phối lực phanh điện tử',
+                        'Brake Assist' => 'Hỗ trợ phanh khẩn cấp',
+                        
+                        // Wheels specs
+                        'Wheel Size' => 'Kích thước bánh xe',
+                        'Tire Size' => 'Kích thước lốp',
+                        'Spare Tire' => 'Lốp dự phòng',
+                        
+                        // Safety specs
+                        'Airbags' => 'Túi khí',
+                        'Seatbelts' => 'Dây an toàn',
+                        'Child Safety Locks' => 'Khóa an toàn trẻ em',
+                        'Immobilizer' => 'Chống trộm động cơ',
+                        'Security System' => 'Hệ thống chống trộm',
+                        
+                        // Technology specs
+                        'Infotainment System' => 'Hệ thống giải trí',
+                        'Screen Size' => 'Kích thước màn hình',
+                        'Connectivity' => 'Kết nối',
+                        'USB Ports' => 'Cổng USB',
+                        'Bluetooth' => 'Bluetooth',
+                        'WiFi' => 'WiFi',
+                        'Navigation' => 'Dẫn đường',
+                        'Sound System' => 'Hệ thống âm thanh',
+                        'Speakers' => 'Loa',
+                        
+                        // Chassis specs
+                        'Body Type' => 'Kiểu dáng thân xe',
+                        'Doors' => 'Số cửa',
+                        'Seating Capacity' => 'Số chỗ ngồi',
+                        'Trunk Capacity' => 'Dung tích cốp xe',
+                        'Fuel Tank Capacity' => 'Dung tích bình nhiên liệu',
+                        
+                        // Seating specs
+                        'Seat Material' => 'Chất liệu ghế',
+                        'Driver Seat Adjustment' => 'Chỉnh ghế lái',
+                        'Passenger Seat Adjustment' => 'Chỉnh ghế phụ',
+                        'Seat Heating' => 'Sưởi ghế',
+                        'Seat Ventilation' => 'Thông gió ghế',
+                        'Memory Seats' => 'Ghế nhớ vị trí',
+                        
+                        // Comfort specs
+                        'Air Conditioning' => 'Điều hòa không khí',
+                        'Climate Control' => 'Điều hòa tự động',
+                        'Power Windows' => 'Cửa sổ điện',
+                        'Power Steering' => 'Trợ lực lái',
+                        'Cruise Control' => 'Ga tự động',
+                        'Keyless Entry' => 'Khóa thông minh',
+                        'Push Start' => 'Khởi động bằng nút bấm',
+                        
+                        // Warranty specs
+                        'Basic Warranty' => 'Bảo hành cơ bản',
+                        'Engine Warranty' => 'Bảo hành động cơ',
+                        'Paint Warranty' => 'Bảo hành sơn',
+                        'Roadside Assistance' => 'Hỗ trợ khẩn cấp',
+                        
+                        // Fuel specs
+                        'Fuel Type' => 'Loại nhiên liệu',
+                        'Fuel Grade' => 'Chỉ số octane',
+                        'Emission Standard' => 'Tiêu chuẩn khí thải'
+                    ];
+                @endphp
+                
+                <div class="space-y-6">
+                    @foreach($specsByCategory as $category => $specs)
+                    <div>
+                        <h4 class="text-md font-semibold text-gray-800 mb-3 flex items-center">
+                            @switch($category)
+                                @case('engine')
+                                    <i class="fas fa-cog text-red-600 mr-2"></i>
+                                    @break
+                                @case('performance')
+                                    <i class="fas fa-tachometer-alt text-orange-600 mr-2"></i>
+                                    @break
+                                @case('dimensions')
+                                    <i class="fas fa-ruler-combined text-blue-600 mr-2"></i>
+                                    @break
+                                @case('weight')
+                                    <i class="fas fa-weight text-purple-600 mr-2"></i>
+                                    @break
+                                @case('fuel')
+                                    <i class="fas fa-gas-pump text-green-600 mr-2"></i>
+                                    @break
+                                @case('transmission')
+                                    <i class="fas fa-cogs text-indigo-600 mr-2"></i>
+                                    @break
+                                @case('suspension')
+                                    <i class="fas fa-car-side text-yellow-600 mr-2"></i>
+                                    @break
+                                @case('brakes')
+                                @case('brake')
+                                    <i class="fas fa-stop-circle text-red-600 mr-2"></i>
+                                    @break
+                                @case('wheels')
+                                    <i class="fas fa-circle text-gray-600 mr-2"></i>
+                                    @break
+                                @case('safety')
+                                    <i class="fas fa-shield-alt text-green-600 mr-2"></i>
+                                    @break
+                                @case('comfort')
+                                    <i class="fas fa-couch text-pink-600 mr-2"></i>
+                                    @break
+                                @case('technology')
+                                    <i class="fas fa-microchip text-blue-600 mr-2"></i>
+                                    @break
+                                @case('chassis')
+                                    <i class="fas fa-car-crash text-gray-700 mr-2"></i>
+                                    @break
+                                @case('seating')
+                                    <i class="fas fa-chair text-brown-600 mr-2"></i>
+                                    @break
+                                @case('warranty')
+                                    <i class="fas fa-certificate text-gold-600 mr-2"></i>
+                                    @break
+                                @default
+                                    <i class="fas fa-info-circle text-gray-600 mr-2"></i>
+                            @endswitch
+                            {{ $categoryNames[$category] ?? ucfirst($category) }}
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            @foreach($specs as $spec)
+                            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                <span class="font-medium text-gray-700">{{ $spec->spec_name }}</span>
+                                <span class="text-gray-900">{{ $spec->spec_value }}@if($spec->unit) {{ $spec->unit }}@endif</span>
+                            </div>
+                            @endforeach
                         </div>
                     </div>
                     @endforeach
                 </div>
             </div>
             @endif
+
 
             {{-- Related Variants --}}
             @if($relatedVariants->count() > 0)
@@ -281,9 +514,9 @@
                     </div>
                     
                     @if($carvariant->short_description)
-                    <div>
-                        <span class="text-gray-600 block mb-1">Mô tả ngắn:</span>
-                        <p class="font-medium text-sm">{{ $carvariant->short_description }}</p>
+                    <div class="flex items-center justify-between">
+                        <span class="text-gray-600">Mô tả ngắn:</span>
+                        <span class="font-medium text-sm">{{ $carvariant->short_description }}</span>
                     </div>
                     @endif
                     
@@ -333,6 +566,70 @@
                         </div>
                     </div>
                     @endif
+                </div>
+            </div>
+            @endif
+
+
+            {{-- Description --}}
+            @if($carvariant->description)
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-info-circle text-blue-600 mr-2"></i>
+                    Mô tả chi tiết
+                </h3>
+                <div class="prose prose-sm max-w-none text-gray-700">
+                    {!! nl2br(e($carvariant->description)) !!}
+                </div>
+            </div>
+            @endif
+
+            {{-- Colors --}}
+            @if($carvariant->colors->count() > 0)
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-palette text-pink-600 mr-2"></i>
+                    Màu sắc có sẵn ({{ $carvariant->colors->count() }})
+                </h3>
+                <div class="space-y-3">
+                    @foreach($carvariant->colors as $color)
+                    <div class="flex items-center p-3 border border-gray-200 rounded-lg">
+                        <div class="w-8 h-8 rounded-full border border-gray-300 mr-3" 
+                             style="background-color: {{ $color->hex_code }}"></div>
+                        <div class="flex-1">
+                            <div class="font-medium text-gray-900">{{ $color->color_name }}</div>
+                            <div class="text-sm text-gray-500">{{ $color->color_code ?? $color->hex_code }}</div>
+                        </div>
+                        @if($color->stock_quantity !== null)
+                        <div class="text-sm text-gray-600">
+                            Tồn kho: {{ $color->stock_quantity }}
+                        </div>
+                        @endif
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
+            {{-- Features --}}
+            @if($carvariant->featuresRelation->count() > 0)
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-list-check text-green-600 mr-2"></i>
+                    Tính năng nổi bật ({{ $carvariant->featuresRelation->count() }})
+                </h3>
+                <div class="space-y-3">
+                    @foreach($carvariant->featuresRelation as $feature)
+                    <div class="flex items-center p-3 bg-green-50 rounded-lg">
+                        <i class="fas fa-check-circle text-green-600 mr-3"></i>
+                        <div>
+                            <div class="font-medium text-gray-900">{{ $feature->feature_name }}</div>
+                            @if($feature->description)
+                                <div class="text-sm text-gray-600">{{ $feature->description }}</div>
+                            @endif
+                        </div>
+                    </div>
+                    @endforeach
                 </div>
             </div>
             @endif
@@ -390,6 +687,105 @@
 </div>
 
 <script>
+// Images data array
+const images = [
+    @foreach($carvariant->images as $index => $image)
+    {
+        url: "{{ $image->image_url }}",
+        alt: "{{ addslashes($image->alt_text ?? $carvariant->name) }}",
+        title: "{{ addslashes($image->title ?? $carvariant->name) }}",
+        image_type: "{{ $image->image_type ?? 'gallery' }}"
+    }@if(!$loop->last),@endif
+    @endforeach
+];
+
+let currentImageIndex = 0;
+
+// Pagination variables
+let currentPage = 1;
+let perPage = 4;
+let totalImages = 0;
+let totalPages = 0;
+let currentFilter = 'all';
+let filteredImages = [];
+let allImagesData = [];
+
+// Change main image by index
+function changeMainImageByIndex(index) {
+    if (index >= 0 && index < images.length) {
+        currentImageIndex = index;
+        const image = images[index];
+        changeMainImage(image.url, image.alt, image.title);
+        updateImageCounter();
+        updateThumbnailActive();
+    }
+}
+
+// Change main image when clicking thumbnail
+function changeMainImage(url, alt, title) {
+    const mainImage = document.getElementById('mainImage');
+    if (mainImage) {
+        mainImage.src = url;
+        mainImage.alt = alt || 'Hình ảnh';
+        // Update onclick for modal
+        mainImage.onclick = function() {
+            viewImage(url, title || alt || 'Hình ảnh');
+        };
+    }
+}
+
+// Navigate to previous image
+function previousImage() {
+    const prevIndex = currentImageIndex > 0 ? currentImageIndex - 1 : images.length - 1;
+    changeMainImageByIndex(prevIndex);
+    // Sync with thumbnail pagination
+    syncThumbnailPagination(prevIndex);
+}
+
+// Navigate to next image
+function nextImage() {
+    const nextIndex = currentImageIndex < images.length - 1 ? currentImageIndex + 1 : 0;
+    changeMainImageByIndex(nextIndex);
+    // Sync with thumbnail pagination
+    syncThumbnailPagination(nextIndex);
+}
+
+// Sync thumbnail pagination when using main image arrows
+function syncThumbnailPagination(imageIndex) {
+    // Find which page contains this image
+    const targetPage = Math.ceil((imageIndex + 1) / perPage);
+    if (targetPage !== currentPage) {
+        currentPage = targetPage;
+        renderImages();
+        updatePagination();
+    }
+    // Update active thumbnail
+    updateThumbnailActive();
+}
+
+// Update image counter
+function updateImageCounter() {
+    const counter = document.getElementById('currentImageIndex');
+    if (counter) {
+        counter.textContent = currentImageIndex + 1;
+    }
+}
+
+// Update thumbnail active state
+function updateThumbnailActive() {
+    const thumbnails = document.querySelectorAll('.thumbnail-item');
+    thumbnails.forEach((thumb, index) => {
+        const thumbIndex = parseInt(thumb.getAttribute('data-index'));
+        if (thumbIndex === currentImageIndex) {
+            thumb.classList.add('active');
+            thumb.querySelector('img').classList.add('border-blue-500', 'border-2');
+        } else {
+            thumb.classList.remove('active');
+            thumb.querySelector('img').classList.remove('border-blue-500', 'border-2');
+        }
+    });
+}
+
 function viewImage(url, title) {
     document.getElementById('modalImage').src = url;
     document.getElementById('imageTitle').textContent = title || 'Hình ảnh';
@@ -405,6 +801,180 @@ document.getElementById('imageModal').addEventListener('click', function(e) {
     if (e.target === this) {
         closeImageModal();
     }
+});
+
+// Keyboard navigation
+document.addEventListener('keydown', function(e) {
+    if (document.getElementById('imageModal').classList.contains('hidden')) {
+        // Only work when modal is closed
+        if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            previousImage();
+        } else if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            nextImage();
+        }
+    }
+});
+
+// Pagination functions
+function updatePagination() {
+    const imageInfo = document.getElementById('imageInfo');
+    const paginationControls = document.getElementById('paginationControls');
+    
+    // Update info text
+    const startIndex = (currentPage - 1) * perPage + 1;
+    const endIndex = Math.min(currentPage * perPage, totalImages);
+    imageInfo.textContent = `Hiển thị ${startIndex}-${endIndex} trong ${totalImages} ảnh`;
+    
+    // Generate pagination controls
+    paginationControls.innerHTML = '';
+    
+    if (totalPages > 1) {
+        // Previous button
+        if (currentPage > 1) {
+            const prevBtn = document.createElement('button');
+            prevBtn.className = 'inline-flex items-center px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors';
+            prevBtn.innerHTML = '<i class="fas fa-chevron-left mr-1"></i>Trước';
+            prevBtn.onclick = () => goToPage(currentPage - 1);
+            paginationControls.appendChild(prevBtn);
+        }
+        
+        // Page numbers (show max 5 pages)
+        const startPage = Math.max(1, currentPage - 2);
+        const endPage = Math.min(totalPages, startPage + 4);
+        
+        for (let i = startPage; i <= endPage; i++) {
+            const pageBtn = document.createElement('button');
+            pageBtn.className = i === currentPage 
+                ? 'inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-300 rounded-lg'
+                : 'inline-flex items-center px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors';
+            pageBtn.textContent = i;
+            if (i !== currentPage) {
+                pageBtn.onclick = () => goToPage(i);
+            }
+            paginationControls.appendChild(pageBtn);
+        }
+        
+        // Next button
+        if (currentPage < totalPages) {
+            const nextBtn = document.createElement('button');
+            nextBtn.className = 'inline-flex items-center px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors';
+            nextBtn.innerHTML = 'Sau<i class="fas fa-chevron-right ml-1"></i>';
+            nextBtn.onclick = () => goToPage(currentPage + 1);
+            paginationControls.appendChild(nextBtn);
+        }
+    }
+}
+
+function goToPage(page) {
+    if (page >= 1 && page <= totalPages) {
+        currentPage = page;
+        renderImages();
+        updatePagination();
+    }
+}
+
+function renderImages() {
+    const imageGrid = document.getElementById('imageGrid');
+    const startIndex = (currentPage - 1) * perPage;
+    const endIndex = startIndex + perPage;
+    const imagesToShow = filteredImages.slice(startIndex, endIndex);
+    
+    // Clear current images
+    imageGrid.innerHTML = '';
+    
+    // Render new images
+    imagesToShow.forEach((imageData, index) => {
+        const actualIndex = startIndex + index;
+        const card = createImageCard(imageData, actualIndex);
+        imageGrid.appendChild(card);
+    });
+}
+
+function createImageCard(imageData, index) {
+    const card = document.createElement('div');
+    card.className = 'image-item relative bg-gray-50 rounded-lg overflow-hidden border border-gray-200 hover:border-blue-300 transition-colors thumbnail-item';
+    card.setAttribute('data-type', imageData.image_type);
+    card.setAttribute('data-index', imageData.index); // Use original image index
+    
+    card.innerHTML = `
+        <div class="relative cursor-pointer" onclick="changeMainImageByIndex(${imageData.index})">
+            <img src="${imageData.url}" alt="${imageData.alt}" class="w-full h-32 object-cover hover:opacity-90 transition-opacity">
+        </div>
+        <div class="p-2">
+            <p class="text-xs font-medium text-gray-900 truncate mb-1">${imageData.title}</p>
+            <p class="text-xs text-gray-600 truncate">${imageData.alt}</p>
+            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                ${getTypeText(imageData.image_type)}
+            </span>
+        </div>
+    `;
+    
+    return card;
+}
+
+// Filter images by type
+function filterImages(type) {
+    currentFilter = type;
+    currentPage = 1; // Reset to first page
+    
+    // Update filter button states
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active', 'bg-blue-100', 'text-blue-700');
+        btn.classList.add('bg-gray-100', 'text-gray-700');
+    });
+    
+    // Set active filter button
+    const activeBtn = document.querySelector(`[data-type="${type}"], [onclick="filterImages('${type}')"]`);
+    if (activeBtn) {
+        activeBtn.classList.remove('bg-gray-100', 'text-gray-700');
+        activeBtn.classList.add('active', 'bg-blue-100', 'text-blue-700');
+    }
+    
+    // Filter images
+    if (type === 'all') {
+        filteredImages = [...allImagesData];
+    } else {
+        filteredImages = allImagesData.filter(img => img.image_type === type);
+    }
+    
+    // Update pagination
+    totalImages = filteredImages.length;
+    totalPages = Math.ceil(totalImages / perPage);
+    
+    // Render filtered images
+    renderImages();
+    updatePagination();
+}
+
+// Get Vietnamese text for image type
+function getTypeText(type) {
+    const typeConfig = {
+        'gallery': 'Thư viện',
+        'exterior': 'Ngoại thất', 
+        'interior': 'Nội thất',
+        'engine': 'Động cơ',
+        'wheel': 'Bánh xe',
+        'detail': 'Chi tiết'
+    };
+    return typeConfig[type] || type;
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Set initial active thumbnail
+    updateThumbnailActive();
+    
+    // Initialize pagination with actual image types from PHP
+    allImagesData = images.map((img, index) => ({
+        ...img,
+        index: index
+    }));
+    filteredImages = [...allImagesData];
+    totalImages = filteredImages.length;
+    totalPages = Math.ceil(totalImages / perPage);
+    updatePagination();
 });
 </script>
 @endsection

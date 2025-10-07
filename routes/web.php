@@ -284,10 +284,11 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/', [AccessoryController::class, 'index'])->name('index');
         Route::get('/create', [AccessoryController::class, 'create'])->name('create');
         Route::post('/store', [AccessoryController::class, 'store'])->name('store');
+        Route::get('/show/{accessory}', [AccessoryController::class, 'show'])->name('show');
         Route::get('/edit/{accessory}', [AccessoryController::class, 'edit'])->name('edit');
         Route::put('/update/{accessory}', [AccessoryController::class, 'update'])->name('update');
         Route::delete('/delete/{accessory}', [AccessoryController::class, 'destroy'])->name('destroy');
-        Route::post('/{accessory}/toggle-status', [AccessoryController::class, 'toggleStatus'])->name('toggle-status');
+        Route::patch('/{accessory}/toggle-status', [AccessoryController::class, 'toggleStatus'])->name('toggle-status');
     });
 
     // Blogs

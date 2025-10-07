@@ -149,7 +149,7 @@ class AccessorySeeder extends Seeder
             $cat = $categories[array_rand($categories)];
             Accessory::updateOrCreate(['slug' => 'phu-kien-' . $i], [
                 'name' => 'Phụ kiện #' . $i,
-                'sku' => 'ACC-' . strtoupper(Str::random(6)),
+                'sku' => 'ACC-PK' . str_pad($i, 3, '0', STR_PAD_LEFT),
                 'description' => 'Phụ kiện số ' . $i . ' chất lượng cho xe.',
                 'short_description' => 'Phụ kiện #' . $i,
                 'category' => $cat['category'],
@@ -157,12 +157,12 @@ class AccessorySeeder extends Seeder
                 'compatible_car_brands' => json_encode(['Toyota','Hyundai','Kia']),
                 'compatible_car_models' => null,
                 'compatible_car_years' => null,
-                'base_price' => rand(200, 2500) * 1000,
-                'current_price' => rand(100, 2000) * 1000,
-                'is_on_sale' => (bool) rand(0,1),
+                'base_price' => (200 + ($i * 50)) * 1000,
+                'current_price' => (150 + ($i * 40)) * 1000,
+                'is_on_sale' => ($i % 3 == 0),
                 'sale_start_date' => null,
                 'sale_end_date' => null,
-                'stock_quantity' => rand(5, 200),
+                'stock_quantity' => 50 + ($i * 5),
                 'stock_status' => 'in_stock',
                 'gallery' => json_encode([
                     'https://placehold.co/1200x800?text=' . urlencode('Phu kien #' . $i),
@@ -181,25 +181,25 @@ class AccessorySeeder extends Seeder
                 'meta_title' => 'Phụ kiện #' . $i,
                 'meta_description' => 'Phụ kiện cho xe #' . $i,
                 'meta_keywords' => 'phu kien, xe',
-                'is_featured' => (bool) rand(0,1),
-                'is_bestseller' => (bool) rand(0,1),
-                'is_popular' => (bool) rand(0,1),
+                'is_featured' => ($i <= 5), // First 5 are featured
+                'is_bestseller' => ($i % 5 == 0), // Every 5th is bestseller
+                'is_popular' => ($i <= 10), // First 10 are popular
                 'sort_order' => $i + 2,
                 'is_active' => true,
-                'installation_service_available' => (bool) rand(0,1),
-                'installation_fee' => rand(0,1) ? rand(50,200) * 1000 : null,
+                'installation_service_available' => ($i % 2 == 0), // Every 2nd has installation
+                'installation_fee' => ($i % 2 == 0) ? (50 + ($i * 10)) * 1000 : null,
                 'installation_requirements' => null,
-                'installation_time_minutes' => rand(10,90),
+                'installation_time_minutes' => 30 + ($i * 2),
                 'warranty_terms' => null,
                 'warranty_contact' => null,
                 'return_policy' => 'Trả hàng trong 7 ngày nếu chưa sử dụng',
                 'support_contact' => null,
                 'return_policy_days' => 7,
-                'weight' => rand(1, 20) / 2,
-                'dimensions' => rand(10,60) . 'x' . rand(10,60) . 'x' . rand(2,20) . ' cm',
+                'weight' => 1.0 + ($i * 0.5),
+                'dimensions' => (20 + $i) . 'x' . (15 + $i) . 'x' . (5 + ($i % 10)) . ' cm',
                 'material' => 'Nhựa',
                 'color_options' => json_encode(['Đen','Bạc','Đỏ']),
-                'is_new_arrival' => (bool) rand(0,1),
+                'is_new_arrival' => ($i <= 3), // First 3 are new arrivals
             ]);
         }
     }
