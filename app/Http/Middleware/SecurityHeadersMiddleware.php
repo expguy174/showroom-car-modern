@@ -23,7 +23,7 @@ class SecurityHeadersMiddleware
                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.tailwindcss.com https://code.jquery.com; " .
                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; " .
                "font-src 'self' https://fonts.gstatic.com; " .
-               "img-src 'self' data: https:; " .
+               "img-src 'self' data: blob: https:; " .
                "connect-src 'self' https://sandbox.vnpayment.vn; " .
                "frame-src 'none'; " .
                "object-src 'none';";

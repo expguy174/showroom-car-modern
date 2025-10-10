@@ -2,7 +2,7 @@
 
 {{-- Delete Modal Component --}}
 <div id="{{ $modalId }}" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl max-w-md w-full p-6">
+    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 overflow-hidden">
         {{-- Header --}}
         <div class="flex items-center mb-4">
             <div class="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">

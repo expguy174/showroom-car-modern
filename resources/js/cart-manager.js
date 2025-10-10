@@ -284,14 +284,12 @@ class CartManager {
             cache: 'no-store'
         })
         .then(response => {
-            console.log('Add to cart response:', response);
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
             return response.json();
         })
         .then(data => {
-            console.log('Add to cart data:', data);
             if (data.success) {
                 this.showMessage(data.message || 'Đã thêm vào giỏ hàng!', 'success');
                 this.updateCartCount(parseInt(data.cart_count || 0, 10));
@@ -1357,7 +1355,6 @@ class CartManager {
             const serverCountNum = parseInt(serverCount, 10) || 0;
             const localCountNum = parseInt(localCount, 10) || 0;
             
-            console.log(`Cart count check: local=${localCountNum}, server=${serverCountNum}, type: local=${typeof localCountNum}, server=${typeof serverCountNum}`);
             
             // If counts don't match, we need to reconcile
             if (serverCountNum !== localCountNum) {
@@ -1375,7 +1372,6 @@ class CartManager {
             
             // If counts match, no need to reconcile - just log success
             if (serverCountNum === localCountNum) {
-                console.log(`Cart count match: local=${localCountNum}, server=${serverCountNum}. No reconciliation needed.`);
                 return;
             }
         } catch (error) {

@@ -16,14 +16,27 @@
     // Image (align with components/accessory-card)
     $galleryRaw = $item->item->gallery ?? null;
     $gallery = is_array($galleryRaw) ? $galleryRaw : (json_decode($galleryRaw ?? '[]', true) ?: []);
-    $firstGalleryImg = $gallery[0] ?? null;
+    
+    // Extract image URL from gallery
     $imageUrl = null;
-    if ($firstGalleryImg) {
-        $imageUrl = $firstGalleryImg;
-    } elseif (!empty($item->item->image_url)) {
-        $imageUrl = filter_var($item->item->image_url, FILTER_VALIDATE_URL) ? $item->item->image_url : asset('storage/'.$item->item->image_url);
-    } else {
-        $imageUrl = asset('images/default-accessory.jpg');
+    if (!empty($gallery) && isset($gallery[0])) {
+        $firstGalleryImg = $gallery[0];
+        if (is_array($firstGalleryImg)) {
+            // New format: array with url/file_path
+            $imageUrl = $firstGalleryImg['url'] ?? $firstGalleryImg['file_path'] ?? null;
+        } elseif (is_string($firstGalleryImg)) {
+            // Old format: direct URL string
+            $imageUrl = $firstGalleryImg;
+        }
+    }
+    
+    // Fallback to image_url or default
+    if (empty($imageUrl)) {
+        if (!empty($item->item->image_url)) {
+            $imageUrl = filter_var($item->item->image_url, FILTER_VALIDATE_URL) ? $item->item->image_url : asset('storage/'.$item->item->image_url);
+        } else {
+            $imageUrl = asset('images/default-accessory.jpg');
+        }
     }
 @endphp
 

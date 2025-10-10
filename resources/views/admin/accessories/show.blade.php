@@ -116,7 +116,7 @@
                     
                     @if($accessory->is_on_sale && $accessory->current_price < $accessory->base_price)
                         <div class="bg-orange-50 rounded-lg p-4">
-                            <div class="text-sm text-gray-600 mb-1">Giá gốc</div>
+                            <div class="text-sm text-gray-600 mb-1">Giá niêm yết</div>
                             <div class="text-lg text-gray-500 line-through">
                                 {{ number_format($accessory->base_price) }}đ
                             </div>

@@ -3,7 +3,24 @@
 @php
 $galleryRaw = $accessory->gallery;
 $gallery = is_array($galleryRaw) ? $galleryRaw : (json_decode($galleryRaw ?? '[]', true) ?: []);
-$img = $gallery[0] ?? null;
+
+// Extract image URL from gallery
+$img = null;
+if (!empty($gallery) && isset($gallery[0])) {
+    $firstImage = $gallery[0];
+    if (is_array($firstImage)) {
+        // New format: array with url/file_path
+        $img = $firstImage['url'] ?? $firstImage['file_path'] ?? null;
+        // If file_path exists, prepend storage path
+        if (!empty($img) && !str_starts_with($img, 'http') && !str_starts_with($img, '/storage/')) {
+            $img = asset('storage/' . $img);
+        }
+    } elseif (is_string($firstImage)) {
+        // Old format: direct URL string
+        $img = $firstImage;
+    }
+}
+
 $name = $accessory->name ?? 'N/A';
 $price = (float) ($accessory->current_price ?? 0);
 $originalPrice = (float) ($accessory->base_price ?? $price);

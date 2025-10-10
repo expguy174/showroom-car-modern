@@ -17,8 +17,22 @@
     // Get gallery images
     $galleryRaw = $accessory->gallery;
     $gallery = is_array($galleryRaw) ? $galleryRaw : (json_decode($galleryRaw ?? '[]', true) ?: []);
+    
+    // Extract first image URL
+    $firstImageUrl = null;
+    if (!empty($gallery) && isset($gallery[0])) {
+        $firstImage = $gallery[0];
+        if (is_array($firstImage)) {
+            // New format: array with url/file_path
+            $firstImageUrl = $firstImage['url'] ?? $firstImage['file_path'] ?? null;
+        } elseif (is_string($firstImage)) {
+            // Old format: direct URL string
+            $firstImageUrl = $firstImage;
+        }
+    }
+    
     $mainImage = $resolveImage(
-        $gallery[0] ?? $accessory->image_url,
+        $firstImageUrl ?? $accessory->image_url,
         $accessory->name ?? 'No Image'
     );
     $hasDiscount = (bool) ($accessory->has_discount ?? false);

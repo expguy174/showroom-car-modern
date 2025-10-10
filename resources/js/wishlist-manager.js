@@ -162,7 +162,6 @@
                     }
                 });
             }
-        console.log(`Updated wishlist count to ${c} across all badges`);
         } finally {
             state.updatingCount = false;
         }
@@ -181,7 +180,6 @@
         const allSelectors = [...SELECTORS,'[class*="wishlist"][class*="count"]','[id*="wishlist"][id*="count"]','[data-wishlist-count]'];
         if (window.paintBadge) { window.paintBadge(allSelectors, 0); }
         
-        console.log('Force cleared all wishlist storage and updated UI');
     }
 
     function isIn(t, id){ return state.items.has(t) && state.items.get(t).has(id); }
@@ -293,7 +291,6 @@
                         state.items.get(itemType).add(itemId);
                     });
                     
-                    console.log(`Loaded ${data.wishlist_items.length} items from server`);
                     return true;
                 }
             } else {
@@ -321,7 +318,6 @@
             
             // If counts don't match, we need to reconcile
             if (serverCount !== localCount) {
-                console.log(`Wishlist mismatch detected: local=${localCount}, server=${serverCount}. Reconciling...`);
                 await reconcileWishlistState();
                 // After reconcile, if still zero and on wishlist page, ensure empty shows and stop progress line
                 if (count() === 0 && window.location.pathname.includes('/wishlist')) {
@@ -392,26 +388,22 @@
             if (serverCount !== localCount) {
                 if (serverCount > localCount) {
                     // Server has more items, fetch all from server
-                    console.log(`Fetching all wishlist items from server (server: ${serverCount}, local: ${localCount})`);
                     const success = await fetchAllWishlistFromServer();
                     if (success) {
                         saveToStorage();
                         applyStateToButtons();
                     } else {
                         // If server fetch fails, keep local data
-                        console.log('Server fetch failed, keeping local data');
                         applyStateToButtons();
                     }
                 } else {
                     // Local has more items, server is source of truth - sync from server
-                    console.log(`Local has more items than server (local: ${localCount}, server: ${serverCount}). Syncing from server...`);
                     const success = await fetchAllWishlistFromServer();
                     if (success) {
                         saveToStorage();
                         applyStateToButtons();
                     } else {
                         // If server fetch fails, keep local data
-                        console.log('Server fetch failed, keeping local data');
                         applyStateToButtons();
                     }
                 }
@@ -990,7 +982,6 @@
                 
                 // Clear state first
                 state.items.clear();
-                console.log('Clear All: State cleared, items count:', state.items.size);
                 
                 // Force clear all wishlist storage and UI immediately
                 forceClearWishlistStorage();
@@ -1001,13 +992,11 @@
                 
                 // Clear DOM - use correct selector for wishlist items
                 const itemsToRemove = document.querySelectorAll('.wishlist-item');
-                console.log('Clear All: Found', itemsToRemove.length, 'items to remove from DOM');
                 itemsToRemove.forEach(el => el.remove());
                 
                 // Extra safety: if grid still has residual nodes, empty it
                 const gridNode = document.getElementById('wishlist-grid');
                 if (gridNode && gridNode.querySelectorAll('.wishlist-item').length > 0) {
-                    console.log('Clear All: Grid still has items, forcing innerHTML clear');
                     gridNode.innerHTML = '';
                 }
                 
@@ -1027,13 +1016,11 @@
                 try { 
                     localStorage.setItem(STORAGE_KEY, '[]'); 
                     localStorage.setItem(COUNT_KEY, '0'); 
-                    console.log('Clear All: localStorage forced to empty arrays');
                 } catch(_) {}
                 
                 // Verify final state
                 const finalItems = document.querySelectorAll('.wishlist-item');
                 const finalCount = localStorage.getItem(COUNT_KEY);
-                console.log('Clear All: Final DOM items:', finalItems.length, 'Final localStorage count:', finalCount);
                 
                 // Reset filter selection if present
                 const select = document.getElementById('filter-type');
@@ -1255,7 +1242,6 @@
                 loadFromStorage();
                 updateCountBadges();
                 applyStateToButtons();
-                console.log('Wishlist state refreshed from cache');
             } else {
                 // Normal page load, load from storage first
                 loadFromStorage();
@@ -1296,7 +1282,6 @@
                 updateCountBadges();
             }
             
-            console.log('Wishlist state refreshed after navigation');
         });
 
         // Handle beforeunload to save state before navigation

@@ -534,21 +534,16 @@
     <!-- Admin Toast Integration -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Clean messages - remove emojis
-            const originalShowMessage = window.showMessage;
-            window.showMessage = function(message, type = 'info') {
-                // Clean message - remove emojis and extra symbols
-                const cleanMessage = message.replace(/[✅❌⚠️ℹ️]/g, '').trim();
-                
-                // Call original user toast function with clean message
-                originalShowMessage(cleanMessage, type);
-            };
+            // Flash messages are handled by component
+            // No layout interference needed
             
-            // Session flash messages disabled - only use toast from AJAX responses
-            
-            // Test function
+            // Test function for debugging
             window.testToast = function() {
-                showMessage('Test notification!', 'success');
+                if (typeof window.showMessage === 'function') {
+                    showMessage('Test notification!', 'success');
+                } else {
+                    console.log('showMessage function not available yet - component may still be loading');
+                }
             };
         });
     </script>

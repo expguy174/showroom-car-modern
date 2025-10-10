@@ -12,6 +12,10 @@
         <tbody class="bg-white divide-y divide-gray-200">
             @forelse($accessories as $accessory)
             <tr class="hover:bg-gray-50 transition-colors">
+                {{-- Debug: Check accessory data --}}
+                @if(config('app.debug'))
+                    <!-- DEBUG: Accessory ID {{ $accessory->id ?? 'NULL' }}, Gallery: {{ json_encode($accessory->gallery ?? 'NULL') }} -->
+                @endif
                 <td class="px-6 py-4 whitespace-nowrap">
                     <div class="flex items-center">
                         <div class="flex-shrink-0 h-12 w-12">
@@ -27,11 +31,53 @@
                                     return 'https://placehold.co/400x400/111827/ffffff?text=' . urlencode($val);
                                 };
                                 
-                                // Get gallery images from JSON field
-                                $galleryRaw = $accessory->gallery;
-                                $gallery = is_array($galleryRaw) ? $galleryRaw : (json_decode($galleryRaw ?? '[]', true) ?: []);
+                                // Get gallery images from JSON field - SAFE VERSION
+                                $galleryRaw = $accessory->gallery ?? null;
+                                $gallery = [];
+                                
+                                // Safe gallery processing
+                                try {
+                                    if (is_array($galleryRaw)) {
+                                        $gallery = $galleryRaw;
+                                    } elseif (is_string($galleryRaw) && !empty($galleryRaw)) {
+                                        $decoded = json_decode($galleryRaw, true);
+                                        $gallery = is_array($decoded) ? $decoded : [];
+                                    }
+                                } catch (Exception $e) {
+                                    $gallery = [];
+                                }
+                                
+                                // Get primary image URL from gallery - EXTRA SAFE
+                                $primaryImageUrl = '';
+                                if (is_array($gallery) && !empty($gallery)) {
+                                    // First, try to find primary image
+                                    $primaryImage = null;
+                                    foreach ($gallery as $img) {
+                                        if (is_array($img) && isset($img['is_primary']) && $img['is_primary']) {
+                                            $primaryImage = $img;
+                                            break;
+                                        }
+                                    }
+                                    
+                                    // If no primary, use first image
+                                    if (!$primaryImage && isset($gallery[0])) {
+                                        $primaryImage = $gallery[0];
+                                    }
+                                    
+                                    // Extract URL from image
+                                    if ($primaryImage) {
+                                        if (is_array($primaryImage)) {
+                                            // New format: array with url/title/etc
+                                            $primaryImageUrl = $primaryImage['url'] ?? $primaryImage['file'] ?? '';
+                                        } elseif (is_string($primaryImage)) {
+                                            // Old format: direct URL string
+                                            $primaryImageUrl = $primaryImage;
+                                        }
+                                    }
+                                }
+                                
                                 $mainImage = $resolveImage(
-                                    $gallery[0] ?? '',
+                                    $primaryImageUrl,
                                     $accessory->name ?? 'No Image'
                                 );
                             @endphp

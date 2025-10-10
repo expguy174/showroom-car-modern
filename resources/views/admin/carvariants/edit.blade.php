@@ -30,26 +30,26 @@
 
     {{-- Tab Navigation --}}
     <div class="border-b border-gray-200">
-        <nav class="flex space-x-8 px-6" aria-label="Tabs">
-            <button type="button" class="tab-button active py-4 px-1 border-b-2 border-blue-500 font-medium text-sm text-blue-600" data-tab="basic">
-                <i class="fas fa-info-circle mr-2"></i>
-                Thông tin cơ bản
+        <nav class="flex flex-wrap gap-x-4 gap-y-2 px-6" aria-label="Tabs">
+            <button type="button" class="tab-button active py-3 px-2 border-b-2 border-blue-500 font-medium text-sm text-blue-600 whitespace-nowrap" data-tab="basic">
+                <i class="fas fa-info-circle mr-1.5"></i>
+                <span class="hidden sm:inline">Thông tin</span>
             </button>
-            <button type="button" class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="colors">
-                <i class="fas fa-palette mr-2"></i>
-                Màu sắc ({{ $carvariant->colors->count() }})
+            <button type="button" class="tab-button py-3 px-2 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap" data-tab="colors">
+                <i class="fas fa-palette mr-1.5"></i>
+                <span class="hidden sm:inline">Màu</span> ({{ $carvariant->colors->count() }})
             </button>
-            <button type="button" class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="specifications">
-                <i class="fas fa-cogs mr-2"></i>
-                Thông số kỹ thuật ({{ $carvariant->specifications->count() }})
+            <button type="button" class="tab-button py-3 px-2 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap" data-tab="specifications">
+                <i class="fas fa-cogs mr-1.5"></i>
+                <span class="hidden sm:inline">Thông số</span> ({{ $carvariant->specifications->count() }})
             </button>
-            <button type="button" class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="features">
-                <i class="fas fa-star mr-2"></i>
-                Tính năng ({{ $carvariant->featuresRelation->count() }})
+            <button type="button" class="tab-button py-3 px-2 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap" data-tab="features">
+                <i class="fas fa-star mr-1.5"></i>
+                <span class="hidden sm:inline">Tính năng</span> ({{ $carvariant->featuresRelation->count() }})
             </button>
-            <button type="button" class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="images">
-                <i class="fas fa-images mr-2"></i>
-                Hình ảnh ({{ $carvariant->images->count() }})
+            <button type="button" class="tab-button py-3 px-2 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap" data-tab="images">
+                <i class="fas fa-images mr-1.5"></i>
+                <span class="hidden sm:inline">Ảnh</span> ({{ $carvariant->images->count() }})
             </button>
         </nav>
     </div>
@@ -709,7 +709,7 @@
                 <div class="space-x-2">
                     <button type="button" id="uploadImagesBtn" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
                         <i class="fas fa-upload mr-2"></i>
-                        Upload hình ảnh
+                        Thêm hình ảnh
                     </button>
                 </div>
             </div>
@@ -825,7 +825,7 @@
             @if($carvariant->images->count() == 0)
                 <div class="text-center py-8 text-gray-500">
                     <i class="fas fa-images text-4xl mb-4"></i>
-                    <p>Chưa có hình ảnh nào. Hãy upload hình ảnh đầu tiên!</p>
+                    <p>Chưa có hình ảnh nào. Hãy Thêm hình ảnh đầu tiên!</p>
                 </div>
             @endif
         </div>
@@ -848,12 +848,12 @@
 
 {{-- Image Upload Modal --}}
 <div id="uploadModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
         {{-- Header --}}
-        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+        <div class="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-gray-200 rounded-t-xl">
             <h3 class="text-lg font-semibold text-gray-900">
                 <i class="fas fa-upload text-blue-600 mr-2"></i>
-                Upload hình ảnh mới
+                Thêm hình ảnh mới
             </h3>
             <button type="button" id="closeUploadModal" class="text-gray-400 hover:text-gray-600 transition-colors">
                 <i class="fas fa-times text-xl"></i>
@@ -861,7 +861,7 @@
         </div>
         
         {{-- Body --}}
-        <div class="px-6 pb-6">
+        <div class="flex-1 overflow-y-auto px-6 py-6">
             <form id="uploadForm" class="space-y-4" enctype="multipart/form-data">
                 <input type="hidden" name="car_variant_id" value="{{ $carvariant->id }}">
                 
@@ -904,7 +904,7 @@
         </div>
         
         {{-- Footer --}}
-        <div class="flex items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200">
+        <div class="flex-shrink-0 flex items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-xl">
             <button type="button" id="cancelUpload"
                     class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors">
                 Hủy
@@ -912,7 +912,7 @@
             <button type="submit" form="uploadForm" id="uploadSubmitBtn"
                     class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
                 <i class="fas fa-upload mr-2"></i>
-                Upload hình ảnh
+                Thêm hình ảnh
             </button>
         </div>
     </div>
@@ -920,9 +920,9 @@
 
 {{-- Image Edit Modal --}}
 <div id="imageModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
         {{-- Header --}}
-        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+        <div class="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-gray-200 rounded-t-xl">
             <h3 id="imageModalTitle" class="text-lg font-semibold text-gray-900">
                 <i class="fas fa-edit text-blue-600 mr-2"></i>
                 Chỉnh sửa hình ảnh
@@ -933,7 +933,7 @@
         </div>
         
         {{-- Body --}}
-        <div class="px-6 pb-6">
+        <div class="flex-1 overflow-y-auto px-6 py-6">
             <form id="imageForm" class="space-y-4" enctype="multipart/form-data">
                 <input type="hidden" id="imageId" name="image_id">
                 <input type="hidden" name="car_variant_id" value="{{ $carvariant->id }}">
@@ -1065,7 +1065,7 @@
         </div>
         
         {{-- Footer --}}
-        <div class="flex items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200">
+        <div class="flex-shrink-0 flex items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-xl">
             <button type="button" id="cancelImageEdit"
                     class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors">
                 Hủy
@@ -2501,7 +2501,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(error => {
             console.error('Upload error:', error);
-            showMessage('Có lỗi xảy ra khi upload hình ảnh', 'error');
+            showMessage('Có lỗi xảy ra khi thêm hình ảnh', 'error');
         })
         .finally(() => {
             // Reset button state
@@ -3525,7 +3525,7 @@ function removeImageFromDOM(imageId) {
             imagesContainer.innerHTML = `
                 <div class="text-center py-8 text-gray-500">
                     <i class="fas fa-images text-4xl mb-4"></i>
-                    <p>Chưa có hình ảnh nào. Hãy upload hình ảnh đầu tiên!</p>
+                    <p>Chưa có hình ảnh nào. Hãy thêm hình ảnh đầu tiên!</p>
                 </div>
             `;
         }

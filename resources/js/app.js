@@ -16,12 +16,6 @@ window.loadingStates = {
 
 // Re-sync wishlist buttons after navigation/return
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('App.js: DOM loaded, initializing...');
-    
-    // Check if managers are loaded
-    console.log('App.js: Cart manager available:', !!window.cartManager);
-    console.log('App.js: Wishlist manager available:', !!window.wishlistManager);
-    console.log('App.js: Compare manager available:', !!window.compareManager);
     
     // Force badge from localStorage immediately after navigation (e.g., click logo)
     try {
@@ -53,18 +47,14 @@ document.addEventListener('DOMContentLoaded', () => {
     try { 
         if (window.CartCount && !window.CartCount.initialized) { 
             window.CartCount.init(); 
-            console.log('App.js: CartCount initialized');
         } 
-    } catch(e) { console.warn('App.js: CartCount init failed:', e); }
+    } catch(e) {}
     
     try { 
         if (window.WishlistCount && !window.WishlistCount.initialized) { 
             window.WishlistCount.init(); 
-            console.log('App.js: WishlistCount initialized');
         } 
-    } catch(e) { console.warn('App.js: WishlistCount init failed:', e); }
-    
-    console.log('App.js: Initialization complete');
+    } catch(e) {}
 
     // Fire toast from payload span if present (server-side redirect payload)
     try {
@@ -174,7 +164,6 @@ function addToCartServer(itemType, itemId, button) {
     })
     .then(response => response.json())
     .then(data => {
-        console.log('Add to cart response:', data);
         if (data.success) {
             showMessage(data.message || 'Đã thêm vào giỏ hàng', 'success');
             if (typeof updateCartCount === 'function' && data.cart_count !== undefined) {

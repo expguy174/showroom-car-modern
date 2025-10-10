@@ -288,7 +288,11 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/edit/{accessory}', [AccessoryController::class, 'edit'])->name('edit');
         Route::put('/update/{accessory}', [AccessoryController::class, 'update'])->name('update');
         Route::delete('/delete/{accessory}', [AccessoryController::class, 'destroy'])->name('destroy');
+        Route::patch('/{accessory}/restore', [AccessoryController::class, 'restore'])->name('restore');
         Route::patch('/{accessory}/toggle-status', [AccessoryController::class, 'toggleStatus'])->name('toggle-status');
+        Route::get('/{accessory}/get-image/{index}', [AccessoryController::class, 'getImage'])->name('get-image');
+        Route::put('/{accessory}/update-image/{index}', [AccessoryController::class, 'updateImage'])->name('update-image');
+        Route::delete('/{accessory}/delete-image/{index}', [AccessoryController::class, 'deleteImage'])->name('delete-image');
     });
 
     // Blogs

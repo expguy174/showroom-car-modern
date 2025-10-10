@@ -125,13 +125,13 @@
                         <div class="p-0">
                             <div class="overflow-x-auto">
                                 <table id="car-table" class="cart-table centered min-w-full">
-                                    <thead>
+                                    <thead class="desktop-only">
                                         <tr class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider">
-                                            <th class="px-6 py-3 whitespace-nowrap">Ảnh</th>
-                                            <th class="px-6 py-3 whitespace-nowrap">Thông tin</th>
-                                            <th class="px-6 py-3 whitespace-nowrap">Số lượng</th>
-                                            <th class="px-6 py-3 whitespace-nowrap">Giá</th>
-                                            <th class="px-6 py-3 whitespace-nowrap">Thao tác</th>
+                                            <th class="px-6 py-3 whitespace-nowrap text-center">Ảnh</th>
+                                            <th class="px-6 py-3 whitespace-nowrap text-left">Thông tin</th>
+                                            <th class="px-6 py-3 whitespace-nowrap text-center">Số lượng</th>
+                                            <th class="px-6 py-3 whitespace-nowrap text-right">Giá</th>
+                                            <th class="px-6 py-3 whitespace-nowrap text-center">Thao tác</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-gray-100">
@@ -159,13 +159,13 @@
                         <div class="p-0">
                             <div class="overflow-x-auto">
                                 <table id="accessory-table" class="cart-table centered min-w-full">
-                                    <thead>
+                                    <thead class="desktop-only">
                                         <tr class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider">
-                                            <th class="px-6 py-3 whitespace-nowrap">Ảnh</th>
-                                            <th class="px-6 py-3 whitespace-nowrap">Thông tin</th>
-                                            <th class="px-6 py-3 whitespace-nowrap">Số lượng</th>
-                                            <th class="px-6 py-3 whitespace-nowrap">Giá</th>
-                                            <th class="px-6 py-3 whitespace-nowrap">Thao tác</th>
+                                            <th class="px-6 py-3 whitespace-nowrap text-center">Ảnh</th>
+                                            <th class="px-6 py-3 whitespace-nowrap text-left">Thông tin</th>
+                                            <th class="px-6 py-3 whitespace-nowrap text-center">Số lượng</th>
+                                            <th class="px-6 py-3 whitespace-nowrap text-right">Giá</th>
+                                            <th class="px-6 py-3 whitespace-nowrap text-center">Thao tác</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-gray-100">
@@ -311,6 +311,102 @@
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/cart.css') }}">
 <style>
+    /* Responsive display control - Mobile first approach */
+    /* Default: Show mobile layout */
+    .desktop-only {
+        display: none !important;
+    }
+    
+    .mobile-only {
+        display: table-row;
+    }
+    
+    /* Tablet and up (md breakpoint: 768px) - Show desktop layout */
+    @media (min-width: 768px) {
+        /* Table rows */
+        tr.desktop-only {
+            display: table-row !important;
+        }
+        
+        /* Table headers */
+        thead.desktop-only {
+            display: table-header-group !important;
+        }
+        
+        /* Hide mobile layout */
+        .mobile-only {
+            display: none !important;
+        }
+        
+        /* Show columns that were hidden on mobile */
+        .mobile-hide {
+            display: table-cell !important;
+        }
+    }
+    
+    /* Mobile specific - Hide elements on small screens */
+    @media (max-width: 767px) {
+        .mobile-hide {
+            display: none !important;
+        }
+        
+        /* Improve mobile spacing */
+        .container {
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+    }
+    
+    /* Remove spinner arrows from number inputs */
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    
+    input[type=number] {
+        -moz-appearance: textfield;
+        appearance: textfield;
+    }
+    
+    /* Increase spacing between cart items */
+    .cart-table tbody tr.desktop-only td {
+        padding-top: 1.5rem;
+        padding-bottom: 1.5rem;
+    }
+    
+    .cart-table tbody tr {
+        border-bottom: 2px solid #f3f4f6;
+    }
+    
+    /* Column alignment */
+    .cart-table tbody tr.desktop-only td:nth-child(3) {
+        text-align: center;
+        vertical-align: middle;
+    }
+    
+    .cart-table tbody tr.desktop-only td:nth-child(3) > div {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .cart-table tbody tr.desktop-only td:nth-child(2) {
+        text-align: left;
+        vertical-align: top;
+    }
+    
+    /* Mobile card spacing */
+    @media (max-width: 767px) {
+        .mobile-only td > div {
+            margin-bottom: 1.5rem;
+        }
+        
+        .mobile-only:not(:last-child) {
+            margin-bottom: 0.5rem;
+        }
+    }
+    
     .cart-item-card {
         transition: all 0.3s ease;
     }
@@ -334,6 +430,12 @@
     
     .quantity-control:hover {
         background-color: #f3f4f6;
+    }
+    
+    /* Smooth transitions for responsive changes */
+    .desktop-only,
+    .mobile-only {
+        transition: opacity 0.2s ease;
     }
 </style>
 @endpush

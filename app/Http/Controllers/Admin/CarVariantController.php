@@ -67,7 +67,9 @@ class CarVariantController extends Controller
         }
 
 
-        $carVariants = $query->orderBy('created_at', 'desc')->paginate(15);
+        $carVariants = $query->orderBy('sort_order')
+                            ->orderBy('created_at', 'desc')
+                            ->paginate(15);
 
         // Get car models for filter dropdown - format for dropdown component
         $carModels = CarModel::with('carBrand')->orderBy('name')->get()->map(function($model) {

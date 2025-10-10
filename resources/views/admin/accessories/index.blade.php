@@ -173,19 +173,21 @@
 
 @push('scripts')
 <script>
+// Initialize all event listeners
+function initializeEventListeners() {
+    initializeDeleteButtons();
+    initializeStatusToggle();
+}
+
 // Initialize delete button event listeners
 document.addEventListener('DOMContentLoaded', function() {
-    initializeDeleteButtons();
+    initializeEventListeners();
 });
 
 function initializeDeleteButtons() {
-    console.log('🔍 Initializing delete buttons...');
     const deleteButtons = document.querySelectorAll('.delete-btn');
-    console.log('🔍 Found delete buttons:', deleteButtons.length);
     
-    deleteButtons.forEach((btn, index) => {
-        console.log(`🔍 Delete button ${index}:`, btn);
-        
+    deleteButtons.forEach((btn) => {
         // Remove existing listeners to prevent duplicates
         btn.removeEventListener('click', handleDeleteClick);
         
@@ -258,7 +260,9 @@ function getCategoryDisplayName(category) {
         'performance': 'Hiệu suất',
         'comfort': 'Tiện nghi',
         'maintenance': 'Bảo dưỡng',
-        'decoration': 'Trang trí'
+        'decoration': 'Trang trí',
+        'car_care': 'Chăm sóc xe',
+        'utility': 'Tiện ích'
     };
     return categoryMap[category] || category;
 }
@@ -290,12 +294,22 @@ function loadAccessoriesFromDropdown() {
 }
 
 // Status toggle functionality
-document.querySelectorAll('.status-toggle').forEach(button => {
-    button.addEventListener('click', async function(e) {
-        e.preventDefault();
-        const accessoryId = this.dataset.accessoryId;
-        const newStatus = this.dataset.status === 'true';
-        const buttonElement = this;
+function initializeStatusToggle() {
+    document.querySelectorAll('.status-toggle').forEach(button => {
+        // Remove existing listener to prevent duplicates
+        button.removeEventListener('click', handleStatusToggle);
+        // Add new listener
+        button.addEventListener('click', handleStatusToggle);
+    });
+}
+
+// Status toggle is now initialized via initializeEventListeners()
+
+async function handleStatusToggle(e) {
+    e.preventDefault();
+    const accessoryId = this.dataset.accessoryId;
+    const newStatus = this.dataset.status === 'true';
+    const buttonElement = this;
         
         // Show loading state
         const originalIcon = buttonElement.querySelector('i').className;
@@ -361,14 +375,11 @@ document.querySelectorAll('.status-toggle').forEach(button => {
         } finally {
             buttonElement.disabled = false;
         }
-    });
-});
+    }
 
 // Delete confirmation function
 window.confirmDelete = function(data) {
-    console.log('🗑️ Delete function called with data:', data);
     if (!data || !data.deleteUrl) {
-        console.log('❌ No data or deleteUrl provided');
         return;
     }
     
@@ -405,11 +416,6 @@ window.confirmDelete = function(data) {
             if (window.loadAccessories) {
                 const currentUrl = window.location.href;
                 window.loadAccessories(currentUrl);
-                
-                // Re-initialize delete buttons after table reload
-                setTimeout(() => {
-                    initializeDeleteButtons();
-                }, 500);
             }
             
             // 4. Show success message

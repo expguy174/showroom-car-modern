@@ -30,7 +30,6 @@
     @if($hasToggle && $item)
         <button type="button" 
                 class="text-{{ $status ? 'orange' : 'green' }}-600 hover:text-{{ $status ? 'orange' : 'green' }}-900 status-toggle w-4 h-4 flex items-center justify-center"
-                data-brand-id="{{ $id }}"
                 data-{{ strtolower($entity) }}-id="{{ $id }}"
                 data-status="{{ $status ? 'false' : 'true' }}"
                 title="{{ $status ? 'Tạm dừng' : 'Kích hoạt' }}">
