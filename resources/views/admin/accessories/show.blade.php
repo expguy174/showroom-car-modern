@@ -17,8 +17,14 @@
                     @endphp
                     
                     @if($headerImage)
+                        @php
+                            // Get image URL from array structure
+                            $imageUrl = is_array($headerImage) 
+                                ? ($headerImage['url'] ?? asset('storage/' . ($headerImage['file_path'] ?? '')))
+                                : $headerImage;
+                        @endphp
                         <div class="w-12 h-12 rounded-xl overflow-hidden border-2 border-gray-200 shadow-sm">
-                            <img src="{{ $headerImage }}" 
+                            <img src="{{ $imageUrl }}" 
                                  alt="{{ $accessory->name }}"
                                  class="w-full h-full object-cover"
                                  onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
@@ -136,14 +142,28 @@
                 $galleryRaw = $accessory->gallery;
                 $gallery = is_array($galleryRaw) ? $galleryRaw : (json_decode($galleryRaw ?? '[]', true) ?: []);
                 
-                // Convert gallery URLs to simple objects without complex filtering
-                $galleryImages = collect($gallery)->map(function($imageUrl, $index) use ($accessory) {
+                // Convert gallery items to simple objects
+                $galleryImages = collect($gallery)->map(function($imageData, $index) use ($accessory) {
+                    // Handle both array (new format) and string (legacy) formats
+                    if (is_array($imageData)) {
+                        $imageUrl = $imageData['url'] ?? asset('storage/' . ($imageData['file_path'] ?? ''));
+                        $title = $imageData['title'] ?? "Ảnh " . ($index + 1);
+                        $altText = $imageData['alt_text'] ?? ($accessory->name . " - Ảnh " . ($index + 1));
+                        $description = $imageData['description'] ?? null;
+                    } else {
+                        // Legacy string URL
+                        $imageUrl = $imageData;
+                        $title = "Ảnh " . ($index + 1);
+                        $altText = $accessory->name . " - Ảnh " . ($index + 1);
+                        $description = null;
+                    }
+                    
                     return (object) [
                         'id' => $index + 1,
                         'image_url' => $imageUrl,
-                        'title' => "Ảnh " . ($index + 1),
-                        'alt_text' => $accessory->name . " - Ảnh " . ($index + 1),
-                        'description' => null,
+                        'title' => $title,
+                        'alt_text' => $altText,
+                        'description' => $description,
                         'is_main' => $index === 0,
                         'sort_order' => $index + 1
                     ];
@@ -164,11 +184,14 @@
                 {{-- Main Image Display --}}
                 <div class="mb-4 max-w-2xl mx-auto">
                     <div class="relative group">
+                        @php
+                            $firstImage = $galleryImages->first();
+                        @endphp
                         <img id="mainImage" 
-                             src="{{ $galleryImages->first()->image_url }}" 
-                             alt="{{ $galleryImages->first()->alt_text }}"
+                             src="{{ $firstImage->image_url }}" 
+                             alt="{{ $firstImage->alt_text }}"
                              class="w-full h-64 md:h-80 object-cover rounded-lg border border-gray-200 shadow-sm cursor-pointer"
-                             onclick="viewImage('{{ $galleryImages->first()->image_url }}', '{{ $galleryImages->first()->title }}')">
+                             onclick="viewImage('{{ $firstImage->image_url }}', '{{ $firstImage->title }}')">
                         
                         {{-- Navigation arrows for multiple images --}}
                         @if($galleryImages->count() > 1)
@@ -297,10 +320,23 @@
                 </h2>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    @foreach($specifications as $spec => $value)
+                    @foreach($specifications as $spec)
+                        @php
+                            // Handle both array format {name: 'X', value: 'Y'} and key-value format
+                            if (is_array($spec) && isset($spec['name'])) {
+                                $specName = $spec['name'];
+                                $specValue = $spec['value'] ?? 'N/A';
+                            } else {
+                                $specName = is_numeric($spec) ? 'Thông số' : (is_string($spec) ? $spec : 'N/A');
+                                $specValue = is_array($spec) ? json_encode($spec) : $spec;
+                            }
+                        @endphp
                         <div class="bg-gray-50 rounded-lg p-4">
-                            <div class="text-sm text-gray-600 mb-1">{{ $spec }}</div>
-                            <div class="font-medium text-gray-900">{{ $value }}</div>
+                            <div class="text-sm text-gray-600 mb-1 flex items-center">
+                                <i class="fas fa-wrench text-gray-400 mr-2 text-xs"></i>
+                                {{ $specName }}
+                            </div>
+                            <div class="font-medium text-gray-900">{{ $specValue }}</div>
                         </div>
                     @endforeach
                 </div>
@@ -324,7 +360,7 @@
                     @foreach($features as $feature)
                         <div class="flex items-center bg-gray-50 rounded-lg p-3">
                             <i class="fas fa-check-circle text-green-600 mr-3"></i>
-                            <span class="text-gray-900">{{ $feature }}</span>
+                            <span class="text-gray-900">{{ is_array($feature) ? ($feature['name'] ?? json_encode($feature)) : $feature }}</span>
                         </div>
                     @endforeach
                 </div>
@@ -389,7 +425,7 @@
             @endif
 
             {{-- Installation & Warranty Information --}}
-            @if($accessory->installation_instructions || $accessory->warranty_info || $accessory->installation_service_available)
+            @if($accessory->installation_instructions || $accessory->warranty_info || $accessory->installation_service_available || $accessory->installation_requirements || $accessory->warranty_terms)
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
                     <i class="fas fa-tools text-orange-600 mr-3"></i>
@@ -412,9 +448,24 @@
                     </div>
                     @endif
                     
+                    @if($accessory->installation_requirements)
+                    <div>
+                        <h3 class="font-medium text-gray-900 mb-2 flex items-center">
+                            <i class="fas fa-list-check text-orange-600 mr-2"></i>
+                            Yêu cầu lắp đặt:
+                        </h3>
+                        <div class="text-gray-700 bg-orange-50 rounded-lg p-4">
+                            {!! nl2br(e($accessory->installation_requirements)) !!}
+                        </div>
+                    </div>
+                    @endif
+                    
                     @if($accessory->installation_instructions)
                     <div>
-                        <h3 class="font-medium text-gray-900 mb-2">Hướng dẫn lắp đặt:</h3>
+                        <h3 class="font-medium text-gray-900 mb-2 flex items-center">
+                            <i class="fas fa-book-open text-blue-600 mr-2"></i>
+                            Hướng dẫn lắp đặt:
+                        </h3>
                         <div class="text-gray-700 bg-gray-50 rounded-lg p-4">
                             {!! nl2br(e($accessory->installation_instructions)) !!}
                         </div>
@@ -423,9 +474,24 @@
                     
                     @if($accessory->warranty_info)
                     <div>
-                        <h3 class="font-medium text-gray-900 mb-2">Thông tin bảo hành:</h3>
+                        <h3 class="font-medium text-gray-900 mb-2 flex items-center">
+                            <i class="fas fa-shield-alt text-blue-600 mr-2"></i>
+                            Thông tin bảo hành:
+                        </h3>
                         <div class="text-gray-700 bg-blue-50 rounded-lg p-4">
                             {!! nl2br(e($accessory->warranty_info)) !!}
+                        </div>
+                    </div>
+                    @endif
+                    
+                    @if($accessory->warranty_terms)
+                    <div>
+                        <h3 class="font-medium text-gray-900 mb-2 flex items-center">
+                            <i class="fas fa-file-contract text-indigo-600 mr-2"></i>
+                            Điều khoản bảo hành:
+                        </h3>
+                        <div class="text-gray-700 bg-indigo-50 rounded-lg p-4">
+                            {!! nl2br(e($accessory->warranty_terms)) !!}
                         </div>
                     </div>
                     @endif

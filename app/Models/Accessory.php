@@ -82,6 +82,9 @@ class Accessory extends Model
         'specifications' => 'array',
         'features' => 'array',
         'color_options' => 'array',
+        'compatible_car_brands' => 'array',
+        'compatible_car_models' => 'array',
+        'compatible_car_years' => 'array',
     ];
 
     public function reviews()
@@ -125,18 +128,30 @@ class Accessory extends Model
             $this->main_image_path ?? null,
             $this->image_path ?? null,
         ];
+        
+        // Get first gallery image URL if exists
         if (is_array($this->gallery) && !empty($this->gallery)) {
             $first = $this->gallery[0] ?? null;
             if ($first) {
-                $paths[] = $first;
+                // Gallery items are arrays with 'url' or 'file_path' keys
+                if (is_array($first)) {
+                    $paths[] = $first['url'] ?? $first['file_path'] ?? null;
+                } else {
+                    // Legacy: gallery item is string path
+                    $paths[] = $first;
+                }
             }
         }
+        
         foreach ($paths as $p) {
             if (!$p) continue;
+            // If already full URL, return as-is
             if (filter_var($p, FILTER_VALIDATE_URL)) return $p;
+            // If relative path, prepend storage URL
             return asset('storage/' . ltrim($p, '/'));
         }
-        // Deterministic accessory photo pool
+        
+        // Deterministic accessory photo pool (fallback)
         $pool = [
             'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=1200&q=80',
             'https://images.unsplash.com/photo-1583267746897-8b4fbc1d2a9a?auto=format&fit=crop&w=1200&q=80',

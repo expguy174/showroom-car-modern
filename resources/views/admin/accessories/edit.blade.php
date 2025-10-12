@@ -691,11 +691,21 @@
                         </h3>
                         
                         <div>
+                            <label for="slug" class="block text-sm font-medium text-gray-700 mb-2">
+                                Slug URL <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" name="slug" id="slug" 
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                   value="{{ old('slug', $accessory->slug) }}" placeholder="phu-kien-xe-hoi">
+                            <p class="mt-1 text-xs text-gray-500">URL thân thiện SEO (tự động tạo từ tên nếu để trống)</p>
+                        </div>
+                        
+                        <div>
                             <label for="meta_title" class="block text-sm font-medium text-gray-700 mb-2">Meta Title</label>
                             <input type="text" name="meta_title" id="meta_title" 
                                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
                                    value="{{ old('meta_title', $accessory->meta_title) }}" placeholder="Tiêu đề trang cho SEO">
-                            <p class="mt-1 text-xs text-gray-500">Nên từ 50-60 ký tự</p>
+                            <p class="mt-1 text-xs text-gray-500">Nên từ 50-60 ký tú</p>
                         </div>
 
                         <div>
@@ -3095,7 +3105,18 @@ function deleteExistingImage(index, accessoryId) {
     }
     
     const deleteUrl = `/admin/accessories/${accessoryId}/delete-image/${index}`;
-    const imageName = `Hình ảnh #${index + 1}`;
+    
+    // Get image title from DOM
+    const imageCard = document.querySelector(`.image-card[data-image-index="${index}"]`);
+    let imageName = `Hình ảnh #${index + 1}`;
+    
+    if (imageCard) {
+        // Try to get title from the card
+        const titleElement = imageCard.querySelector('p.text-sm.font-medium.text-gray-800');
+        if (titleElement && titleElement.textContent.trim()) {
+            imageName = titleElement.textContent.trim();
+        }
+    }
     
     // Show modal
     window.deleteModalManager_deleteImageModal.show({

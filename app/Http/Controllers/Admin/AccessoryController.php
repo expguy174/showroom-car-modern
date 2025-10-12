@@ -168,6 +168,7 @@ class AccessoryController extends Controller
             'gallery.*.file' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
 
             // SEO
+            'slug' => 'nullable|string|max:255|unique:accessories,slug,NULL,id,deleted_at,NULL',
             'meta_title' => 'nullable|string|max:255',
             'meta_description' => 'nullable|string|max:500',
             'meta_keywords' => 'nullable|string|max:255',
@@ -203,7 +204,14 @@ class AccessoryController extends Controller
             'image_path.image' => 'Tệp tải lên phải là hình ảnh.',
             'image_path.mimes' => 'Hình ảnh phải có định dạng: jpeg, png, jpg, gif.',
             'image_path.max' => 'Kích thước hình ảnh không được vượt quá 2MB.',
+            'slug.unique' => 'Slug URL này đã tồn tại.',
+            'slug.max' => 'Slug URL không được vượt quá 255 ký tự.',
         ]);
+
+        // Auto-generate slug if not provided
+        if (empty($validated['slug'])) {
+            $validated['slug'] = Str::slug($validated['name']);
+        }
 
         // Handle image upload
         if ($request->hasFile('image_path')) {
@@ -217,23 +225,27 @@ class AccessoryController extends Controller
             $galleryData = json_decode($request->gallery_json, true) ?: [];
         }
 
-        // Debug: Log initial state
-        Log::info('=== GALLERY DEBUG START ===');
-        Log::info('Request gallery_json', ['gallery_json' => $request->input('gallery_json')]);
-        Log::info('Gallery processing started', [
-            'has_gallery_json' => $request->filled('gallery_json'),
-            'gallery_json_content' => $request->input('gallery_json'),
-            'initial_gallery_data' => $galleryData,
-            'has_gallery_files' => $request->hasFile('gallery'),
-        ]);
 
         // Process gallery file uploads
+        // Try to get files using both methods
+        $galleryFiles = [];
+        
+        // Method 1: Direct hasFile check
         if ($request->hasFile('gallery')) {
-            Log::info('Gallery files found', ['files' => array_keys($request->file('gallery'))]);
+            $galleryFiles = $request->file('gallery');
+        }
+        // Method 2: Check nested structure in allFiles
+        elseif (!empty($request->allFiles()['gallery'] ?? [])) {
+            $galleryFiles = $request->allFiles()['gallery'];
+        }
+        
+        if (!empty($galleryFiles) && is_array($galleryFiles)) {
 
-            foreach ($request->file('gallery') as $index => $fileData) {
-                Log::info('Processing gallery index', ['index' => $index, 'data_type' => gettype($fileData)]);
+                // Reset gallery data to avoid duplicates
+                $uploadedImages = [];
+                $metadataCounter = 0;
 
+                foreach ($galleryFiles as $index => $fileData) {
                 // Handle both structures: gallery[1][file] and gallery[1] = file
                 $file = null;
                 if (is_array($fileData) && isset($fileData['file'])) {
@@ -242,25 +254,17 @@ class AccessoryController extends Controller
                     $file = $fileData;
                 }
 
-                if ($file && $file->isValid()) {
-                    Log::info('Valid file found', ['name' => $file->getClientOriginalName()]);
-
+                if ($file && $file instanceof \Illuminate\Http\UploadedFile && $file->isValid()) {
                     // Store the uploaded file
                     $filePath = $file->store('accessories/gallery', 'public');
-                    $fileUrl = asset('storage/' . $filePath);
+                    
+                    // Create full URL (not just asset path)
+                    $fileUrl = url('storage/' . $filePath);
 
-                    // Find corresponding metadata from JSON (match by index)
-                    $metadataIndex = is_numeric($index) ? $index - 1 : 0;
-                    $metadata = $galleryData[$metadataIndex] ?? [];
+                    // Get corresponding metadata by counter (sequential match)
+                    $metadata = $galleryData[$metadataCounter] ?? [];
+                    $metadataCounter++;
 
-                    Log::info('File uploaded successfully', [
-                        'file_path' => $filePath,
-                        'file_url' => $fileUrl,
-                        'metadata_index' => $metadataIndex,
-                        'metadata' => $metadata
-                    ]);
-
-                    // Merge file URL with metadata
                     $finalData = array_merge($metadata, [
                         'url' => $fileUrl,
                         'file_path' => $filePath,
@@ -269,28 +273,20 @@ class AccessoryController extends Controller
                         'mime_type' => $file->getMimeType(),
                     ]);
 
-                    $galleryData[] = $finalData;
-                    Log::info('Added to gallery data', ['final_data' => $finalData]);
+                    $uploadedImages[] = $finalData;
                 }
             }
+            
+            // Replace gallery data with uploaded images
+            $galleryData = $uploadedImages;
         }
 
-        // Handle gallery: Always preserve existing, add new if any
-        $currentGallery = $accessory->gallery ?? [];
-        if (!is_array($currentGallery)) {
-            $currentGallery = [];
-        }
-
-        // Add new images if any
+        // Set gallery data for new accessory (no existing gallery to preserve)
         if (!empty($galleryData)) {
-            foreach ($galleryData as $newImage) {
-                $currentGallery[] = $newImage;
-            }
-            Log::info('Added new images', ['new_count' => count($galleryData), 'total_count' => count($currentGallery)]);
+            $validated['gallery'] = $galleryData;
+        } else {
+            $validated['gallery'] = [];
         }
-
-        // Always set gallery (preserve existing)
-        $validated['gallery'] = $currentGallery;
         $validated['is_active'] = $request->boolean('is_active', true);
         $validated['is_featured'] = $request->boolean('is_featured');
         $validated['is_on_sale'] = $request->boolean('is_on_sale');
@@ -358,14 +354,6 @@ class AccessoryController extends Controller
     {
         $accessory = Accessory::findOrFail($id);
 
-        // Debug: Log all request data
-        Log::info('Update request received', [
-            'request_method' => $request->method(),
-            'has_files' => $request->hasFile('gallery'),
-            'all_files' => $request->allFiles(),
-            'gallery_json' => $request->input('gallery_json'),
-        ]);
-
         try {
             $validated = $request->validate([
                 // Basic Info
@@ -423,6 +411,7 @@ class AccessoryController extends Controller
                 'gallery.*.file' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
 
                 // SEO
+                'slug' => 'nullable|string|max:255|unique:accessories,slug,' . $id . ',id,deleted_at,NULL',
                 'meta_title' => 'nullable|string|max:255',
                 'meta_description' => 'nullable|string|max:500',
                 'meta_keywords' => 'nullable|string|max:255',
@@ -458,14 +447,14 @@ class AccessoryController extends Controller
                 'image_path.image' => 'Tệp tải lên phải là hình ảnh.',
                 'image_path.mimes' => 'Hình ảnh phải có định dạng: jpeg, png, jpg, gif.',
                 'image_path.max' => 'Kích thước hình ảnh không được vượt quá 2MB.',
+                'slug.unique' => 'Slug URL này đã tồn tại.',
+                'slug.max' => 'Slug URL không được vượt quá 255 ký tự.',
             ]);
 
             // IMPORTANT: Remove gallery from validated data 
             // We handle it separately to preserve existing images
-            Log::info('Before unset - validated keys', ['keys' => array_keys($validated), 'has_gallery' => isset($validated['gallery'])]);
             unset($validated['gallery']);
             unset($validated['gallery_json']);
-            Log::info('After unset - validated keys', ['keys' => array_keys($validated), 'has_gallery' => isset($validated['gallery'])]);
 
             // Handle image upload
             if ($request->hasFile('image_path')) {
@@ -612,8 +601,9 @@ class AccessoryController extends Controller
             }
             // If no new images, don't modify gallery field at all
 
-            // Generate slug if name changed
-            if ($validated['name'] !== $accessory->name) {
+            // Auto-generate slug only if empty
+            // Don't override user's custom slug even if name changes
+            if (empty($validated['slug'])) {
                 $validated['slug'] = Str::slug($validated['name']);
             }
 
