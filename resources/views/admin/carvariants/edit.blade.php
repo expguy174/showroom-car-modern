@@ -3453,10 +3453,24 @@ function addImageToDOM(image, updateCounter = true) {
     const imagesContainer = document.getElementById('imagesContainer');
     const imageCard = createImageCard(image);
     
-    // Remove empty state if exists
-    const emptyState = imagesContainer.querySelector('.text-center.py-8');
-    if (emptyState) {
-        emptyState.remove();
+    // Remove ALL empty states (both inside and outside imagesContainer)
+    // Check inside imagesContainer
+    const emptyStatesInside = imagesContainer.querySelectorAll('.text-center.py-8, .col-span-full');
+    emptyStatesInside.forEach(state => {
+        if (state.textContent.includes('Chưa có hình ảnh')) {
+            state.remove();
+        }
+    });
+    
+    // Check in parent (sibling of imagesContainer)
+    const parent = imagesContainer.parentElement;
+    if (parent) {
+        const emptyStatesOutside = parent.querySelectorAll('.text-center.py-8');
+        emptyStatesOutside.forEach(state => {
+            if (state.textContent.includes('Chưa có hình ảnh')) {
+                state.remove();
+            }
+        });
     }
     
     // If this image is set as main, remove main status from other images
@@ -3523,7 +3537,7 @@ function removeImageFromDOM(imageId) {
         const remainingImages = imagesContainer.querySelectorAll('[data-image-id]');
         if (remainingImages.length === 0) {
             imagesContainer.innerHTML = `
-                <div class="text-center py-8 text-gray-500">
+                <div class="col-span-full text-center py-8 text-gray-500">
                     <i class="fas fa-images text-4xl mb-4"></i>
                     <p>Chưa có hình ảnh nào. Hãy thêm hình ảnh đầu tiên!</p>
                 </div>

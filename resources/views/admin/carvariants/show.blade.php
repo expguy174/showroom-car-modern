@@ -774,14 +774,18 @@ function updateImageCounter() {
 // Update thumbnail active state
 function updateThumbnailActive() {
     const thumbnails = document.querySelectorAll('.thumbnail-item');
-    thumbnails.forEach((thumb, index) => {
+    thumbnails.forEach((thumb) => {
         const thumbIndex = parseInt(thumb.getAttribute('data-index'));
         if (thumbIndex === currentImageIndex) {
-            thumb.classList.add('active');
-            thumb.querySelector('img').classList.add('border-blue-500', 'border-2');
+            // Active entire card like Accessory with shadow
+            thumb.classList.add('active', 'shadow-lg');
+            thumb.style.borderColor = '#3B82F6'; // Blue-500
+            thumb.style.borderWidth = '2px';
         } else {
-            thumb.classList.remove('active');
-            thumb.querySelector('img').classList.remove('border-blue-500', 'border-2');
+            // Inactive state
+            thumb.classList.remove('active', 'shadow-lg');
+            thumb.style.borderColor = '#E5E7EB'; // Gray-200
+            thumb.style.borderWidth = '1px';
         }
     });
 }

@@ -2667,6 +2667,16 @@ function convertNewImagesToSaved() {
         // Remove data-temp-id
         card.removeAttribute('data-temp-id');
         
+        // CRITICAL: Remove file inputs or remove their name attribute
+        // This prevents resubmitting the same files on next save
+        const fileInputs = card.querySelectorAll('input[type="file"]');
+        fileInputs.forEach(input => {
+            // Remove name attribute so it won't be submitted
+            input.removeAttribute('name');
+            // Or completely remove the input
+            // input.remove();
+        });
+        
         // Update buttons with correct data attributes
         const editBtn = card.querySelector('.edit-image-btn');
         const deleteBtn = card.querySelector('.delete-image-btn');
@@ -2726,8 +2736,17 @@ function saveImagesToDatabase() {
         if (data.success) {
             showMessage('Đã lưu hình ảnh thành công!', 'success');
             
-            // Convert new images to saved state - no reload needed!
-            convertNewImagesToSaved();
+            // CRITICAL: Re-render gallery with updated data from server
+            // This ensures data-image-index matches DB array indices exactly
+            if (data.gallery) {
+                rerenderGalleryFromServer(data.gallery);
+            }
+            
+            // Clear gallery_json for next save
+            const galleryJsonInput = document.getElementById('new_images_hidden');
+            if (galleryJsonInput) {
+                galleryJsonInput.value = '[]';
+            }
         } else {
             showMessage('Lỗi: ' + data.message, 'error');
         }
@@ -2735,6 +2754,115 @@ function saveImagesToDatabase() {
     .catch(error => {
         showMessage('Có lỗi xảy ra khi lưu ảnh', 'error');
     });
+}
+
+// Re-render entire gallery from server data (after save success)
+function rerenderGalleryFromServer(galleryData) {
+    const container = document.getElementById('gallery-container');
+    const accessoryId = '{{ $accessory->id }}';
+    
+    // Clear container
+    container.innerHTML = '';
+    
+    // Check if empty
+    if (!galleryData || galleryData.length === 0) {
+        container.innerHTML = `
+            <div class="col-span-full text-center py-8 text-gray-500">
+                <i class="fas fa-image text-4xl mb-2"></i>
+                <p>Chưa có hình ảnh nào</p>
+            </div>
+        `;
+        updateGalleryCount();
+        return;
+    }
+    
+    // CRITICAL: Sort gallery exactly like PHP does
+    // Primary images first, then by sort_order
+    const sortedGallery = [...galleryData].sort((a, b) => {
+        // Primary images always come first
+        const isPrimaryA = a.is_primary ? 1 : 0;
+        const isPrimaryB = b.is_primary ? 1 : 0;
+        
+        if (isPrimaryA !== isPrimaryB) {
+            return isPrimaryB - isPrimaryA; // Primary first (descending)
+        }
+        
+        // Then sort by sort_order (ascending)
+        const sortA = a.sort_order !== undefined ? parseInt(a.sort_order) : 999;
+        const sortB = b.sort_order !== undefined ? parseInt(b.sort_order) : 999;
+        return sortA - sortB;
+    });
+    
+    const typeMap = {
+        'product': 'Sản phẩm',
+        'detail': 'Chi tiết',
+        'installation': 'Lắp đặt',
+        'usage': 'Sử dụng'
+    };
+    
+    // Render each image with correct index from SORTED array
+    sortedGallery.forEach((image, index) => {
+        const imageUrl = image.url || image.file_path || image;
+        const title = image.title || `Hình ảnh ${index + 1}`;
+        const altText = image.alt_text || image.alt || 'Gallery image';
+        const imageType = image.image_type || 'product';
+        const isPrimary = image.is_primary || false;
+        const description = image.description || '';
+        
+        const cardDiv = document.createElement('div');
+        cardDiv.className = 'bg-white p-3 rounded-lg border border-gray-200 relative image-card';
+        cardDiv.setAttribute('data-image-index', index); // CORRECT index from server
+        
+        cardDiv.innerHTML = `
+            <div class="absolute top-2 right-2 z-10 flex gap-2">
+                <button type="button" 
+                        class="edit-image-btn bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-full shadow-lg transition-colors"
+                        data-index="${index}"
+                        data-accessory-id="${accessoryId}"
+                        title="Sửa ảnh">
+                    <i class="fas fa-edit text-xs"></i>
+                </button>
+                <button type="button" 
+                        class="delete-image-btn bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow-lg transition-colors"
+                        data-index="${index}"
+                        data-accessory-id="${accessoryId}"
+                        title="Xóa ảnh">
+                    <i class="fas fa-trash text-xs"></i>
+                </button>
+            </div>
+            
+            <div class="aspect-video bg-gray-100 rounded-lg overflow-hidden mb-3 relative">
+                <img src="${imageUrl}" 
+                     alt="${altText}" 
+                     class="w-full h-full object-cover">
+                
+                ${isPrimary ? `
+                <div class="primary-badge absolute top-2 left-2 bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 shadow-lg">
+                    <i class="fas fa-star"></i>
+                    <span>Chính</span>
+                </div>
+                ` : ''}
+            </div>
+            
+            <div class="space-y-1">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                        ${typeMap[imageType] || imageType}
+                    </span>
+                </div>
+                <p class="text-sm font-medium text-gray-800 mb-1">${title}</p>
+                <div class="text-xs text-gray-600 space-y-1">
+                    <div>${altText}</div>
+                    ${description ? `<div class="text-gray-500 italic">${description}</div>` : ''}
+                </div>
+            </div>
+        `;
+        
+        container.appendChild(cardDiv);
+    });
+    
+    // Update counts
+    updateGalleryCount();
 }
 
 // Add single image to gallery (show immediately in management section)

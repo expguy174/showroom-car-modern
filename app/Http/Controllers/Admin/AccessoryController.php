@@ -470,7 +470,7 @@ class AccessoryController extends Controller
             // Handle gallery file uploads - UPDATE METHOD - FIXED
             $newGalleryItems = [];
 
-            // Get metadata from JSON
+            // Get metadata from JSON (ONLY FOR NEW IMAGES)
             $metadataArray = [];
             if ($request->filled('gallery_json')) {
                 $metadataArray = json_decode($request->gallery_json, true) ?: [];
@@ -483,8 +483,8 @@ class AccessoryController extends Controller
                 'metadata' => $metadataArray
             ]);
 
-            // Process file uploads and merge with metadata
-            // Check for nested structure: gallery[1][file]
+            // CRITICAL: Only process if there are ACTUAL FILE UPLOADS
+            // This prevents duplicate entries when form is resubmitted without new files
             $galleryFiles = $request->file('gallery') ?? [];
             if (!empty($galleryFiles)) {
                 Log::info('Gallery files found', ['file_keys' => array_keys($galleryFiles)]);
@@ -500,6 +500,8 @@ class AccessoryController extends Controller
                         $file = $fileData;
                     }
 
+                    // IMPORTANT: Only process valid, uploaded files
+                    // Skip if file is null or invalid (prevents processing existing image metadata)
                     if ($file && $file->isValid()) {
                         Log::info('Valid file found', ['name' => $file->getClientOriginalName()]);
 
@@ -539,6 +541,8 @@ class AccessoryController extends Controller
                             'metadata' => $metadata,
                             'final_data' => $imageData
                         ]);
+                    } else {
+                        Log::info('Skipped invalid or missing file at index', ['index' => $index]);
                     }
                 }
             }
@@ -664,7 +668,8 @@ class AccessoryController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Cập nhật phụ kiện "' . $accessory->name . '" thành công!',
-                    'accessory' => $accessory
+                    'accessory' => $accessory,
+                    'gallery' => $accessory->gallery ?? [] // Return updated gallery with correct indices
                 ]);
             }
 
@@ -907,6 +912,23 @@ class AccessoryController extends Controller
             $gallery = [];
         }
         
+        // CRITICAL: Sort gallery exactly like the view does
+        // Primary images first, then by sort_order
+        usort($gallery, function($a, $b) {
+            // Primary images always come first
+            $isPrimaryA = isset($a['is_primary']) && $a['is_primary'] ? 1 : 0;
+            $isPrimaryB = isset($b['is_primary']) && $b['is_primary'] ? 1 : 0;
+            
+            if ($isPrimaryA !== $isPrimaryB) {
+                return $isPrimaryB - $isPrimaryA; // Primary first (descending)
+            }
+            
+            // Then sort by sort_order (ascending)
+            $sortA = isset($a['sort_order']) ? (int)$a['sort_order'] : 999;
+            $sortB = isset($b['sort_order']) ? (int)$b['sort_order'] : 999;
+            return $sortA - $sortB;
+        });
+        
         if (!isset($gallery[$index])) {
             return response()->json([
                 'success' => false,
@@ -931,6 +953,18 @@ class AccessoryController extends Controller
         if (!is_array($gallery)) {
             $gallery = [];
         }
+        
+        // CRITICAL: Sort gallery to match frontend display order
+        usort($gallery, function($a, $b) {
+            $isPrimaryA = isset($a['is_primary']) && $a['is_primary'] ? 1 : 0;
+            $isPrimaryB = isset($b['is_primary']) && $b['is_primary'] ? 1 : 0;
+            if ($isPrimaryA !== $isPrimaryB) {
+                return $isPrimaryB - $isPrimaryA;
+            }
+            $sortA = isset($a['sort_order']) ? (int)$a['sort_order'] : 999;
+            $sortB = isset($b['sort_order']) ? (int)$b['sort_order'] : 999;
+            return $sortA - $sortB;
+        });
         
         if (!isset($gallery[$index])) {
             return response()->json([
@@ -990,6 +1024,18 @@ class AccessoryController extends Controller
         if (!is_array($gallery)) {
             $gallery = [];
         }
+        
+        // CRITICAL: Sort gallery to match frontend display order
+        usort($gallery, function($a, $b) {
+            $isPrimaryA = isset($a['is_primary']) && $a['is_primary'] ? 1 : 0;
+            $isPrimaryB = isset($b['is_primary']) && $b['is_primary'] ? 1 : 0;
+            if ($isPrimaryA !== $isPrimaryB) {
+                return $isPrimaryB - $isPrimaryA;
+            }
+            $sortA = isset($a['sort_order']) ? (int)$a['sort_order'] : 999;
+            $sortB = isset($b['sort_order']) ? (int)$b['sort_order'] : 999;
+            return $sortA - $sortB;
+        });
         
         // Validate index
         if (!isset($gallery[$index])) {

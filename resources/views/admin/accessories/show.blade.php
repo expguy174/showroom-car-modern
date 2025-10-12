@@ -3,12 +3,12 @@
 @section('title', 'Chi tiết phụ kiện: ' . $accessory->name)
 
 @section('content')
-<div class="container mx-auto px-4 py-6">
-    {{-- Header Section --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div class="flex-1">
-                <div class="flex items-center gap-3 mb-2">
+<div class="space-y-6">
+    {{-- Header --}}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 h-16 w-16 mr-4">
                     @php
                         // Get first image from gallery for header
                         $galleryRaw = $accessory->gallery;
@@ -23,78 +23,71 @@
                                 ? ($headerImage['url'] ?? asset('storage/' . ($headerImage['file_path'] ?? '')))
                                 : $headerImage;
                         @endphp
-                        <div class="w-12 h-12 rounded-xl overflow-hidden border-2 border-gray-200 shadow-sm">
-                            <img src="{{ $imageUrl }}" 
-                                 alt="{{ $accessory->name }}"
-                                 class="w-full h-full object-cover"
-                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                            <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center" style="display: none;">
-                                <i class="fas fa-cogs text-white text-xl"></i>
-                            </div>
+                        <img class="h-16 w-16 rounded-xl object-cover border border-gray-200 bg-white p-1" 
+                             src="{{ $imageUrl }}" 
+                             alt="{{ $accessory->name }}"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="h-16 w-16 rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center" style="display: none;">
+                            <i class="fas fa-cogs text-gray-400 text-xl"></i>
                         </div>
                     @else
-                        <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-                            <i class="fas fa-cogs text-white text-xl"></i>
+                        <div class="h-16 w-16 rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center">
+                            <i class="fas fa-cogs text-gray-400 text-xl"></i>
                         </div>
                     @endif
-                    
-                    <div>
-                        <h1 class="text-2xl font-bold text-gray-900">{{ $accessory->name }}</h1>
-                        <p class="text-gray-600">SKU: {{ $accessory->sku ?? 'Chưa có' }}</p>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">{{ $accessory->name }}</h1>
+                    <p class="text-gray-600 mt-1">SKU: {{ $accessory->sku ?? 'Chưa có' }}</p>
+                    <div class="flex items-center mt-2 space-x-2">
+                        @if($accessory->is_active)
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <i class="fas fa-check-circle mr-1"></i>
+                                Hoạt động
+                            </span>
+                        @else
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                <i class="fas fa-times-circle mr-1"></i>
+                                Ngừng hoạt động
+                            </span>
+                        @endif
+
+                        @if($accessory->is_featured)
+                            <span class="inline-flex items-center px-2 py-1 text-xs rounded-md font-medium bg-yellow-100 text-yellow-800 whitespace-nowrap min-h-[20px]">
+                                <i class="fas fa-star mr-1.5 w-3 h-3 flex-shrink-0"></i>
+                                <span>Nổi bật</span>
+                            </span>
+                        @endif
+
+                        @if($accessory->is_on_sale)
+                            <span class="inline-flex items-center px-2 py-1 text-xs rounded-md font-medium bg-orange-100 text-orange-800 whitespace-nowrap min-h-[20px]">
+                                <i class="fas fa-percentage mr-1.5 w-3 h-3 flex-shrink-0"></i>
+                                <span>Khuyến mãi</span>
+                            </span>
+                        @endif
+
+                        @if($accessory->is_new_arrival)
+                            <span class="inline-flex items-center px-2 py-1 text-xs rounded-md font-medium bg-blue-100 text-blue-800 whitespace-nowrap min-h-[20px]">
+                                <i class="fas fa-plus-circle mr-1.5 w-3 h-3 flex-shrink-0"></i>
+                                <span>Mới</span>
+                            </span>
+                        @endif
+
+                        @if($accessory->is_bestseller)
+                            <span class="inline-flex items-center px-2 py-1 text-xs rounded-md font-medium bg-purple-100 text-purple-800 whitespace-nowrap min-h-[20px]">
+                                <i class="fas fa-fire mr-1.5 w-3 h-3 flex-shrink-0"></i>
+                                <span>Bán chạy</span>
+                            </span>
+                        @endif
                     </div>
                 </div>
-                
-                {{-- Status Badges --}}
-                <div class="flex flex-wrap gap-2 mt-3">
-                    {{-- Active Status --}}
-                    <span class="inline-flex items-center px-3 py-1 text-sm rounded-full font-medium {{ $accessory->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                        <i class="fas {{ $accessory->is_active ? 'fa-check-circle' : 'fa-times-circle' }} mr-2"></i>
-                        {{ $accessory->is_active ? 'Hoạt động' : 'Tạm dừng' }}
-                    </span>
-                    
-                    {{-- Featured --}}
-                    @if($accessory->is_featured)
-                        <span class="inline-flex items-center px-3 py-1 text-sm rounded-full font-medium bg-yellow-100 text-yellow-800">
-                            <i class="fas fa-star mr-2"></i>
-                            Nổi bật
-                        </span>
-                    @endif
-                    
-                    {{-- On Sale --}}
-                    @if($accessory->is_on_sale)
-                        <span class="inline-flex items-center px-3 py-1 text-sm rounded-full font-medium bg-orange-100 text-orange-800">
-                            <i class="fas fa-percentage mr-2"></i>
-                            Khuyến mãi
-                        </span>
-                    @endif
-                    
-                    {{-- New Arrival --}}
-                    @if($accessory->is_new_arrival)
-                        <span class="inline-flex items-center px-3 py-1 text-sm rounded-full font-medium bg-blue-100 text-blue-800">
-                            <i class="fas fa-plus-circle mr-2"></i>
-                            Mới
-                        </span>
-                    @endif
-                    
-                    {{-- Bestseller --}}
-                    @if($accessory->is_bestseller)
-                        <span class="inline-flex items-center px-3 py-1 text-sm rounded-full font-medium bg-purple-100 text-purple-800">
-                            <i class="fas fa-fire mr-2"></i>
-                            Bán chạy
-                        </span>
-                    @endif
-                </div>
             </div>
-            
-            {{-- Action Buttons --}}
-            <div class="flex flex-col sm:flex-row gap-3">
-                <a href="{{ route('admin.accessories.edit', $accessory) }}" 
-                   class="inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
+            <div class="flex space-x-3">
+                <a href="{{ route('admin.accessories.edit', $accessory) }}" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
                     <i class="fas fa-edit mr-2"></i>
                     Chỉnh sửa
                 </a>
-                <a href="{{ route('admin.accessories.index') }}" 
-                   class="inline-flex items-center justify-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors">
+                <a href="{{ route('admin.accessories.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors">
                     <i class="fas fa-arrow-left mr-2"></i>
                     Quay lại
                 </a>
@@ -142,6 +135,23 @@
                 $galleryRaw = $accessory->gallery;
                 $gallery = is_array($galleryRaw) ? $galleryRaw : (json_decode($galleryRaw ?? '[]', true) ?: []);
                 
+                // CRITICAL: Sort gallery exactly like edit page
+                // Primary images first, then by sort_order
+                usort($gallery, function($a, $b) {
+                    // Primary images always come first
+                    $isPrimaryA = isset($a['is_primary']) && $a['is_primary'] ? 1 : 0;
+                    $isPrimaryB = isset($b['is_primary']) && $b['is_primary'] ? 1 : 0;
+                    
+                    if ($isPrimaryA !== $isPrimaryB) {
+                        return $isPrimaryB - $isPrimaryA;
+                    }
+                    
+                    // Then sort by sort_order (ascending)
+                    $sortA = isset($a['sort_order']) ? (int)$a['sort_order'] : 999;
+                    $sortB = isset($b['sort_order']) ? (int)$b['sort_order'] : 999;
+                    return $sortA - $sortB;
+                });
+                
                 // Convert gallery items to simple objects
                 $galleryImages = collect($gallery)->map(function($imageData, $index) use ($accessory) {
                     // Handle both array (new format) and string (legacy) formats
@@ -150,12 +160,18 @@
                         $title = $imageData['title'] ?? "Ảnh " . ($index + 1);
                         $altText = $imageData['alt_text'] ?? ($accessory->name . " - Ảnh " . ($index + 1));
                         $description = $imageData['description'] ?? null;
+                        $imageType = $imageData['image_type'] ?? 'product';
+                        $sortOrder = $imageData['sort_order'] ?? 0;
+                        $isPrimary = $imageData['is_primary'] ?? false;
                     } else {
                         // Legacy string URL
                         $imageUrl = $imageData;
                         $title = "Ảnh " . ($index + 1);
                         $altText = $accessory->name . " - Ảnh " . ($index + 1);
                         $description = null;
+                        $imageType = 'product';
+                        $sortOrder = 0;
+                        $isPrimary = false;
                     }
                     
                     return (object) [
@@ -164,8 +180,10 @@
                         'title' => $title,
                         'alt_text' => $altText,
                         'description' => $description,
-                        'is_main' => $index === 0,
-                        'sort_order' => $index + 1
+                        'image_type' => $imageType,
+                        'sort_order' => $sortOrder,
+                        'is_primary' => $isPrimary,
+                        'is_main' => $isPrimary // Use is_primary from data
                     ];
                 });
                 
@@ -242,6 +260,20 @@
                                     @endif
                                     @if($image->alt_text)
                                         <p class="text-xs text-gray-600 truncate">{{ $image->alt_text }}</p>
+                                    @endif
+                                    <div class="flex items-center justify-between mt-1">
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                            @switch($image->image_type)
+                                                @case('product') Sản phẩm @break
+                                                @case('detail') Chi tiết @break
+                                                @case('installation') Lắp đặt @break
+                                                @case('usage') Sử dụng @break
+                                                @default {{ ucfirst($image->image_type) }}
+                                            @endswitch
+                                        </span>
+                                    </div>
+                                    @if($image->description)
+                                        <p class="text-xs text-gray-500 mt-1 truncate" title="{{ $image->description }}">{{ $image->description }}</p>
                                     @endif
                                 </div>
                             </div>
@@ -736,13 +768,17 @@ const images = [
             url: '{{ $image->image_url }}',
             alt: '{{ $image->alt_text }}',
             title: '{{ $image->title }}',
-            index: {{ $index }}
+            index: {{ $index }},
+            is_primary: {{ $image->is_primary ? 'true' : 'false' }},
+            is_main: {{ $image->is_main ? 'true' : 'false' }}
         }{{ !$loop->last ? ',' : '' }}
         @endforeach
     @endif
 ];
 
-let currentImageIndex = 0;
+// Find index of main/primary image after sort
+let currentImageIndex = images.findIndex(img => img.is_primary || img.is_main);
+if (currentImageIndex === -1) currentImageIndex = 0; // Fallback to first if no primary
 
 // Pagination variables
 let currentPage = 1;
@@ -759,6 +795,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (totalImages > perPage) {
             updatePagination();
         }
+        
+        // Set initial active state for primary/main image
+        updateThumbnailActive();
     }
 });
 
@@ -825,11 +864,15 @@ function updateThumbnailActive() {
     thumbnails.forEach((thumb) => {
         const thumbIndex = parseInt(thumb.getAttribute('data-index'));
         if (thumbIndex === currentImageIndex) {
-            thumb.classList.add('active');
-            thumb.style.borderColor = '#3B82F6';
+            // Active state with shadow like CarVariant
+            thumb.classList.add('active', 'shadow-lg');
+            thumb.style.borderColor = '#3B82F6'; // Blue-500
+            thumb.style.borderWidth = '2px';
         } else {
-            thumb.classList.remove('active');
-            thumb.style.borderColor = '#E5E7EB';
+            // Inactive state
+            thumb.classList.remove('active', 'shadow-lg');
+            thumb.style.borderColor = '#E5E7EB'; // Gray-200
+            thumb.style.borderWidth = '1px';
         }
     });
 }
