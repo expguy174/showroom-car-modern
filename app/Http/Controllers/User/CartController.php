@@ -629,24 +629,68 @@ class CartController extends Controller
                     }
                 }
 
-                $unitPrice = ($item->item_type === 'car_variant' && method_exists($item->item, 'getPriceWithColorAdjustment'))
-                    ? $item->item->getPriceWithColorAdjustment($item->color_id)
-                    : ($item->item->current_price ?? 0);
-                // Include selected add-ons
+                // Get base price
+                $basePrice = $item->item->current_price ?? 0;
+                
+                // Calculate color price adjustment
+                $colorPrice = 0;
+                $colorData = null;
+                if ($item->item_type === 'car_variant' && $item->color_id) {
+                    $unitPrice = $item->item->getPriceWithColorAdjustment($item->color_id);
+                    $colorPrice = $unitPrice - $basePrice;
+                    
+                    // Get color details
+                    $color = $item->color;
+                    if ($color) {
+                        $colorData = [
+                            'id' => $color->id,
+                            'name' => $color->color_name,
+                            'hex' => $color->hex_code,
+                            'price_adjustment' => $colorPrice,
+                        ];
+                    }
+                } else {
+                    $unitPrice = $basePrice;
+                }
+                
+                // Include selected add-ons with full details
                 $meta = session('cart_item_meta.' . $item->id, []);
                 $featIds = collect($meta['feature_ids'] ?? [])->filter()->map(fn($v)=> (int)$v)->unique()->all();
                 $optIds = collect($meta['option_ids'] ?? [])->filter()->map(fn($v)=> (int)$v)->unique()->all();
-                $featSum = !empty($featIds) ? (float) CarVariantFeature::whereIn('id', $featIds)->sum('price') : 0;
+                
+                // Get features with full details
+                $featuresArray = [];
+                $featSum = 0;
+                if (!empty($featIds)) {
+                    $features = CarVariantFeature::whereIn('id', $featIds)->get(['id', 'feature_name', 'category', 'price']);
+                    foreach ($features as $feat) {
+                        $featuresArray[] = [
+                            'id' => $feat->id,
+                            'name' => $feat->feature_name,
+                            'category' => $feat->category,
+                            'price' => $feat->price ?? 0,
+                        ];
+                        $featSum += $feat->price ?? 0;
+                    }
+                }
+                
                 $optSum  = !empty($optIds) ? (float) CarVariantOption::whereIn('id', $optIds)->sum(DB::raw('COALESCE(package_price, price, 0)')) : 0;
                 $unitPrice += ($featSum + $optSum);
                 $itemTotal = $unitPrice * $item->quantity;
                 $total += $itemTotal;
                 
-                // Prepare metadata for features and options
+                // Prepare metadata matching seeder format
                 $metadata = [
+                    'base_price' => $basePrice,
+                    'color_price' => $colorPrice,
+                    'features_price' => $featSum,
+                    'final_price' => $unitPrice,
+                    'color' => $colorData,
+                    'features' => $featuresArray,
+                    // Legacy fields for backward compatibility
                     'feature_ids' => $featIds,
                     'option_ids' => $optIds,
-                    'feature_names' => !empty($featIds) ? \App\Models\CarVariantFeature::whereIn('id', $featIds)->pluck('feature_name')->toArray() : [],
+                    'feature_names' => !empty($featIds) ? collect($featuresArray)->pluck('name')->toArray() : [],
                     'option_names' => !empty($optIds) ? \App\Models\CarVariantOption::whereIn('id', $optIds)->pluck('option_name')->toArray() : [],
                     'feature_total' => $featSum,
                     'option_total' => $optSum,
@@ -705,7 +749,7 @@ class CartController extends Controller
 
                 // Create new billing address
                 $newAddr = $user->addresses()->create([
-                    'type' => 'billing',
+                    'type' => 'other', // Let user categorize later, not system-defined
                     'contact_name' => $validated['name'],
                     'phone' => $validated['phone'],
                     'address' => $validated['billing_address'],
@@ -746,7 +790,7 @@ class CartController extends Controller
 
                     // Create new shipping address
                     $newSAddr = $user->addresses()->create([
-                        'type' => 'shipping',
+                        'type' => 'other', // Let user categorize later, not system-defined
                         'contact_name' => $validated['name'],
                         'phone' => $validated['phone'],
                         'address' => $validated['shipping_address'],
@@ -904,7 +948,26 @@ class CartController extends Controller
 
             // Increment promotion usage count if promotion was applied
             if ($promotionId) {
-                \App\Models\Promotion::where('id', $promotionId)->increment('usage_count');
+                \App\Models\Promotion::find($promotionId)->increment('used_count');
+            }
+
+            // Create initial payment log for COD and Bank Transfer
+            if (in_array($methodCode, ['cod', 'bank_transfer'])) {
+                \App\Models\OrderLog::create([
+                    'order_id' => $order->id,
+                    'user_id' => \Illuminate\Support\Facades\Auth::id() ?? $order->user_id,
+                    'action' => 'payment_pending',
+                    'message' => $methodCode === 'cod' 
+                        ? 'Chờ thanh toán khi nhận hàng (COD)' 
+                        : 'Chờ xác nhận chuyển khoản',
+                    'details' => [
+                        'payment_method' => $methodCode,
+                        'payment_status' => 'pending',
+                        'amount' => $order->grand_total,
+                    ],
+                    'ip_address' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                ]);
             }
 
             // Notifications are handled by OrderCreated event listener

@@ -234,6 +234,9 @@ class PaymentController extends Controller
                 $pt->notes = $pt->notes ?: 'VNPAY IPN';
                 $pt->save();
 
+                $oldPaymentStatus = $order->payment_status;
+                $oldOrderStatus = $order->status;
+                
                 if ($pt->status === 'completed') {
                     $order->payment_status = 'completed';
                     $order->paid_at = $order->paid_at ?: now();
@@ -243,6 +246,41 @@ class PaymentController extends Controller
                     $order->payment_status = 'failed';
                 }
                 $order->save();
+                
+                // Log payment status change
+                if ($oldPaymentStatus !== $order->payment_status) {
+                    \App\Models\OrderLog::create([
+                        'order_id' => $order->id,
+                        'user_id' => $order->user_id,
+                        'action' => 'payment_status_changed',
+                        'message' => $pt->status === 'completed' ? 'Thanh toán thành công qua VNPAY' : 'Thanh toán thất bại qua VNPAY',
+                        'details' => [
+                            'from' => $oldPaymentStatus,
+                            'to' => $order->payment_status,
+                            'paid_at' => $order->paid_at,
+                            'transaction_id' => $order->transaction_id,
+                            'payment_method' => 'vnpay',
+                        ],
+                        'ip_address' => request()->ip(),
+                        'user_agent' => request()->userAgent(),
+                    ]);
+                }
+                
+                // Log order status change if auto-confirmed
+                if ($oldOrderStatus !== $order->status) {
+                    \App\Models\OrderLog::create([
+                        'order_id' => $order->id,
+                        'user_id' => $order->user_id,
+                        'action' => 'status_changed',
+                        'message' => 'Tự động xác nhận đơn sau khi thanh toán',
+                        'details' => [
+                            'from' => $oldOrderStatus,
+                            'to' => $order->status,
+                        ],
+                        'ip_address' => request()->ip(),
+                        'user_agent' => request()->userAgent(),
+                    ]);
+                }
             });
             return response('OK');
         } catch (\Throwable $e) {
@@ -334,6 +372,9 @@ class PaymentController extends Controller
                 $pt->notes = $pt->notes ?: 'MOMO IPN';
                 $pt->save();
 
+                $oldPaymentStatus = $order->payment_status;
+                $oldOrderStatus = $order->status;
+                
                 if ($pt->status === 'completed') {
                     $order->payment_status = 'completed';
                     $order->paid_at = $order->paid_at ?: now();
@@ -343,6 +384,41 @@ class PaymentController extends Controller
                     $order->payment_status = 'failed';
                 }
                 $order->save();
+                
+                // Log payment status change
+                if ($oldPaymentStatus !== $order->payment_status) {
+                    \App\Models\OrderLog::create([
+                        'order_id' => $order->id,
+                        'user_id' => $order->user_id,
+                        'action' => 'payment_status_changed',
+                        'message' => $pt->status === 'completed' ? 'Thanh toán thành công qua MoMo' : 'Thanh toán thất bại qua MoMo',
+                        'details' => [
+                            'from' => $oldPaymentStatus,
+                            'to' => $order->payment_status,
+                            'paid_at' => $order->paid_at,
+                            'transaction_id' => $order->transaction_id,
+                            'payment_method' => 'momo',
+                        ],
+                        'ip_address' => request()->ip(),
+                        'user_agent' => request()->userAgent(),
+                    ]);
+                }
+                
+                // Log order status change if auto-confirmed
+                if ($oldOrderStatus !== $order->status) {
+                    \App\Models\OrderLog::create([
+                        'order_id' => $order->id,
+                        'user_id' => $order->user_id,
+                        'action' => 'status_changed',
+                        'message' => 'Tự động xác nhận đơn sau khi thanh toán',
+                        'details' => [
+                            'from' => $oldOrderStatus,
+                            'to' => $order->status,
+                        ],
+                        'ip_address' => request()->ip(),
+                        'user_agent' => request()->userAgent(),
+                    ]);
+                }
             });
             return response('OK');
         } catch (\Throwable $e) {

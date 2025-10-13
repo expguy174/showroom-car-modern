@@ -265,18 +265,26 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     // Orders
     Route::prefix('orders')->name('orders.')->group(function () {
         Route::get('/', [OrderController::class, 'index'])->name('index');
-        Route::get('/edit/{order}', [OrderController::class, 'edit'])->name('edit');
-        Route::put('/update/{order}', [OrderController::class, 'update'])->name('update');
-        Route::delete('/delete/{order}', [OrderController::class, 'destroy'])->name('destroy');
         Route::get('/{order}', [OrderController::class, 'show'])->name('show');
-        // Chuyển trạng thái đơn
+        Route::delete('/delete/{order}', [OrderController::class, 'destroy'])->name('destroy');
+        
+        // Status management
         Route::patch('/{order}/update-status', [OrderController::class, 'updateStatus'])->name('update-status');
         Route::post('/{order}/next-status', [OrderController::class, 'nextStatus'])->name('nextStatus');
         Route::post('/{order}/cancel', [OrderController::class, 'cancel'])->name('cancel');
+        
+        // Inline updates (replaces edit page)
+        Route::patch('/{order}/update-tracking', [OrderController::class, 'updateTracking'])->name('update-tracking');
+        Route::patch('/{order}/update-note', [OrderController::class, 'updateNote'])->name('update-note');
+        Route::patch('/{order}/update-payment-status', [OrderController::class, 'updatePaymentStatus'])->name('update-payment-status');
+        Route::post('/{order}/refund', [OrderController::class, 'refund'])->name('refund');
+        Route::post('/{order}/generate-installments', [OrderController::class, 'generateInstallments'])->name('generate-installments');
 
-        // Logs
-        Route::get('/{order}/logs', [OrderLogController::class, 'index'])->name('logs');
-        Route::get('/{order}/logs/export', [OrderLogController::class, 'export'])->name('logs.export');
+        // Edit & Logs pages removed - all functionality now on show page
+        // Route::get('/edit/{order}', [OrderController::class, 'edit'])->name('edit');
+        // Route::put('/update/{order}', [OrderController::class, 'update'])->name('update');
+        // Route::get('/{order}/logs', [OrderLogController::class, 'index'])->name('logs');
+        // Route::get('/{order}/logs/export', [OrderLogController::class, 'export'])->name('logs.export');
     });
 
     // Accessories
@@ -370,6 +378,45 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/{promotion}/edit', [\App\Http\Controllers\Admin\PromotionController::class, 'edit'])->name('edit');
         Route::put('/{promotion}', [\App\Http\Controllers\Admin\PromotionController::class, 'update'])->name('update');
         Route::delete('/{promotion}', [\App\Http\Controllers\Admin\PromotionController::class, 'destroy'])->name('destroy');
+    });
+
+    // Payment Methods
+    Route::prefix('payment-methods')->name('payment-methods.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\PaymentMethodController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Admin\PaymentMethodController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Admin\PaymentMethodController::class, 'store'])->name('store');
+        Route::get('/{paymentMethod}/edit', [\App\Http\Controllers\Admin\PaymentMethodController::class, 'edit'])->name('edit');
+        Route::put('/{paymentMethod}', [\App\Http\Controllers\Admin\PaymentMethodController::class, 'update'])->name('update');
+        Route::delete('/{paymentMethod}', [\App\Http\Controllers\Admin\PaymentMethodController::class, 'destroy'])->name('destroy');
+        Route::patch('/{paymentMethod}/toggle', [\App\Http\Controllers\Admin\PaymentMethodController::class, 'toggleActive'])->name('toggle');
+    });
+
+    // Finance Options
+    Route::prefix('finance-options')->name('finance-options.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\FinanceOptionController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Admin\FinanceOptionController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Admin\FinanceOptionController::class, 'store'])->name('store');
+        Route::get('/{financeOption}/edit', [\App\Http\Controllers\Admin\FinanceOptionController::class, 'edit'])->name('edit');
+        Route::put('/{financeOption}', [\App\Http\Controllers\Admin\FinanceOptionController::class, 'update'])->name('update');
+        Route::delete('/{financeOption}', [\App\Http\Controllers\Admin\FinanceOptionController::class, 'destroy'])->name('destroy');
+        Route::patch('/{financeOption}/toggle', [\App\Http\Controllers\Admin\FinanceOptionController::class, 'toggleActive'])->name('toggle');
+    });
+
+    // Reviews
+    Route::prefix('reviews')->name('reviews.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\ReviewController::class, 'index'])->name('index');
+        Route::get('/{review}', [\App\Http\Controllers\Admin\ReviewController::class, 'show'])->name('show');
+        Route::patch('/{review}/approve', [\App\Http\Controllers\Admin\ReviewController::class, 'approve'])->name('approve');
+        Route::patch('/{review}/reject', [\App\Http\Controllers\Admin\ReviewController::class, 'reject'])->name('reject');
+        Route::delete('/{review}', [\App\Http\Controllers\Admin\ReviewController::class, 'destroy'])->name('destroy');
+    });
+
+    // Contact Messages
+    Route::prefix('contact-messages')->name('contact-messages.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\ContactMessageController::class, 'index'])->name('index');
+        Route::get('/{contactMessage}', [\App\Http\Controllers\Admin\ContactMessageController::class, 'show'])->name('show');
+        Route::patch('/{contactMessage}/mark-read', [\App\Http\Controllers\Admin\ContactMessageController::class, 'markAsRead'])->name('mark-read');
+        Route::delete('/{contactMessage}', [\App\Http\Controllers\Admin\ContactMessageController::class, 'destroy'])->name('destroy');
     });
 
     // Services

@@ -4,6 +4,7 @@ namespace App\Application\Orders\UseCases;
 
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\OrderLog;
 use App\Models\CarVariant;
 use App\Models\Accessory;
 use Illuminate\Support\Facades\DB;
@@ -211,6 +212,41 @@ class PlaceOrder
                 ]);
             }
 
+            // Create initial order log
+            try {
+                OrderLog::create([
+                    'order_id' => $order->id,
+                    'user_id' => \Illuminate\Support\Facades\Auth::id() ?? $payload['user_id'] ?? null,
+                    'action' => 'order_created',
+                    'message' => 'Đơn hàng được tạo',
+                    'details' => [
+                        'status' => 'pending',
+                        'order_number' => $order->order_number,
+                        'grand_total' => $order->grand_total,
+                        'payment_method_id' => $order->payment_method_id,
+                    ],
+                    'ip_address' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                ]);
+            } catch (\Throwable $e) {
+                Log::warning('Failed to create OrderLog', [
+                    'order_id' => $order->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
+            // Auto-create installment schedule for finance orders
+            if ($order->finance_option_id && $order->tenure_months && $order->monthly_payment_amount) {
+                try {
+                    $this->createInstallmentSchedule($order);
+                } catch (\Throwable $e) {
+                    Log::warning('Failed to create installment schedule', [
+                        'order_id' => $order->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+
             try {
                 // Dispatch domain event for side-effects (email/notifications)
                 event(new OrderCreated($order));
@@ -238,6 +274,47 @@ class PlaceOrder
             'category' => $model->category ?? null,
             'brand' => $model->brand ?? null,
         ];
+    }
+
+    /**
+     * Create installment schedule for finance orders
+     */
+    private function createInstallmentSchedule($order): void
+    {
+        if (!$order->finance_option_id || !$order->tenure_months || !$order->monthly_payment_amount) {
+            return;
+        }
+
+        $tenureMonths = $order->tenure_months;
+        $monthlyAmount = $order->monthly_payment_amount;
+
+        for ($i = 1; $i <= $tenureMonths; $i++) {
+            \App\Models\Installment::create([
+                'order_id' => $order->id,
+                'user_id' => $order->user_id,
+                'finance_option_id' => $order->finance_option_id,
+                'installment_number' => $i,
+                'amount' => $monthlyAmount,
+                'due_date' => now()->addMonths($i)->startOfMonth(),
+                'status' => 'pending',
+            ]);
+        }
+
+        // Log installment creation
+        \App\Models\OrderLog::create([
+            'order_id' => $order->id,
+            'user_id' => \Illuminate\Support\Facades\Auth::id() ?? $order->user_id,
+            'action' => 'installments_created',
+            'message' => 'Tạo lịch trả góp tự động',
+            'details' => [
+                'tenure_months' => $tenureMonths,
+                'monthly_amount' => $monthlyAmount,
+                'total_installments' => $tenureMonths,
+                'finance_option_id' => $order->finance_option_id,
+            ],
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+        ]);
     }
 }
 

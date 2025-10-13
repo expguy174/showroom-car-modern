@@ -32,6 +32,12 @@ class ReviewController extends Controller
         return view('admin.reviews.index', compact('reviews'));
     }
 
+    public function show(Review $review)
+    {
+        $review->load(['user.userProfile', 'reviewable']);
+        return view('admin.reviews.show', compact('review'));
+    }
+
     public function approve(Review $review)
     {
         $review->update(['is_approved' => true]);

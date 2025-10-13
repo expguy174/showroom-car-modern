@@ -75,11 +75,12 @@ class PaymentMethodController extends Controller
             ->with('success', 'Phương thức thanh toán đã được xóa thành công!');
     }
 
-    public function toggleStatus(PaymentMethod $paymentMethod)
+    public function toggleActive(PaymentMethod $paymentMethod)
     {
         $paymentMethod->update(['is_active' => !$paymentMethod->is_active]);
-
+        
+        $status = $paymentMethod->is_active ? 'kích hoạt' : 'tắt';
         return redirect()->route('admin.payment-methods.index')
-            ->with('success', 'Trạng thái đã được cập nhật!');
+            ->with('success', "Đã {$status} phương thức thanh toán: {$paymentMethod->name}");
     }
 }

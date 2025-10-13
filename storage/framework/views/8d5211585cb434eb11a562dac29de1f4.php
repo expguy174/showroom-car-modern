@@ -1,6 +1,34 @@
-@props(['showIcons' => true, 'dismissible' => true, 'position' => 'top-right', 'autoHide' => 5000])
+<?php $attributes ??= new \Illuminate\View\ComponentAttributeBag;
 
-@php
+$__newAttributes = [];
+$__propNames = \Illuminate\View\ComponentAttributeBag::extractPropNames((['showIcons' => true, 'dismissible' => true, 'position' => 'top-right', 'autoHide' => 5000]));
+
+foreach ($attributes->all() as $__key => $__value) {
+    if (in_array($__key, $__propNames)) {
+        $$__key = $$__key ?? $__value;
+    } else {
+        $__newAttributes[$__key] = $__value;
+    }
+}
+
+$attributes = new \Illuminate\View\ComponentAttributeBag($__newAttributes);
+
+unset($__propNames);
+unset($__newAttributes);
+
+foreach (array_filter((['showIcons' => true, 'dismissible' => true, 'position' => 'top-right', 'autoHide' => 5000]), 'is_string', ARRAY_FILTER_USE_KEY) as $__key => $__value) {
+    $$__key = $$__key ?? $__value;
+}
+
+$__defined_vars = get_defined_vars();
+
+foreach ($attributes->all() as $__key => $__value) {
+    if (array_key_exists($__key, $__defined_vars)) unset($$__key);
+}
+
+unset($__defined_vars); ?>
+
+<?php
     // Define position classes function
     $getPositionClasses = function() use ($position) {
         switch($position ?? 'top-right') {
@@ -20,33 +48,33 @@
                 return 'top-4 right-4';
         }
     };
-@endphp
+?>
 
-{{-- Meta tags for JavaScript access --}}
-@if(session('success'))
-    <meta name="flash-success" content="{{ session('success') }}">
-@endif
-@if(session('error'))
-    <meta name="flash-error" content="{{ session('error') }}">
-@endif
-@if(session('warning'))
-    <meta name="flash-warning" content="{{ session('warning') }}">
-@endif
-@if(session('info'))
-    <meta name="flash-info" content="{{ session('info') }}">
-@endif
 
-{{-- Flash Messages Container - Rendered by JavaScript only --}}
+<?php if(session('success')): ?>
+    <meta name="flash-success" content="<?php echo e(session('success')); ?>">
+<?php endif; ?>
+<?php if(session('error')): ?>
+    <meta name="flash-error" content="<?php echo e(session('error')); ?>">
+<?php endif; ?>
+<?php if(session('warning')): ?>
+    <meta name="flash-warning" content="<?php echo e(session('warning')); ?>">
+<?php endif; ?>
+<?php if(session('info')): ?>
+    <meta name="flash-info" content="<?php echo e(session('info')); ?>">
+<?php endif; ?>
 
-{{-- Dynamic Flash Messages Container (for JavaScript) --}}
-<div id="dynamic-flash-messages" class="fixed {{ $getPositionClasses() }} z-50 space-y-3 max-w-md"></div>
 
-@push('scripts')
+
+
+<div id="dynamic-flash-messages" class="fixed <?php echo e($getPositionClasses()); ?> z-50 space-y-3 max-w-md"></div>
+
+<?php $__env->startPush('scripts'); ?>
 <script>
 // Flash Messages Management
 class FlashMessagesManager {
     constructor(options = {}) {
-        this.autoHide = options.autoHide || {{ $autoHide }};
+        this.autoHide = options.autoHide || <?php echo e($autoHide); ?>;
         this.container = document.getElementById('dynamic-flash-messages');
         this.init();
     }
@@ -142,19 +170,19 @@ class FlashMessagesManager {
         messageEl.setAttribute('data-type', type);
         
         messageEl.innerHTML = `
-            @if($showIcons)
+            <?php if($showIcons): ?>
             <div class="flex-shrink-0">
                 <i class="${color.icon} text-lg"></i>
             </div>
-            @endif
+            <?php endif; ?>
             <div class="flex-1">
                 <p class="font-medium">${message}</p>
             </div>
-            @if($dismissible)
+            <?php if($dismissible): ?>
             <button type="button" class="flex-shrink-0 ${color.button}" onclick="dismissMessage(this)">
                 <i class="fas fa-times"></i>
             </button>
-            @endif
+            <?php endif; ?>
         `;
         
         return messageEl;
@@ -188,8 +216,10 @@ class FlashMessagesManager {
 // Initialize Flash Messages Manager
 document.addEventListener('DOMContentLoaded', function() {
     new FlashMessagesManager({
-        autoHide: {{ $autoHide }}
+        autoHide: <?php echo e($autoHide); ?>
+
     });
 });
 </script>
-@endpush
+<?php $__env->stopPush(); ?>
+<?php /**PATH C:\Users\forev\showroom-car-modern\resources\views/components/admin/flash-messages.blade.php ENDPATH**/ ?>

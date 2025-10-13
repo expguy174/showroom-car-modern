@@ -1,47 +1,45 @@
-@extends('layouts.app')
+<?php $__env->startSection('title', 'Chi tiết đơn hàng'); ?>
 
-@section('title', 'Chi tiết đơn hàng')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div class="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8">
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-4 sm:mb-6">
         <div class="px-4 sm:px-6 py-4 border-b bg-gradient-to-r from-indigo-50 to-white">
             <div class="flex items-center justify-between">
                 <div class="min-w-0">
                     <div class="text-xs text-gray-500">Mã đơn</div>
-                    <h1 class="text-lg sm:text-xl md:text-2xl font-extrabold text-gray-900">#{{ $order->order_number ?? $order->id }}</h1>
-                    <div class="mt-1 text-sm text-gray-500">Tạo lúc {{ $order->created_at?->format('d/m/Y H:i') }}</div>
+                    <h1 class="text-lg sm:text-xl md:text-2xl font-extrabold text-gray-900">#<?php echo e($order->order_number ?? $order->id); ?></h1>
+                    <div class="mt-1 text-sm text-gray-500">Tạo lúc <?php echo e($order->created_at?->format('d/m/Y H:i')); ?></div>
                 </div>
                 <div class="text-right">
-                    @if($order->finance_option_id)
+                    <?php if($order->finance_option_id): ?>
                         <!-- Finance Order Display -->
-                        <div class="text-indigo-700 font-extrabold text-base sm:text-lg">{{ number_format($order->down_payment_amount ?? 0, 0, ',', '.') }} đ</div>
+                        <div class="text-indigo-700 font-extrabold text-base sm:text-lg"><?php echo e(number_format($order->down_payment_amount ?? 0, 0, ',', '.')); ?> đ</div>
                         <div class="text-xs text-gray-500">Trả trước</div>
-                        @if((float)($order->discount_total ?? 0) > 0)
+                        <?php if((float)($order->discount_total ?? 0) > 0): ?>
                             <div class="text-xs text-green-600 mt-1">
                                 <i class="fas fa-tag mr-1"></i>Có khuyến mãi
                             </div>
-                        @else
+                        <?php else: ?>
                             <div class="text-xs text-blue-600 mt-1">
-                                <i class="fas fa-credit-card mr-1"></i>{{ $order->tenure_months ?? 0 }} tháng
+                                <i class="fas fa-credit-card mr-1"></i><?php echo e($order->tenure_months ?? 0); ?> tháng
                             </div>
-                        @endif
-                    @else
+                        <?php endif; ?>
+                    <?php else: ?>
                         <!-- Full Payment Display -->
-                        <div class="text-indigo-700 font-extrabold text-base sm:text-lg">{{ number_format($order->grand_total, 0, ',', '.') }} đ</div>
+                        <div class="text-indigo-700 font-extrabold text-base sm:text-lg"><?php echo e(number_format($order->grand_total, 0, ',', '.')); ?> đ</div>
                         <div class="text-xs text-gray-500">Tổng cộng</div>
-                        @if((float)($order->discount_total ?? 0) > 0)
+                        <?php if((float)($order->discount_total ?? 0) > 0): ?>
                             <div class="text-xs text-green-600 mt-1">
                                 <i class="fas fa-tag mr-1"></i>Có khuyến mãi
                             </div>
-                        @else
+                        <?php else: ?>
                             <div class="text-xs text-emerald-600 mt-1">
                                 <i class="fas fa-check-circle mr-1"></i>Thanh toán đầy đủ
                             </div>
-                        @endif
-                    @endif
-                    @if($order->status !== 'cancelled')
-                        @php
+                        <?php endif; ?>
+                    <?php endif; ?>
+                    <?php if($order->status !== 'cancelled'): ?>
+                        <?php
                             // Improved cancel logic with better edge case handling
                             $canCancel = in_array($order->status, ['pending', 'confirmed']) 
                                 && !in_array($order->payment_status, ['completed', 'processing']);
@@ -69,38 +67,38 @@
                             } else {
                                 $cancelReason = 'Hủy đơn hàng';
                             }
-                        @endphp
+                        ?>
                         <div class="mt-2 flex items-center gap-2">
-                            <a href="{{ route('user.order.index') }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 text-xs">
+                            <a href="<?php echo e(route('user.order.index')); ?>" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 text-xs">
                                 <i class="fas fa-arrow-left"></i> Quay về
                             </a>
-                            @if($order->status !== 'cancelled')
-                                <form action="{{ route('user.orders.cancel', $order->id) }}" method="post" title="{{ $cancelReason }}">
-                                    @csrf
-                                    <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-500 text-white hover:bg-rose-600 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors duration-200" {{ $canCancel ? '' : 'disabled' }}>
+                            <?php if($order->status !== 'cancelled'): ?>
+                                <form action="<?php echo e(route('user.orders.cancel', $order->id)); ?>" method="post" title="<?php echo e($cancelReason); ?>">
+                                    <?php echo csrf_field(); ?>
+                                    <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-500 text-white hover:bg-rose-600 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors duration-200" <?php echo e($canCancel ? '' : 'disabled'); ?>>
                                         <i class="fas fa-ban"></i> Hủy đơn
                                     </button>
                                 </form>
-                            @else
+                            <?php else: ?>
                                 <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-gray-500 bg-gray-100">
                                     <i class="fas fa-ban"></i> Đã hủy
                                 </div>
-                            @endif
+                            <?php endif; ?>
                         </div>
-                    @else
+                    <?php else: ?>
                         <div class="mt-2 flex items-center gap-2">
-                            <a href="{{ route('user.order.index') }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 text-xs">
+                            <a href="<?php echo e(route('user.order.index')); ?>" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 text-xs">
                                 <i class="fas fa-arrow-left"></i> Quay về
                             </a>
                             <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-gray-500 bg-gray-100">
                                 <i class="fas fa-ban"></i> Đã hủy
                             </div>
                         </div>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
-        @php
+        <?php
             $orderSteps = ['pending' => 'Đặt hàng', 'confirmed' => 'Xác nhận', 'shipping' => 'Vận chuyển', 'delivered' => 'Hoàn tất'];
             // Bỏ chữ "Đã" trong nhãn tiến trình
             $paySteps = ['pending' => 'Chờ thanh toán', 'processing' => 'Đang xử lý', 'completed' => 'Thanh toán'];
@@ -118,23 +116,23 @@
                 $payIndex = array_search($order->payment_status, $payKeys);
                 if ($payIndex === false) { $payIndex = 0; }
             }
-        @endphp
+        ?>
         <div class="px-4 sm:px-6 py-4 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
                 <div class="flex items-center justify-between mb-2">
                     <div class="text-sm font-semibold text-gray-800">Tiến trình đơn hàng</div>
                 </div>
                 <div class="flex items-center gap-2">
-                    @foreach($orderSteps as $key => $label)
-                        @php $i = array_search($key, $orderKeys); @endphp
+                    <?php $__currentLoopData = $orderSteps; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $key => $label): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <?php $i = array_search($key, $orderKeys); ?>
                         <div class="flex items-center gap-2 min-w-0">
-                            <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold {{ $order->status === 'cancelled' ? ($i === 0 ? 'bg-rose-500 text-white' : 'bg-gray-200 text-gray-500') : ($i <= $orderIndex ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-500') }}">{{ $i+1 }}</div>
-                            <div class="text-xs sm:text-sm text-gray-700 truncate max-w-[90px] sm:max-w-none">{{ $label }}</div>
+                            <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold <?php echo e($order->status === 'cancelled' ? ($i === 0 ? 'bg-rose-500 text-white' : 'bg-gray-200 text-gray-500') : ($i <= $orderIndex ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-500')); ?>"><?php echo e($i+1); ?></div>
+                            <div class="text-xs sm:text-sm text-gray-700 truncate max-w-[90px] sm:max-w-none"><?php echo e($label); ?></div>
                         </div>
-                        @if(!$loop->last)
-                            <div class="flex-1 h-1 rounded-full {{ $order->status === 'cancelled' ? 'bg-gray-200' : ($i < $orderIndex ? 'bg-indigo-600' : 'bg-gray-200') }}"></div>
-                        @endif
-                    @endforeach
+                        <?php if(!$loop->last): ?>
+                            <div class="flex-1 h-1 rounded-full <?php echo e($order->status === 'cancelled' ? 'bg-gray-200' : ($i < $orderIndex ? 'bg-indigo-600' : 'bg-gray-200')); ?>"></div>
+                        <?php endif; ?>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </div>
             </div>
             <div>
@@ -142,20 +140,20 @@
                     <div class="text-sm font-semibold text-gray-800">Tiến trình thanh toán</div>
                 </div>
                 <div class="flex items-center gap-2">
-                    @foreach($paySteps as $key => $label)
-                        @php $j = array_search($key, $payKeys); @endphp
+                    <?php $__currentLoopData = $paySteps; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $key => $label): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <?php $j = array_search($key, $payKeys); ?>
                         <div class="flex items-center gap-2 min-w-0">
-                            <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold {{ $order->status === 'cancelled' ? ($j === 0 ? 'bg-rose-500 text-white' : 'bg-gray-200 text-gray-500') : (in_array($order->payment_status, ['failed','cancelled']) ? 'bg-rose-100 text-rose-700' : ($j <= $payIndex ? 'bg-emerald-600 text-white' : 'bg-gray-200 text-gray-500')) }}">{{ $j+1 }}</div>
-                            <div class="text-xs sm:text-sm text-gray-700 truncate max-w-[110px] sm:max-w-none">{{ $label }}</div>
+                            <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold <?php echo e($order->status === 'cancelled' ? ($j === 0 ? 'bg-rose-500 text-white' : 'bg-gray-200 text-gray-500') : (in_array($order->payment_status, ['failed','cancelled']) ? 'bg-rose-100 text-rose-700' : ($j <= $payIndex ? 'bg-emerald-600 text-white' : 'bg-gray-200 text-gray-500'))); ?>"><?php echo e($j+1); ?></div>
+                            <div class="text-xs sm:text-sm text-gray-700 truncate max-w-[110px] sm:max-w-none"><?php echo e($label); ?></div>
                         </div>
-                        @if(!$loop->last)
-                            <div class="flex-1 h-1 rounded-full {{ $order->status === 'cancelled' ? 'bg-gray-200' : (in_array($order->payment_status, ['failed','cancelled']) ? 'bg-rose-100' : ($j < $payIndex ? 'bg-emerald-600' : 'bg-gray-200')) }}"></div>
-                        @endif
-                    @endforeach
+                        <?php if(!$loop->last): ?>
+                            <div class="flex-1 h-1 rounded-full <?php echo e($order->status === 'cancelled' ? 'bg-gray-200' : (in_array($order->payment_status, ['failed','cancelled']) ? 'bg-rose-100' : ($j < $payIndex ? 'bg-emerald-600' : 'bg-gray-200'))); ?>"></div>
+                        <?php endif; ?>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </div>
-                @if(in_array($order->payment_status, ['failed','cancelled']) && $order->status !== 'cancelled')
+                <?php if(in_array($order->payment_status, ['failed','cancelled']) && $order->status !== 'cancelled'): ?>
                 <div class="mt-2 text-xs text-rose-600"><i class="fas fa-exclamation-circle mr-1"></i> Thanh toán không thành công</div>
-                @endif
+                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -167,68 +165,68 @@
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
                 <div class="flex items-center justify-between mb-3">
                     <h2 class="text-lg font-bold">Trạng thái</h2>
-                    <div class="text-sm text-gray-500">Tạo lúc {{ $order->created_at?->format('d/m/Y H:i') }}</div>
+                    <div class="text-sm text-gray-500">Tạo lúc <?php echo e($order->created_at?->format('d/m/Y H:i')); ?></div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Cột trái: Thông tin cơ bản -->
                     <dl class="space-y-3 text-sm">
                         <div class="flex items-center justify-between sm:justify-start sm:gap-3">
                             <dt class="text-gray-500">Mã đơn</dt>
-                            <dd class="font-medium text-gray-900">#{{ $order->order_number ?? $order->id }}</dd>
+                            <dd class="font-medium text-gray-900">#<?php echo e($order->order_number ?? $order->id); ?></dd>
                         </div>
                         <div class="flex items-center justify-between sm:justify-start sm:gap-3">
                             <dt class="text-gray-500">Loại thanh toán</dt>
-                            <dd class="font-medium text-gray-900">{{ $order->payment_type_display }}</dd>
+                            <dd class="font-medium text-gray-900"><?php echo e($order->payment_type_display); ?></dd>
                         </div>
-                        @if($order->financeOption)
+                        <?php if($order->financeOption): ?>
                         <div class="flex items-center justify-between sm:justify-start sm:gap-3">
                             <dt class="text-gray-500">Gói trả góp</dt>
-                            <dd class="font-medium text-gray-900">{{ $order->financeOption->name }}</dd>
+                            <dd class="font-medium text-gray-900"><?php echo e($order->financeOption->name); ?></dd>
                         </div>
-                        @else
+                        <?php else: ?>
                         <div class="flex items-center justify-between sm:justify-start sm:gap-3">
                             <dt class="text-gray-500">Số sản phẩm</dt>
-                            <dd class="font-medium text-gray-900">{{ $order->items->count() }} sản phẩm</dd>
+                            <dd class="font-medium text-gray-900"><?php echo e($order->items->count()); ?> sản phẩm</dd>
                         </div>
-                        @endif
+                        <?php endif; ?>
                     </dl>
                     
                     <!-- Cột phải: Phương thức và Trạng thái -->
                     <dl class="space-y-3 text-sm">
                         <div class="flex items-center justify-between sm:justify-start sm:gap-3">
                             <dt class="text-gray-500">Phương thức</dt>
-                            <dd class="font-medium text-gray-900">{{ $order->paymentMethod->name ?? '—' }}</dd>
+                            <dd class="font-medium text-gray-900"><?php echo e($order->paymentMethod->name ?? '—'); ?></dd>
                         </div>
                         <div class="flex items-center justify-between sm:justify-start sm:gap-3">
                             <dt class="text-gray-500">Đơn hàng</dt>
                             <dd>
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
-                                    @class([
+                                    class="<?php echo \Illuminate\Support\Arr::toCssClasses([
                                         'bg-yellow-50 text-yellow-700 border border-yellow-200' => $order->status === 'pending',
                                         'bg-blue-50 text-blue-700 border border-blue-200' => $order->status === 'confirmed',
                                         'bg-indigo-50 text-indigo-700 border border-indigo-200' => $order->status === 'shipping',
                                         'bg-emerald-50 text-emerald-700 border border-emerald-200' => $order->status === 'delivered',
                                         'bg-rose-50 text-rose-700 border border-rose-200' => $order->status === 'cancelled',
-                                    ])">{{ $order->status_display }}</span>
+                                    ]); ?>""><?php echo e($order->status_display); ?></span>
                             </dd>
                         </div>
                         <div class="flex items-center justify-between sm:justify-start sm:gap-3">
                             <dt class="text-gray-500">Thanh toán</dt>
                             <dd>
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
-                                    @class([
+                                    class="<?php echo \Illuminate\Support\Arr::toCssClasses([
                                         'bg-gray-50 text-gray-700 border border-gray-200' => $order->payment_status === 'pending',
                                         'bg-blue-50 text-blue-700 border border-blue-200' => $order->payment_status === 'processing',
                                         'bg-emerald-50 text-emerald-700 border border-emerald-200' => $order->payment_status === 'completed',
                                         'bg-rose-50 text-rose-700 border border-rose-200' => $order->payment_status === 'failed',
                                         'bg-slate-50 text-slate-700 border border-slate-200' => $order->payment_status === 'cancelled',
-                                    ])">{{ $order->payment_status_display }}</span>
+                                    ]); ?>""><?php echo e($order->payment_status_display); ?></span>
                             </dd>
                         </div>
                     </dl>
                 </div>
                 
-                @if(!$order->finance_option_id)
+                <?php if(!$order->finance_option_id): ?>
                 <!-- Payment Type Info for Full Payment -->
                 <div class="mt-4 p-4 bg-emerald-50 rounded-xl border border-emerald-200">
                     <div class="flex items-start gap-3">
@@ -241,9 +239,9 @@
                         </div>
                     </div>
                 </div>
-                @endif
+                <?php endif; ?>
                 
-                @if($order->paymentMethod && in_array($order->paymentMethod->code, ['bank_transfer']) && !$order->finance_option_id)
+                <?php if($order->paymentMethod && in_array($order->paymentMethod->code, ['bank_transfer']) && !$order->finance_option_id): ?>
                 <!-- Bank Transfer Info for Full Payment -->
                 <div class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
                     <div class="text-sm font-semibold text-blue-900 mb-2 flex items-center gap-2">
@@ -254,20 +252,20 @@
                         <div><span class="font-medium">Ngân hàng:</span> Vietcombank - CN TP.HCM</div>
                         <div><span class="font-medium">Tên tài khoản:</span> CONG TY TNHH SHOWROOM</div>
                         <div><span class="font-medium">Số tài khoản:</span> <span class="font-mono">0123456789</span></div>
-                        <div><span class="font-medium">Nội dung:</span> <span class="font-mono">{{ $order->order_number ?? ('#'.$order->id) }}</span></div>
+                        <div><span class="font-medium">Nội dung:</span> <span class="font-mono"><?php echo e($order->order_number ?? ('#'.$order->id)); ?></span></div>
                     </div>
                     <div class="text-center p-2 bg-blue-100 rounded border border-blue-300">
                         <div class="text-xs text-blue-700 font-medium">Số tiền cần chuyển</div>
-                        <div class="text-lg font-bold text-blue-900">{{ number_format($order->grand_total ?? $order->total_price, 0, ',', '.') }} đ</div>
+                        <div class="text-lg font-bold text-blue-900"><?php echo e(number_format($order->grand_total ?? $order->total_price, 0, ',', '.')); ?> đ</div>
                     </div>
                     <div class="mt-2 text-xs text-blue-700">
                         <i class="fas fa-info-circle mr-1"></i>
                         Vui lòng chuyển khoản chính xác số tiền và nội dung để hệ thống đối soát tự động.
                     </div>
                 </div>
-                @endif
+                <?php endif; ?>
                 
-                @if($order->finance_option_id && $order->financeOption)
+                <?php if($order->finance_option_id && $order->financeOption): ?>
                 <!-- Finance Details Section -->
                 <div class="mt-4 p-4 bg-indigo-50 rounded-lg border border-indigo-200">
                     <div class="text-sm font-semibold text-indigo-900 mb-3 flex items-center gap-2">
@@ -278,11 +276,11 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm mb-4">
                         <div>
                             <div class="text-indigo-700 font-medium">Ngân hàng</div>
-                            <div class="text-indigo-900">{{ $order->financeOption->bank_name }}</div>
+                            <div class="text-indigo-900"><?php echo e($order->financeOption->bank_name); ?></div>
                         </div>
                         <div>
                             <div class="text-indigo-700 font-medium">Lãi suất</div>
-                            <div class="text-indigo-900">{{ $order->financeOption->interest_rate }}%/năm</div>
+                            <div class="text-indigo-900"><?php echo e($order->financeOption->interest_rate); ?>%/năm</div>
                         </div>
                     </div>
 
@@ -290,43 +288,43 @@
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm mb-4">
                         <div class="text-center p-3 bg-white rounded-lg border border-indigo-100">
                             <div class="text-indigo-700 font-medium text-xs mb-1">Trả trước</div>
-                            <div class="text-indigo-900 font-bold text-lg">{{ number_format($order->down_payment_amount ?? 0, 0, ',', '.') }} đ</div>
+                            <div class="text-indigo-900 font-bold text-lg"><?php echo e(number_format($order->down_payment_amount ?? 0, 0, ',', '.')); ?> đ</div>
                         </div>
                         <div class="text-center p-3 bg-white rounded-lg border border-indigo-100">
                             <div class="text-indigo-700 font-medium text-xs mb-1">Số tiền vay</div>
-                            <div class="text-indigo-900 font-bold text-lg">{{ number_format(($order->subtotal ?? $order->total_price) - ($order->down_payment_amount ?? 0), 0, ',', '.') }} đ</div>
+                            <div class="text-indigo-900 font-bold text-lg"><?php echo e(number_format(($order->subtotal ?? $order->total_price) - ($order->down_payment_amount ?? 0), 0, ',', '.')); ?> đ</div>
                         </div>
                         <div class="text-center p-3 bg-white rounded-lg border border-indigo-100">
                             <div class="text-indigo-700 font-medium text-xs mb-1">Trả hàng tháng</div>
-                            <div class="text-indigo-900 font-bold text-lg">{{ number_format($order->monthly_payment_amount ?? 0, 0, ',', '.') }} đ</div>
+                            <div class="text-indigo-900 font-bold text-lg"><?php echo e(number_format($order->monthly_payment_amount ?? 0, 0, ',', '.')); ?> đ</div>
                         </div>
                     </div>
 
                     <!-- Tenure Info -->
                     <div class="text-center mb-4">
                         <div class="text-indigo-700 font-medium text-sm">Thời hạn vay</div>
-                        <div class="text-indigo-900 font-semibold text-lg">{{ $order->tenure_months ?? 0 }} tháng</div>
+                        <div class="text-indigo-900 font-semibold text-lg"><?php echo e($order->tenure_months ?? 0); ?> tháng</div>
                     </div>
                     
                     <!-- Additional Costs Info -->
-                    @if($order->tax_total > 0 || $order->shipping_fee > 0)
+                    <?php if($order->tax_total > 0 || $order->shipping_fee > 0): ?>
                     <div class="p-3 bg-amber-50 rounded-lg border border-amber-200 mb-3">
                         <div class="text-xs text-amber-800 mb-2">
                             <i class="fas fa-info-circle mr-1"></i>
                             <span class="font-medium">Lưu ý về chi phí bổ sung:</span>
                         </div>
                         <div class="text-xs text-amber-700 space-y-1">
-                            @if($order->tax_total > 0)
-                            <div>• Thuế: {{ number_format($order->tax_total, 0, ',', '.') }} đ (thanh toán riêng)</div>
-                            @endif
-                            @if($order->shipping_fee > 0)
-                            <div>• Phí vận chuyển: {{ number_format($order->shipping_fee, 0, ',', '.') }} đ (thanh toán riêng)</div>
-                            @endif
+                            <?php if($order->tax_total > 0): ?>
+                            <div>• Thuế: <?php echo e(number_format($order->tax_total, 0, ',', '.')); ?> đ (thanh toán riêng)</div>
+                            <?php endif; ?>
+                            <?php if($order->shipping_fee > 0): ?>
+                            <div>• Phí vận chuyển: <?php echo e(number_format($order->shipping_fee, 0, ',', '.')); ?> đ (thanh toán riêng)</div>
+                            <?php endif; ?>
                             <div class="mt-1 font-medium">→ Trả góp chỉ áp dụng cho giá trị sản phẩm</div>
                         </div>
                     </div>
-                    @endif
-                    @if($order->paymentMethod && in_array($order->paymentMethod->code, ['bank_transfer']))
+                    <?php endif; ?>
+                    <?php if($order->paymentMethod && in_array($order->paymentMethod->code, ['bank_transfer'])): ?>
                     <!-- Bank Transfer Info for Finance -->
                     <div class="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
                         <div class="text-sm font-semibold text-blue-900 mb-2 flex items-center gap-2">
@@ -337,11 +335,11 @@
                             <div><span class="font-medium">Ngân hàng:</span> Vietcombank - CN TP.HCM</div>
                             <div><span class="font-medium">Tên tài khoản:</span> CONG TY TNHH SHOWROOM</div>
                             <div><span class="font-medium">Số tài khoản:</span> <span class="font-mono">0123456789</span></div>
-                            <div><span class="font-medium">Nội dung:</span> <span class="font-mono">{{ $order->order_number ?? ('#'.$order->id) }}</span></div>
+                            <div><span class="font-medium">Nội dung:</span> <span class="font-mono"><?php echo e($order->order_number ?? ('#'.$order->id)); ?></span></div>
                         </div>
                         <div class="text-center p-2 bg-blue-100 rounded border border-blue-300">
                             <div class="text-xs text-blue-700 font-medium">Số tiền cần chuyển</div>
-                            <div class="text-lg font-bold text-blue-900">{{ number_format($order->down_payment_amount ?? 0, 0, ',', '.') }} đ</div>
+                            <div class="text-lg font-bold text-blue-900"><?php echo e(number_format($order->down_payment_amount ?? 0, 0, ',', '.')); ?> đ</div>
                             <div class="text-xs text-blue-600">(Khoản trả trước)</div>
                         </div>
                         <div class="mt-2 text-xs text-blue-700">
@@ -349,7 +347,7 @@
                             Chuyển khoản chính xác số tiền và nội dung để hệ thống đối soát tự động.
                         </div>
                     </div>
-                    @endif
+                    <?php endif; ?>
                     
                     <div class="mt-3 p-3 bg-white rounded-lg border border-indigo-100">
                         <div class="text-xs text-indigo-700 flex items-start gap-2">
@@ -357,11 +355,11 @@
                             <div>
                                 <div class="font-medium mb-1">Lưu ý quan trọng:</div>
                                 <ul class="space-y-1">
-                                    @if($order->paymentMethod && in_array($order->paymentMethod->code, ['bank_transfer']))
+                                    <?php if($order->paymentMethod && in_array($order->paymentMethod->code, ['bank_transfer'])): ?>
                                     <li>• Sau khi chuyển khoản, ngân hàng sẽ liên hệ để hoàn tất thủ tục vay</li>
-                                    @else
-                                    <li>• Bạn đã thanh toán khoản trả trước qua {{ $order->paymentMethod->name ?? 'phương thức đã chọn' }}</li>
-                                    @endif
+                                    <?php else: ?>
+                                    <li>• Bạn đã thanh toán khoản trả trước qua <?php echo e($order->paymentMethod->name ?? 'phương thức đã chọn'); ?></li>
+                                    <?php endif; ?>
                                     <li>• Ngân hàng sẽ liên hệ để hoàn tất thủ tục vay trong 1-2 ngày làm việc</li>
                                     <li>• Vui lòng chuẩn bị đầy đủ hồ sơ theo yêu cầu của ngân hàng</li>
                                 </ul>
@@ -369,17 +367,17 @@
                         </div>
                     </div>
                 </div>
-                @endif
+                <?php endif; ?>
             </div>
 
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
                 <div class="px-4 sm:px-6 py-4 border-b flex items-center justify-between gap-2">
                     <h2 class="text-lg font-bold">Thông tin đơn hàng</h2>
-                    <div class="text-sm text-gray-500">Sản phẩm ({{ $order->items->count() }})</div>
+                    <div class="text-sm text-gray-500">Sản phẩm (<?php echo e($order->items->count()); ?>)</div>
                 </div>
                 <div class="divide-y">
-                    @forelse($order->items->sortBy(function($it){ return $it->item_type === 'car_variant' ? 0 : 1; }) as $it)
-                        @php
+                    <?php $__empty_1 = true; $__currentLoopData = $order->items->sortBy(function($it){ return $it->item_type === 'car_variant' ? 0 : 1; }); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $it): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                        <?php
                             $model = $it->item;
                             $unit = $it->price;
                             $line = $it->line_total ?: ($unit * $it->quantity);
@@ -400,71 +398,72 @@
                                     $img = asset('images/default-accessory.jpg');
                                 }
                             }
-                        @endphp
+                        ?>
                         <div class="px-4 py-3 flex items-center gap-3 flex-wrap">
                             <div class="w-16 h-12 rounded-md bg-gray-100 overflow-hidden flex-shrink-0">
-                                @if($img)
-                                    <img src="{{ $img }}" class="w-full h-full object-cover" alt="{{ $model?->name ?? $it->item_name }}" />
-                                @else
+                                <?php if($img): ?>
+                                    <img src="<?php echo e($img); ?>" class="w-full h-full object-cover" alt="<?php echo e($model?->name ?? $it->item_name); ?>" />
+                                <?php else: ?>
                                     <div class="w-full h-full flex items-center justify-center text-gray-400 text-[11px]">No image</div>
-                                @endif
+                                <?php endif; ?>
                             </div>
                             <div class="min-w-0 flex-1">
-                                <div class="text-sm font-medium text-gray-900 line-clamp-2" title="{{ $model?->name ?? $it->item_name }}">{{ $model?->name ?? $it->item_name }}</div>
-                                @if($it->item_type === 'car_variant')
+                                <div class="text-sm font-medium text-gray-900 line-clamp-2" title="<?php echo e($model?->name ?? $it->item_name); ?>"><?php echo e($model?->name ?? $it->item_name); ?></div>
+                                <?php if($it->item_type === 'car_variant'): ?>
                                     <div class="text-[11px] text-gray-500 whitespace-normal break-words">
-                                        @php 
+                                        <?php 
                                             $colorName = $it->color?->color_name;
                                             $colorHex = $colorName ? \App\Helpers\ColorHelper::getColorHex($colorName) : null;
-                                        @endphp
-                                        SL: {{ $it->quantity }}
+                                        ?>
+                                        SL: <?php echo e($it->quantity); ?>
+
                                         <span>•</span>
                                         <span class="inline-flex items-center gap-1">
                                             <span>Màu:</span>
-                                            @if($colorName)
+                                            <?php if($colorName): ?>
                                                 <span class="inline-flex items-center gap-1">
                                                     <span class="inline-block w-3 h-3 rounded-full border border-gray-200 bg-gray-200"></span>
-                                                    <span class="text-gray-700">{{ $colorName }}</span>
+                                                    <span class="text-gray-700"><?php echo e($colorName); ?></span>
                                                 </span>
-                                            @else
+                                            <?php else: ?>
                                                 <span class="text-gray-400">Chưa chọn</span>
-                                            @endif
+                                            <?php endif; ?>
                                         </span>
-                                        @php $featureNames = $meta['feature_names'] ?? []; @endphp
-                                        @if(!empty($featureNames))
+                                        <?php $featureNames = $meta['feature_names'] ?? []; ?>
+                                        <?php if(!empty($featureNames)): ?>
                                             <div class="mt-1 space-y-1">
                                                 <div class="text-[11px] text-gray-600">Tùy chọn:
-                                                    @foreach($featureNames as $fname)
-                                                        <span class="inline-flex items-center gap-1 mr-2">{{ $fname }}</span>
-                                                    @endforeach
+                                                    <?php $__currentLoopData = $featureNames; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $fname): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                        <span class="inline-flex items-center gap-1 mr-2"><?php echo e($fname); ?></span>
+                                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                                 </div>
                                             </div>
-                                        @endif
-                                        @php $optionNames = $meta['option_names'] ?? []; @endphp
-                                        @if(!empty($optionNames))
+                                        <?php endif; ?>
+                                        <?php $optionNames = $meta['option_names'] ?? []; ?>
+                                        <?php if(!empty($optionNames)): ?>
                                             <div class="mt-1 space-y-1">
                                                 <div class="text-[11px] text-gray-600">Gói:
-                                                    @foreach($optionNames as $oname)
-                                                        <span class="inline-flex items-center gap-1 mr-2">{{ $oname }}</span>
-                                                    @endforeach
+                                                    <?php $__currentLoopData = $optionNames; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $oname): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                        <span class="inline-flex items-center gap-1 mr-2"><?php echo e($oname); ?></span>
+                                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                                 </div>
                                             </div>
-                                        @endif
+                                        <?php endif; ?>
                                     </div>
-                                @else
-                                    <div class="text-[11px] text-gray-500">SL: {{ $it->quantity }}</div>
-                                @endif
+                                <?php else: ?>
+                                    <div class="text-[11px] text-gray-500">SL: <?php echo e($it->quantity); ?></div>
+                                <?php endif; ?>
                             </div>
                             <div class="text-right sm:shrink-0 sm:min-w-[140px]">
                                 <div class="text-xs text-gray-500 whitespace-nowrap leading-none">Đơn giá</div>
-                                <div class="text-sm font-semibold text-gray-900 whitespace-nowrap tabular-nums leading-none">{{ number_format($unit) }} đ</div>
+                                <div class="text-sm font-semibold text-gray-900 whitespace-nowrap tabular-nums leading-none"><?php echo e(number_format($unit)); ?> đ</div>
                                 <div class="text-xs text-gray-500 whitespace-nowrap leading-none mt-2">Tổng</div>
-                                <div class="text-sm font-semibold text-gray-900 whitespace-nowrap tabular-nums leading-none">{{ number_format($line) }} đ</div>
+                                <div class="text-sm font-semibold text-gray-900 whitespace-nowrap tabular-nums leading-none"><?php echo e(number_format($line)); ?> đ</div>
                             </div>
                         </div>
-                    @empty
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                         <div class="p-6 text-center text-gray-500">Không có sản phẩm trong đơn hàng</div>
-                    @endforelse
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -474,7 +473,7 @@
             <!-- Tổng kết (giống success) -->
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
                 <h3 class="text-base font-bold mb-4">Tổng kết</h3>
-                @php
+                <?php
                     $ship = $order->shippingAddress ?: $order->billingAddress;
                     // Ưu tiên contact_name -> full_name -> name trên address; sau đó fallback về user->name
                     $recipientName = $ship?->contact_name
@@ -484,78 +483,78 @@
                         ?? '';
                     $recipientPhone = $ship?->phone ?? optional($order->user)->phone ?? '';
                     $recipientEmail = optional($order->user)->email ?? '';
-                @endphp
+                ?>
                 <div class="space-y-3 text-sm">
                     <div class="text-gray-700">
                         <div class="font-semibold mb-1">Người nhận</div>
-                        <div class="font-medium">{{ $recipientName !== '' ? $recipientName : (optional($order->user)->name ?? '—') }}</div>
-                        <div class="text-gray-500">@if($recipientPhone) {{ $recipientPhone }} @endif @if($recipientPhone && $recipientEmail) • @endif @if($recipientEmail) {{ $recipientEmail }} @endif</div>
+                        <div class="font-medium"><?php echo e($recipientName !== '' ? $recipientName : (optional($order->user)->name ?? '—')); ?></div>
+                        <div class="text-gray-500"><?php if($recipientPhone): ?> <?php echo e($recipientPhone); ?> <?php endif; ?> <?php if($recipientPhone && $recipientEmail): ?> • <?php endif; ?> <?php if($recipientEmail): ?> <?php echo e($recipientEmail); ?> <?php endif; ?></div>
                     </div>
                     <div class="text-gray-700">
                         <div class="font-semibold mb-1">Địa chỉ giao</div>
-                        @if($ship)
+                        <?php if($ship): ?>
                             <div class="space-y-1">
-                                <div>{{ $ship->address_line1 ?? $ship->address ?? '' }}</div>
-                                <div class="text-gray-500">{{ $ship->ward ?? '' }}@if($ship?->ward && $ship?->district), @endif{{ $ship->district ?? '' }}@if(($ship?->ward || $ship?->district) && $ship?->city), @endif{{ $ship->city ?? '' }}</div>
+                                <div><?php echo e($ship->address_line1 ?? $ship->address ?? ''); ?></div>
+                                <div class="text-gray-500"><?php echo e($ship->ward ?? ''); ?><?php if($ship?->ward && $ship?->district): ?>, <?php endif; ?><?php echo e($ship->district ?? ''); ?><?php if(($ship?->ward || $ship?->district) && $ship?->city): ?>, <?php endif; ?><?php echo e($ship->city ?? ''); ?></div>
                             </div>
-                        @else
+                        <?php else: ?>
                             <div class="text-gray-500">Không có thông tin</div>
-                        @endif
+                        <?php endif; ?>
                     </div>
                 </div>
                 <div class="mt-4 border-t pt-4 space-y-2 text-sm">
                     <div class="flex items-center justify-between">
                         <span class="text-gray-600">Tạm tính</span>
-                        <span class="text-gray-900 font-medium">{{ number_format($order->subtotal ?? 0, 0, ',', '.') }} đ</span>
+                        <span class="text-gray-900 font-medium"><?php echo e(number_format($order->subtotal ?? 0, 0, ',', '.')); ?> đ</span>
                     </div>
                     <div class="flex items-center justify-between">
-                        <span class="text-gray-600">Thuế ({{ number_format(($order->tax_rate ?? 0.1) * 100, 1) }}%)</span>
-                        <span class="text-gray-900 font-medium">{{ number_format($order->tax_total ?? 0, 0, ',', '.') }} đ</span>
+                        <span class="text-gray-600">Thuế (<?php echo e(number_format(($order->tax_rate ?? 0.1) * 100, 1)); ?>%)</span>
+                        <span class="text-gray-900 font-medium"><?php echo e(number_format($order->tax_total ?? 0, 0, ',', '.')); ?> đ</span>
                     </div>
                     <div class="flex items-center justify-between">
                         <span class="text-gray-600">
                             Vận chuyển
-                            @if($order->shipping_method)
+                            <?php if($order->shipping_method): ?>
                                 <span class="text-xs text-blue-600 ml-1">
-                                    ({{ $order->shipping_method === 'express' ? 'Nhanh' : ($order->shipping_method === 'standard' ? 'Tiêu chuẩn' : ucfirst($order->shipping_method)) }})
+                                    (<?php echo e($order->shipping_method === 'express' ? 'Nhanh' : ($order->shipping_method === 'standard' ? 'Tiêu chuẩn' : ucfirst($order->shipping_method))); ?>)
                                 </span>
-                            @endif
+                            <?php endif; ?>
                         </span>
-                        <span class="text-gray-900 font-medium">{{ number_format($order->shipping_fee ?? 0, 0, ',', '.') }} đ</span>
+                        <span class="text-gray-900 font-medium"><?php echo e(number_format($order->shipping_fee ?? 0, 0, ',', '.')); ?> đ</span>
                     </div>
-                    @if((float)($order->discount_total ?? 0) > 0)
+                    <?php if((float)($order->discount_total ?? 0) > 0): ?>
                     <div class="flex items-center justify-between">
                         <span class="text-gray-600">
                             Giảm giá
-                            @if($order->promotion)
-                                <span class="text-xs text-green-600 ml-1">({{ $order->promotion->code }})</span>
-                            @endif
+                            <?php if($order->promotion): ?>
+                                <span class="text-xs text-green-600 ml-1">(<?php echo e($order->promotion->code); ?>)</span>
+                            <?php endif; ?>
                         </span>
-                        <span class="text-rose-600 font-medium">-{{ number_format($order->discount_total ?? 0, 0, ',', '.') }} đ</span>
+                        <span class="text-rose-600 font-medium">-<?php echo e(number_format($order->discount_total ?? 0, 0, ',', '.')); ?> đ</span>
                     </div>
-                    @endif
-                    @if($order->financeOption && $order->down_payment_amount)
+                    <?php endif; ?>
+                    <?php if($order->financeOption && $order->down_payment_amount): ?>
                     <div class="flex items-center justify-between">
                         <span class="text-gray-600">Trả trước</span>
-                        <span class="text-gray-900 font-medium">{{ number_format($order->down_payment_amount, 0, ',', '.') }} đ</span>
+                        <span class="text-gray-900 font-medium"><?php echo e(number_format($order->down_payment_amount, 0, ',', '.')); ?> đ</span>
                     </div>
-                    @if($order->monthly_payment_amount && $order->tenure_months)
+                    <?php if($order->monthly_payment_amount && $order->tenure_months): ?>
                     <div class="flex items-center justify-between">
                         <span class="text-gray-600">Trả góp</span>
-                        <span class="text-gray-900 font-medium">{{ number_format($order->monthly_payment_amount, 0, ',', '.') }} đ/tháng × {{ $order->tenure_months }} tháng</span>
+                        <span class="text-gray-900 font-medium"><?php echo e(number_format($order->monthly_payment_amount, 0, ',', '.')); ?> đ/tháng × <?php echo e($order->tenure_months); ?> tháng</span>
                     </div>
-                    @endif
-                    @endif
+                    <?php endif; ?>
+                    <?php endif; ?>
                     <div class="pt-2 mt-2 border-t flex items-center justify-between">
                         <span class="text-gray-700 font-semibold">Tổng cộng</span>
-                        <span class="text-indigo-700 font-extrabold text-lg">{{ number_format($order->grand_total ?? $order->total_price, 0, ',', '.') }} đ</span>
+                        <span class="text-indigo-700 font-extrabold text-lg"><?php echo e(number_format($order->grand_total ?? $order->total_price, 0, ',', '.')); ?> đ</span>
                     </div>
                     
                 </div>
             </div>
 
             <!-- Promotion Details Section -->
-            @if($order->promotion)
+            <?php if($order->promotion): ?>
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
                 <div class="flex items-center gap-3 mb-4">
                     <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
@@ -572,70 +571,72 @@
                         <div class="flex-1">
                             <div class="flex items-center gap-2 mb-2">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                    {{ $order->promotion->code }}
+                                    <?php echo e($order->promotion->code); ?>
+
                                 </span>
                                 <span class="text-xs text-gray-500">
-                                    @switch($order->promotion->type)
-                                        @case('percentage')
+                                    <?php switch($order->promotion->type):
+                                        case ('percentage'): ?>
                                             Giảm theo %
-                                            @break
-                                        @case('fixed_amount')
+                                            <?php break; ?>
+                                        <?php case ('fixed_amount'): ?>
                                             Giảm cố định
-                                            @break
-                                        @case('free_shipping')
+                                            <?php break; ?>
+                                        <?php case ('free_shipping'): ?>
                                             Miễn phí ship
-                                            @break
-                                        @case('brand_specific')
+                                            <?php break; ?>
+                                        <?php case ('brand_specific'): ?>
                                             Theo thương hiệu
-                                            @break
-                                        @case('category_specific')
+                                            <?php break; ?>
+                                        <?php case ('category_specific'): ?>
                                             Theo danh mục
-                                            @break
-                                        @case('buy_x_get_y')
+                                            <?php break; ?>
+                                        <?php case ('buy_x_get_y'): ?>
                                             Mua X tặng Y
-                                            @break
-                                        @case('bundle_discount')
+                                            <?php break; ?>
+                                        <?php case ('bundle_discount'): ?>
                                             Combo giảm giá
-                                            @break
-                                        @case('tiered_discount')
+                                            <?php break; ?>
+                                        <?php case ('tiered_discount'): ?>
                                             Giảm theo bậc
-                                            @break
-                                        @case('time_based')
+                                            <?php break; ?>
+                                        <?php case ('time_based'): ?>
                                             Flash Sale
-                                            @break
-                                        @default
-                                            {{ ucfirst($order->promotion->type) }}
-                                    @endswitch
+                                            <?php break; ?>
+                                        <?php default: ?>
+                                            <?php echo e(ucfirst($order->promotion->type)); ?>
+
+                                    <?php endswitch; ?>
                                 </span>
                             </div>
-                            <h4 class="font-semibold text-green-900 mb-1">{{ $order->promotion->name }}</h4>
-                            <p class="text-sm text-green-700">{{ $order->promotion->description }}</p>
+                            <h4 class="font-semibold text-green-900 mb-1"><?php echo e($order->promotion->name); ?></h4>
+                            <p class="text-sm text-green-700"><?php echo e($order->promotion->description); ?></p>
                         </div>
                         <div class="text-right">
-                            <div class="text-lg font-bold text-green-900">-{{ number_format($order->discount_total, 0, ',', '.') }} đ</div>
+                            <div class="text-lg font-bold text-green-900">-<?php echo e(number_format($order->discount_total, 0, ',', '.')); ?> đ</div>
                             <div class="text-xs text-green-600">Đã tiết kiệm</div>
                         </div>
                     </div>
                 </div>
             </div>
-            @endif
+            <?php endif; ?>
 
-            {{-- Ghi chú --}}
-            @if($order->note)
+            
+            <?php if($order->note): ?>
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
                 <h3 class="text-base font-bold mb-2">Ghi chú</h3>
-                <p class="text-sm text-gray-700">{{ $order->note }}</p>
+                <p class="text-sm text-gray-700"><?php echo e($order->note); ?></p>
             </div>
-            @endif
+            <?php endif; ?>
 
             <!-- Refund Section -->
-            @if($order->payment_status === 'completed' && $order->status !== 'cancelled')
-                @php
+            <?php if($order->payment_status === 'completed' && $order->status !== 'cancelled'): ?>
+                <?php
                     $existingRefund = $order->refunds->whereIn('status', ['pending', 'processing'])->first();
                     $canRequestRefund = !$existingRefund && $order->created_at->diffInDays(now()) <= 30; // 30 days refund policy
-                @endphp
+                ?>
                 
-                @if($existingRefund)
+                <?php if($existingRefund): ?>
                     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
                         <h3 class="text-base font-bold mb-4">Yêu cầu hoàn tiền</h3>
                         <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
@@ -644,19 +645,21 @@
                                 <div>
                                     <h4 class="font-medium text-yellow-800">Đang xử lý yêu cầu hoàn tiền</h4>
                                     <p class="text-sm text-yellow-700 mt-1">
-                                        Số tiền: <span class="font-medium">{{ number_format($existingRefund->amount, 0, ',', '.') }} đ</span>
+                                        Số tiền: <span class="font-medium"><?php echo e(number_format($existingRefund->amount, 0, ',', '.')); ?> đ</span>
                                     </p>
                                     <p class="text-sm text-yellow-700">
-                                        Lý do: {{ $existingRefund->reason }}
+                                        Lý do: <?php echo e($existingRefund->reason); ?>
+
                                     </p>
                                     <p class="text-xs text-yellow-600 mt-2">
-                                        Yêu cầu từ {{ $existingRefund->created_at->format('d/m/Y H:i') }}
+                                        Yêu cầu từ <?php echo e($existingRefund->created_at->format('d/m/Y H:i')); ?>
+
                                     </p>
                                 </div>
                             </div>
                         </div>
                     </div>
-                @elseif($canRequestRefund)
+                <?php elseif($canRequestRefund): ?>
                     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-base font-bold">Yêu cầu hoàn tiền</h3>
@@ -669,22 +672,15 @@
                             <i class="fas fa-undo"></i> Yêu cầu hoàn tiền
                         </button>
                     </div>
-                @endif
-            @endif
+                <?php endif; ?>
+            <?php endif; ?>
 
 
-            {{-- Installments Section - REMOVED (too long for 36 installments) --}}
-            {{-- Keep only "Chi tiết trả góp" overview section above --}}
-            {{-- Can be restored later if needed with payment integration --}}
             
-            {{-- COMMENTED OUT: Full installments list
-            @if($order->isInstallmentOrder() && $order->installments->count() > 0)
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
-                    <h3 class="text-base font-bold mb-4">Lịch trả góp</h3>
-                    ... (36 installments list removed) ...
-                </div>
-            @endif
-            --}}
+            
+            
+            
+            
         </div>
     </div>
 </div>
@@ -699,16 +695,16 @@
                     <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
-            <form action="{{ route('user.orders.refund', $order) }}" method="POST" id="refundForm">
-                @csrf
+            <form action="<?php echo e(route('user.orders.refund', $order)); ?>" method="POST" id="refundForm">
+                <?php echo csrf_field(); ?>
                 <div class="space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Số tiền hoàn (VND)</label>
                         <input type="number" name="amount" id="refundAmount"
-                               value="{{ intval($order->grand_total) }}"
+                               value="<?php echo e(intval($order->grand_total)); ?>"
                                class="w-full rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500"
                                placeholder="Nhập số tiền hoàn">
-                        <p class="text-xs text-gray-500 mt-1">Tối đa: {{ number_format($order->grand_total, 0, ',', '.') }} đ</p>
+                        <p class="text-xs text-gray-500 mt-1">Tối đa: <?php echo e(number_format($order->grand_total, 0, ',', '.')); ?> đ</p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Lý do hoàn tiền</label>
@@ -740,15 +736,15 @@ document.addEventListener('click', function(e) {
         const form = e.target.closest('form');
         const button = form.querySelector('button[type="submit"]');
         
-        const orderNumber = '#{{ $order->order_number ?? $order->id }}';
-        const orderAmount = '{{ number_format($order->grand_total, 0, ",", ".") }} đ';
+        const orderNumber = '#<?php echo e($order->order_number ?? $order->id); ?>';
+        const orderAmount = '<?php echo e(number_format($order->grand_total, 0, ",", ".")); ?> đ';
         
         // Enhanced confirm dialog with more details
         let confirmMessage = `Bạn có chắc chắn muốn hủy đơn hàng ${orderNumber}?\n\nGiá trị đơn hàng: ${orderAmount}`;
         
-        @if($order->finance_option_id)
+        <?php if($order->finance_option_id): ?>
         confirmMessage += `\nLưu ý: Nếu đã thanh toán trả trước, bạn có thể yêu cầu hoàn tiền sau khi hủy.`;
-        @endif
+        <?php endif; ?>
         
         confirmMessage += `\n\nHành động này không thể hoàn tác.`;
         
@@ -876,7 +872,7 @@ function openRefundModal() {
 function closeRefundModal() {
     document.getElementById('refundModal').classList.add('hidden');
     document.getElementById('refundForm').reset();
-    document.getElementById('refundAmount').value = '{{ intval($order->grand_total) }}';
+    document.getElementById('refundAmount').value = '<?php echo e(intval($order->grand_total)); ?>';
 }
 
 // Handle ESC key to close modal
@@ -902,7 +898,7 @@ document.getElementById('refundForm').addEventListener('submit', function(e) {
     // Client-side validation with Vietnamese toast messages
     const amountValue = parseFloat(amountInput.value);
     const reasonValue = reasonInput.value.trim();
-    const maxAmount = parseInt('{{ $order->grand_total }}');
+    const maxAmount = parseInt('<?php echo e($order->grand_total); ?>');
     
     if (!amountValue || amountValue <= 0) {
         if (typeof window.showMessage === 'function') {
@@ -998,4 +994,6 @@ document.getElementById('refundForm').addEventListener('submit', function(e) {
 
 // Modal close functionality is now handled by onclick attributes in HTML
 </script>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\forev\showroom-car-modern\resources\views/user/orders/show.blade.php ENDPATH**/ ?>
