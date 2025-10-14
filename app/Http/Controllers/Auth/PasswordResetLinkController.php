@@ -27,6 +27,9 @@ class PasswordResetLinkController extends Controller
     {
         $request->validate([
             'email' => ['required', 'email'],
+        ], [
+            'email.required' => 'Vui lòng nhập email.',
+            'email.email' => 'Email không đúng định dạng.',
         ]);
 
         // We will send the password reset link to this user. Once we have attempted
@@ -37,8 +40,8 @@ class PasswordResetLinkController extends Controller
         );
 
         return $status == Password::RESET_LINK_SENT
-                    ? back()->with('status', __($status))
+                    ? back()->with('status', trans($status, [], 'vi'))
                     : back()->withInput($request->only('email'))
-                        ->withErrors(['email' => __($status)]);
+                        ->withErrors(['email' => trans($status, [], 'vi')]);
     }
 }

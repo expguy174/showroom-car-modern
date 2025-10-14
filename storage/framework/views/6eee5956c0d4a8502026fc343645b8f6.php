@@ -1,49 +1,115 @@
-<x-guest-layout>
+<?php if (isset($component)) { $__componentOriginal69dc84650370d1d4dc1b42d016d7226b = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal69dc84650370d1d4dc1b42d016d7226b = $attributes; } ?>
+<?php $component = App\View\Components\GuestLayout::resolve([] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('guest-layout'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\App\View\Components\GuestLayout::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes([]); ?>
     <div class="mb-6">
         <h2 class="text-2xl font-bold tracking-tight text-gray-900">Tạo tài khoản</h2>
         <p class="mt-1 text-sm text-gray-600">Đăng ký để nhận ưu đãi, đặt lịch lái thử và quản lý đơn hàng dễ dàng.</p>
     </div>
 
-    <form x-data="{ show1: false, show2: false }" @submit="handleRegisterSubmit($event)" method="POST" action="{{ route('register') }}" class="space-y-5" novalidate>
-        @csrf
+    <form x-data="{ show1: false, show2: false }" @submit="handleRegisterSubmit($event)" method="POST" action="<?php echo e(route('register')); ?>" class="space-y-5" novalidate>
+        <?php echo csrf_field(); ?>
 
         <!-- Name (required) -->
         <div>
             <label for="name" class="block text-sm font-medium text-gray-700">Họ và tên <span class="text-red-500">*</span></label>
             <div class="mt-1 relative">
-                <input id="name" type="text" name="name" value="{{ old('name') }}" autofocus autocomplete="name" placeholder="Nguyễn Văn A"
+                <input id="name" type="text" name="name" value="<?php echo e(old('name')); ?>" autofocus autocomplete="name" placeholder="Nguyễn Văn A"
                        class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-4 py-2.5" />
                 <div class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400">
                     <i class="fas fa-user"></i>
                 </div>
             </div>
-            <x-input-error :messages="$errors->get('name')" class="mt-2" />
+            <?php if (isset($component)) { $__componentOriginalf94ed9c5393ef72725d159fe01139746 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalf94ed9c5393ef72725d159fe01139746 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.input-error','data' => ['messages' => $errors->get('name'),'class' => 'mt-2']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('input-error'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['messages' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($errors->get('name')),'class' => 'mt-2']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalf94ed9c5393ef72725d159fe01139746)): ?>
+<?php $attributes = $__attributesOriginalf94ed9c5393ef72725d159fe01139746; ?>
+<?php unset($__attributesOriginalf94ed9c5393ef72725d159fe01139746); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalf94ed9c5393ef72725d159fe01139746)): ?>
+<?php $component = $__componentOriginalf94ed9c5393ef72725d159fe01139746; ?>
+<?php unset($__componentOriginalf94ed9c5393ef72725d159fe01139746); ?>
+<?php endif; ?>
         </div>
 
         <!-- Phone (required) -->
         <div>
             <label for="phone" class="block text-sm font-medium text-gray-700">Số điện thoại <span class="text-red-500">*</span></label>
             <div class="mt-1 relative">
-                <input id="phone" type="text" name="phone" value="{{ old('phone') }}" autocomplete="tel" placeholder="0901 234 567"
+                <input id="phone" type="text" name="phone" value="<?php echo e(old('phone')); ?>" autocomplete="tel" placeholder="0901 234 567"
                        class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-4 py-2.5" />
                 <div class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400">
                     <i class="fas fa-phone"></i>
                 </div>
             </div>
-            <x-input-error :messages="$errors->get('phone')" class="mt-2" />
+            <?php if (isset($component)) { $__componentOriginalf94ed9c5393ef72725d159fe01139746 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalf94ed9c5393ef72725d159fe01139746 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.input-error','data' => ['messages' => $errors->get('phone'),'class' => 'mt-2']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('input-error'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['messages' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($errors->get('phone')),'class' => 'mt-2']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalf94ed9c5393ef72725d159fe01139746)): ?>
+<?php $attributes = $__attributesOriginalf94ed9c5393ef72725d159fe01139746; ?>
+<?php unset($__attributesOriginalf94ed9c5393ef72725d159fe01139746); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalf94ed9c5393ef72725d159fe01139746)): ?>
+<?php $component = $__componentOriginalf94ed9c5393ef72725d159fe01139746; ?>
+<?php unset($__componentOriginalf94ed9c5393ef72725d159fe01139746); ?>
+<?php endif; ?>
         </div>
 
         <!-- Email Address -->
         <div>
             <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
             <div class="mt-1 relative">
-                <input id="email" type="text" name="email" value="{{ old('email') }}" autocomplete="username" placeholder="you@example.com"
+                <input id="email" type="text" name="email" value="<?php echo e(old('email')); ?>" autocomplete="username" placeholder="you@example.com"
                        class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-4 py-2.5" />
                 <div class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400">
                     <i class="fas fa-envelope"></i>
                 </div>
             </div>
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+            <?php if (isset($component)) { $__componentOriginalf94ed9c5393ef72725d159fe01139746 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalf94ed9c5393ef72725d159fe01139746 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.input-error','data' => ['messages' => $errors->get('email'),'class' => 'mt-2']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('input-error'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['messages' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($errors->get('email')),'class' => 'mt-2']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalf94ed9c5393ef72725d159fe01139746)): ?>
+<?php $attributes = $__attributesOriginalf94ed9c5393ef72725d159fe01139746; ?>
+<?php unset($__attributesOriginalf94ed9c5393ef72725d159fe01139746); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalf94ed9c5393ef72725d159fe01139746)): ?>
+<?php $component = $__componentOriginalf94ed9c5393ef72725d159fe01139746; ?>
+<?php unset($__componentOriginalf94ed9c5393ef72725d159fe01139746); ?>
+<?php endif; ?>
         </div>
 
         <!-- Password -->
@@ -58,7 +124,26 @@
                     </button>
                 </div>
             </div>
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
+            <?php if (isset($component)) { $__componentOriginalf94ed9c5393ef72725d159fe01139746 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalf94ed9c5393ef72725d159fe01139746 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.input-error','data' => ['messages' => $errors->get('password'),'class' => 'mt-2']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('input-error'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['messages' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($errors->get('password')),'class' => 'mt-2']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalf94ed9c5393ef72725d159fe01139746)): ?>
+<?php $attributes = $__attributesOriginalf94ed9c5393ef72725d159fe01139746; ?>
+<?php unset($__attributesOriginalf94ed9c5393ef72725d159fe01139746); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalf94ed9c5393ef72725d159fe01139746)): ?>
+<?php $component = $__componentOriginalf94ed9c5393ef72725d159fe01139746; ?>
+<?php unset($__componentOriginalf94ed9c5393ef72725d159fe01139746); ?>
+<?php endif; ?>
         </div>
 
         <!-- Confirm Password -->
@@ -73,7 +158,26 @@
                     </button>
                 </div>
             </div>
-            <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
+            <?php if (isset($component)) { $__componentOriginalf94ed9c5393ef72725d159fe01139746 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalf94ed9c5393ef72725d159fe01139746 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.input-error','data' => ['messages' => $errors->get('password_confirmation'),'class' => 'mt-2']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('input-error'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['messages' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($errors->get('password_confirmation')),'class' => 'mt-2']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalf94ed9c5393ef72725d159fe01139746)): ?>
+<?php $attributes = $__attributesOriginalf94ed9c5393ef72725d159fe01139746; ?>
+<?php unset($__attributesOriginalf94ed9c5393ef72725d159fe01139746); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalf94ed9c5393ef72725d159fe01139746)): ?>
+<?php $component = $__componentOriginalf94ed9c5393ef72725d159fe01139746; ?>
+<?php unset($__componentOriginalf94ed9c5393ef72725d159fe01139746); ?>
+<?php endif; ?>
         </div>
 
         <!-- Terms -->
@@ -81,7 +185,26 @@
             <input id="terms" name="terms" type="checkbox" class="mt-1 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
             <div class="flex-1">
                 <label for="terms" class="text-sm text-gray-600">Tôi đồng ý với <a href="#" class="text-indigo-600 hover:underline">Điều khoản sử dụng</a> và <a href="#" class="text-indigo-600 hover:underline">Chính sách bảo mật</a>.</label>
-                <x-input-error :messages="$errors->get('terms')" class="mt-1" />
+                <?php if (isset($component)) { $__componentOriginalf94ed9c5393ef72725d159fe01139746 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalf94ed9c5393ef72725d159fe01139746 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.input-error','data' => ['messages' => $errors->get('terms'),'class' => 'mt-1']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('input-error'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['messages' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($errors->get('terms')),'class' => 'mt-1']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalf94ed9c5393ef72725d159fe01139746)): ?>
+<?php $attributes = $__attributesOriginalf94ed9c5393ef72725d159fe01139746; ?>
+<?php unset($__attributesOriginalf94ed9c5393ef72725d159fe01139746); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalf94ed9c5393ef72725d159fe01139746)): ?>
+<?php $component = $__componentOriginalf94ed9c5393ef72725d159fe01139746; ?>
+<?php unset($__componentOriginalf94ed9c5393ef72725d159fe01139746); ?>
+<?php endif; ?>
             </div>
         </div>
 
@@ -260,7 +383,17 @@
             Tạo tài khoản
         </button>
 
-        <div class="text-sm text-center text-gray-600">Đã có tài khoản? <a href="{{ route('login') }}" class="text-indigo-600 hover:underline">Đăng nhập</a></div>
+        <div class="text-sm text-center text-gray-600">Đã có tài khoản? <a href="<?php echo e(route('login')); ?>" class="text-indigo-600 hover:underline">Đăng nhập</a></div>
     </form>
-</x-guest-layout>
+ <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal69dc84650370d1d4dc1b42d016d7226b)): ?>
+<?php $attributes = $__attributesOriginal69dc84650370d1d4dc1b42d016d7226b; ?>
+<?php unset($__attributesOriginal69dc84650370d1d4dc1b42d016d7226b); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal69dc84650370d1d4dc1b42d016d7226b)): ?>
+<?php $component = $__componentOriginal69dc84650370d1d4dc1b42d016d7226b; ?>
+<?php unset($__componentOriginal69dc84650370d1d4dc1b42d016d7226b); ?>
+<?php endif; ?>
 
+<?php /**PATH C:\Users\forev\showroom-car-modern\resources\views/auth/register.blade.php ENDPATH**/ ?>

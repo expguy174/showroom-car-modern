@@ -631,3 +631,21 @@ html {
 .toast-notification.hide {
     transform: translateX(100%);
 }
+
+/* Hide browser's built-in password visibility toggle */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-webkit-credentials-auto-fill-button {
+    display: none !important;
+}
+
+/* For WebKit browsers (Chrome, Safari, Edge) */
+input[type="password"]::-webkit-textfield-decoration-container {
+    visibility: hidden;
+}
+
+/* Alternative approach for some browsers */
+input[type="password"]::-webkit-inner-spin-button,
+input[type="password"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}

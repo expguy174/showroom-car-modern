@@ -14,7 +14,7 @@
         <div>
             <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
             <div class="mt-1 relative">
-                <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus autocomplete="username" placeholder="you@example.com"
+                <input id="email" type="text" name="email" value="{{ old('email') }}" autofocus autocomplete="username" placeholder="you@example.com"
                        class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-4 py-2.5" />
                 <div class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400">
                     <i class="fas fa-envelope"></i>
@@ -32,11 +32,13 @@
                 @endif
             </div>
             <div class="mt-1 relative">
-                <input :type="show ? 'text' : 'password'" id="password" name="password" required autocomplete="current-password" placeholder="••••••••"
+                <input :type="show ? 'text' : 'password'" id="password" name="password" autocomplete="current-password" placeholder="••••••••"
                        class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-4 py-2.5 pr-12" />
-                <button type="button" @click="show = !show" class="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600">
-                    <i :class="show ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
-                </button>
+                <div class="absolute inset-y-0 right-3 flex items-center">
+                    <button type="button" @click="show = !show" class="text-gray-400 hover:text-gray-600 focus:outline-none">
+                        <i :class="show ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                    </button>
+                </div>
             </div>
             <x-input-error :messages="$errors->get('password')" class="mt-2" />
         </div>
@@ -55,97 +57,111 @@
             Đăng nhập
         </button>
         <script>
-            (function(){
-                const form = document.currentScript.closest('form');
-                if (!form) return;
+            // Simple validation - only JavaScript
+            function showError(field, message) {
+                // For password field with icon, use parentNode.parentNode
+                const container = field.parentNode.classList.contains('relative') ? field.parentNode.parentNode : field.parentNode;
+                const existingError = container.querySelector('.error-message');
+                if (existingError) {
+                    existingError.remove();
+                }
                 
-                // Enhanced validation with better UX
-                const setMsg = (el, msg) => { 
-                    if (el) { 
-                        el.setCustomValidity(msg || ''); 
-                        // Show custom error message
-                        if (msg) {
-                            el.classList.add('border-red-500', 'focus:border-red-500', 'focus:ring-red-500');
-                            el.classList.remove('border-gray-300', 'focus:border-indigo-500', 'focus:ring-indigo-500');
-                        } else {
-                            el.classList.remove('border-red-500', 'focus:border-red-500', 'focus:ring-red-500');
-                            el.classList.add('border-gray-300', 'focus:border-indigo-500', 'focus:ring-indigo-500');
-                        }
-                    } 
-                };
+                // Add error styling
+                field.classList.add('border-red-500', 'focus:border-red-500', 'focus:ring-red-500');
+                field.classList.remove('border-gray-300', 'focus:border-indigo-500', 'focus:ring-indigo-500');
                 
-                const email = form.querySelector('#email');
-                const pass = form.querySelector('#password');
+                // Add error message
+                if (message) {
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'error-message text-sm text-red-600 mt-1';
+                    errorDiv.textContent = message;
+                    container.appendChild(errorDiv);
+                }
+            }
+            
+            function clearError(field) {
+                // For password field with icon, use parentNode.parentNode
+                const container = field.parentNode.classList.contains('relative') ? field.parentNode.parentNode : field.parentNode;
+                const existingError = container.querySelector('.error-message');
+                if (existingError) {
+                    existingError.remove();
+                }
                 
-                // Email validation
-                if (email) {
-                    email.addEventListener('invalid', ()=> {
-                        if (email.validity.valueMissing) {
-                            setMsg(email, 'Vui lòng nhập email.');
-                        } else if (email.validity.typeMismatch) {
-                            setMsg(email, 'Email không đúng định dạng.');
-                        }
-                    });
-                    email.addEventListener('input', ()=> {
-                        setMsg(email, '');
-                        // Real-time email format check
-                        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                        if (email.value && !emailRegex.test(email.value)) {
-                            setMsg(email, 'Email không đúng định dạng.');
-                        }
+                // Remove error styling
+                field.classList.remove('border-red-500', 'focus:border-red-500', 'focus:ring-red-500');
+                field.classList.add('border-gray-300', 'focus:border-indigo-500', 'focus:ring-indigo-500');
+            }
+            
+            // Clear errors on input
+            document.addEventListener('DOMContentLoaded', function() {
+                const emailField = document.getElementById('email');
+                const passwordField = document.getElementById('password');
+                
+                if (emailField) {
+                    emailField.addEventListener('input', function() {
+                        clearError(this);
                     });
                 }
                 
-                // Password validation
-                if (pass) {
-                    pass.addEventListener('invalid', ()=> {
-                        if (pass.validity.valueMissing) {
-                            setMsg(pass, 'Vui lòng nhập mật khẩu.');
-                        }
+                if (passwordField) {
+                    passwordField.addEventListener('input', function() {
+                        clearError(this);
                     });
-                    pass.addEventListener('input', ()=> setMsg(pass, ''));
                 }
-                
-                // Form submission with better error handling
-                form.addEventListener('submit', function(e) {
-                    // Clear previous errors
-                    [email, pass].forEach(el => {
-                        if (el) {
-                            el.classList.remove('border-red-500', 'focus:border-red-500', 'focus:ring-red-500');
-                            el.classList.add('border-gray-300', 'focus:border-indigo-500', 'focus:ring-indigo-500');
-                        }
-                    });
-                    
-                    // Check if form is valid
-                    if (!form.checkValidity()) {
-                        e.preventDefault();
-                        // Focus first invalid field
-                        const firstInvalid = form.querySelector(':invalid');
-                        if (firstInvalid) {
-                            firstInvalid.focus();
-                            firstInvalid.dispatchEvent(new Event('invalid'));
-                        }
-                        return false;
-                    }
-                });
-            })();
+            });
             
             // Handle login form submission with loading state
             function handleLoginSubmit(event) {
                 const form = event.target;
                 const submitBtn = form.querySelector('button[type="submit"]');
+                const emailField = form.querySelector('#email');
+                const passwordField = form.querySelector('#password');
                 
-                // Show loading state
+                // Validate fields before showing spinner
+                let hasErrors = false;
+                
+                // Clear previous errors
+                clearError(emailField);
+                clearError(passwordField);
+                
+                // Check email
+                if (!emailField.value.trim()) {
+                    showError(emailField, 'Vui lòng nhập email.');
+                    hasErrors = true;
+                } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailField.value)) {
+                    showError(emailField, 'Email không đúng định dạng.');
+                    hasErrors = true;
+                }
+                
+                // Check password
+                if (!passwordField.value.trim()) {
+                    showError(passwordField, 'Vui lòng nhập mật khẩu.');
+                    hasErrors = true;
+                }
+                
+                // If validation fails, prevent submit and focus first error
+                if (hasErrors) {
+                    event.preventDefault();
+                    // Focus first field with error
+                    if (!emailField.value.trim()) {
+                        emailField.focus();
+                    } else if (!passwordField.value.trim()) {
+                        passwordField.focus();
+                    }
+                    return false;
+                }
+                
+                // Show loading state only if validation passes
                 if (submitBtn) {
                     const originalText = submitBtn.innerHTML;
                     submitBtn.disabled = true;
                     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang đăng nhập...';
                     
-                    // Reset after 10 seconds as fallback
+                    // Reset after 5 seconds as fallback (reduced from 10s)
                     setTimeout(() => {
                         submitBtn.disabled = false;
                         submitBtn.innerHTML = originalText;
-                    }, 10000);
+                    }, 5000);
                 }
                 
                 // Let form submit normally
