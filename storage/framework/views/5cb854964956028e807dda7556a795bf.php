@@ -200,19 +200,41 @@
             function handleLoginSubmit(event) {
                 const form = event.target;
                 const submitBtn = form.querySelector('button[type="submit"]');
+                if (!submitBtn) return true;
+                
+                // Prevent double submit
+                if (submitBtn.dataset.submitting === '1') {
+                    event.preventDefault();
+                    return false;
+                }
+                submitBtn.dataset.submitting = '1';
                 
                 // Show loading state
-                if (submitBtn) {
-                    const originalText = submitBtn.innerHTML;
-                    submitBtn.disabled = true;
-                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang đăng nhập...';
-                    
-                    // Reset after 10 seconds as fallback
-                    setTimeout(() => {
+                const originalText = submitBtn.innerHTML;
+                submitBtn.dataset.originalText = originalText;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang đăng nhập...';
+                
+                // Fast fallback reset if the page doesn't navigate (e.g., validation errors)
+                submitBtn._fallbackTimer && clearTimeout(submitBtn._fallbackTimer);
+                submitBtn._fallbackTimer = setTimeout(() => {
+                    // If still on the same page after 4s, re-enable so it doesn't look stuck
+                    if (document.visibilityState === 'visible') {
                         submitBtn.disabled = false;
-                        submitBtn.innerHTML = originalText;
-                    }, 10000);
-                }
+                        submitBtn.innerHTML = submitBtn.dataset.originalText || originalText;
+                        submitBtn.dataset.submitting = '0';
+                    }
+                }, 4000);
+                
+                // Also reset on pageshow (in case of back/redirect with errors)
+                const resetOnce = () => {
+                    clearTimeout(submitBtn._fallbackTimer);
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = submitBtn.dataset.originalText || originalText;
+                    submitBtn.dataset.submitting = '0';
+                    window.removeEventListener('pageshow', resetOnce);
+                };
+                window.addEventListener('pageshow', resetOnce);
                 
                 // Let form submit normally
                 return true;

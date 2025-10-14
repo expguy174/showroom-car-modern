@@ -1,7 +1,7 @@
 {{-- Table Content Only (for AJAX) --}}
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
     <div class="overflow-x-auto">
-        <table class="w-full">
+        <table class="min-w-full divide-y divide-gray-200" style="table-layout: fixed;">
             <thead class="bg-gray-50 border-b border-gray-200">
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Đơn hàng</th>
@@ -114,7 +114,7 @@
 
     {{-- Pagination --}}
     @if($orders->hasPages())
-    <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
+    <div class="px-6 py-4 border-t border-gray-200">
         <x-admin.pagination :paginator="$orders" />
     </div>
     @endif

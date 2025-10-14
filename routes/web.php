@@ -400,6 +400,15 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::put('/{financeOption}', [\App\Http\Controllers\Admin\FinanceOptionController::class, 'update'])->name('update');
         Route::delete('/{financeOption}', [\App\Http\Controllers\Admin\FinanceOptionController::class, 'destroy'])->name('destroy');
         Route::patch('/{financeOption}/toggle', [\App\Http\Controllers\Admin\FinanceOptionController::class, 'toggleActive'])->name('toggle');
+        Route::post('/{financeOption}/toggle-status', [\App\Http\Controllers\Admin\FinanceOptionController::class, 'toggleStatus'])->name('toggle-status');
+    });
+
+    // Installments
+    Route::prefix('installments')->name('installments.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\InstallmentController::class, 'index'])->name('index');
+        Route::get('/{order}', [\App\Http\Controllers\Admin\InstallmentController::class, 'show'])->name('show');
+        Route::post('/{installment}/mark-as-paid', [\App\Http\Controllers\Admin\InstallmentController::class, 'markAsPaid'])->name('mark-as-paid');
+        Route::post('/{installment}/cancel', [\App\Http\Controllers\Admin\InstallmentController::class, 'cancel'])->name('cancel');
     });
 
     // Reviews

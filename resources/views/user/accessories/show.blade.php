@@ -104,7 +104,7 @@
                 <div class="relative group">
                     <div class="aspect-[3/2] bg-white rounded-3xl shadow-2xl overflow-hidden">
                         <img src="{{ $mainImage }}"
-                         id="main-image"
+                             id="main-image"
                              class="w-full h-full object-cover cursor-zoom-in transition-all duration-500 ease-out hover:scale-110"
                              alt="{{ $accessory->name }}"
                              loading="lazy" decoding="async" width="1200" height="800"
@@ -166,8 +166,8 @@
                                     <div class="aspect-square w-full bg-white rounded-2xl shadow-lg overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 thumbnail-image" 
                                                  data-image="{{ $thumb }}" data-lightbox-src="{{ $thumb }}">
                                         <img src="{{ $thumb }}" alt="{{ $accessory->name }}" class="w-full h-full object-cover hover:scale-110 transition-transform duration-300" loading="lazy" decoding="async" width="300" height="300">
-                                    </div>
-                                    @endforeach
+                    </div>
+                    @endforeach
                                 </div>
                             </div>
                             @endforeach
@@ -238,42 +238,42 @@
                             @if($hasDiscount)
                                 <span class="text-sm lg:text-base text-gray-500 line-through">
                                     <span id="original-price">{{ number_format($baseOriginal, 0, ',', '.') }}</span>₫
-                                </span>
+                            </span>
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-bold">-{{ rtrim(rtrim(number_format($discountPct, 1), '0'), '.') }}%</span>
                             @endif
                             @if($accessory->is_available)
                             <div class="inline-flex items-center px-3 py-1.5 rounded-full bg-green-50 text-green-700 text-sm font-semibold" aria-live="polite">
                                 <i class="fas fa-check-circle mr-2"></i> Còn hàng
-                            </div>
-                            @else
+                        </div>
+                        @else
                             <div class="inline-flex items-center px-3 py-1.5 rounded-full bg-red-50 text-red-700 text-sm font-semibold" aria-live="polite">
                                 <i class="fas fa-times-circle mr-2"></i> Hết hàng
-                            </div>
-                            @endif
+                        </div>
+                        @endif
                         </div>
                     </div>
                 </div>
                 
                 @if($accessory->is_available)
-                <!-- CTA row: full-width equal buttons -->
+                    <!-- CTA row: full-width equal buttons -->
                 <div class="mt-3 grid grid-cols-2 gap-2">
                     @php
                         $__inWishlistAccPage = \App\Helpers\WishlistHelper::isInWishlist('accessory', $accessory->id);
                     @endphp
-                    <button type="button" class="action-btn action-ghost w-full js-wishlist-toggle {{ $__inWishlistAccPage ? 'in-wishlist' : 'not-in-wishlist' }}" aria-label="Yêu thích" title="Yêu thích" aria-pressed="{{ $__inWishlistAccPage ? 'true' : 'false' }}" data-item-type="accessory" data-item-id="{{ $accessory->id }}">
+                        <button type="button" class="action-btn action-ghost w-full js-wishlist-toggle {{ $__inWishlistAccPage ? 'in-wishlist' : 'not-in-wishlist' }}" aria-label="Yêu thích" title="Yêu thích" aria-pressed="{{ $__inWishlistAccPage ? 'true' : 'false' }}" data-item-type="accessory" data-item-id="{{ $accessory->id }}">
                         <i class="fa-heart {{ $__inWishlistAccPage ? 'fas' : 'far' }}"></i><span>Yêu thích</span>
-                    </button>
-                    <form action="{{ route('user.cart.add') }}" method="POST" class="w-full add-to-cart-form" data-item-type="accessory" data-item-id="{{ $accessory->id }}">
-                        @csrf
-                        <input type="hidden" name="item_type" value="accessory">
-                        <input type="hidden" name="item_id" value="{{ $accessory->id }}">
-                        <input type="hidden" name="quantity" value="1">
-                        <button type="submit" class="action-btn action-primary w-full">
-                            <i class="fas fa-cart-plus"></i><span>Thêm vào giỏ</span>
                         </button>
-                    </form>
-                </div>
-                @endif
+                        <form action="{{ route('user.cart.add') }}" method="POST" class="w-full add-to-cart-form" data-item-type="accessory" data-item-id="{{ $accessory->id }}">
+                            @csrf
+                            <input type="hidden" name="item_type" value="accessory">
+                            <input type="hidden" name="item_id" value="{{ $accessory->id }}">
+                            <input type="hidden" name="quantity" value="1">
+                            <button type="submit" class="action-btn action-primary w-full">
+                                <i class="fas fa-cart-plus"></i><span>Thêm vào giỏ</span>
+                            </button>
+                        </form>
+                    </div>
+                    @endif
 
                 <!-- Additional Info Section -->
                 <div class="mt-8 space-y-6">
@@ -287,7 +287,7 @@
                             <div class="text-center">
                                 <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
                                     <i class="fas fa-certificate text-green-600"></i>
-                                </div>
+                </div>
                                 <span class="text-xs text-gray-600">Chính hãng 100%</span>
                             </div>
                             <div class="text-center">

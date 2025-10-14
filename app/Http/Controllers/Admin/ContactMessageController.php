@@ -22,11 +22,16 @@ class ContactMessageController extends Controller
             });
         }
 
-        if ($request->filled('status')) {
+        if ($request->filled('status') && $request->status !== '') {
             $query->where('is_read', $request->status === 'read');
         }
 
         $messages = $query->orderBy('created_at', 'desc')->paginate(20);
+        
+        // Return partial view for AJAX requests
+        if ($request->ajax() || $request->wantsJson()) {
+            return view('admin.contact-messages.partials.table', compact('messages'))->render();
+        }
         
         return view('admin.contact-messages.index', compact('messages'));
     }
@@ -41,17 +46,31 @@ class ContactMessageController extends Controller
         return view('admin.contact-messages.show', compact('contactMessage'));
     }
 
-    public function markAsRead(ContactMessage $contactMessage)
+    public function markAsRead(ContactMessage $contactMessage, Request $request)
     {
-        $contactMessage->update(['is_read' => !$contactMessage->is_read]);
+        $contactMessage->update(['is_read' => true]);
         
-        $status = $contactMessage->is_read ? 'đã đọc' : 'chưa đọc';
-        return redirect()->back()->with('success', "Đã đánh dấu {$status}");
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã đánh dấu đã đọc!'
+            ]);
+        }
+        
+        return redirect()->back()->with('success', 'Đã đánh dấu đã đọc!');
     }
 
-    public function destroy(ContactMessage $contactMessage)
+    public function destroy(ContactMessage $contactMessage, Request $request)
     {
         $contactMessage->delete();
+        
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã xóa tin nhắn thành công!'
+            ]);
+        }
+        
         return redirect()->route('admin.contact-messages.index')
             ->with('success', 'Đã xóa tin nhắn thành công!');
     }

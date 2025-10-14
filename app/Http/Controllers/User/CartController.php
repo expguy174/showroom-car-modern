@@ -541,7 +541,8 @@ class CartController extends Controller
                 $request->merge(['shipping_address' => trim(implode(', ', array_filter($request->input('shipping_address'))))]);
             }
 
-            $validated = $request->validate([
+            // Build validation rules dynamically based on finance option
+            $rules = [
                 'phone' => 'required|string|regex:/^[0-9+\-\s()]+$/|min:10|max:15',
                 'name' => 'required|string|max:255',
                 'email' => 'nullable|email|max:255',
@@ -555,17 +556,51 @@ class CartController extends Controller
                 'payment_method_id' => 'required|exists:payment_methods,id',
                 'payment_type' => 'required|in:full,finance',
                 'finance_option_id' => 'required_if:payment_type,finance|exists:finance_options,id',
-                'down_payment_percent' => 'required_if:payment_type,finance|numeric|min:20|max:80',
-                'tenure_months' => 'required_if:payment_type,finance|integer|min:3|max:96',
                 'terms_accepted' => 'required|accepted',
-            ], [
+            ];
+
+            $messages = [
                 'phone.required' => 'Vui lòng nhập số điện thoại.',
                 'phone.regex' => 'Số điện thoại không hợp lệ.',
                 'phone.min' => 'Số điện thoại phải có ít nhất 10 ký tự.',
                 'phone.max' => 'Số điện thoại không được vượt quá 15 ký tự.',
                 'payment_method_id.required' => 'Vui lòng chọn phương thức thanh toán',
                 'terms_accepted.accepted' => 'Bạn phải đồng ý với điều khoản sử dụng',
-            ]);
+            ];
+
+            // Dynamic validation for finance options
+            $financeOption = null;
+            if ($request->payment_type === 'finance' && $request->finance_option_id) {
+                $financeOption = \App\Models\FinanceOption::where('id', $request->finance_option_id)
+                    ->where('is_active', true)
+                    ->first();
+
+                if (!$financeOption) {
+                    return back()->with('error', 'Gói vay không hợp lệ hoặc đã ngừng hoạt động')->withInput();
+                }
+
+                // Add dynamic rules based on finance option settings
+                $rules['down_payment_percent'] = [
+                    'required',
+                    'numeric',
+                    'min:' . $financeOption->min_down_payment,
+                    'max:80',
+                ];
+                $rules['tenure_months'] = [
+                    'required',
+                    'integer',
+                    'min:' . $financeOption->min_tenure,
+                    'max:' . $financeOption->max_tenure,
+                ];
+
+                $messages['down_payment_percent.min'] = "Trả trước tối thiểu {$financeOption->min_down_payment}% cho gói vay này.";
+                $messages['down_payment_percent.required'] = 'Vui lòng nhập tỷ lệ trả trước.';
+                $messages['tenure_months.min'] = "Kỳ hạn tối thiểu {$financeOption->min_tenure} tháng.";
+                $messages['tenure_months.max'] = "Kỳ hạn tối đa {$financeOption->max_tenure} tháng.";
+                $messages['tenure_months.required'] = 'Vui lòng nhập số tháng trả góp.';
+            }
+
+            $validated = $request->validate($rules, $messages);
             
             // Debug: Log validated data
             \Log::info('Validated checkout data:', $validated);
@@ -896,6 +931,21 @@ class CartController extends Controller
                 $financeableAmount = $total - $discountTotal; // Product value after discount
                 $downPaymentAmount = round($financeableAmount * ($downPaymentPercent / 100));
                 $loanAmount = $financeableAmount - $downPaymentAmount;
+                
+                // Validate loan amount against finance option limits
+                if ($loanAmount < $financeOption->min_loan_amount) {
+                    return back()->with('error', 
+                        "Số tiền vay tối thiểu cho gói này là " . number_format($financeOption->min_loan_amount) . " đ. " .
+                        "Vui lòng giảm tỷ lệ trả trước hoặc chọn gói vay khác."
+                    )->withInput();
+                }
+                
+                if ($loanAmount > $financeOption->max_loan_amount) {
+                    return back()->with('error', 
+                        "Số tiền vay tối đa cho gói này là " . number_format($financeOption->max_loan_amount) . " đ. " .
+                        "Vui lòng tăng tỷ lệ trả trước hoặc chọn gói vay khác."
+                    )->withInput();
+                }
                 
                 // Calculate monthly payment
                 $monthlyRate = ($financeOption->interest_rate / 100) / 12;

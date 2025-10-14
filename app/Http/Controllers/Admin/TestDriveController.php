@@ -43,7 +43,32 @@ class TestDriveController extends Controller
             'status' => 'required|in:' . implode(',', \App\Models\TestDrive::STATUSES)
         ]);
 
-        $testDrive->update(['status' => $request->status]);
+        $oldStatus = $testDrive->status;
+        $newStatus = $request->status;
+        
+        $testDrive->update(['status' => $newStatus]);
+
+        // Send notification to user
+        if ($testDrive->user_id && $oldStatus !== $newStatus) {
+            $statusLabels = [
+                'pending' => 'Chờ xử lý',
+                'confirmed' => 'Đã xác nhận',
+                'completed' => 'Hoàn thành',
+                'cancelled' => 'Đã hủy'
+            ];
+
+            $carName = $testDrive->carVariant 
+                ? "{$testDrive->carVariant->carModel->carBrand->name} {$testDrive->carVariant->carModel->name}"
+                : 'N/A';
+
+            \App\Models\Notification::create([
+                'user_id' => $testDrive->user_id,
+                'type' => 'test_drive',
+                'title' => "Lịch lái thử {$carName}",
+                'message' => "Trạng thái lịch lái thử đã cập nhật: {$statusLabels[$newStatus]}. Ngày hẹn: {$testDrive->preferred_date->format('d/m/Y H:i')}",
+                'is_read' => false,
+            ]);
+        }
 
         return redirect()->back()->with('success', 'Trạng thái đã được cập nhật!');
     }

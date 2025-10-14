@@ -126,9 +126,7 @@ use Illuminate\Support\Str;
         base-url="{{ route('admin.carbrands.index') }}"
         callback-name="loadCarBrands"
         after-load-callback="initializeEventListeners">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200">
-            @include('admin.carbrands.partials.table', ['carbrands' => $carbrands])
-        </div>
+        @include('admin.carbrands.partials.table', ['carbrands' => $carbrands])
     </x-admin.ajax-table>
 </div>
 

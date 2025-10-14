@@ -49,6 +49,14 @@
                     <div class="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center">
                         <i class="fas fa-calendar-alt text-teal-600 text-sm"></i>
                     </div>
+                @elseif($log->action == 'installment_paid')
+                    <div class="w-8 h-8 bg-cyan-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-money-check-alt text-cyan-600 text-sm"></i>
+                    </div>
+                @elseif($log->action == 'installment_completed')
+                    <div class="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-trophy text-emerald-600 text-sm"></i>
+                    </div>
                 @else
                     <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
                         <i class="fas fa-info text-gray-600 text-sm"></i>
@@ -83,6 +91,10 @@
                             Hoàn tiền
                         @elseif($log->action == 'installments_created')
                             Tạo lịch trả góp
+                        @elseif($log->action == 'installment_paid')
+                            Thanh toán kỳ trả góp
+                        @elseif($log->action == 'installment_completed')
+                            Hoàn thành trả góp
                         @else
                             {{ ucfirst(str_replace('_', ' ', $log->action)) }}
                         @endif
@@ -109,12 +121,13 @@
                             $paymentStatusTranslations = [
                                 'pending' => 'Chờ thanh toán',
                                 'completed' => 'Đã thanh toán',
+                                'partial' => 'Thanh toán một phần',
                                 'failed' => 'Thất bại',
                                 'refunded' => 'Đã hoàn tiền'
                             ];
                             
-                            // Use payment translations if this is a payment_status_changed action
-                            $translations = $log->action === 'payment_status_changed' 
+                            // Use payment translations if this is a payment-related action
+                            $translations = in_array($log->action, ['payment_status_changed', 'payment_refunded'])
                                 ? $paymentStatusTranslations 
                                 : $orderStatusTranslations;
                             
@@ -164,11 +177,6 @@
                             <span class="font-medium">{{ $log->details['refund_type'] === 'full' ? 'Hoàn toàn bộ' : 'Hoàn một phần' }}</span>
                         </div>
                         @endif
-                        @if(isset($log->details['refund_id']))
-                        <div class="mt-1 text-xs text-gray-500">
-                            Refund ID: #{{ $log->details['refund_id'] }}
-                        </div>
-                        @endif
                     </div>
                     @endif
                     
@@ -183,6 +191,26 @@
                                 <span class="text-gray-600">Hàng tháng:</span>
                                 <span class="font-medium text-teal-600">{{ number_format($log->details['monthly_amount'], 0, ',', '.') }} VNĐ</span>
                             </div>
+                        </div>
+                    </div>
+                    @endif
+                    
+                    @if(($log->action === 'installment_paid' || $log->action === 'installment_completed') && isset($log->details['installment_number']))
+                    <div class="mt-2 p-3 bg-cyan-50 border border-cyan-200 rounded">
+                        <div class="flex items-center justify-between text-xs">
+                            <div class="flex items-center gap-2">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                    Kỳ {{ $log->details['installment_number'] }}
+                                </span>
+                                @if(isset($log->details['amount']))
+                                <span class="font-medium text-cyan-700">{{ number_format($log->details['amount'], 0, ',', '.') }} VNĐ</span>
+                                @endif
+                            </div>
+                            @if($log->action === 'installment_completed')
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                                <i class="fas fa-trophy mr-1"></i> Hoàn thành toàn bộ
+                            </span>
+                            @endif
                         </div>
                     </div>
                     @endif

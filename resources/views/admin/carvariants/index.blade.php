@@ -156,9 +156,7 @@
         base-url="{{ route('admin.carvariants.index') }}"
         callback-name="loadCarVariants"
         after-load-callback="initializeEventListeners">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200">
-            @include('admin.carvariants.partials.table', ['carVariants' => $carVariants])
-        </div>
+        @include('admin.carvariants.partials.table', ['carVariants' => $carVariants])
     </x-admin.ajax-table>
 </div>
 

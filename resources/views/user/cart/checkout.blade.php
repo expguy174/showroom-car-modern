@@ -134,7 +134,7 @@
                         <!-- Finance Options (Hidden by default) -->
                         <div id="finance-options-section" class="pt-2 hidden">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Gói tài chính</label>
-                            <div class="space-y-3 mb-4">
+                            <div class="space-y-3 mb-4 max-h-96 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                                 @foreach(($financeOptions ?? []) as $fo)
                                 <label class="relative flex items-start gap-3 p-4 rounded-lg border border-gray-200 hover:border-indigo-400 cursor-pointer">
                                     <input type="radio" name="finance_option_id" value="{{ $fo->id }}" 

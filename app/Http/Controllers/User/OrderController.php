@@ -68,11 +68,27 @@ class OrderController extends Controller
             'installments' => function($query) {
                 $query->orderBy('installment_number');
             },
+            'installments.paymentTransaction',
             'refunds' => function($query) {
                 $query->orderBy('created_at', 'desc');
             }
         ]);
-        return view('user.orders.show', compact('order'));
+        
+        // Calculate installment stats if this is a finance order
+        $installmentStats = null;
+        if ($order->finance_option_id && $order->installments->count() > 0) {
+            $installmentStats = [
+                'total_installments' => $order->installments->count(),
+                'paid_count' => $order->installments->where('status', 'paid')->count(),
+                'pending_count' => $order->installments->where('status', 'pending')->count(),
+                'overdue_count' => $order->installments->where('status', 'overdue')->count(),
+                'total_paid' => $order->installments->where('status', 'paid')->sum('amount'),
+                'total_remaining' => $order->installments->whereIn('status', ['pending', 'overdue'])->sum('amount'),
+                'next_payment' => $order->installments->where('status', 'pending')->sortBy('due_date')->first(),
+            ];
+        }
+        
+        return view('user.orders.show', compact('order', 'installmentStats'));
     }
 
     public function store(Request $request)

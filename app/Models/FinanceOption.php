@@ -11,11 +11,15 @@ class FinanceOption extends Model
 
     protected $fillable = [
         'name',
+        'code',
         'bank_name',
+        'description',
         'interest_rate',
+        'processing_fee',
         'min_tenure',
         'max_tenure',
         'min_down_payment',
+        'min_loan_amount',
         'max_loan_amount',
         'requirements',
         'is_active',
@@ -24,12 +28,13 @@ class FinanceOption extends Model
 
     protected $casts = [
         'interest_rate' => 'decimal:2',
+        'processing_fee' => 'integer',
         'min_tenure' => 'integer',
         'max_tenure' => 'integer',
         'min_down_payment' => 'decimal:2',
-        'max_loan_amount' => 'decimal:2',
+        'min_loan_amount' => 'integer',
+        'max_loan_amount' => 'integer',
         'is_active' => 'boolean',
-        'requirements' => 'json',
         'sort_order' => 'integer',
     ];
 

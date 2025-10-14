@@ -661,7 +661,7 @@ class ServiceAppointmentController extends Controller
         
         // Show summary info instead of predefined slots
         $totalAppointments = $existingAppointments->count();
-        $availableSlots[] = [
+                $availableSlots[] = [
             'info' => 'Giờ làm việc: 09:00 - 16:59',
             'total_appointments' => $totalAppointments,
             'existing_times' => $appointmentTimes->toArray()

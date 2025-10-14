@@ -12,9 +12,11 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Arr;
 use App\Services\NotificationService;
+use App\Traits\SendsOrderNotifications;
 
 class OrderController extends Controller
 {
+    use SendsOrderNotifications;
     public function index(Request $request)
     {
         $query = Order::with(['user.userProfile', 'items']);
@@ -178,10 +180,10 @@ class OrderController extends Controller
         // Update order status to cancelled
         $order->update(['status' => 'cancelled']);
 
-        // Create detailed order log
+        // Log cancellation with reason
         $logMessage = $oldStatus === 'shipping' 
-            ? 'Admin hủy đơn hàng đang giao (đã liên hệ vận chuyển)'
-            : 'Admin hủy đơn hàng';
+            ? 'Hủy đơn hàng đang giao (đã xác nhận liên hệ vận chuyển)' 
+            : 'Hủy đơn hàng';
 
         OrderLog::create([
             'order_id' => $order->id,
@@ -197,23 +199,14 @@ class OrderController extends Controller
                 'was_shipping' => $oldStatus === 'shipping',
                 'tracking_number' => $order->tracking_number,
             ],
-            'ip_address' => request()->ip(),
-            'user_agent' => request()->userAgent(),
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
         ]);
 
-        // Send notification to user
+        // Notify customer about cancellation
         try {
             if ($order->user_id) {
-                $notificationMessage = $oldStatus === 'shipping'
-                    ? 'Đơn hàng ' . ($order->order_number ?? '#'.$order->id) . ' đang giao đã bị hủy. Lý do: ' . $validated['reason'] . '. Chúng tôi sẽ liên hệ với bạn để hoàn tiền.'
-                    : 'Đơn hàng ' . ($order->order_number ?? '#'.$order->id) . ' đã bị hủy. Lý do: ' . $validated['reason'];
-                
-                app(\App\Services\NotificationService::class)->send(
-                    $order->user_id,
-                    'order_status',
-                    'Đơn hàng đã bị hủy',
-                    $notificationMessage
-                );
+                $this->notifyOrderCancelled($order, $validated['reason']);
             }
         } catch (\Throwable $e) {
             Log::error('Failed to send cancellation notification', [
@@ -311,23 +304,14 @@ class OrderController extends Controller
         // Send notification to user
         try {
             if ($order->user_id) {
-                $title = match($newStatus) {
-                    'confirmed' => 'Đơn hàng đã xác nhận',
-                    'shipping' => 'Đơn hàng đang giao',
-                    'delivered' => 'Đơn hàng đã giao thành công',
-                    'cancelled' => 'Đơn hàng đã bị hủy',
-                    default => 'Cập nhật đơn hàng',
-                };
-                
-                app(NotificationService::class)->send(
-                    $order->user_id,
-                    'order_status',
-                    $title,
-                    'Đơn hàng ' . ($order->order_number ?? '#'.$order->id) . ' đã chuyển sang trạng thái: ' . $title
-                );
+                $this->notifyOrderStatusChanged($order, $oldStatus, $newStatus);
             }
         } catch (\Throwable $e) {
             // Log error but don't fail the status update
+            Log::error('Failed to send order status notification', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage()
+            ]);
         }
 
         $statusLabels = [
@@ -368,12 +352,7 @@ class OrderController extends Controller
         // Notify user
         try {
             if ($order->user_id) {
-                app(\App\Services\NotificationService::class)->send(
-                    $order->user_id,
-                    'order_status',
-                    'Cập nhật mã vận đơn',
-                    'Đơn hàng ' . ($order->order_number ?? '#'.$order->id) . ' có mã vận đơn: ' . $validated['tracking_number']
-                );
+                $this->notifyTrackingUpdated($order, $validated['tracking_number']);
             }
         } catch (\Throwable $e) {
             Log::error('Failed to send tracking notification', [
@@ -489,29 +468,23 @@ class OrderController extends Controller
             'order_id' => $order->id,
             'user_id' => Auth::id(),
             'action' => 'payment_status_changed',
-            'message' => 'Cập nhật trạng thái thanh toán',
+            'message' => 'Thay đổi trạng thái thanh toán',
             'details' => [
                 'from' => $oldStatus,
                 'to' => $newStatus,
-                'paid_at' => $newStatus === 'completed' ? $order->paid_at : null,
-                'updated_by' => Auth::user()->userProfile->name ?? Auth::user()->email,
+                'paid_at' => $newStatus === 'completed' ? now() : null,
             ],
-            'ip_address' => request()->ip(),
-            'user_agent' => request()->userAgent(),
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
         ]);
 
-        // Notify user if payment completed
+        // Send notification to user
         try {
-            if ($order->user_id && $newStatus === 'completed') {
-                app(\App\Services\NotificationService::class)->send(
-                    $order->user_id,
-                    'order_payment',
-                    'Thanh toán thành công',
-                    'Đơn hàng ' . ($order->order_number ?? '#'.$order->id) . ' đã được thanh toán thành công.'
-                );
+            if ($order->user_id) {
+                $this->notifyPaymentStatusChanged($order, $oldStatus, $newStatus);
             }
         } catch (\Throwable $e) {
-            Log::error('Failed to send payment notification', [
+            Log::error('Failed to send payment status notification', [
                 'order_id' => $order->id,
                 'error' => $e->getMessage()
             ]);
@@ -671,6 +644,18 @@ class OrderController extends Controller
             'ip_address' => request()->ip(),
             'user_agent' => request()->userAgent(),
         ]);
+
+        // Notify user about installments created
+        try {
+            if ($order->user_id) {
+                $this->notifyInstallmentsCreated($order, $tenureMonths, $monthlyAmount);
+            }
+        } catch (\Throwable $e) {
+            Log::error('Failed to send installments created notification', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 
     /**

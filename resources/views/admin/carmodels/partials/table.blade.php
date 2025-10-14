@@ -1,5 +1,6 @@
-<div class="overflow-x-auto">
-    <table class="min-w-full divide-y divide-gray-200" style="table-layout: fixed;">
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200" style="table-layout: fixed;">
         <thead class="bg-gray-50">
             <tr>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 20%;">Dòng xe</th>
@@ -15,13 +16,23 @@
             <tr class="hover:bg-gray-50 transition-colors">
                 <td class="px-6 py-4 whitespace-nowrap">
                     <div class="flex items-center">
-                        <div class="flex-shrink-0 h-16 w-16">
-                            <img class="h-16 w-16 rounded-lg object-cover border border-gray-200 bg-white p-1 shadow-sm" 
+                        <div class="flex-shrink-0 h-12 w-12">
+                            <img class="h-12 w-12 rounded-lg object-cover border border-gray-200" 
                                  src="{{ $model->image_url }}" alt="{{ $model->name }}">
                         </div>
                         <div class="ml-4 min-w-0 flex-1">
                             <div class="text-sm font-medium text-gray-900 truncate">{{ $model->name }}</div>
-                            <div class="text-sm text-gray-500 truncate">{{ $model->slug }}</div>
+                            @if($model->production_start_year || $model->production_end_year)
+                            <div class="text-xs text-gray-500 mt-1">
+                                @if($model->production_start_year && $model->production_end_year)
+                                    {{ $model->production_start_year }} - {{ $model->production_end_year }}
+                                @elseif($model->production_start_year)
+                                    {{ $model->production_start_year }} - Nay
+                                @else
+                                    {{ $model->production_end_year }}
+                                @endif
+                            </div>
+                            @endif
                         </div>
                     </div>
                 </td>
@@ -186,11 +197,12 @@
             @endforelse
         </tbody>
     </table>
-</div>
+    </div>
 
-{{-- Pagination --}}
-@if($carModels->hasPages())
-<div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
-    <x-admin.pagination :paginator="$carModels->appends(request()->query())" />
+    {{-- Pagination --}}
+    @if($carModels->hasPages())
+    <div class="px-6 py-4 border-t border-gray-200">
+        <x-admin.pagination :paginator="$carModels" />
+    </div>
+    @endif
 </div>
-@endif

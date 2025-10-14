@@ -603,18 +603,38 @@
                     {{-- Installments Status --}}
                     <div class="pt-3 border-t border-gray-200">
                         <div class="flex items-center justify-between">
-                            <div>
+                            <div class="flex-1">
                                 <span class="font-medium text-gray-700">Lịch trả góp:</span>
                                 @if($order->installments->count() > 0)
-                                <p class="text-green-600 text-sm mt-1">
-                                    <i class="fas fa-check-circle mr-1"></i>
-                                    Đã tạo {{ $order->installments->count() }} kỳ
-                                </p>
+                                    @php
+                                        $totalInstallments = $order->installments->count();
+                                        $paidInstallments = $order->installments->where('status', 'paid')->count();
+                                        $isCompleted = $paidInstallments === $totalInstallments;
+                                    @endphp
+                                    <div class="mt-2 space-y-2">
+                                        <div class="flex items-center gap-2">
+                                            @if($isCompleted)
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                                                    <i class="fas fa-check-double mr-1"></i>
+                                                    Hoàn thành {{ $totalInstallments }}/{{ $totalInstallments }} kỳ
+                                                </span>
+                                            @else
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+                                                    <i class="fas fa-clock mr-1"></i>
+                                                    Đã trả {{ $paidInstallments }}/{{ $totalInstallments }} kỳ
+                                                </span>
+                                            @endif
+                                        </div>
+                                        {{-- Progress Bar --}}
+                                        <div class="w-full bg-gray-200 rounded-full h-2">
+                                            <div class="bg-green-600 h-2 rounded-full transition-all" style="width: {{ $totalInstallments > 0 ? ($paidInstallments / $totalInstallments * 100) : 0 }}%"></div>
+                                        </div>
+                                    </div>
                                 @else
-                                <p class="text-yellow-600 text-sm mt-1">
-                                    <i class="fas fa-exclamation-triangle mr-1"></i>
-                                    Chưa tạo lịch
-                                </p>
+                                    <p class="text-yellow-600 text-sm mt-1">
+                                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                                        Chưa tạo lịch
+                                    </p>
                                 @endif
                             </div>
                             @if($order->installments->count() == 0)
@@ -628,6 +648,17 @@
                             @endif
                         </div>
                     </div>
+                    
+                    {{-- View Installments Details --}}
+                    @if($order->installments->count() > 0)
+                    <div class="pt-3 border-t border-gray-200">
+                        <a href="{{ route('admin.installments.show', $order->id) }}" 
+                           class="inline-flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition shadow-sm">
+                            <i class="fas fa-calendar-alt mr-2"></i>
+                            Xem chi tiết lịch trả góp
+                        </a>
+                    </div>
+                    @endif
                 </div>
             </div>
             @endif
@@ -645,6 +676,119 @@
         </div>
     </div>
 </div>
+
+
+{{-- Mark as Paid Modal --}}
+<div id="markAsPaidModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4">
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-bold text-gray-900">Xác nhận thanh toán kỳ trả góp</h3>
+                <button onclick="document.getElementById('markAsPaidModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <form method="POST" id="markAsPaidForm" onsubmit="return handleMarkAsPaid(event)">
+                @csrf
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Phương thức thanh toán <span class="text-red-500">*</span>
+                    </label>
+                    <select name="payment_method_id" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" required>
+                        <option value="">Chọn phương thức</option>
+                        @foreach(\App\Models\PaymentMethod::where('is_active', true)->get() as $method)
+                            <option value="{{ $method->id }}">{{ $method->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Ngày thanh toán <span class="text-red-500">*</span>
+                    </label>
+                    <input type="date" 
+                           name="payment_date" 
+                           value="{{ date('Y-m-d') }}"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                           required>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Ghi chú</label>
+                    <textarea name="notes" 
+                              rows="3"
+                              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                              placeholder="Ghi chú về giao dịch (tùy chọn)"></textarea>
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="button" 
+                            onclick="document.getElementById('markAsPaidModal').classList.add('hidden')"
+                            class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
+                        Hủy
+                    </button>
+                    <button type="submit" 
+                            class="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition">
+                        <i class="fas fa-check mr-2"></i>
+                        Xác nhận thanh toán
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function showMarkAsPaidModal(installmentId) {
+    const form = document.getElementById('markAsPaidForm');
+    form.action = `/admin/installments/${installmentId}/mark-as-paid`;
+    
+    document.getElementById('markAsPaidModal').classList.remove('hidden');
+}
+
+function handleMarkAsPaid(event) {
+    event.preventDefault();
+    const form = event.target;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Đang xử lý...';
+    
+    fetch(form.action, {
+        method: 'POST',
+        body: new FormData(form),
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (window.showMessage) {
+                window.showMessage(data.message, 'success');
+            }
+            document.getElementById('markAsPaidModal').classList.add('hidden');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            throw new Error(data.message || 'Có lỗi xảy ra');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        if (window.showMessage) {
+            window.showMessage(error.message || 'Có lỗi xảy ra khi xác nhận thanh toán', 'error');
+        }
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    });
+    
+    return false;
+}
+</script>
 
 {{-- Refund Modal --}}
 <div id="refundModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">

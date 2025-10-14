@@ -160,6 +160,11 @@
                     </a>
                     
                     @if(in_array($role, ['admin', 'manager']))
+                    <a href="{{ route('admin.installments.index') }}" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors {{ request()->routeIs('admin.installments.*') ? 'bg-blue-100 text-blue-700 border-r-2 border-blue-500' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
+                        <i class="fas fa-calendar-check mr-3 w-4 text-center {{ request()->routeIs('admin.installments.*') ? 'text-blue-600' : 'text-gray-500' }}"></i>
+                        <span>Lịch trả góp</span>
+                    </a>
+                    
                     <a href="{{ route('admin.finance-options.index') }}" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors {{ request()->routeIs('admin.finance-options.*') ? 'bg-blue-100 text-blue-700 border-r-2 border-blue-500' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
                         <i class="fas fa-calculator mr-3 w-4 text-center {{ request()->routeIs('admin.finance-options.*') ? 'text-blue-600' : 'text-gray-500' }}"></i>
                         <span>Gói trả góp</span>

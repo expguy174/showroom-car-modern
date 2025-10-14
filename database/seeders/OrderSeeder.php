@@ -58,7 +58,23 @@ class OrderSeeder extends Seeder
             
             if ($isInstallment && $financeOptions->isNotEmpty()) {
                 $financeOption = $financeOptions->random();
-                $tenureMonths = [12, 24, 36, 48][rand(0,3)];
+                
+                // Pick tenure within the finance option's min/max range
+                $minTenure = (int) $financeOption->min_tenure;
+                $maxTenure = (int) $financeOption->max_tenure;
+                
+                // Common tenure options: 6, 12, 18, 24, 36, 48, 60, 72
+                $commonTenures = [6, 12, 18, 24, 36, 48, 60, 72];
+                $validTenures = array_filter($commonTenures, function($t) use ($minTenure, $maxTenure) {
+                    return $t >= $minTenure && $t <= $maxTenure;
+                });
+                
+                // If no common tenure fits, pick a random value in range
+                if (empty($validTenures)) {
+                    $tenureMonths = rand($minTenure, $maxTenure);
+                } else {
+                    $tenureMonths = $validTenures[array_rand($validTenures)];
+                }
             }
             
             // Get addresses
@@ -219,6 +235,118 @@ class OrderSeeder extends Seeder
                 'monthly_payment_amount' => $monthlyPayment,
             ]);
         }
+        
+        // Create specific example orders for testing tenure variations
+        $this->createExampleInstallmentOrders($users, $variants, $paymentMethods, $financeOptions);
+    }
+    
+    /**
+     * Create example orders with specific tenure configurations
+     */
+    private function createExampleInstallmentOrders($users, $variants, $paymentMethods, $financeOptions)
+    {
+        if ($users->isEmpty() || $variants->isEmpty() || $paymentMethods->isEmpty() || $financeOptions->isEmpty()) {
+            return;
+        }
+        
+        // Example 1: Gói 12 tháng (min=6, max=12) với tenure = 6 tháng
+        $finance12M = $financeOptions->where('code', 'FIN-12M')->first();
+        if ($finance12M) {
+            $this->createInstallmentOrder($users->random(), $variants->random(), $paymentMethods->random(), $finance12M, 6, 'ORD-' . date('Ymd') . '-EX01');
+        }
+        
+        // Example 2: Gói 12 tháng với tenure = 12 tháng
+        if ($finance12M) {
+            $this->createInstallmentOrder($users->random(), $variants->random(), $paymentMethods->random(), $finance12M, 12, 'ORD-' . date('Ymd') . '-EX02');
+        }
+        
+        // Example 3: Gói 36 tháng với tenure = 18 tháng
+        $finance36M = $financeOptions->where('code', 'FIN-36M')->first();
+        if ($finance36M) {
+            $this->createInstallmentOrder($users->random(), $variants->random(), $paymentMethods->random(), $finance36M, 18, 'ORD-' . date('Ymd') . '-EX03');
+        }
+    }
+    
+    /**
+     * Create a single installment order with specific configuration
+     */
+    private function createInstallmentOrder($user, $variant, $paymentMethod, $financeOption, $tenureMonths, $orderNumber)
+    {
+        $userAddress = $user->addresses()->first();
+        $shippingFee = 30000;
+        
+        $order = Order::create([
+            'order_number' => $orderNumber,
+            'user_id' => $user->id,
+            'total_price' => 0,
+            'subtotal' => 0,
+            'discount_total' => 0,
+            'tax_total' => 0,
+            'shipping_fee' => $shippingFee,
+            'grand_total' => 0,
+            'note' => "Đơn hàng mẫu: Gói {$financeOption->name}, trả trong {$tenureMonths} tháng",
+            'payment_method_id' => $paymentMethod->id,
+            'finance_option_id' => $financeOption->id,
+            'tenure_months' => $tenureMonths,
+            'payment_status' => 'pending',
+            'status' => 'confirmed',
+            'billing_address_id' => $userAddress?->id,
+            'shipping_address_id' => $userAddress?->id,
+            'shipping_method' => 'standard',
+            'tax_rate' => 0.1000,
+        ]);
+        
+        // Add order item
+        $variantColor = $variant->colors()->where('is_active', true)->inRandomOrder()->first();
+        $colorPrice = $variantColor?->price_adjustment ?? 0;
+        $finalPrice = $variant->current_price + $colorPrice;
+        
+        $metadata = [
+            'color' => $variantColor ? [
+                'id' => $variantColor->id,
+                'name' => $variantColor->color_name,
+                'hex' => $variantColor->hex_code,
+                'price_adjustment' => $colorPrice,
+            ] : null,
+            'base_price' => $variant->current_price,
+            'color_price' => $colorPrice,
+            'final_price' => $finalPrice,
+        ];
+        
+        OrderItem::create([
+            'order_id' => $order->id,
+            'item_type' => 'car_variant',
+            'item_id' => $variant->id,
+            'color_id' => $variantColor?->id,
+            'item_name' => $variant->name . ($variantColor ? ' - ' . $variantColor->color_name : ''),
+            'item_sku' => $variant->sku,
+            'item_metadata' => json_encode($metadata),
+            'quantity' => 1,
+            'price' => $finalPrice,
+            'tax_amount' => 0,
+            'discount_amount' => 0,
+            'line_total' => $finalPrice,
+        ]);
+        
+        // Calculate totals
+        $subtotal = $finalPrice;
+        $taxTotal = round($subtotal * 0.1, 2);
+        $totalPrice = $subtotal + $taxTotal + $shippingFee;
+        
+        // Calculate finance amounts
+        $downPaymentPercent = $financeOption->min_down_payment / 100;
+        $downPayment = round($totalPrice * $downPaymentPercent, 2);
+        $remainingAmount = $totalPrice - $downPayment;
+        $monthlyPayment = round($remainingAmount / $tenureMonths, 2);
+        
+        $order->update([
+            'subtotal' => $subtotal,
+            'tax_total' => $taxTotal,
+            'total_price' => $totalPrice,
+            'grand_total' => $totalPrice,
+            'down_payment_amount' => $downPayment,
+            'monthly_payment_amount' => $monthlyPayment,
+        ]);
     }
 }
 

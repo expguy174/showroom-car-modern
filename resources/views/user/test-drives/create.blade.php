@@ -18,7 +18,7 @@
 		<div class="lg:col-span-2">
 			<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
 				<form method="POST" action="{{ route('test-drives.book') }}" id="testdrive-create-form" novalidate>
-					@csrf
+				@csrf
 					<h2 class="text-xl font-bold text-gray-900 mb-6">Thông tin đặt lịch</h2>
 					
 					<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -89,8 +89,8 @@
 						<i class="fas fa-check"></i> Xác nhận đặt lịch
 					</button>
 				</div>
-					</div>
-				</form>
+				</div>
+			</form>
 			</div>
 		</div>
 		<div class="space-y-6">
@@ -369,8 +369,8 @@
     } catch {
       out.innerHTML = '';
       if (typeof window.showMessage === 'function') window.showMessage('Không thể kiểm tra slot. Vui lòng thử lại.', 'error');
-    }
-  });
+		}
+	});
 })();
 </script>
 @endsection

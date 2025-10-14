@@ -3,118 +3,249 @@
 @section('title', 'Quản lý Liên hệ')
 
 @section('content')
+{{-- Flash Messages Component --}}
+<x-admin.flash-messages 
+    :show-icons="true"
+    :dismissible="true"
+    position="top-right"
+    :auto-hide="5000" />
+
 <div class="space-y-6">
-    {{-- Header --}}
-    <div>
-        <h1 class="text-2xl font-bold text-gray-900">Tin nhắn Liên hệ</h1>
-        <p class="text-sm text-gray-600 mt-1">Quản lý tin nhắn từ khách hàng</p>
+    {{-- Page Header --}}
+    <x-admin.page-header 
+        title="Tin nhắn Liên hệ"
+        description="Quản lý tin nhắn từ khách hàng"
+        icon="fas fa-envelope">
+    </x-admin.page-header>
+
+    {{-- Stats Cards --}}
+    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 mb-6">
+        <x-admin.stats-card 
+            title="Tổng tin nhắn"
+            :value="$messages->total()"
+            icon="fas fa-envelope"
+            color="blue"
+            description="Tất cả tin nhắn"
+            dataStat="total" />
+            
+        <x-admin.stats-card 
+            title="Chưa đọc"
+            :value="\App\Models\ContactMessage::where('is_read', false)->count()"
+            icon="fas fa-envelope"
+            color="orange"
+            description="Tin nhắn chưa xử lý"
+            dataStat="unread" />
+            
+        <x-admin.stats-card 
+            title="Đã đọc"
+            :value="\App\Models\ContactMessage::where('is_read', true)->count()"
+            icon="fas fa-envelope-open"
+            color="gray"
+            description="Đã xử lý" />
     </div>
 
     {{-- Filters --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-        <form method="GET" class="flex gap-3">
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="Tìm theo tên, email, tiêu đề..." class="flex-1 rounded-lg border-gray-300">
-            <select name="status" class="rounded-lg border-gray-300">
-                <option value="">Tất cả</option>
-                <option value="unread" {{ request('status') === 'unread' ? 'selected' : '' }}>Chưa đọc</option>
-                <option value="read" {{ request('status') === 'read' ? 'selected' : '' }}>Đã đọc</option>
-            </select>
-            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                <i class="fas fa-search mr-2"></i>Lọc
-            </button>
+        <form id="filterForm" 
+              class="grid grid-cols-1 md:grid-cols-[1fr_minmax(min-content,_auto)_auto] gap-4 items-end"
+              data-base-url="{{ route('admin.contact-messages.index') }}">
+            
+            {{-- Search --}}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Tìm kiếm</label>
+                <x-admin.search-input 
+                    name="search"
+                    placeholder="Tìm theo tên, email, tiêu đề..."
+                    :value="request('search')"
+                    callbackName="handleSearch"
+                    :debounceTime="500"
+                    size="small"
+                    :showIcon="true"
+                    :showClearButton="true" />
+            </div>
+            
+            {{-- Status Filter --}}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label>
+                <x-admin.custom-dropdown
+                    name="status"
+                    :options="[
+                        'unread' => 'Chưa đọc',
+                        'read' => 'Đã đọc'
+                    ]"
+                    :selected="request('status')"
+                    placeholder="Tất cả"
+                    onchange="loadMessagesFromDropdown"
+                    :searchable="false"
+                    width="w-full" />
+            </div>
+            
+            {{-- Reset --}}
+            <div>
+                <x-admin.reset-button 
+                    formId="#filterForm" 
+                    callback="loadMessages" />
+            </div>
         </form>
     </div>
 
-    {{-- Table --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Người gửi</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tiêu đề</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nội dung</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ngày gửi</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Trạng thái</th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200">
-                    @forelse($messages as $message)
-                    <tr class="hover:bg-gray-50 {{ !$message->is_read ? 'bg-blue-50' : '' }}">
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="flex items-center">
-                                <div class="h-10 w-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold">
-                                    {{ strtoupper(substr($message->name, 0, 1)) }}
-                                </div>
-                                <div class="ml-4">
-                                    <div class="text-sm font-medium text-gray-900 {{ !$message->is_read ? 'font-bold' : '' }}">
-                                        {{ $message->name }}
-                                    </div>
-                                    <div class="text-xs text-gray-500">{{ $message->email }}</div>
-                                    @if($message->phone)
-                                    <div class="text-xs text-gray-500">{{ $message->phone }}</div>
-                                    @endif
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="text-sm text-gray-900 {{ !$message->is_read ? 'font-semibold' : '' }}">
-                                {{ $message->subject }}
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 max-w-md">
-                            <p class="text-sm text-gray-600 truncate">{{ $message->message }}</p>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {{ $message->created_at->format('d/m/Y H:i') }}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <form action="{{ route('admin.contact-messages.mark-read', $message) }}" method="POST" class="inline">
-                                @csrf
-                                @method('PATCH')
-                                <button type="submit" class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium transition-colors {{ $message->is_read ? 'bg-gray-100 text-gray-800 hover:bg-gray-200' : 'bg-blue-100 text-blue-800 hover:bg-blue-200' }}">
-                                    <i class="fas {{ $message->is_read ? 'fa-envelope-open' : 'fa-envelope' }} mr-1"></i>
-                                    {{ $message->is_read ? 'Đã đọc' : 'Chưa đọc' }}
-                                </button>
-                            </form>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
-                            <div class="flex items-center justify-end gap-2">
-                                <a href="{{ route('admin.contact-messages.show', $message) }}" class="text-blue-600 hover:text-blue-900" title="Xem">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                <a href="mailto:{{ $message->email }}" class="text-green-600 hover:text-green-900" title="Trả lời email">
-                                    <i class="fas fa-reply"></i>
-                                </a>
-                                <form action="{{ route('admin.contact-messages.destroy', $message) }}" method="POST" class="inline" onsubmit="return confirm('Xóa tin nhắn này?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="text-red-600 hover:text-red-900" title="Xóa">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="6" class="px-6 py-12 text-center text-gray-500">
-                            <i class="fas fa-envelope text-4xl mb-2"></i>
-                            <p>Chưa có tin nhắn nào</p>
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-
-        {{-- Pagination --}}
-        @if($messages->hasPages())
-        <div class="px-6 py-4 border-t border-gray-200">
-            {{ $messages->links() }}
-        </div>
-        @endif
-    </div>
+    {{-- AJAX Table Component --}}
+    <x-admin.ajax-table 
+        table-id="messages-content"
+        loading-id="loading-state"
+        form-id="#filterForm"
+        base-url="{{ route('admin.contact-messages.index') }}"
+        callback-name="loadMessages"
+        after-load-callback="initializeEventListeners">
+        @include('admin.contact-messages.partials.table', ['messages' => $messages])
+    </x-admin.ajax-table>
 </div>
+
+{{-- Delete Modal --}}
+<x-admin.delete-modal 
+    modal-id="deleteMessageModal"
+    title="Xác nhận xóa tin nhắn"
+    confirm-text="Xóa"
+    cancel-text="Hủy"
+    delete-callback-name="confirmDeleteMessage"
+    entity-type="message" />
+
+@push('scripts')
+<script>
+// Initialize event listeners
+function initializeEventListeners() {
+    // Delete buttons
+    document.querySelectorAll('.delete-btn').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const messageId = this.dataset.messageId;
+            const senderName = this.dataset.messageName;
+            const subject = this.dataset.messageSubject;
+            
+            if (window.deleteModalManager_deleteMessageModal) {
+                window.deleteModalManager_deleteMessageModal.show({
+                    entityName: `tin nhắn từ ${senderName}`,
+                    details: `<strong>Tiêu đề:</strong> ${subject}<br>Hành động này không thể hoàn tác.`,
+                    deleteUrl: `/admin/contact-messages/${messageId}`
+                });
+            }
+        });
+    });
+    
+    // Mark as read forms
+    document.querySelectorAll('.mark-read-form').forEach(form => {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const button = this.querySelector('button');
+            const originalHtml = button.innerHTML;
+            
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            button.disabled = true;
+            
+            try {
+                const response = await fetch(this.action, {
+                    method: 'POST',
+                    body: new FormData(this),
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                if (response.ok) {
+                    if (window.loadMessages) {
+                        window.loadMessages();
+                    }
+                    
+                    const data = await response.json();
+                    if (data.message && window.showMessage) {
+                        window.showMessage(data.message, 'success');
+                    }
+                } else {
+                    throw new Error('Request failed');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                if (window.showMessage) {
+                    window.showMessage('Có lỗi xảy ra!', 'error');
+                }
+                button.innerHTML = originalHtml;
+                button.disabled = false;
+            }
+        });
+    });
+}
+
+// Dropdown callback
+window.loadMessagesFromDropdown = function() {
+    const searchForm = document.getElementById('filterForm');
+    if (searchForm && window.loadMessages) {
+        const formData = new FormData(searchForm);
+        const url = '{{ route("admin.contact-messages.index") }}?' + new URLSearchParams(formData).toString();
+        window.loadMessages(url);
+    }
+};
+
+// Search callback
+window.handleSearch = function(searchTerm, inputElement) {
+    const searchForm = document.getElementById('filterForm');
+    if (searchForm && window.loadMessages) {
+        const formData = new FormData(searchForm);
+        const url = '{{ route("admin.contact-messages.index") }}?' + new URLSearchParams(formData).toString();
+        window.loadMessages(url);
+    }
+};
+
+// Delete confirmation
+window.confirmDeleteMessage = function(data) {
+    if (!data || !data.deleteUrl) return;
+    
+    if (window.deleteModalManager_deleteMessageModal) {
+        window.deleteModalManager_deleteMessageModal.setLoading(true);
+    }
+    
+    fetch(data.deleteUrl, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (window.deleteModalManager_deleteMessageModal) {
+                window.deleteModalManager_deleteMessageModal.hide();
+            }
+            
+            if (window.loadMessages) {
+                window.loadMessages();
+            }
+            
+            if (window.showMessage) {
+                window.showMessage(data.message || 'Đã xóa tin nhắn thành công!', 'success');
+            }
+        } else {
+            throw new Error(data.message || 'Có lỗi xảy ra');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        if (window.deleteModalManager_deleteMessageModal) {
+            window.deleteModalManager_deleteMessageModal.setLoading(false);
+        }
+        if (window.showMessage) {
+            window.showMessage('Có lỗi xảy ra khi xóa tin nhắn!', 'error');
+        }
+    });
+};
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    initializeEventListeners();
+});
+</script>
+@endpush
+
 @endsection

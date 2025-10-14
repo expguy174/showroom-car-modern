@@ -59,6 +59,19 @@ class Installment extends Model
         return $this->belongsTo(PaymentTransaction::class);
     }
 
+    public function financeOption()
+    {
+        // Access finance option through order relationship
+        return $this->hasOneThrough(
+            FinanceOption::class,
+            Order::class,
+            'id', // Foreign key on orders table
+            'id', // Foreign key on finance_options table
+            'order_id', // Local key on installments table
+            'finance_option_id' // Local key on orders table
+        );
+    }
+
     public function getFormattedMonthlyPaymentAttribute()
     {
         return $this->monthly_payment_amount !== null

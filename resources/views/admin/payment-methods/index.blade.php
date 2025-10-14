@@ -3,118 +3,297 @@
 @section('title', 'Quản lý Phương thức Thanh toán')
 
 @section('content')
+{{-- Flash Messages Component --}}
+<x-admin.flash-messages 
+    :show-icons="true"
+    :dismissible="true"
+    position="top-right"
+    :auto-hide="5000" />
+
 <div class="space-y-6">
-    {{-- Header --}}
-    <div class="flex items-center justify-between">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-900">Phương thức Thanh toán</h1>
-            <p class="text-sm text-gray-600 mt-1">Quản lý các phương thức thanh toán cho khách hàng</p>
-        </div>
+    {{-- Page Header --}}
+    <x-admin.page-header 
+        title="Phương thức Thanh toán"
+        description="Quản lý các phương thức thanh toán cho khách hàng"
+        icon="fas fa-credit-card">
         <a href="{{ route('admin.payment-methods.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
             <i class="fas fa-plus mr-2"></i>
             Thêm phương thức
         </a>
+    </x-admin.page-header>
+
+    {{-- Stats Cards --}}
+    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 mb-6">
+        <x-admin.stats-card 
+            title="Tổng phương thức"
+            :value="\App\Models\PaymentMethod::count()"
+            icon="fas fa-credit-card"
+            color="blue"
+            description="Tất cả phương thức"
+            dataStat="total" />
+            
+        <x-admin.stats-card 
+            title="Hoạt động"
+            :value="\App\Models\PaymentMethod::where('is_active', true)->count()"
+            icon="fas fa-check-circle"
+            color="green"
+            description="Đang hỗ trợ"
+            dataStat="active" />
+            
+        <x-admin.stats-card 
+            title="Tạm dừng"
+            :value="\App\Models\PaymentMethod::where('is_active', false)->count()"
+            icon="fas fa-times-circle"
+            color="red"
+            description="Ngừng hỗ trợ"
+            dataStat="inactive" />
     </div>
 
-    {{-- Table --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phương thức</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loại</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phí</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thứ tự</th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    @forelse($paymentMethods as $method)
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0 h-10 w-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
-                                    <i class="fas fa-credit-card text-white"></i>
-                                </div>
-                                <div class="ml-4">
-                                    <div class="text-sm font-medium text-gray-900">{{ $method->name }}</div>
-                                    @if($method->provider)
-                                    <div class="text-xs text-gray-500">{{ $method->provider }}</div>
-                                    @endif
-                                    <div class="text-xs text-gray-400">Code: {{ $method->code }}</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            @if($method->type === 'online')
-                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                                <i class="fas fa-globe mr-1"></i>Online
-                            </span>
-                            @else
-                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                <i class="fas fa-hand-holding-usd mr-1"></i>Offline
-                            </span>
-                            @endif
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            @if($method->fee_flat > 0)
-                                <div>{{ number_format($method->fee_flat, 0, ',', '.') }} đ</div>
-                            @endif
-                            @if($method->fee_percent > 0)
-                                <div>{{ $method->fee_percent }}%</div>
-                            @endif
-                            @if($method->fee_flat == 0 && $method->fee_percent == 0)
-                                <span class="text-green-600">Miễn phí</span>
-                            @endif
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <form action="{{ route('admin.payment-methods.toggle', $method) }}" method="POST" class="inline">
-                                @csrf
-                                @method('PATCH')
-                                <button type="submit" class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium transition-colors {{ $method->is_active ? 'bg-green-100 text-green-800 hover:bg-green-200' : 'bg-gray-100 text-gray-800 hover:bg-gray-200' }}">
-                                    <i class="fas {{ $method->is_active ? 'fa-check-circle' : 'fa-times-circle' }} mr-1"></i>
-                                    {{ $method->is_active ? 'Hoạt động' : 'Tắt' }}
-                                </button>
-                            </form>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {{ $method->sort_order }}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <div class="flex items-center justify-end gap-2">
-                                <a href="{{ route('admin.payment-methods.edit', $method) }}" class="text-blue-600 hover:text-blue-900" title="Sửa">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <form action="{{ route('admin.payment-methods.destroy', $method) }}" method="POST" class="inline" onsubmit="return confirm('Bạn có chắc muốn xóa phương thức này?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="text-red-600 hover:text-red-900" title="Xóa">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="6" class="px-6 py-12 text-center text-gray-500">
-                            <i class="fas fa-credit-card text-4xl mb-2"></i>
-                            <p>Chưa có phương thức thanh toán nào</p>
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-
-        {{-- Pagination --}}
-        @if($paymentMethods->hasPages())
-        <div class="px-6 py-4 border-t border-gray-200">
-            {{ $paymentMethods->links() }}
-        </div>
-        @endif
+    {{-- Filters --}}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+        <form id="filterForm" 
+              class="grid grid-cols-1 md:grid-cols-[1fr_minmax(min-content,_auto)_auto] gap-4 items-end"
+              data-base-url="{{ route('admin.payment-methods.index') }}">
+            
+            {{-- Search --}}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Tìm kiếm</label>
+                <x-admin.search-input 
+                    name="search"
+                    placeholder="Tìm theo tên phương thức, provider..."
+                    :value="request('search')"
+                    callbackName="handleSearch"
+                    :debounceTime="500"
+                    size="small"
+                    :showIcon="true"
+                    :showClearButton="true" />
+            </div>
+            
+            {{-- Status Filter --}}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label>
+                <x-admin.custom-dropdown
+                    name="status"
+                    :options="[
+                        ['value' => 'active', 'label' => 'Hoạt động'],
+                        ['value' => 'inactive', 'label' => 'Tạm dừng']
+                    ]"
+                    optionValue="value"
+                    optionText="label"
+                    :selected="request('status')"
+                    placeholder="Tất cả"
+                    onchange="loadPaymentMethodsFromDropdown"
+                    :searchable="false"
+                    width="w-full" />
+            </div>
+            
+            {{-- Reset --}}
+            <div>
+                <x-admin.reset-button 
+                    formId="#filterForm" 
+                    callback="loadPaymentMethods" />
+            </div>
+        </form>
     </div>
+
+    {{-- AJAX Table Component --}}
+    <x-admin.ajax-table 
+        table-id="payment-methods-content"
+        loading-id="loading-state"
+        form-id="#filterForm"
+        base-url="{{ route('admin.payment-methods.index') }}"
+        callback-name="loadPaymentMethods"
+        after-load-callback="initializeEventListeners">
+        @include('admin.payment-methods.partials.table', ['paymentMethods' => $paymentMethods])
+    </x-admin.ajax-table>
 </div>
+
+{{-- Delete Modal --}}
+<x-admin.delete-modal 
+    modal-id="deletePaymentModal"
+    title="Xác nhận xóa phương thức thanh toán"
+    confirm-text="Xóa"
+    cancel-text="Hủy"
+    delete-callback-name="confirmDeletePayment"
+    entity-type="payment" />
+
+@push('scripts')
+<script>
+// Initialize event listeners
+function initializeEventListeners() {
+    // Status toggle buttons
+    document.querySelectorAll('.status-toggle').forEach(button => {
+        button.addEventListener('click', async function(e) {
+            e.preventDefault();
+            const paymentId = this.dataset.paymentmethodId || this.dataset.paymentId;
+            const newStatus = this.dataset.status === 'true';
+            const buttonElement = this;
+            
+            // Show loading state
+            const originalIcon = buttonElement.querySelector('i').className;
+            buttonElement.querySelector('i').className = 'fas fa-spinner fa-spin w-4 h-4';
+            buttonElement.disabled = true;
+            
+            try {
+                const response = await fetch(`/admin/payment-methods/${paymentId}/toggle-status`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Update button appearance
+                    if (newStatus) {
+                        buttonElement.className = 'text-orange-600 hover:text-orange-900 status-toggle w-4 h-4 flex items-center justify-center';
+                        buttonElement.title = 'Tạm dừng';
+                        buttonElement.dataset.status = 'false';
+                        buttonElement.querySelector('i').className = 'fas fa-pause w-4 h-4';
+                    } else {
+                        buttonElement.className = 'text-green-600 hover:text-green-900 status-toggle w-4 h-4 flex items-center justify-center';
+                        buttonElement.title = 'Kích hoạt';
+                        buttonElement.dataset.status = 'true';
+                        buttonElement.querySelector('i').className = 'fas fa-play w-4 h-4';
+                    }
+                    
+                    // Update status badge
+                    if (window.updateStatusBadge) {
+                        window.updateStatusBadge(paymentId, newStatus, 'payment');
+                    }
+                    
+                    // Update stats cards if provided
+                    if (data.stats && window.updateStatsFromServer) {
+                        window.updateStatsFromServer(data.stats);
+                    }
+                    
+                    // Show message
+                    if (data.message && window.showMessage) {
+                        window.showMessage(data.message, 'success');
+                    }
+                } else {
+                    throw new Error(data.message || 'Có lỗi xảy ra');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                buttonElement.querySelector('i').className = originalIcon;
+                if (window.showMessage) {
+                    window.showMessage('Có lỗi xảy ra khi cập nhật trạng thái!', 'error');
+                }
+            } finally {
+                buttonElement.disabled = false;
+            }
+        });
+    });
+    
+    // Delete buttons
+    document.querySelectorAll('.delete-btn').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const paymentId = this.dataset.paymentmethodId || this.dataset.paymentId;
+            const paymentName = this.dataset.paymentmethodName || this.dataset.paymentName;
+            
+            if (window.deleteModalManager_deletePaymentModal) {
+                window.deleteModalManager_deletePaymentModal.show({
+                    entityName: `phương thức ${paymentName}`,
+                    details: 'Hành động này không thể hoàn tác.',
+                    deleteUrl: `/admin/payment-methods/${paymentId}`
+                });
+            }
+        });
+    });
+}
+
+// Dropdown callback
+window.loadPaymentMethodsFromDropdown = function() {
+    const searchForm = document.getElementById('filterForm');
+    if (searchForm && window.loadPaymentMethods) {
+        const formData = new FormData(searchForm);
+        const url = '{{ route("admin.payment-methods.index") }}?' + new URLSearchParams(formData).toString();
+        window.loadPaymentMethods(url);
+    }
+};
+
+// Search callback
+window.handleSearch = function(searchTerm, inputElement) {
+    const searchForm = document.getElementById('filterForm');
+    if (searchForm && window.loadPaymentMethods) {
+        const formData = new FormData(searchForm);
+        const url = '{{ route("admin.payment-methods.index") }}?' + new URLSearchParams(formData).toString();
+        window.loadPaymentMethods(url);
+    }
+};
+
+// Delete confirmation
+window.confirmDeletePayment = function(data) {
+    if (!data || !data.deleteUrl) return;
+    
+    if (window.deleteModalManager_deletePaymentModal) {
+        window.deleteModalManager_deletePaymentModal.setLoading(true);
+    }
+    
+    fetch(data.deleteUrl, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (window.deleteModalManager_deletePaymentModal) {
+                window.deleteModalManager_deletePaymentModal.hide();
+            }
+            
+            if (window.loadPaymentMethods) {
+                window.loadPaymentMethods();
+            }
+            
+            if (window.showMessage) {
+                window.showMessage(data.message || 'Đã xóa phương thức thanh toán thành công!', 'success');
+            }
+        } else {
+            throw new Error(data.message || 'Có lỗi xảy ra');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        if (window.deleteModalManager_deletePaymentModal) {
+            window.deleteModalManager_deletePaymentModal.setLoading(false);
+        }
+        if (window.showMessage) {
+            window.showMessage('Có lỗi xảy ra khi xóa phương thức thanh toán!', 'error');
+        }
+    });
+};
+
+// Function to update stats cards from server data
+window.updateStatsFromServer = function(stats) {
+    const totalCard = document.querySelector('[data-stat="total"] .text-2xl');
+    const activeCard = document.querySelector('[data-stat="active"] .text-2xl');
+    const inactiveCard = document.querySelector('[data-stat="inactive"] .text-2xl');
+    
+    if (totalCard && stats.total !== undefined) {
+        totalCard.textContent = stats.total;
+    }
+    if (activeCard && stats.active !== undefined) {
+        activeCard.textContent = stats.active;
+    }
+    if (inactiveCard && stats.inactive !== undefined) {
+        inactiveCard.textContent = stats.inactive;
+    }
+};
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    initializeEventListeners();
+});
+</script>
+@endpush
+
 @endsection

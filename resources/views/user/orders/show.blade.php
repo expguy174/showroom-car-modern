@@ -28,7 +28,7 @@
                         @endif
                     @else
                         <!-- Full Payment Display -->
-                        <div class="text-indigo-700 font-extrabold text-base sm:text-lg">{{ number_format($order->grand_total, 0, ',', '.') }} đ</div>
+                    <div class="text-indigo-700 font-extrabold text-base sm:text-lg">{{ number_format($order->grand_total, 0, ',', '.') }} đ</div>
                         <div class="text-xs text-gray-500">Tổng cộng</div>
                         @if((float)($order->discount_total ?? 0) > 0)
                             <div class="text-xs text-green-600 mt-1">
@@ -69,18 +69,18 @@
                             } else {
                                 $cancelReason = 'Hủy đơn hàng';
                             }
-                        @endphp
+                    @endphp
                         <div class="mt-2 flex items-center gap-2">
                             <a href="{{ route('user.order.index') }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 text-xs">
                                 <i class="fas fa-arrow-left"></i> Quay về
                             </a>
                             @if($order->status !== 'cancelled')
                                 <form action="{{ route('user.orders.cancel', $order->id) }}" method="post" title="{{ $cancelReason }}">
-                                    @csrf
-                                    <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-500 text-white hover:bg-rose-600 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors duration-200" {{ $canCancel ? '' : 'disabled' }}>
-                                        <i class="fas fa-ban"></i> Hủy đơn
-                                    </button>
-                                </form>
+                        @csrf
+                        <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-500 text-white hover:bg-rose-600 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors duration-200" {{ $canCancel ? '' : 'disabled' }}>
+                            <i class="fas fa-ban"></i> Hủy đơn
+                        </button>
+                    </form>
                             @else
                                 <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-gray-500 bg-gray-100">
                                     <i class="fas fa-ban"></i> Đã hủy
@@ -172,10 +172,10 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Cột trái: Thông tin cơ bản -->
                     <dl class="space-y-3 text-sm">
-                        <div class="flex items-center justify-between sm:justify-start sm:gap-3">
-                            <dt class="text-gray-500">Mã đơn</dt>
-                            <dd class="font-medium text-gray-900">#{{ $order->order_number ?? $order->id }}</dd>
-                        </div>
+                    <div class="flex items-center justify-between sm:justify-start sm:gap-3">
+                        <dt class="text-gray-500">Mã đơn</dt>
+                        <dd class="font-medium text-gray-900">#{{ $order->order_number ?? $order->id }}</dd>
+                    </div>
                         <div class="flex items-center justify-between sm:justify-start sm:gap-3">
                             <dt class="text-gray-500">Loại thanh toán</dt>
                             <dd class="font-medium text-gray-900">{{ $order->payment_type_display }}</dd>
@@ -199,33 +199,33 @@
                             <dt class="text-gray-500">Phương thức</dt>
                             <dd class="font-medium text-gray-900">{{ $order->paymentMethod->name ?? '—' }}</dd>
                         </div>
-                        <div class="flex items-center justify-between sm:justify-start sm:gap-3">
-                            <dt class="text-gray-500">Đơn hàng</dt>
-                            <dd>
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
-                                    @class([
-                                        'bg-yellow-50 text-yellow-700 border border-yellow-200' => $order->status === 'pending',
-                                        'bg-blue-50 text-blue-700 border border-blue-200' => $order->status === 'confirmed',
-                                        'bg-indigo-50 text-indigo-700 border border-indigo-200' => $order->status === 'shipping',
-                                        'bg-emerald-50 text-emerald-700 border border-emerald-200' => $order->status === 'delivered',
-                                        'bg-rose-50 text-rose-700 border border-rose-200' => $order->status === 'cancelled',
-                                    ])">{{ $order->status_display }}</span>
-                            </dd>
-                        </div>
-                        <div class="flex items-center justify-between sm:justify-start sm:gap-3">
-                            <dt class="text-gray-500">Thanh toán</dt>
-                            <dd>
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
-                                    @class([
-                                        'bg-gray-50 text-gray-700 border border-gray-200' => $order->payment_status === 'pending',
-                                        'bg-blue-50 text-blue-700 border border-blue-200' => $order->payment_status === 'processing',
-                                        'bg-emerald-50 text-emerald-700 border border-emerald-200' => $order->payment_status === 'completed',
-                                        'bg-rose-50 text-rose-700 border border-rose-200' => $order->payment_status === 'failed',
-                                        'bg-slate-50 text-slate-700 border border-slate-200' => $order->payment_status === 'cancelled',
-                                    ])">{{ $order->payment_status_display }}</span>
-                            </dd>
-                        </div>
-                    </dl>
+                    <div class="flex items-center justify-between sm:justify-start sm:gap-3">
+                        <dt class="text-gray-500">Đơn hàng</dt>
+                        <dd>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
+                                @class([
+                                    'bg-yellow-50 text-yellow-700 border border-yellow-200' => $order->status === 'pending',
+                                    'bg-blue-50 text-blue-700 border border-blue-200' => $order->status === 'confirmed',
+                                    'bg-indigo-50 text-indigo-700 border border-indigo-200' => $order->status === 'shipping',
+                                    'bg-emerald-50 text-emerald-700 border border-emerald-200' => $order->status === 'delivered',
+                                    'bg-rose-50 text-rose-700 border border-rose-200' => $order->status === 'cancelled',
+                                ])">{{ $order->status_display }}</span>
+                        </dd>
+                    </div>
+                    <div class="flex items-center justify-between sm:justify-start sm:gap-3">
+                        <dt class="text-gray-500">Thanh toán</dt>
+                        <dd>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
+                                @class([
+                                    'bg-gray-50 text-gray-700 border border-gray-200' => $order->payment_status === 'pending',
+                                    'bg-blue-50 text-blue-700 border border-blue-200' => $order->payment_status === 'processing',
+                                    'bg-emerald-50 text-emerald-700 border border-emerald-200' => $order->payment_status === 'completed',
+                                    'bg-rose-50 text-rose-700 border border-rose-200' => $order->payment_status === 'failed',
+                                    'bg-slate-50 text-slate-700 border border-slate-200' => $order->payment_status === 'cancelled',
+                                ])">{{ $order->payment_status_display }}</span>
+                        </dd>
+                    </div>
+                </dl>
                 </div>
                 
                 @if(!$order->finance_option_id)
@@ -377,7 +377,7 @@
                     <h2 class="text-lg font-bold">Thông tin đơn hàng</h2>
                     <div class="text-sm text-gray-500">Sản phẩm ({{ $order->items->count() }})</div>
                 </div>
-                <div class="divide-y">
+                <div class="divide-y max-h-[400px] overflow-y-auto">
                     @forelse($order->items->sortBy(function($it){ return $it->item_type === 'car_variant' ? 0 : 1; }) as $it)
                         @php
                             $model = $it->item;
@@ -673,18 +673,98 @@
             @endif
 
 
-            {{-- Installments Section - REMOVED (too long for 36 installments) --}}
-            {{-- Keep only "Chi tiết trả góp" overview section above --}}
-            {{-- Can be restored later if needed with payment integration --}}
-            
-            {{-- COMMENTED OUT: Full installments list
-            @if($order->isInstallmentOrder() && $order->installments->count() > 0)
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
-                    <h3 class="text-base font-bold mb-4">Lịch trả góp</h3>
-                    ... (36 installments list removed) ...
+            {{-- Lịch Trả Góp - Simple Version --}}
+            @if($order->finance_option_id && $installmentStats)
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
+                <h3 class="text-base font-bold mb-3">Lịch Trả Góp</h3>
+                
+                {{-- Quick Stats --}}
+                <div class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-3 mb-3">
+                    <div class="flex justify-between items-center text-sm">
+                        <div>
+                            <div class="text-gray-600 text-xs">Tiến độ</div>
+                            <div class="font-bold text-gray-900">{{ $installmentStats['paid_count'] }}/{{ $installmentStats['total_installments'] }} kỳ</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-gray-600 text-xs">Còn nợ</div>
+                            <div class="font-bold text-red-600">{{ number_format($installmentStats['total_remaining']) }} đ</div>
+                        </div>
+                    </div>
                 </div>
+
+                {{-- Next Payment --}}
+                @if($installmentStats['next_payment'])
+                <div class="bg-blue-50 border-l-4 border-blue-500 rounded p-3 mb-3">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="text-xs font-medium text-blue-800">Kỳ tiếp theo</div>
+                            <div class="text-sm font-bold text-blue-900 mt-1">
+                                Kỳ {{ $installmentStats['next_payment']->installment_number }} - {{ number_format($installmentStats['next_payment']->amount) }} đ
+                            </div>
+                            <div class="text-xs text-blue-600 mt-1">
+                                Đến hạn: {{ $installmentStats['next_payment']->due_date->format('d/m/Y') }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @else
+                <div class="bg-green-50 border-l-4 border-green-500 rounded p-3 mb-3">
+                    <div class="text-sm font-medium text-green-800">
+                        Đã hoàn thành tất cả các kỳ!
+                    </div>
+                </div>
+                @endif
+
+                {{-- Payment Methods & Instructions --}}
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                    <div class="text-xs font-semibold text-yellow-800 mb-2">Phương thức thanh toán trả góp:</div>
+                    
+                    <div class="space-y-2 mb-3">
+                        {{-- Bank Transfer - RECOMMENDED --}}
+                        <div class="bg-white rounded-lg p-2.5 border-2 border-green-200">
+                            <div class="flex items-center justify-between mb-1">
+                                <div class="font-semibold text-xs text-gray-800">💳 Chuyển khoản ngân hàng</div>
+                                <span class="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Khuyến nghị</span>
+                            </div>
+                            <div class="text-xs text-gray-600 mb-1">
+                                Chuyển khoản với nội dung:
+                            </div>
+                            <div class="mb-1">
+                                <span class="font-mono text-xs bg-yellow-50 px-2 py-1 rounded border border-yellow-200 inline-block">TRAGOP-{{ $order->order_number }}-KY[X]</span>
+                            </div>
+                            <div class="text-[10px] text-gray-500">
+                                • Nhanh chóng, có chứng từ điện tử
+                            </div>
+                        </div>
+                        
+                        {{-- Cash at Showroom --}}
+                        <div class="bg-white rounded-lg p-2.5 border border-yellow-100">
+                            <div class="font-semibold text-xs text-gray-800 mb-1">💵 Tiền mặt tại showroom</div>
+                            <div class="text-xs text-gray-600 mb-1">
+                                Đến trực tiếp showroom để thanh toán và nhận biên nhận
+                            </div>
+                            <div class="text-[10px] text-gray-500">
+                                • Địa chỉ: (địa chỉ showroom của bạn)
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-2 mb-2">
+                        <div class="text-[10px] text-blue-700">
+                            <strong>Lưu ý:</strong> Không chấp nhận thanh toán qua ví điện tử (MoMo, VNPay...) cho các khoản trả góp. Vui lòng sử dụng chuyển khoản ngân hàng hoặc đến showroom.
+                        </div>
+                    </div>
+                    
+                    <div class="text-xs font-semibold text-yellow-800 mb-1">⚠️ Quy định quan trọng:</div>
+                    <ul class="text-xs text-yellow-700 space-y-0.5">
+                        <li>• Thanh toán đúng hạn để tránh phí phạt</li>
+                        <li>• Sau khi chuyển khoản, liên hệ hotline <strong>0909.xxx.xxx</strong> để xác nhận</li>
+                        <li>• Thanh toán trước hạn được chấp nhận và khuyến khích</li>
+                        <li>• Trễ hạn trên 7 ngày sẽ bị tính phí phạt theo quy định</li>
+                    </ul>
+                </div>
+            </div>
             @endif
-            --}}
         </div>
     </div>
 </div>
@@ -731,6 +811,7 @@
         </div>
     </div>
 </div>
+
 
 <script>
 // Handle cancel order form with confirm dialog (same as orders index page)

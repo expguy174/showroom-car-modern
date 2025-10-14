@@ -156,10 +156,9 @@
         loading-id="loading-state"
         form-id="#filterForm"
         base-url="{{ route('admin.accessories.index') }}"
-        callback-name="loadAccessories">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200">
-            @include('admin.accessories.partials.table', ['accessories' => $accessories])
-        </div>
+        callback-name="loadAccessories"
+        after-load-callback="initializeEventListeners">
+        @include('admin.accessories.partials.table', ['accessories' => $accessories])
     </x-admin.ajax-table>
 </div>
 
