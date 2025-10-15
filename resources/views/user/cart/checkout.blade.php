@@ -219,11 +219,25 @@
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 @foreach(($paymentMethods ?? []) as $pm)
                                 <label class="relative flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-indigo-400 cursor-pointer">
-                                    <input type="radio" name="payment_method_id" value="{{ $pm->id }}" class="text-indigo-600 focus:ring-indigo-500" />
-                                    <div>
+                                    <input type="radio" name="payment_method_id" value="{{ $pm->id }}" 
+                                           data-fee-flat="{{ $pm->fee_flat }}" 
+                                           data-fee-percent="{{ $pm->fee_percent }}"
+                                           class="text-indigo-600 focus:ring-indigo-500" />
+                                    <div class="flex-1">
                                         <div class="text-sm font-semibold text-gray-900">{{ $pm->name }}</div>
                                         @if($pm->provider)
                                         <div class="text-xs text-gray-500">{{ $pm->provider }}</div>
+                                        @endif
+                                        @if($pm->fee_flat > 0 || $pm->fee_percent > 0)
+                                        <div class="text-xs text-orange-600 font-medium mt-1">
+                                            Phí: 
+                                            @if($pm->fee_flat > 0)
+                                                {{ number_format($pm->fee_flat, 0, ',', '.') }}đ
+                                            @endif
+                                            @if($pm->fee_percent > 0)
+                                                @if($pm->fee_flat > 0) + @endif{{ $pm->fee_percent }}%
+                                            @endif
+                                        </div>
                                         @endif
                                     </div>
                                 </label>
@@ -399,6 +413,10 @@
                         <div class="flex items-center justify-between text-sm text-gray-700">
                             <span>Phí vận chuyển</span>
                             <span id="shipping-fee-amount" data-shipping="{{ (int) $defaultShippingFee }}" class="whitespace-nowrap tabular-nums">{{ number_format($defaultShippingFee,0,',','.') }} đ</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm text-gray-700">
+                            <span>Phí thanh toán</span>
+                            <span id="payment-fee-amount" data-payment-fee="0" class="whitespace-nowrap tabular-nums">0 đ</span>
                         </div>
                         
                         <!-- Promotion Code Section -->
@@ -626,9 +644,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const discountEl = document.getElementById('discount-amount');
     const taxEl = document.getElementById('tax-amount');
     const shipEl = document.getElementById('shipping-fee-amount');
+    const paymentEl = document.getElementById('payment-fee-amount');
     const grandEl = document.getElementById('grand-total-amount');
 
     function format(n){ return new Intl.NumberFormat('vi-VN').format(n) + ' đ'; }
+    
+    function calculatePaymentFee(subtotal) {
+        const selectedPayment = document.querySelector('input[name="payment_method_id"]:checked');
+        if (!selectedPayment) return 0;
+        
+        const feeFlat = parseFloat(selectedPayment.dataset.feeFlat || '0');
+        const feePercent = parseFloat(selectedPayment.dataset.feePercent || '0');
+        
+        return feeFlat + (subtotal * feePercent / 100);
+    }
+    
     function recalc(){
         const subtotal = parseInt(subtotalEl.dataset.subtotal || '0');
         const tax = parseInt(taxEl.dataset.tax || '0');
@@ -636,9 +666,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const fee = parseInt(option.getAttribute('data-fee') || '0');
         const discount = parseInt(document.getElementById('discount-amount')?.textContent?.replace(/[^\d]/g, '') || '0');
         
+        // Calculate payment method fee
+        const paymentFee = calculatePaymentFee(subtotal);
+        
         shipEl.dataset.shipping = String(fee);
         shipEl.textContent = format(fee);
-        const grand = Math.max(0, subtotal + tax + fee - discount);
+        paymentEl.dataset.paymentFee = String(paymentFee);
+        paymentEl.textContent = format(paymentFee);
+        const grand = Math.max(0, subtotal + tax + fee + paymentFee - discount);
         grandEl.textContent = format(grand);
         
         // Recalculate finance if finance is selected
@@ -651,6 +686,14 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update discount amount if free shipping promotion is applied
         updateDiscountDisplayOnShippingChange();
     });
+    
+    // Payment method change event listeners
+    document.querySelectorAll('input[name="payment_method_id"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            recalc();
+        });
+    });
+    
     recalc();
 
     // Finance options handling
@@ -1035,9 +1078,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const subtotalEl = document.getElementById('subtotal-amount');
         const taxEl = document.getElementById('tax-amount');
         const shippingEl = document.getElementById('shipping-fee-amount');
+        const paymentEl = document.getElementById('payment-fee-amount');
         const grandTotalEl = document.getElementById('grand-total-amount');
         
-        if (!subtotalEl || !taxEl || !shippingEl || !grandTotalEl) return;
+        if (!subtotalEl || !taxEl || !shippingEl || !paymentEl || !grandTotalEl) return;
         
         const subtotal = parseInt(subtotalEl.dataset.subtotal);
         const tax = parseInt(taxEl.dataset.tax);
@@ -1054,7 +1098,12 @@ document.addEventListener('DOMContentLoaded', function() {
             shippingEl.classList.remove('line-through', 'text-green-600');
         }
         
-        let newGrandTotal = subtotal + tax + shipping;
+        // Calculate payment fee
+        const paymentFee = calculatePaymentFee(subtotal);
+        paymentEl.dataset.paymentFee = String(paymentFee);
+        paymentEl.textContent = formatNumber(paymentFee) + ' đ';
+        
+        let newGrandTotal = subtotal + tax + shipping + paymentFee;
         
         // Apply discount (except for free shipping which is already handled)
         if (promotionType !== 'free_shipping') {

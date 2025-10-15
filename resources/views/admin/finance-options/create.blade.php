@@ -243,7 +243,6 @@
                                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
                                    {{ old('is_active', true) ? 'checked' : '' }}>
                             <label for="is_active" class="ml-2 block text-sm text-gray-900">
-                                <i class="fas fa-check-circle text-green-500 mr-1"></i>
                                 Hoạt động
                             </label>
                         </div>
@@ -269,11 +268,11 @@
 </div>
 
 <script>
-// AJAX Form submission with client-side validation
+// AJAX Form submission
 document.getElementById('financeForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
-    // Client-side validation first
+    // Client-side validation first (but don't block spinner)
     const validationResult = validateFinanceForm();
     if (!validationResult.isValid) {
         // Focus the field with error
@@ -316,25 +315,47 @@ document.getElementById('financeForm').addEventListener('submit', function(e) {
     })
     .then(data => {
         if (data.success) {
+            // Reset button to original state
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+            
             if (window.showMessage) {
                 window.showMessage(data.message || 'Thêm gói vay thành công!', 'success');
             }
             
             setTimeout(() => {
                 window.location.href = data.redirect || '{{ route("admin.finance-options.index") }}';
-            }, 2000);
+            }, 1500);
         } else {
+            // Reset button on error
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
             throw new Error(data.message || 'Có lỗi xảy ra');
         }
     })
     .catch(error => {
-        console.error('Error:', error);
+        // Always reset button first
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
         
+        // Handle validation errors like promotions
         if (error.status === 422 && error.data && error.data.errors) {
+            // Focus first error field and show flash message
             const errors = error.data.errors;
-            const firstError = Object.values(errors)[0][0];
+            const firstFieldName = Object.keys(errors)[0];
+            const firstErrorMessage = errors[firstFieldName][0];
+            
+            // Find and focus first error field
+            const firstErrorField = document.querySelector(`[name="${firstFieldName}"]`);
+            if (firstErrorField) {
+                firstErrorField.focus();
+                firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                firstErrorField.classList.add('border-red-300');
+                firstErrorField.classList.remove('border-gray-300');
+            }
+            
             if (window.showMessage) {
-                window.showMessage(firstError, 'error');
+                window.showMessage(translateError(firstErrorMessage), 'error');
             }
         } else if (error.data && error.data.message) {
             if (window.showMessage) {
@@ -345,11 +366,41 @@ document.getElementById('financeForm').addEventListener('submit', function(e) {
                 window.showMessage(error.message || 'Có lỗi xảy ra khi thêm gói vay', 'error');
             }
         }
-        
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalText;
     });
 });
+
+// Translate error messages to Vietnamese
+function translateError(message) {
+    const translations = {
+        'The name field is required.': 'Tên gói vay là bắt buộc.',
+        'The code field is required.': 'Mã gói vay là bắt buộc.',
+        'The bank name field is required.': 'Tên ngân hàng là bắt buộc.',
+        'The interest rate field is required.': 'Lãi suất là bắt buộc.',
+        'The min down payment field is required.': 'Trả trước tối thiểu là bắt buộc.',
+        'The min tenure field is required.': 'Kỳ hạn tối thiểu là bắt buộc.',
+        'The max tenure field is required.': 'Kỳ hạn tối đa là bắt buộc.',
+        'The min loan amount field is required.': 'Số tiền vay tối thiểu là bắt buộc.',
+        'The max loan amount field is required.': 'Số tiền vay tối đa là bắt buộc.',
+        'The interest rate must be a number.': 'Lãi suất phải là số.',
+        'The min down payment must be a number.': 'Trả trước tối thiểu phải là số.',
+        'The min tenure must be an integer.': 'Kỳ hạn tối thiểu phải là số nguyên.',
+        'The max tenure must be an integer.': 'Kỳ hạn tối đa phải là số nguyên.',
+        'The min loan amount must be an integer.': 'Số tiền vay tối thiểu phải là số nguyên.',
+        'The max loan amount must be an integer.': 'Số tiền vay tối đa phải là số nguyên.',
+        'The processing fee must be an integer.': 'Phí xử lý hồ sơ phải là số nguyên.',
+        'The sort order must be an integer.': 'Thứ tự sắp xếp phải là số nguyên.',
+        'The interest rate must be at least 0.': 'Lãi suất phải lớn hơn hoặc bằng 0.',
+        'The min down payment must be at least 0.': 'Trả trước tối thiểu phải lớn hơn hoặc bằng 0.',
+        'The min tenure must be at least 1.': 'Kỳ hạn tối thiểu phải ít nhất 1 tháng.',
+        'The max tenure must be at least 1.': 'Kỳ hạn tối đa phải ít nhất 1 tháng.',
+        'The min loan amount must be at least 0.': 'Số tiền vay tối thiểu phải lớn hơn hoặc bằng 0.',
+        'The max loan amount must be at least 0.': 'Số tiền vay tối đa phải lớn hơn hoặc bằng 0.',
+        'The code has already been taken.': 'Mã gói vay đã tồn tại.',
+        'The name has already been taken.': 'Tên gói vay đã tồn tại.'
+    };
+    
+    return translations[message] || message;
+}
 
 // Client-side validation function - Hợp lý, logic và việt hóa
 function validateFinanceForm() {

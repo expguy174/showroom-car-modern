@@ -14,12 +14,23 @@ class PromotionController extends Controller
 
         // Filter by status
         if ($request->has('status') && $request->status !== '') {
-            $query->where('is_active', $request->status === 'active');
-        }
-
-        // Filter by type
-        if ($request->has('type') && $request->type !== '') {
-            $query->where('type', $request->type);
+            switch ($request->status) {
+                case 'active':
+                    $query->where('is_active', true)
+                          ->where(function($q) {
+                              $q->whereNull('start_date')->orWhere('start_date', '<=', now());
+                          })
+                          ->where(function($q) {
+                              $q->whereNull('end_date')->orWhere('end_date', '>=', now());
+                          });
+                    break;
+                case 'inactive':
+                    $query->where('is_active', false);
+                    break;
+                case 'expired':
+                    $query->where('end_date', '<', now());
+                    break;
+            }
         }
 
         // Search
@@ -35,14 +46,127 @@ class PromotionController extends Controller
         $promotions = $query->orderBy('created_at', 'desc')->paginate(15);
         
         // Get statistics
-        $stats = [
-            'total' => Promotion::count(),
-            'active' => Promotion::where('is_active', true)->count(),
-            'inactive' => Promotion::where('is_active', false)->count(),
-            'expired' => Promotion::where('end_date', '<', now())->count(),
-        ];
+        $totalPromotions = Promotion::count();
+        $activePromotions = Promotion::where('is_active', true)
+            ->where(function($q) {
+                $q->whereNull('start_date')->orWhere('start_date', '<=', now());
+            })
+            ->where(function($q) {
+                $q->whereNull('end_date')->orWhere('end_date', '>=', now());
+            })->count();
+        $inactivePromotions = Promotion::where('is_active', false)->count();
+        $expiredPromotions = Promotion::where('end_date', '<', now())->count();
 
-        return view('admin.promotions.index', compact('promotions', 'stats'));
+        // AJAX request - return only table partial
+        if ($request->ajax()) {
+            // Stats only request
+            if ($request->has('stats_only')) {
+                return response()->json([
+                    'total' => $totalPromotions,
+                    'active' => $activePromotions,
+                    'inactive' => $inactivePromotions,
+                    'expired' => $expiredPromotions,
+                ]);
+            }
+            
+            return view('admin.promotions.partials.table', compact('promotions'))->render();
+        }
+
+        // Regular request - return full view
+        return view('admin.promotions.index', compact(
+            'promotions', 
+            'totalPromotions', 
+            'activePromotions', 
+            'inactivePromotions', 
+            'expiredPromotions'
+        ));
+    }
+
+    public function destroy(Promotion $promotion, Request $request)
+    {
+        try {
+            // Check if promotion is currently active
+            if ($promotion->is_active) {
+                $message = "Không thể xóa khuyến mãi \"{$promotion->name}\" ({$promotion->code}) vì đang ở trạng thái HOẠT ĐỘNG. Vui lòng tạm dừng khuyến mãi trước khi xóa.";
+                
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $message,
+                        'action_suggestion' => 'deactivate'
+                    ], 400);
+                }
+                return redirect()->route('admin.promotions.index')->with('error', $message);
+            }
+
+            // Check if promotion has been used
+            if ($promotion->usage_count > 0) {
+                $message = "KHÔNG THỂ XÓA khuyến mãi \"{$promotion->name}\" ({$promotion->code}) vì đã được sử dụng {$promotion->usage_count} lần. " .
+                          "Đây là dữ liệu giao dịch quan trọng! Bạn chỉ có thể 'Tạm dừng' để ngừng hoạt động nhưng vẫn giữ lịch sử.";
+                
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $message,
+                        'action_suggestion' => 'deactivate',
+                        'business_data' => [
+                            'usage_count' => $promotion->usage_count
+                        ]
+                    ], 400);
+                }
+                return redirect()->route('admin.promotions.index')->with('error', $message);
+            }
+
+            // Safe to delete - no usage history
+            $promotionName = $promotion->name;
+            $promotionCode = $promotion->code;
+            
+            $promotion->delete();
+
+            $message = "Đã xóa khuyến mãi \"{$promotionName}\" ({$promotionCode}) thành công!";
+            
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $message
+                ]);
+            }
+            
+            return redirect()->route('admin.promotions.index')->with('success', $message);
+            
+        } catch (\Exception $e) {
+            $message = 'Có lỗi xảy ra khi xóa khuyến mãi: ' . $e->getMessage();
+            
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $message
+                ], 500);
+            }
+            
+            return redirect()->route('admin.promotions.index')->with('error', $message);
+        }
+    }
+
+    public function toggle(Request $request, Promotion $promotion)
+    {
+        try {
+            $promotion->is_active = $request->boolean('is_active');
+            $promotion->save();
+
+            $status = $promotion->is_active ? 'kích hoạt' : 'tạm dừng';
+            
+            return response()->json([
+                'success' => true,
+                'message' => "Đã {$status} khuyến mãi thành công!",
+                'is_active' => $promotion->is_active
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi thay đổi trạng thái khuyến mãi.'
+            ], 500);
+        }
     }
 
     public function show(Promotion $promotion)
@@ -57,21 +181,51 @@ class PromotionController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $rules = [
             'name' => 'required|string|max:255',
             'code' => 'required|string|max:50|unique:promotions,code',
             'description' => 'nullable|string',
             'type' => 'required|in:percentage,fixed_amount,free_shipping,brand_specific',
-            'discount_value' => 'required|numeric|min:0',
+            'discount_value' => 'nullable|numeric|min:0',
             'min_order_amount' => 'nullable|numeric|min:0',
             'max_discount_amount' => 'nullable|numeric|min:0',
             'usage_limit' => 'nullable|integer|min:1',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after:start_date',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after:start_date',
             'is_active' => 'boolean',
-        ]);
+        ];
 
-        Promotion::create($request->all());
+        // Conditional validation for discount_value
+        if ($request->type && $request->type !== 'free_shipping') {
+            $rules['discount_value'] = 'required|numeric|min:0';
+            
+            if (in_array($request->type, ['percentage', 'brand_specific'])) {
+                $rules['discount_value'] .= '|max:100';
+            }
+        }
+
+        try {
+            $validated = $request->validate($rules);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $e->errors(),
+                    'message' => 'Dữ liệu không hợp lệ.'
+                ], 422);
+            }
+            throw $e;
+        }
+
+        $promotion = Promotion::create($request->all());
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Khuyến mãi đã được tạo thành công.',
+                'redirect' => route('admin.promotions.index')
+            ]);
+        }
 
         return redirect()->route('admin.promotions.index')
             ->with('success', 'Khuyến mãi đã được tạo thành công.');
@@ -84,31 +238,54 @@ class PromotionController extends Controller
 
     public function update(Request $request, Promotion $promotion)
     {
-        $request->validate([
+        $rules = [
             'name' => 'required|string|max:255',
             'code' => 'required|string|max:50|unique:promotions,code,' . $promotion->id,
             'description' => 'nullable|string',
             'type' => 'required|in:percentage,fixed_amount,free_shipping,brand_specific',
-            'discount_value' => 'required|numeric|min:0',
+            'discount_value' => 'nullable|numeric|min:0',
             'min_order_amount' => 'nullable|numeric|min:0',
             'max_discount_amount' => 'nullable|numeric|min:0',
             'usage_limit' => 'nullable|integer|min:1',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after:start_date',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after:start_date',
             'is_active' => 'boolean',
-        ]);
+        ];
+
+        // Conditional validation for discount_value
+        if ($request->type && $request->type !== 'free_shipping') {
+            $rules['discount_value'] = 'required|numeric|min:0';
+            
+            if (in_array($request->type, ['percentage', 'brand_specific'])) {
+                $rules['discount_value'] .= '|max:100';
+            }
+        }
+
+        try {
+            $validated = $request->validate($rules);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $e->errors(),
+                    'message' => 'Dữ liệu không hợp lệ.'
+                ], 422);
+            }
+            throw $e;
+        }
 
         $promotion->update($request->all());
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Khuyến mãi đã được cập nhật thành công.',
+                'redirect' => route('admin.promotions.index')
+            ]);
+        }
 
         return redirect()->route('admin.promotions.index')
             ->with('success', 'Khuyến mãi đã được cập nhật thành công.');
     }
 
-    public function destroy(Promotion $promotion)
-    {
-        $promotion->delete();
-
-        return redirect()->route('admin.promotions.index')
-            ->with('success', 'Khuyến mãi đã được xóa thành công.');
-    }
 }

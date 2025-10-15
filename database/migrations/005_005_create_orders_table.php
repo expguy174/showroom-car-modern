@@ -16,6 +16,7 @@ return new class extends Migration {
             $table->decimal('discount_total', 15, 2)->unsigned()->default(0);
             $table->decimal('tax_total', 15, 2)->unsigned()->default(0);
             $table->decimal('shipping_fee', 15, 2)->unsigned()->default(0);
+            $table->decimal('payment_fee', 15, 2)->unsigned()->default(0);
             $table->decimal('grand_total', 15, 2)->unsigned()->default(0);
             $table->text('note')->nullable();
             $table->foreignId('payment_method_id')->nullable()->constrained('payment_methods')->onDelete('set null');

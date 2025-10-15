@@ -14,7 +14,7 @@
         </thead>
         <tbody class="divide-y divide-gray-200">
             @forelse($reviews as $review)
-            <tr class="hover:bg-gray-50">
+            <tr class="hover:bg-gray-50" data-review-id="{{ $review->id }}">
                 <td class="px-6 py-4 whitespace-nowrap">
                     <div class="text-sm font-medium text-gray-900">
                         {{ $review->user->userProfile->name ?? $review->user->email }}
@@ -45,7 +45,7 @@
                 <td class="px-6 py-4">
                     <p class="text-sm text-gray-900 truncate">{{ $review->comment }}</p>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-center">
+                <td class="px-6 py-4 whitespace-nowrap text-center status-cell">
                     @if($review->is_approved)
                     <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                         <i class="fas fa-check-circle mr-1"></i>Đã duyệt
@@ -56,7 +56,7 @@
                     </span>
                     @endif
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
+                <td class="px-6 py-4 whitespace-nowrap text-center text-sm actions-cell">
                     <div class="flex items-center justify-center gap-2">
                         @if(!$review->is_approved)
                         <form action="{{ route('admin.reviews.approve', $review) }}" method="POST" class="inline approve-form">

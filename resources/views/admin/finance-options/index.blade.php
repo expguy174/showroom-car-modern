@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Quản lý Gói Trả Góp')
+@section('title', 'Quản lý gói trả góp')
 
 @section('content')
 {{-- Flash Messages Component --}}
@@ -13,7 +13,7 @@
 <div class="space-y-6">
     {{-- Page Header --}}
     <x-admin.page-header 
-        title="Gói Trả Góp"
+        title="Gói trả góp"
         description="Quản lý các gói vay tài chính cho khách hàng"
         icon="fas fa-calculator">
         <a href="{{ route('admin.finance-options.create') }}" class="inline-flex items-center justify-center w-full sm:w-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
@@ -246,12 +246,12 @@ window.confirmDeleteFinance = function(data) {
         }
     })
     .then(response => {
-        if (!response.ok) {
-            return response.json().then(errorData => {
-                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-            });
-        }
-        return response.json();
+        return response.json().then(data => {
+            if (!response.ok) {
+                throw { status: response.status, data: data };
+            }
+            return data;
+        });
     })
     .then(data => {
         if (data.success) {
@@ -260,12 +260,17 @@ window.confirmDeleteFinance = function(data) {
                 window.deleteModalManager_deleteFinanceModal.hide();
             }
             
-            // 2. Reload data
+            // 2. Update stats cards if provided
+            if (data.stats && window.updateStatsFromServer) {
+                window.updateStatsFromServer(data.stats);
+            }
+            
+            // 3. Reload data
             if (window.loadFinanceOptions) {
                 window.loadFinanceOptions();
             }
             
-            // 3. Show success message from server
+            // 4. Show success message from server
             if (window.showMessage) {
                 window.showMessage(data.message || 'Đã xóa gói trả góp thành công!', 'success');
             }
@@ -281,9 +286,17 @@ window.confirmDeleteFinance = function(data) {
             window.deleteModalManager_deleteFinanceModal.setLoading(false);
         }
         
-        // Show detailed error message from server
+        // Use server error message if available
+        let errorMessage = 'Có lỗi xảy ra khi xóa gói trả góp!';
+        if (error.data && error.data.message) {
+            errorMessage = error.data.message;
+        } else if (error.message) {
+            errorMessage = error.message;
+        }
+        
+        // Show user-friendly error message
         if (window.showMessage) {
-            window.showMessage(error.message || 'Có lỗi xảy ra khi xóa gói trả góp!', 'error');
+            window.showMessage(errorMessage, 'error');
         }
     });
 };

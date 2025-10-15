@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Quản lý Phương thức Thanh toán')
+@section('title', 'Quản lý phương thức thanh toán')
 
 @section('content')
 {{-- Flash Messages Component --}}
@@ -13,10 +13,10 @@
 <div class="space-y-6">
     {{-- Page Header --}}
     <x-admin.page-header 
-        title="Phương thức Thanh toán"
+        title="Phương thức thanh toán"
         description="Quản lý các phương thức thanh toán cho khách hàng"
         icon="fas fa-credit-card">
-        <a href="{{ route('admin.payment-methods.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
+        <a href="{{ route('admin.payment-methods.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
             <i class="fas fa-plus mr-2"></i>
             Thêm phương thức
         </a>
@@ -243,11 +243,24 @@ window.confirmDeletePayment = function(data) {
             'Accept': 'application/json'
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        return response.json().then(data => {
+            if (!response.ok) {
+                // Server returned error status (400, 500, etc.)
+                throw { status: response.status, data: data };
+            }
+            return data;
+        });
+    })
     .then(data => {
         if (data.success) {
             if (window.deleteModalManager_deletePaymentModal) {
                 window.deleteModalManager_deletePaymentModal.hide();
+            }
+            
+            // Update stats cards if provided
+            if (data.stats && window.updateStatsFromServer) {
+                window.updateStatsFromServer(data.stats);
             }
             
             if (window.loadPaymentMethods) {
@@ -258,7 +271,7 @@ window.confirmDeletePayment = function(data) {
                 window.showMessage(data.message || 'Đã xóa phương thức thanh toán thành công!', 'success');
             }
         } else {
-            throw new Error(data.message || 'Có lỗi xảy ra');
+            throw { status: 200, data: data };
         }
     })
     .catch(error => {
@@ -266,8 +279,17 @@ window.confirmDeletePayment = function(data) {
         if (window.deleteModalManager_deletePaymentModal) {
             window.deleteModalManager_deletePaymentModal.setLoading(false);
         }
+        
+        // Use server error message if available
+        let errorMessage = 'Có lỗi xảy ra khi xóa phương thức thanh toán!';
+        if (error.data && error.data.message) {
+            errorMessage = error.data.message;
+        } else if (error.message) {
+            errorMessage = error.message;
+        }
+        
         if (window.showMessage) {
-            window.showMessage('Có lỗi xảy ra khi xóa phương thức thanh toán!', 'error');
+            window.showMessage(errorMessage, 'error');
         }
     });
 };

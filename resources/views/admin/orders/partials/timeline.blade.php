@@ -45,6 +45,10 @@
                     <div class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
                         <i class="fas fa-undo text-orange-600 text-sm"></i>
                     </div>
+                @elseif($log->action == 'refund_status_updated')
+                    <div class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-exchange-alt text-indigo-600 text-sm"></i>
+                    </div>
                 @elseif($log->action == 'installments_created')
                     <div class="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center">
                         <i class="fas fa-calendar-alt text-teal-600 text-sm"></i>
@@ -89,6 +93,8 @@
                             Cập nhật ghi chú
                         @elseif($log->action == 'payment_refunded')
                             Hoàn tiền
+                        @elseif($log->action == 'refund_status_updated')
+                            Cập nhật trạng thái hoàn tiền
                         @elseif($log->action == 'installments_created')
                             Tạo lịch trả góp
                         @elseif($log->action == 'installment_paid')
@@ -180,6 +186,36 @@
                     </div>
                     @endif
                     
+                    @if($log->action === 'refund_status_updated')
+                    <div class="mt-2 p-2 bg-indigo-50 border border-indigo-200 rounded">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-700 font-medium">Trạng thái:</span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm text-gray-600">{{ $log->details['from_label'] ?? $log->details['from_status'] }}</span>
+                                <i class="fas fa-arrow-right text-gray-400 text-xs"></i>
+                                <span class="text-sm font-medium text-indigo-600">{{ $log->details['to_label'] ?? $log->details['to_status'] }}</span>
+                            </div>
+                        </div>
+                        @if(isset($log->details['amount']))
+                        <div class="mt-1 flex justify-between items-center">
+                            <span class="text-gray-700 font-medium">Số tiền:</span>
+                            <span class="text-indigo-600 font-bold">{{ number_format($log->details['amount'], 0, ',', '.') }} VNĐ</span>
+                        </div>
+                        @endif
+                        @if(isset($log->details['admin_notes']) && $log->details['admin_notes'])
+                        <div class="mt-1">
+                            <span class="text-gray-600 text-xs">Ghi chú:</span>
+                            <p class="text-gray-700 text-sm mt-1">{{ $log->details['admin_notes'] }}</p>
+                        </div>
+                        @endif
+                        @if(isset($log->details['admin_name']))
+                        <div class="mt-1 text-xs text-gray-500">
+                            Bởi: {{ $log->details['admin_name'] }}
+                        </div>
+                        @endif
+                    </div>
+                    @endif
+                    
                     @if($log->action === 'installments_created' && isset($log->details['total_installments']))
                     <div class="mt-2 p-3 bg-teal-50 border border-teal-200 rounded">
                         <div class="flex items-center justify-between text-xs">
@@ -214,6 +250,28 @@
                         </div>
                     </div>
                     @endif
+                    
+                    {{-- Show additional details for order_created --}}
+                    @if($log->action === 'order_created' && isset($log->details['order_number']))
+                    <div class="mt-2 p-2 bg-green-50 border border-green-200 rounded">
+                        <div class="text-xs space-y-1">
+                            @if(isset($log->details['order_number']))
+                            <div><span class="text-gray-600">Số đơn:</span> <span class="font-medium">{{ $log->details['order_number'] }}</span></div>
+                            @endif
+                            @if(isset($log->details['grand_total']))
+                            <div><span class="text-gray-600">Tổng tiền:</span> <span class="font-medium text-green-600">{{ number_format($log->details['grand_total'], 0, ',', '.') }} VNĐ</span></div>
+                            @endif
+                            @if(isset($log->details['payment_method_id']))
+                            @php
+                                $paymentMethod = \App\Models\PaymentMethod::find($log->details['payment_method_id']);
+                                $paymentMethodName = $paymentMethod ? $paymentMethod->name : 'ID ' . $log->details['payment_method_id'];
+                            @endphp
+                            <div><span class="text-gray-600">Phương thức thanh toán:</span> <span class="font-medium">{{ $paymentMethodName }}</span></div>
+                            @endif
+                        </div>
+                    </div>
+                    @endif
+                    
                 </div>
                 @endif
                 
@@ -231,10 +289,43 @@
                         $performedBy = $userName . ' (Khách hàng)';
                     }
                 @endphp
-                <p class="text-xs text-gray-500 mt-2">
-                    <i class="fas fa-user mr-1"></i>
-                    Bởi: {{ $performedBy }}
-                </p>
+                <div class="text-xs text-gray-500 mt-2 space-y-1">
+                    <p>
+                        <i class="fas fa-user mr-1"></i>
+                        Bởi: {{ $performedBy }}
+                    </p>
+                    @if($log->ip_address)
+                    <p>
+                        <i class="fas fa-globe mr-1"></i>
+                        IP: {{ $log->ip_address }}
+                    </p>
+                    @endif
+                    @if($log->user_agent)
+                    <p class="break-all">
+                        <i class="fas fa-desktop mr-1"></i>
+                        Thiết bị: 
+                        @php
+                            $userAgent = $log->user_agent;
+                            // Extract browser and OS info from user agent
+                            $browser = 'Unknown';
+                            $os = 'Unknown';
+                            
+                            if (strpos($userAgent, 'Chrome') !== false) $browser = 'Chrome';
+                            elseif (strpos($userAgent, 'Firefox') !== false) $browser = 'Firefox';
+                            elseif (strpos($userAgent, 'Safari') !== false && strpos($userAgent, 'Chrome') === false) $browser = 'Safari';
+                            elseif (strpos($userAgent, 'Edge') !== false) $browser = 'Edge';
+                            
+                            if (strpos($userAgent, 'Windows') !== false) $os = 'Windows';
+                            elseif (strpos($userAgent, 'Mac') !== false) $os = 'macOS';
+                            elseif (strpos($userAgent, 'Linux') !== false) $os = 'Linux';
+                            elseif (strpos($userAgent, 'Android') !== false) $os = 'Android';
+                            elseif (strpos($userAgent, 'iPhone') !== false || strpos($userAgent, 'iPad') !== false) $os = 'iOS';
+                        @endphp
+                        <span class="font-medium">{{ $browser }} trên {{ $os }}</span>
+                        <span class="text-gray-400 ml-2 text-xs">({{ Str::limit($userAgent, 60) }})</span>
+                    </p>
+                    @endif
+                </div>
             </div>
         </div>
         @endforeach

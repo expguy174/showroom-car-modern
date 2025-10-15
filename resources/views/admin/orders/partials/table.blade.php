@@ -17,14 +17,9 @@
                 @forelse ($orders as $order)
                     <tr class="hover:bg-gray-50 transition-colors">
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="flex items-center">
-                                <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold mr-3">
-                                    {{ substr($order->order_number ?? $order->id, -2) }}
-                                </div>
-                                <div>
-                                    <div class="text-sm font-medium text-gray-900">#{{ $order->order_number ?? $order->id }}</div>
-                                    <div class="text-sm text-gray-500">{{ $order->items->count() }} sản phẩm</div>
-                                </div>
+                            <div>
+                                <div class="text-sm font-medium text-gray-900">#{{ $order->order_number ?? $order->id }}</div>
+                                <div class="text-sm text-gray-500">{{ $order->items->count() }} sản phẩm</div>
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">

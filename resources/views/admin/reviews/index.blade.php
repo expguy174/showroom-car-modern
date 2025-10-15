@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Quản lý Đánh giá')
+@section('title', 'Quản lý đánh giá')
 
 @section('content')
 {{-- Flash Messages Component --}}
@@ -13,7 +13,7 @@
 <div class="space-y-6">
     {{-- Page Header --}}
     <x-admin.page-header 
-        title="Đánh giá Sản phẩm"
+        title="Đánh giá sản phẩm"
         description="Quản lý và kiểm duyệt đánh giá từ khách hàng"
         icon="fas fa-star">
     </x-admin.page-header>
@@ -41,7 +41,8 @@
             :value="\App\Models\Review::where('is_approved', false)->count()"
             icon="fas fa-clock"
             color="yellow"
-            description="Chưa phê duyệt" />
+            description="Chưa phê duyệt"
+            dataStat="pending" />
     </div>
 
     {{-- Filters --}}
@@ -116,67 +117,169 @@
 function initializeEventListeners() {
     // Delete buttons
     document.querySelectorAll('.delete-btn').forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
-            const reviewId = this.dataset.reviewId;
-            const reviewerName = this.dataset.reviewName;
-            
-            if (window.deleteModalManager_deleteReviewModal) {
-                window.deleteModalManager_deleteReviewModal.show({
-                    entityName: `đánh giá của ${reviewerName}`,
-                    details: 'Hành động này không thể hoàn tác.',
-                    deleteUrl: `/admin/reviews/${reviewId}`
-                });
-            }
-        });
+        attachDeleteListener(button);
     });
     
     // Approve/Reject forms
     document.querySelectorAll('.approve-form, .reject-form').forEach(form => {
-        form.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const formData = new FormData(this);
-            const button = this.querySelector('button');
-            const originalHtml = button.innerHTML;
-            
-            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            button.disabled = true;
-            
-            try {
-                const response = await fetch(this.action, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
-                
-                if (response.ok) {
-                    // Reload table
-                    if (window.loadReviews) {
-                        window.loadReviews();
-                    }
-                    
-                    // Show message
-                    const data = await response.json();
-                    if (data.message && window.showMessage) {
-                        window.showMessage(data.message, 'success');
-                    }
-                } else {
-                    throw new Error('Request failed');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                if (window.showMessage) {
-                    window.showMessage('Có lỗi xảy ra!', 'error');
-                }
-                button.innerHTML = originalHtml;
-                button.disabled = false;
-            }
-        });
+        attachFormListener(form);
     });
 }
+
+// Update button status without reloading table
+function updateButtonStatus(form, newStatus) {
+    const row = form.closest('tr');
+    if (!row) return;
+    
+    const statusCell = row.querySelector('.status-cell');
+    const actionsCell = row.querySelector('.actions-cell');
+    
+    if (statusCell) {
+        // Update status badge
+        if (newStatus) {
+            statusCell.innerHTML = '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"><i class="fas fa-check-circle mr-1"></i>Đã duyệt</span>';
+        } else {
+            statusCell.innerHTML = '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"><i class="fas fa-clock mr-1"></i>Chờ duyệt</span>';
+        }
+    }
+    
+    if (actionsCell) {
+        // Update action buttons while keeping delete button
+        const reviewId = form.closest('[data-review-id]')?.dataset.reviewId;
+        const deleteBtn = actionsCell.querySelector('.delete-btn');
+        const deleteHtml = deleteBtn ? deleteBtn.outerHTML : '';
+        
+        if (reviewId) {
+            if (newStatus) {
+                // Show reject button + keep delete button
+                actionsCell.innerHTML = `
+                    <div class="flex items-center justify-center gap-2">
+                        <form class="reject-form inline" action="/admin/reviews/${reviewId}/reject" method="POST">
+                            <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').getAttribute('content')}">
+                            <input type="hidden" name="_method" value="PATCH">
+                            <button type="submit" class="text-orange-600 hover:text-orange-900" title="Bỏ duyệt">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </form>
+                        ${deleteHtml}
+                    </div>
+                `;
+            } else {
+                // Show approve button + keep delete button
+                actionsCell.innerHTML = `
+                    <div class="flex items-center justify-center gap-2">
+                        <form class="approve-form inline" action="/admin/reviews/${reviewId}/approve" method="POST">
+                            <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').getAttribute('content')}">
+                            <input type="hidden" name="_method" value="PATCH">
+                            <button type="submit" class="text-green-600 hover:text-green-900" title="Phê duyệt">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        </form>
+                        ${deleteHtml}
+                    </div>
+                `;
+            }
+            
+            // Re-attach event listeners to new buttons
+            const newForm = actionsCell.querySelector('.approve-form, .reject-form');
+            if (newForm) {
+                attachFormListener(newForm);
+            }
+            
+            // Re-attach delete button listener if exists
+            const newDeleteBtn = actionsCell.querySelector('.delete-btn');
+            if (newDeleteBtn) {
+                attachDeleteListener(newDeleteBtn);
+            }
+        }
+    }
+}
+
+// Attach event listener to a single form
+function attachFormListener(form) {
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const button = this.querySelector('button');
+        const originalHtml = button.innerHTML;
+        
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        button.disabled = true;
+        
+        try {
+            const response = await fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                
+                // Update stats cards if provided
+                if (data.stats && window.updateStatsFromServer) {
+                    window.updateStatsFromServer(data.stats);
+                }
+                
+                // Update button status without reloading table
+                if (data.new_status !== undefined) {
+                    updateButtonStatus(form, data.new_status);
+                }
+                
+                // Show message
+                if (data.message && window.showMessage) {
+                    window.showMessage(data.message, 'success');
+                }
+            } else {
+                throw new Error('Request failed');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            if (window.showMessage) {
+                window.showMessage('Có lỗi xảy ra!', 'error');
+            }
+            button.innerHTML = originalHtml;
+            button.disabled = false;
+        }
+    });
+}
+
+// Attach delete event listener to a single button
+function attachDeleteListener(button) {
+    button.addEventListener('click', function(e) {
+        e.preventDefault();
+        const reviewId = this.dataset.reviewId;
+        const reviewerName = this.dataset.reviewName;
+        
+        if (window.deleteModalManager_deleteReviewModal) {
+            window.deleteModalManager_deleteReviewModal.show({
+                entityName: `đánh giá của ${reviewerName}`,
+                details: 'Hành động này không thể hoàn tác.',
+                deleteUrl: `/admin/reviews/${reviewId}`
+            });
+        }
+    });
+}
+
+// Function to update stats cards from server data
+window.updateStatsFromServer = function(stats) {
+    const totalCard = document.querySelector('[data-stat="total"] .text-2xl');
+    const approvedCard = document.querySelector('[data-stat="approved"] .text-2xl');
+    const pendingCard = document.querySelector('[data-stat="pending"] .text-2xl');
+    
+    if (totalCard && stats.total !== undefined) {
+        totalCard.textContent = stats.total;
+    }
+    if (approvedCard && stats.approved !== undefined) {
+        approvedCard.textContent = stats.approved;
+    }
+    if (pendingCard && stats.pending !== undefined) {
+        pendingCard.textContent = stats.pending;
+    }
+};
 
 // Dropdown callback
 window.loadReviewsFromDropdown = function() {
@@ -214,11 +317,23 @@ window.confirmDeleteReview = function(data) {
             'Accept': 'application/json'
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        return response.json().then(data => {
+            if (!response.ok) {
+                throw { status: response.status, data: data };
+            }
+            return data;
+        });
+    })
     .then(data => {
         if (data.success) {
             if (window.deleteModalManager_deleteReviewModal) {
                 window.deleteModalManager_deleteReviewModal.hide();
+            }
+            
+            // Update stats cards if provided
+            if (data.stats && window.updateStatsFromServer) {
+                window.updateStatsFromServer(data.stats);
             }
             
             if (window.loadReviews) {
@@ -237,8 +352,17 @@ window.confirmDeleteReview = function(data) {
         if (window.deleteModalManager_deleteReviewModal) {
             window.deleteModalManager_deleteReviewModal.setLoading(false);
         }
+        
+        // Use server error message if available
+        let errorMessage = 'Có lỗi xảy ra khi xóa đánh giá!';
+        if (error.data && error.data.message) {
+            errorMessage = error.data.message;
+        } else if (error.message) {
+            errorMessage = error.message;
+        }
+        
         if (window.showMessage) {
-            window.showMessage('Có lỗi xảy ra khi xóa đánh giá!', 'error');
+            window.showMessage(errorMessage, 'error');
         }
     });
 };

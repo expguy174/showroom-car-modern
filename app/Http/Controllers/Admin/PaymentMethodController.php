@@ -64,6 +64,15 @@ class PaymentMethodController extends Controller
 
         PaymentMethod::create($request->all());
 
+        // Return JSON for AJAX requests
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Phương thức thanh toán đã được tạo thành công!',
+                'redirect' => route('admin.payment-methods.index')
+            ]);
+        }
+
         return redirect()->route('admin.payment-methods.index')
             ->with('success', 'Phương thức thanh toán đã được tạo thành công!');
     }
@@ -93,23 +102,98 @@ class PaymentMethodController extends Controller
 
         $paymentMethod->update($request->all());
 
+        // Return JSON for AJAX requests
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Phương thức thanh toán đã được cập nhật thành công!',
+                'redirect' => route('admin.payment-methods.index')
+            ]);
+        }
+
         return redirect()->route('admin.payment-methods.index')
             ->with('success', 'Phương thức thanh toán đã được cập nhật thành công!');
     }
 
     public function destroy(PaymentMethod $paymentMethod, Request $request)
     {
-        $paymentMethod->delete();
-        
-        if ($request->ajax() || $request->wantsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Đã xóa phương thức thanh toán thành công!'
-            ]);
+        try {
+            // Check if payment method is currently active
+            if ($paymentMethod->is_active) {
+                $message = "Không thể xóa phương thức \"{$paymentMethod->name}\" vì đang ở trạng thái HOẠT ĐỘNG. Vui lòng tắt phương thức trước khi xóa.";
+                
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $message,
+                        'action_suggestion' => 'deactivate'
+                    ], 400);
+                }
+                return redirect()->route('admin.payment-methods.index')->with('error', $message);
+            }
+
+            // Check if payment method has been used in transactions or orders
+            $transactionCount = $paymentMethod->paymentTransactions()->count();
+            $orderCount = $paymentMethod->orders()->count();
+
+            if ($transactionCount > 0 || $orderCount > 0) {
+                $message = "KHÔNG THỂ XÓA phương thức \"{$paymentMethod->name}\" vì đã có " .
+                          "({$orderCount} đơn hàng, {$transactionCount} giao dịch). " .
+                          "Đây là dữ liệu kinh doanh quan trọng! Bạn chỉ có thể 'Tắt' để ngừng sử dụng nhưng vẫn giữ lịch sử.";
+                
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $message,
+                        'action_suggestion' => 'deactivate',
+                        'business_data' => [
+                            'order_count' => $orderCount,
+                            'transaction_count' => $transactionCount
+                        ]
+                    ], 400);
+                }
+                return redirect()->route('admin.payment-methods.index')->with('error', $message);
+            }
+
+            // Safe to delete - no business data
+            $paymentMethodName = $paymentMethod->name;
+            $paymentMethodCode = $paymentMethod->code;
+            
+            $paymentMethod->delete();
+
+            $message = "Đã xóa phương thức \"{$paymentMethodName}\" ({$paymentMethodCode}) thành công!";
+            
+            if ($request->ajax() || $request->wantsJson()) {
+                // Get updated stats after deletion
+                $stats = [
+                    'total' => PaymentMethod::count(),
+                    'active' => PaymentMethod::where('is_active', true)->count(),
+                    'inactive' => PaymentMethod::where('is_active', false)->count()
+                ];
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => $message,
+                    'stats' => $stats
+                ]);
+            }
+            
+            return redirect()->route('admin.payment-methods.index')
+                ->with('success', $message);
+                
+        } catch (\Exception $e) {
+            $message = 'Có lỗi xảy ra khi xóa phương thức thanh toán: ' . $e->getMessage();
+            
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $message
+                ], 500);
+            }
+            
+            return redirect()->route('admin.payment-methods.index')
+                ->with('error', $message);
         }
-        
-        return redirect()->route('admin.payment-methods.index')
-            ->with('success', 'Đã xóa phương thức thanh toán thành công!');
     }
 
     public function toggleActive(PaymentMethod $paymentMethod, Request $request)

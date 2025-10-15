@@ -51,9 +51,18 @@ class ReviewController extends Controller
         $review->update(['is_approved' => true]);
         
         if ($request->ajax() || $request->wantsJson()) {
+            // Get updated stats
+            $stats = [
+                'total' => Review::count(),
+                'approved' => Review::where('is_approved', true)->count(),
+                'pending' => Review::where('is_approved', false)->count()
+            ];
+            
             return response()->json([
                 'success' => true,
-                'message' => 'Đánh giá đã được phê duyệt!'
+                'message' => 'Đánh giá đã được phê duyệt!',
+                'stats' => $stats,
+                'new_status' => true
             ]);
         }
         
@@ -65,9 +74,18 @@ class ReviewController extends Controller
         $review->update(['is_approved' => false]);
         
         if ($request->ajax() || $request->wantsJson()) {
+            // Get updated stats
+            $stats = [
+                'total' => Review::count(),
+                'approved' => Review::where('is_approved', true)->count(),
+                'pending' => Review::where('is_approved', false)->count()
+            ];
+            
             return response()->json([
                 'success' => true,
-                'message' => 'Đã bỏ duyệt đánh giá!'
+                'message' => 'Đã bỏ duyệt đánh giá!',
+                'stats' => $stats,
+                'new_status' => false
             ]);
         }
         
@@ -79,9 +97,17 @@ class ReviewController extends Controller
         $review->delete();
         
         if ($request->ajax() || $request->wantsJson()) {
+            // Get updated stats after deletion
+            $stats = [
+                'total' => Review::count(),
+                'approved' => Review::where('is_approved', true)->count(),
+                'pending' => Review::where('is_approved', false)->count()
+            ];
+            
             return response()->json([
                 'success' => true,
-                'message' => 'Đã xóa đánh giá thành công!'
+                'message' => 'Đã xóa đánh giá thành công!',
+                'stats' => $stats
             ]);
         }
         

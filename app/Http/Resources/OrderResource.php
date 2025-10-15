@@ -24,6 +24,7 @@ class OrderResource extends JsonResource
             'discount_total' => (string) $this->discount_total,
             'tax_total' => (string) $this->tax_total,
             'shipping_fee' => (string) $this->shipping_fee,
+            'payment_fee' => (string) $this->payment_fee,
             'grand_total' => (string) $this->grand_total,
             'note' => $this->note,
             'paid_at' => optional($this->paid_at)->toISOString(),

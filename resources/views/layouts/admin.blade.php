@@ -181,6 +181,11 @@
                         <i class="fas fa-credit-card mr-3 w-4 text-center {{ request()->routeIs('admin.payment-methods.*') ? 'text-blue-600' : 'text-gray-500' }}"></i>
                         <span>Phương thức TT</span>
                     </a>
+                    
+                    <a href="{{ route('admin.payments.refunds') }}" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors {{ request()->routeIs('admin.payments.refunds*') ? 'bg-blue-100 text-blue-700 border-r-2 border-blue-500' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
+                        <i class="fas fa-undo mr-3 w-4 text-center {{ request()->routeIs('admin.payments.refunds*') ? 'text-blue-600' : 'text-gray-500' }}"></i>
+                        <span>Hoàn tiền</span>
+                    </a>
                     @endif
                 </div>
                 @endif

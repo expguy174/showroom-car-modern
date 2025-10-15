@@ -177,6 +177,34 @@ class OrderController extends Controller
             )->withInput();
         }
 
+        // Handle installments if order has them
+        $hasInstallments = $order->installments()->exists();
+        $installmentsSummary = null;
+        
+        if ($hasInstallments) {
+            $installments = $order->installments()->get();
+            $paidCount = $installments->where('status', 'paid')->count();
+            $pendingCount = $installments->whereIn('status', ['pending', 'overdue'])->count();
+            $totalPaid = $installments->where('status', 'paid')->sum('amount');
+            
+            // Cancel all pending installments
+            $order->installments()
+                ->whereIn('status', ['pending', 'overdue'])
+                ->update([
+                    'status' => 'cancelled',
+                    'cancelled_at' => now(),
+                    'cancellation_reason' => 'Đơn hàng bị hủy: ' . $validated['reason']
+                ]);
+            
+            $installmentsSummary = [
+                'total_installments' => $installments->count(),
+                'paid_installments' => $paidCount,
+                'cancelled_installments' => $pendingCount,
+                'total_paid_amount' => $totalPaid,
+                'refund_required' => $paidCount > 0
+            ];
+        }
+
         // Update order status to cancelled
         $order->update(['status' => 'cancelled']);
 
@@ -190,7 +218,7 @@ class OrderController extends Controller
             'user_id' => Auth::id(),
             'action' => 'order_cancelled',
             'message' => $logMessage,
-            'details' => [
+            'details' => array_merge([
                 'from' => $oldStatus,
                 'to' => 'cancelled',
                 'reason' => $validated['reason'],
@@ -198,7 +226,8 @@ class OrderController extends Controller
                 'admin_id' => Auth::id(),
                 'was_shipping' => $oldStatus === 'shipping',
                 'tracking_number' => $order->tracking_number,
-            ],
+                'has_installments' => $hasInstallments,
+            ], $installmentsSummary ? ['installments' => $installmentsSummary] : []),
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
         ]);
@@ -218,6 +247,15 @@ class OrderController extends Controller
         $successMessage = $oldStatus === 'shipping'
             ? 'Đơn hàng đang giao đã được hủy thành công. Vui lòng đảm bảo đã phối hợp với đơn vị vận chuyển.'
             : 'Đơn hàng đã được hủy thành công.';
+
+        // Add installment info to success message if applicable
+        if ($hasInstallments && $installmentsSummary) {
+            $installmentInfo = " Đã hủy {$installmentsSummary['cancelled_installments']} kỳ trả góp còn lại.";
+            if ($installmentsSummary['refund_required']) {
+                $installmentInfo .= " Cần xử lý hoàn tiền cho {$installmentsSummary['paid_installments']} kỳ đã thanh toán (" . number_format($installmentsSummary['total_paid_amount']) . " VNĐ).";
+            }
+            $successMessage .= $installmentInfo;
+        }
 
         return redirect()->back()->with('success', $successMessage);
     }
@@ -424,6 +462,23 @@ class OrderController extends Controller
                 'Không thể thay đổi trạng thái thành "Đã hoàn tiền" trực tiếp. ' .
                 'Vui lòng sử dụng nút "Hoàn tiền" bên dưới để xử lý hoàn tiền.'
             );
+        }
+
+        // Special validation for installment orders
+        if ($order->finance_option_id && $order->installments()->exists()) {
+            if ($newStatus === 'completed') {
+                // Check if all installments are paid
+                $unpaidInstallments = $order->installments()
+                    ->where('status', '!=', 'paid')
+                    ->count();
+                
+                if ($unpaidInstallments > 0) {
+                    return redirect()->back()->with('error', 
+                        'Không thể đánh dấu "Đã thanh toán" khi còn ' . $unpaidInstallments . ' kỳ trả góp chưa thanh toán. ' .
+                        'Vui lòng xác nhận thanh toán từng kỳ trong phần "Lịch trả góp".'
+                    );
+                }
+            }
         }
 
         // Create PaymentTransaction when marking as completed

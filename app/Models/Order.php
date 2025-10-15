@@ -20,6 +20,7 @@ class Order extends Model
         'discount_total',
         'tax_total',
         'shipping_fee',
+        'payment_fee',
         'grand_total',
         'note',
         'payment_method_id',
@@ -78,7 +79,21 @@ class Order extends Model
 
     public function refunds()
     {
-        return $this->hasManyThrough(Refund::class, PaymentTransaction::class);
+        return $this->hasManyThrough(
+            Refund::class, 
+            PaymentTransaction::class,
+            'order_id', // Foreign key on payment_transactions table
+            'payment_transaction_id', // Foreign key on refunds table
+            'id', // Local key on orders table
+            'id' // Local key on payment_transactions table
+        );
+    }
+
+    public function hasPendingRefundRequest()
+    {
+        return \App\Models\Refund::whereHas('paymentTransaction', function($query) {
+            $query->where('order_id', $this->id);
+        })->whereIn('status', ['pending', 'processing'])->exists();
     }
 
     public function paymentMethod()

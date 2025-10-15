@@ -906,16 +906,23 @@ class CartController extends Controller
                 }
             }
             
-            $grandTotal = $total + $taxTotal + $shippingFee - $discountTotal;
+            // Calculate payment method fee
+            $paymentMethod = \App\Models\PaymentMethod::find($validated['payment_method_id']);
+            $paymentFee = 0;
+            if ($paymentMethod) {
+                $paymentFee = $paymentMethod->fee_flat + ($total * $paymentMethod->fee_percent / 100);
+            }
+            
+            $grandTotal = $total + $taxTotal + $shippingFee + $paymentFee - $discountTotal;
 
-            $methodCode = optional(\App\Models\PaymentMethod::find($validated['payment_method_id']))->code;
+            $methodCode = optional($paymentMethod)->code;
             
             // Store payment method in session for mock gateway
             session(['selected_payment_method' => $methodCode]);
             
             // For VNPay and MoMo, create order after payment success
             if (in_array($methodCode, ['vnpay', 'momo'])) {
-                return $this->processOnlinePayment($methodCode, $validated, $orderItems, $cartItems, $userId, $sessionId, $total, $taxTotal, $shippingFee, $grandTotal, $billingAddressId, $shippingAddressId, $billingAddressText, $shippingAddressText, $promotionId, $discountTotal);
+                return $this->processOnlinePayment($methodCode, $validated, $orderItems, $cartItems, $userId, $sessionId, $total, $taxTotal, $shippingFee, $paymentFee, $grandTotal, $billingAddressId, $shippingAddressId, $billingAddressText, $shippingAddressText, $promotionId, $discountTotal);
             }
             
             // For COD and Bank Transfer, create order immediately
@@ -974,6 +981,7 @@ class CartController extends Controller
                 'subtotal' => $total,
                 'tax_total' => $taxTotal,
                 'shipping_fee' => $shippingFee,
+                'payment_fee' => $paymentFee,
                 'discount_total' => $discountTotal,
                 'grand_total' => $grandTotal,
                 'promotion_id' => $promotionId,
@@ -1043,7 +1051,7 @@ class CartController extends Controller
         }
     }
 
-    private function processOnlinePayment($methodCode, $validated, $orderItems, $cartItems, $userId, $sessionId, $total, $taxTotal, $shippingFee, $grandTotal, $billingAddressId, $shippingAddressId, $billingAddressText, $shippingAddressText, $promotionId = null, $discountTotal = 0)
+    private function processOnlinePayment($methodCode, $validated, $orderItems, $cartItems, $userId, $sessionId, $total, $taxTotal, $shippingFee, $paymentFee, $grandTotal, $billingAddressId, $shippingAddressId, $billingAddressText, $shippingAddressText, $promotionId = null, $discountTotal = 0)
     {
         // Calculate finance data if applicable
         $financeData = [];
@@ -1085,6 +1093,7 @@ class CartController extends Controller
             'subtotal' => $total,
             'tax_total' => $taxTotal,
             'shipping_fee' => $shippingFee,
+            'payment_fee' => $paymentFee,
             'discount_total' => $discountTotal,
             'grand_total' => $grandTotal,
             'promotion_id' => $promotionId,

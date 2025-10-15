@@ -146,11 +146,10 @@ class InstallmentController extends Controller
 
             $isLastInstallment = false;
             if ($remainingUnpaid === 0) {
-                $installment->order->update(['payment_status' => 'completed']);
                 $isLastInstallment = true;
             }
 
-            // 4. Log action
+            // 4. Log installment action FIRST (before payment status change)
             $logMessage = $isLastInstallment
                 ? "Đã xác nhận thanh toán kỳ cuối cùng (kỳ {$installment->installment_number}). Hoàn thành toàn bộ lịch trả góp!"
                 : "Đã xác nhận thanh toán kỳ {$installment->installment_number}";
@@ -173,7 +172,32 @@ class InstallmentController extends Controller
                 'user_agent' => $request->userAgent(),
             ]);
 
-            // 5. Create notification for user
+            // 5. Update payment status AFTER logging installment completion
+            if ($isLastInstallment) {
+                $oldPaymentStatus = $installment->order->payment_status;
+                $installment->order->update(['payment_status' => 'completed']);
+                
+                // Create payment status change log if status actually changed
+                if ($oldPaymentStatus !== 'completed') {
+                    OrderLog::create([
+                        'order_id' => $installment->order_id,
+                        'user_id' => Auth::id(),
+                        'action' => 'payment_status_changed',
+                        'message' => 'Trạng thái thanh toán được cập nhật tự động sau khi hoàn thành tất cả kỳ trả góp',
+                        'details' => [
+                            'from' => $oldPaymentStatus,
+                            'to' => 'completed',
+                            'trigger' => 'installment_completion',
+                            'last_installment_id' => $installment->id,
+                            'admin_id' => Auth::id(),
+                        ],
+                        'ip_address' => request()->ip(),
+                        'user_agent' => request()->userAgent(),
+                    ]);
+                }
+            }
+
+            // 6. Create notification for user
             $notificationTitle = "Đơn hàng #{$installment->order->order_number}";
             
             $notificationMessage = $isLastInstallment

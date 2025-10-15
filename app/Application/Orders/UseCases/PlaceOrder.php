@@ -104,7 +104,8 @@ class PlaceOrder
                 'discount_total' => $payload['discount_total'] ?? 0,
                 'tax_total' => $payload['tax_total'] ?? 0,
                 'shipping_fee' => $payload['shipping_fee'] ?? 0,
-                'grand_total' => $payload['grand_total'] ?? ($orderTotal + ($payload['tax_total'] ?? 0) + ($payload['shipping_fee'] ?? 0) - ($payload['discount_total'] ?? 0)),
+                'payment_fee' => $payload['payment_fee'] ?? 0,
+                'grand_total' => $payload['grand_total'] ?? ($orderTotal + ($payload['tax_total'] ?? 0) + ($payload['shipping_fee'] ?? 0) + ($payload['payment_fee'] ?? 0) - ($payload['discount_total'] ?? 0)),
                 'note' => $payload['note'] ?? null,
                 'payment_method_id' => $payload['payment_method_id'] ?? null,
                 'finance_option_id' => $payload['finance_option_id'] ?? null,
@@ -212,30 +213,17 @@ class PlaceOrder
                 ]);
             }
 
-            // Create initial order log
             try {
-                OrderLog::create([
-                    'order_id' => $order->id,
-                    'user_id' => \Illuminate\Support\Facades\Auth::id() ?? $payload['user_id'] ?? null,
-                    'action' => 'order_created',
-                    'message' => 'Đơn hàng được tạo',
-                    'details' => [
-                        'status' => 'pending',
-                        'order_number' => $order->order_number,
-                        'grand_total' => $order->grand_total,
-                        'payment_method_id' => $order->payment_method_id,
-                    ],
-                    'ip_address' => request()->ip(),
-                    'user_agent' => request()->userAgent(),
-                ]);
+                // Dispatch domain event for side-effects (email/notifications) - this creates "order_created" log first
+                event(new OrderCreated($order));
             } catch (\Throwable $e) {
-                Log::warning('Failed to create OrderLog', [
+                Log::warning('Failed to dispatch OrderCreated event', [
                     'order_id' => $order->id,
                     'error' => $e->getMessage(),
                 ]);
             }
 
-            // Auto-create installment schedule for finance orders
+            // Auto-create installment schedule for finance orders AFTER order created log
             if ($order->finance_option_id && $order->tenure_months && $order->monthly_payment_amount) {
                 try {
                     $this->createInstallmentSchedule($order);
@@ -245,16 +233,6 @@ class PlaceOrder
                         'error' => $e->getMessage(),
                     ]);
                 }
-            }
-
-            try {
-                // Dispatch domain event for side-effects (email/notifications)
-                event(new OrderCreated($order));
-            } catch (\Throwable $e) {
-                Log::warning('Failed to dispatch OrderCreated event', [
-                    'order_id' => $order->id,
-                    'error' => $e->getMessage(),
-                ]);
             }
 
             return $order;

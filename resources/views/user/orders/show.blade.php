@@ -309,7 +309,7 @@
                     </div>
                     
                     <!-- Additional Costs Info -->
-                    @if($order->tax_total > 0 || $order->shipping_fee > 0)
+                    @if($order->tax_total > 0 || $order->shipping_fee > 0 || $order->payment_fee > 0)
                     <div class="p-3 bg-amber-50 rounded-lg border border-amber-200 mb-3">
                         <div class="text-xs text-amber-800 mb-2">
                             <i class="fas fa-info-circle mr-1"></i>
@@ -321,6 +321,9 @@
                             @endif
                             @if($order->shipping_fee > 0)
                             <div>• Phí vận chuyển: {{ number_format($order->shipping_fee, 0, ',', '.') }} đ (thanh toán riêng)</div>
+                            @endif
+                            @if($order->payment_fee > 0)
+                            <div>• Phí thanh toán: {{ number_format($order->payment_fee, 0, ',', '.') }} đ (thanh toán riêng)</div>
                             @endif
                             <div class="mt-1 font-medium">→ Trả góp chỉ áp dụng cho giá trị sản phẩm</div>
                         </div>
@@ -523,6 +526,17 @@
                         </span>
                         <span class="text-gray-900 font-medium">{{ number_format($order->shipping_fee ?? 0, 0, ',', '.') }} đ</span>
                     </div>
+                    @if((float)($order->payment_fee ?? 0) > 0)
+                    <div class="flex items-center justify-between">
+                        <span class="text-gray-600">
+                            Phí thanh toán
+                            @if($order->paymentMethod)
+                                <span class="text-xs text-gray-500 ml-1">({{ $order->paymentMethod->name }})</span>
+                            @endif
+                        </span>
+                        <span class="text-gray-900 font-medium">{{ number_format($order->payment_fee ?? 0, 0, ',', '.') }} đ</span>
+                    </div>
+                    @endif
                     @if((float)($order->discount_total ?? 0) > 0)
                     <div class="flex items-center justify-between">
                         <span class="text-gray-600">

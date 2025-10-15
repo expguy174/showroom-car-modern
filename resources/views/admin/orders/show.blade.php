@@ -183,6 +183,12 @@
                             <span class="text-gray-900">{{ number_format($order->shipping_fee, 0, ',', '.') }} VNĐ</span>
                         </div>
                         @endif
+                        @if($order->payment_fee > 0)
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Phí thanh toán:</span>
+                            <span class="text-gray-900">{{ number_format($order->payment_fee, 0, ',', '.') }} VNĐ</span>
+                        </div>
+                        @endif
                         <div class="flex justify-between text-lg font-bold pt-2 border-t border-gray-200">
                             <span class="text-gray-900">Tổng cộng:</span>
                             <span class="text-blue-600">{{ number_format($order->grand_total ?? $order->total_price, 0, ',', '.') }} VNĐ</span>
@@ -353,8 +359,42 @@
                                 <span class="text-sm font-medium text-purple-800">Đã hoàn tiền</span>
                                 <span class="text-xs text-purple-600 ml-auto">(Không thể thay đổi)</span>
                             </div>
+                        @elseif($order->finance_option_id && $order->installments()->exists())
+                            {{-- Special handling for installment orders --}}
+                            @php
+                                $unpaidInstallments = $order->installments()->where('status', '!=', 'paid')->count();
+                                $totalInstallments = $order->installments()->count();
+                                $paidInstallments = $totalInstallments - $unpaidInstallments;
+                            @endphp
+                            
+                            @if($order->payment_status == 'completed')
+                                <div class="flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-200 rounded-lg">
+                                    <i class="fas fa-check text-green-600"></i>
+                                    <span class="text-sm font-medium text-green-800">Đã thanh toán</span>
+                                    <span class="text-xs text-green-600 ml-auto">(Tự động sau khi hoàn thành trả góp)</span>
+                                </div>
+                            @else
+                                <div class="space-y-2">
+                                    <div class="flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+                                        <i class="fas fa-calendar-check text-blue-600"></i>
+                                        <div class="flex-1">
+                                            <span class="text-sm font-medium text-blue-800">Đơn hàng trả góp</span>
+                                            <div class="text-xs text-blue-600 mt-1">
+                                                Đã thanh toán: {{ $paidInstallments }}/{{ $totalInstallments }} kỳ
+                                                @if($unpaidInstallments > 0)
+                                                    (còn {{ $unpaidInstallments }} kỳ)
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p class="text-xs text-gray-500 px-2">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        Trạng thái sẽ tự động chuyển thành "Đã thanh toán" khi hoàn thành tất cả kỳ trả góp
+                                    </p>
+                                </div>
+                            @endif
                         @else
-                            {{-- Editable dropdown for other statuses --}}
+                            {{-- Editable dropdown for regular orders --}}
                             <form method="POST" action="{{ route('admin.orders.update-payment-status', $order) }}" class="flex gap-2">
                                 @csrf
                                 @method('PATCH')
@@ -370,13 +410,34 @@
                         @endif
                     </div>
 
-                    {{-- Refund Button --}}
+                    {{-- Refund Actions --}}
                     @if($order->payment_status == 'completed')
-                    <button onclick="document.getElementById('refundModal').classList.remove('hidden')" 
-                            class="w-full inline-flex items-center justify-center px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition">
-                        <i class="fas fa-undo mr-2"></i>
-                        Hoàn tiền
-                    </button>
+                    @php
+                        $hasUserRefundRequest = $order->hasPendingRefundRequest();
+                    @endphp
+                    
+                    @if($hasUserRefundRequest)
+                        {{-- If user has pending refund request --}}
+                        <a href="{{ route('admin.payments.refunds') }}" 
+                           class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition">
+                            <i class="fas fa-list mr-2"></i>
+                            Xử lý yêu cầu hoàn tiền
+                        </a>
+                        <p class="text-xs text-blue-600 mt-1 text-center">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Khách hàng đã yêu cầu hoàn tiền
+                        </p>
+                    @else
+                        {{-- Direct refund by admin --}}
+                        <button onclick="document.getElementById('refundModal').classList.remove('hidden')" 
+                                class="w-full inline-flex items-center justify-center px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition">
+                            <i class="fas fa-undo mr-2"></i>
+                            Hoàn tiền trực tiếp
+                        </button>
+                        <p class="text-xs text-gray-500 mt-1 text-center">
+                            Admin chủ động hoàn tiền
+                        </p>
+                    @endif
                     @endif
                 </div>
 
@@ -795,7 +856,8 @@ function handleMarkAsPaid(event) {
     <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4">
         <div class="p-6">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-xl font-bold text-gray-900">Hoàn tiền đơn hàng</h3>
+                <h3 class="text-xl font-bold text-gray-900">Hoàn tiền trực tiếp</h3>
+                <p class="text-sm text-gray-600 mt-1">Admin chủ động hoàn tiền cho khách hàng</p>
                 <button onclick="document.getElementById('refundModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
                     <i class="fas fa-times text-xl"></i>
                 </button>

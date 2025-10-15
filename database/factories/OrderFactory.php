@@ -21,6 +21,7 @@ class OrderFactory extends Factory
             'discount_total' => 0,
             'tax_total' => 0,
             'shipping_fee' => 0,
+            'payment_fee' => 0,
             'grand_total' => 0,
             'note' => null,
             'payment_method_id' => null,

@@ -14,6 +14,11 @@ class CartManager {
         this.lastCountCheck = 0; // Timestamp of last count check
         this.countCheckDebounceMs = 200; // Debounce count checks
 
+        // Storage event debouncing
+        this.storageEventDebounce = null;
+        this.lastStorageUpdate = 0;
+        this.storageDebounceMs = 100; // 100ms debounce for storage events
+
         // Cache DOM elements for better performance
         this.cachedElements = new Map();
         // Batch operations for better performance
@@ -1485,41 +1490,64 @@ class CartManager {
     }
 
     updateCartCount(count) {
-        // Update all cart count badges - optimized with caching
+        const newCount = parseInt(count || 0, 10);
+        const prevCount = parseInt(localStorage.getItem('cart_count') || '0', 10);
+        
+        // Guard: Skip if count hasn't actually changed
+        if (newCount === prevCount) {
+            return;
+        }
+        
+        // Update all cart count badges
         const selectors = ['.cart-count','#cart-count-badge','#cart-count-badge-mobile','[data-cart-count]'];
-        // Guard: avoid redundant paints if value unchanged
-        const prev = parseInt(localStorage.getItem('cart_count') || '0', 10);
-        if (prev === Number(count)) {
-            if (window.paintBadge) { window.paintBadge(selectors, count); }
-                } else {
-            if (window.paintBadge) { window.paintBadge(selectors, count); }
-                }
+        if (window.paintBadge) { 
+            window.paintBadge(selectors, newCount); 
+        }
         
         // Store count in localStorage for cross-page/tab synchronization
-        const countStr = count.toString();
         try {
-            localStorage.setItem('cart_count', countStr);
+            localStorage.setItem('cart_count', newCount.toString());
             localStorage.setItem('cart_last_action', String(Date.now()));
         } catch (error) {
             console.warn('Failed to update cart count in localStorage:', error);
         }
-        
-        // Don't call window.updateCartCount to avoid infinite loop
-        // The global function is meant to be called from outside, not from within CartManager
     }
 
     handleStorageChange(e) {
+        // Debounce storage events to prevent loops
+        const now = Date.now();
+        if (now - this.lastStorageUpdate < this.storageDebounceMs) {
+            return;
+        }
+        
+        // Clear existing debounce
+        if (this.storageEventDebounce) {
+            clearTimeout(this.storageEventDebounce);
+        }
+        
+        // Debounce the actual handling
+        this.storageEventDebounce = setTimeout(() => {
+            this.processStorageChange(e);
+            this.lastStorageUpdate = Date.now();
+        }, this.storageDebounceMs);
+    }
+    
+    processStorageChange(e) {
         // Listen for cart_items changes from other pages/tabs
         if (e.key === this.STORAGE_KEY) {
-            const newItems = e.newValue ? JSON.parse(e.newValue) : [];
-            const oldItems = e.oldValue ? JSON.parse(e.oldValue) : [];
-            
-            // Only update if the items actually changed
-            if (JSON.stringify(newItems) !== JSON.stringify(oldItems)) {
-                const oldCount = this.computeLocalCount(oldItems);
-                const newCount = this.computeLocalCount(newItems);
-                console.log(`Cart items changed from ${oldCount} to ${newCount} (from storage event)`);
-                this.updateCartCount(newCount);
+            try {
+                const newItems = e.newValue ? JSON.parse(e.newValue) : [];
+                const oldItems = e.oldValue ? JSON.parse(e.oldValue) : [];
+                
+                // Only update if the items actually changed
+                if (JSON.stringify(newItems) !== JSON.stringify(oldItems)) {
+                    const oldCount = this.computeLocalCount(oldItems);
+                    const newCount = this.computeLocalCount(newItems);
+                    console.log(`Cart items changed from ${oldCount} to ${newCount} (from storage event)`);
+                    this.updateCartCount(newCount);
+                }
+            } catch (error) {
+                console.warn('Error processing cart_items storage change:', error);
             }
         }
         
@@ -1528,10 +1556,14 @@ class CartManager {
             const newCount = parseInt(e.newValue || '0', 10);
             const oldCount = parseInt(e.oldValue || '0', 10);
             
-            // Only update if the count actually changed
+            // Only update if the count actually changed AND it's not from our own update
             if (newCount !== oldCount) {
                 console.log(`Cart count changed from ${oldCount} to ${newCount} (from storage event)`);
-                this.updateCartCount(newCount);
+                // Only update UI badges, don't write back to localStorage to prevent loops
+                const selectors = ['.cart-count','#cart-count-badge','#cart-count-badge-mobile','[data-cart-count]'];
+                if (window.paintBadge) { 
+                    window.paintBadge(selectors, newCount); 
+                }
             }
         }
     }

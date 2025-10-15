@@ -15,15 +15,28 @@ class LogOrderCreated implements ShouldQueue
     {
         $order = $event->order;
 
+        // Check if order_created log already exists to prevent duplicates
+        $existingLog = OrderLog::where('order_id', $order->id)
+            ->where('action', 'order_created')
+            ->first();
+
+        if ($existingLog) {
+            return; // Skip if already exists
+        }
+
         OrderLog::create([
             'order_id' => $order->id,
             'user_id' => $order->user_id,
             'action' => 'order_created',
+            'message' => 'Đơn hàng được tạo',
             'details' => [
                 'order_number' => $order->order_number,
-                'total_price' => $order->total_price,
+                'grand_total' => $order->grand_total,
+                'payment_method_id' => $order->payment_method_id,
                 'status' => $order->status,
             ],
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
         ]);
     }
 }

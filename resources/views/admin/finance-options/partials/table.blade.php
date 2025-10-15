@@ -85,9 +85,12 @@
             </tr>
             @empty
             <tr>
-                <td colspan="8" class="px-6 py-12 text-center text-gray-500">
-                    <i class="fas fa-calculator text-4xl mb-2"></i>
-                    <p>Chưa có gói trả góp nào</p>
+                <td colspan="8" class="px-4 py-12 text-center">
+                    <div class="flex flex-col items-center justify-center">
+                        <i class="fas fa-calculator text-gray-400 text-5xl mb-4"></i>
+                        <p class="text-gray-500 text-lg font-medium">Không có gói trả góp nào</p>
+                        <p class="text-gray-400 text-sm mt-1">Thử thay đổi bộ lọc để xem kết quả khác</p>
+                    </div>
                 </td>
             </tr>
             @endforelse

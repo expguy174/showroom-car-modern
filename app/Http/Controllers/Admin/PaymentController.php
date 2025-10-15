@@ -187,11 +187,35 @@ class PaymentController extends Controller
         return view('admin.payments.installments', compact('installments'));
     }
 
-    public function refunds()
+    public function refunds(Request $request)
     {
-        $refunds = Refund::with(['paymentTransaction.user'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(15);
+        $query = Refund::with(['paymentTransaction.user', 'paymentTransaction.order']);
+        
+        // Search functionality
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('id', 'like', "%{$search}%")
+                  ->orWhere('reason', 'like', "%{$search}%")
+                  ->orWhereHas('paymentTransaction.user', function($userQuery) use ($search) {
+                      $userQuery->whereHas('userProfile', function($profileQuery) use ($search) {
+                          $profileQuery->where('name', 'like', "%{$search}%");
+                      })->orWhere('email', 'like', "%{$search}%");
+                  });
+            });
+        }
+        
+        // Status filter
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        
+        $refunds = $query->orderBy('created_at', 'desc')->paginate(15);
+        
+        // Handle AJAX requests
+        if ($request->ajax()) {
+            return view('admin.payments.partials.refunds-table', compact('refunds'))->render();
+        }
 
         return view('admin.payments.refunds', compact('refunds'));
     }
@@ -216,7 +240,38 @@ class PaymentController extends Controller
             $data['admin_notes'] = $request->admin_notes;
         }
 
+        $oldStatus = $refund->status;
         $refund->update($data);
+
+        // Create OrderLog for refund status change
+        if ($refund->paymentTransaction && $refund->paymentTransaction->order_id) {
+            $statusLabels = [
+                'pending' => 'Chờ xử lý',
+                'processing' => 'Đang xử lý', 
+                'refunded' => 'Đã hoàn tiền',
+                'failed' => 'Thất bại'
+            ];
+
+            \App\Models\OrderLog::create([
+                'order_id' => $refund->paymentTransaction->order_id,
+                'user_id' => \Illuminate\Support\Facades\Auth::id(),
+                'action' => 'refund_status_updated',
+                'message' => 'Admin cập nhật trạng thái yêu cầu hoàn tiền',
+                'details' => [
+                    'refund_id' => $refund->id,
+                    'from_status' => $oldStatus,
+                    'to_status' => $request->refund_status,
+                    'from_label' => $statusLabels[$oldStatus] ?? $oldStatus,
+                    'to_label' => $statusLabels[$request->refund_status] ?? $request->refund_status,
+                    'amount' => $refund->amount,
+                    'admin_notes' => $request->admin_notes,
+                    'admin_id' => \Illuminate\Support\Facades\Auth::id(),
+                    'admin_name' => \Illuminate\Support\Facades\Auth::user()->name ?? 'Admin',
+                ],
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+        }
 
         return response()->json([
             'success' => true,

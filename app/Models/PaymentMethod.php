@@ -34,6 +34,11 @@ class PaymentMethod extends Model
         return $this->hasMany(PaymentTransaction::class);
     }
 
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
+
     public function getFeeAmountAttribute($amount)
     {
         return $this->fee_flat + ($amount * $this->fee_percent / 100);

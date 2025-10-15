@@ -374,6 +374,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/', [\App\Http\Controllers\Admin\PromotionController::class, 'index'])->name('index');
         Route::get('/create', [\App\Http\Controllers\Admin\PromotionController::class, 'create'])->name('create');
         Route::post('/', [\App\Http\Controllers\Admin\PromotionController::class, 'store'])->name('store');
+        Route::post('/{promotion}/toggle', [\App\Http\Controllers\Admin\PromotionController::class, 'toggle'])->name('toggle');
         Route::get('/{promotion}', [\App\Http\Controllers\Admin\PromotionController::class, 'show'])->name('show');
         Route::get('/{promotion}/edit', [\App\Http\Controllers\Admin\PromotionController::class, 'edit'])->name('edit');
         Route::put('/{promotion}', [\App\Http\Controllers\Admin\PromotionController::class, 'update'])->name('update');

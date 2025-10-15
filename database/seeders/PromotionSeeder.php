@@ -113,15 +113,16 @@ class PromotionSeeder extends Seeder
             'percentage', 'fixed_amount', 'free_shipping', 'brand_specific'
         ];
 
-        // Create 2-3 promotions for each type
+        // Create more promotions for each type to test pagination
         foreach ($allTypes as $typeIndex => $type) {
-            for ($j = 1; $j <= 2; $j++) { // 2 promotions per type
-                $i = ($typeIndex * 2) + $j;
+            for ($j = 1; $j <= 8; $j++) { // 8 promotions per type = 32 total
+                $i = ($typeIndex * 8) + $j;
                 $brand = $brands[array_rand($brands)];
                 $month = $months[array_rand($months)];
                 
-                $isActive = true; // All test promotions are active
-                $hasExpired = false; // All test promotions are valid
+                // Mix different statuses for testing filters
+                $isActive = ($j <= 6); // First 6 are active, last 2 are inactive
+                $hasExpired = ($j == 7); // 7th promotion is expired
             
                 // Generate different content based on type
                 switch ($type) {
