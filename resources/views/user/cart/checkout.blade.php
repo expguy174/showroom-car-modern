@@ -222,6 +222,7 @@
                                     <input type="radio" name="payment_method_id" value="{{ $pm->id }}" 
                                            data-fee-flat="{{ $pm->fee_flat }}" 
                                            data-fee-percent="{{ $pm->fee_percent }}"
+                                           data-code="{{ $pm->code }}"
                                            class="text-indigo-600 focus:ring-indigo-500" />
                                     <div class="flex-1">
                                         <div class="text-sm font-semibold text-gray-900">{{ $pm->name }}</div>
@@ -242,6 +243,14 @@
                                     </div>
                                 </label>
                                 @endforeach
+                            </div>
+                            
+                            <!-- Info message for installment payment methods -->
+                            <div id="finance-payment-info" class="hidden mt-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                                <p class="text-xs text-amber-600">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    Đối với đơn hàng trả góp, chỉ chấp nhận thanh toán tiền cọc qua chuyển khoản hoặc tiền mặt để đảm bảo quy trình thẩm định và ký hợp đồng vay.
+                                </p>
                             </div>
                         </div>
 
@@ -708,20 +717,69 @@ document.addEventListener('DOMContentLoaded', function() {
     paymentTypeRadios.forEach(radio => {
         radio.addEventListener('change', function() {
             const paymentMethodLabel = document.getElementById('payment-method-label');
+            const financePaymentInfo = document.getElementById('finance-payment-info');
+            
             if (this.value === 'finance') {
                 financeSection.classList.remove('hidden');
                 if (paymentMethodLabel) {
                     paymentMethodLabel.textContent = 'Phương thức thanh toán (cho khoản trả trước)';
                 }
+                if (financePaymentInfo) {
+                    financePaymentInfo.classList.remove('hidden');
+                }
+                // Hide online payment methods for installment orders
+                filterPaymentMethodsForFinance(true);
             } else {
                 financeSection.classList.add('hidden');
                 financeDetails.classList.add('hidden');
                 if (paymentMethodLabel) {
                     paymentMethodLabel.textContent = 'Phương thức thanh toán';
                 }
+                if (financePaymentInfo) {
+                    financePaymentInfo.classList.add('hidden');
+                }
+                // Show all payment methods for full payment
+                filterPaymentMethodsForFinance(false);
             }
         });
     });
+
+    // Filter payment methods based on payment type
+    function filterPaymentMethodsForFinance(isFinance) {
+        document.querySelectorAll('input[name="payment_method_id"]').forEach(input => {
+            const label = input.closest('label');
+            const methodCode = input.dataset.code;
+            
+            if (isFinance) {
+                // For installment orders, only show manual verification methods
+                // Use same logic as admin: exclude auto-confirm online gateways
+                const isAutoConfirmGateway = ['vnpay', 'momo', 'zalopay', 'paypal', 'stripe'].includes(methodCode);
+                
+                if (isAutoConfirmGateway) {
+                    label.style.display = 'none';
+                    input.checked = false; // Uncheck if currently selected
+                } else {
+                    label.style.display = 'block';
+                }
+            } else {
+                // For full payment, show all methods
+                label.style.display = 'block';
+            }
+        });
+        
+        // Recalculate totals after filtering
+        recalc();
+    }
+
+    // Initialize payment method filtering on page load
+    const initialPaymentType = document.querySelector('input[name="payment_type"]:checked');
+    if (initialPaymentType && initialPaymentType.value === 'finance') {
+        filterPaymentMethodsForFinance(true);
+        const financePaymentInfo = document.getElementById('finance-payment-info');
+        if (financePaymentInfo) {
+            financePaymentInfo.classList.remove('hidden');
+        }
+    }
 
     // Show finance details when a finance option is selected
     financeRadios.forEach(radio => {

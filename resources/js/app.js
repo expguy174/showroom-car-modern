@@ -1,4 +1,5 @@
 import './bootstrap';
+import './count-system';
 import './wishlist-manager';
 import './cart-manager';
 import './compare';
@@ -370,7 +371,7 @@ window.paintBadge = function(selectors, count) {
                         el.classList.remove('hidden');
                         el.classList.add('flex');
                     }
-                    if (el.style) el.style.display = '';
+                    if (el.style) el.style.display = 'flex';
                 } else {
                     if (el.classList) {
                         el.classList.add('hidden');

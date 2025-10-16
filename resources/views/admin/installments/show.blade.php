@@ -350,10 +350,17 @@
     <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4">
         <div class="p-6">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-xl font-bold text-gray-900">Xác nhận</h3>
+                <h3 class="text-xl font-bold text-gray-900">Xác nhận thanh toán trả góp</h3>
                 <button type="button" onclick="closeMarkAsPaidModal()" class="text-gray-400 hover:text-gray-600">
                     <i class="fas fa-times text-xl"></i>
                 </button>
+            </div>
+            
+            <div class="mb-4 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                <p class="text-xs text-amber-600">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Chỉ chấp nhận phương thức thanh toán cần xác minh thủ công cho trả góp.
+                </p>
             </div>
 
             <form id="markAsPaidForm" method="POST" onsubmit="return handleMarkAsPaid(event)">
@@ -364,26 +371,10 @@
                         Phương thức thanh toán <span class="text-red-500">*</span>
                     </label>
                     <select name="payment_method_id" id="payment_method_id" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
-                        <option value="">Chọn phương thức</option>
-                        @php
-                            $paymentMethods = \App\Models\PaymentMethod::where('is_active', true)
-                                ->where(function($q) {
-                                    $q->where('name', 'like', '%Chuyển khoản%')
-                                      ->orWhere('name', 'like', '%Tiền mặt%')
-                                      ->orWhere('name', 'like', '%Ngân hàng%')
-                                      ->orWhere('name', 'like', '%Cash%')
-                                      ->orWhere('name', 'like', '%Bank%');
-                                })
-                                ->get();
-                        @endphp
-                        @forelse($paymentMethods as $method)
+                        <option value="">Chọn phương thức thanh toán</option>
+                        @foreach($manualPaymentMethods as $method)
                             <option value="{{ $method->id }}">{{ $method->name }}</option>
-                        @empty
-                            {{-- Fallback: Show all active methods if no matches --}}
-                            @foreach(\App\Models\PaymentMethod::where('is_active', true)->get() as $method)
-                                <option value="{{ $method->id }}">{{ $method->name }}</option>
-                            @endforeach
-                        @endforelse
+                        @endforeach
                     </select>
                 </div>
 

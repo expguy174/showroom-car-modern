@@ -162,7 +162,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                 <div class="dropdown-group notif-dropdown lg:hidden" data-dropdown="notifications-mobile">
                     <button class="relative inline-flex items-center justify-center w-10 h-10 rounded-full text-gray-600 hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500" data-dropdown-trigger>
                         <i class="fas fa-bell"></i>
-                        <span id="notif-count-badge-mobile" class="absolute -top-1 -right-1 w-5 h-5 text-[10px] rounded-full bg-amber-500 text-white items-center justify-center {{ $navUnreadNotifCount ? 'flex' : 'hidden' }}">{{ $navUnreadNotifCount > 99 ? '99+' : $navUnreadNotifCount }}</span>
+                        <span id="notif-count-badge-mobile" class="notification-count absolute -top-1 -right-1 w-5 h-5 text-[10px] rounded-full bg-amber-500 text-white items-center justify-center {{ $navUnreadNotifCount ? 'flex' : 'hidden' }}">{{ $navUnreadNotifCount > 99 ? '99+' : $navUnreadNotifCount }}</span>
                         <span class="sr-only">Thông báo</span>
                     </button>
                     <div class="dropdown-bridge"></div>
@@ -194,7 +194,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                 <div class="dropdown-group notif-dropdown hidden lg:block" data-dropdown="notifications">
                     <button class="relative inline-flex items-center justify-center w-10 h-10 rounded-full text-gray-600 hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500" data-dropdown-trigger>
                         <i class="fas fa-bell"></i>
-                        <span id="notif-count-badge" class="absolute -top-1 -right-1 w-5 h-5 text-[10px] rounded-full bg-amber-500 text-white items-center justify-center {{ $navUnreadNotifCount ? 'flex' : 'hidden' }}">{{ $navUnreadNotifCount > 99 ? '99+' : $navUnreadNotifCount }}</span>
+                        <span id="notif-count-badge" class="notification-count absolute -top-1 -right-1 w-5 h-5 text-[10px] rounded-full bg-amber-500 text-white items-center justify-center {{ $navUnreadNotifCount ? 'flex' : 'hidden' }}">{{ $navUnreadNotifCount > 99 ? '99+' : $navUnreadNotifCount }}</span>
                         <span class="sr-only">Thông báo</span>
                     </button>
                     <div class="dropdown-bridge"></div>
@@ -414,7 +414,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                     @auth
                     <a href="{{ route('notifications.index') }}" class="block px-4 py-3 rounded-lg hover:bg-gray-50 relative">
                         <i class="fas fa-bell mr-3 text-gray-400"></i>Thông báo
-                        <span class="absolute top-2 right-2 w-5 h-5 text-[10px] rounded-full bg-amber-500 text-white items-center justify-center {{ $navUnreadNotifCount ? 'flex' : 'hidden' }}">{{ $navUnreadNotifCount > 99 ? '99+' : $navUnreadNotifCount }}</span>
+                        <span class="notification-count absolute top-2 right-2 w-5 h-5 text-[10px] rounded-full bg-amber-500 text-white items-center justify-center {{ $navUnreadNotifCount ? 'flex' : 'hidden' }}">{{ $navUnreadNotifCount > 99 ? '99+' : $navUnreadNotifCount }}</span>
                     </a>
                     @endauth
                 </div>
@@ -534,6 +534,16 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
             const data = await res.json().catch(()=>({}));
             if (res.ok && data && data.data){
                 const count = data.data.unread_count || 0;
+                
+                // Update localStorage
+                localStorage.setItem('notification_count', count);
+                
+                // Update CountSystem
+                if (window.CountSystem) {
+                    window.CountSystem.updateNotifications(count);
+                }
+                
+                // Update nav badges
                 const desktop = document.getElementById('notif-count-badge');
                 const mobile = document.getElementById('notif-count-badge-mobile');
                 [desktop, mobile].forEach(el => {
@@ -582,8 +592,20 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                 }
                 items.slice(0,5).forEach(n => {
                     const row = document.createElement('div');
-                    row.className = 'p-3 text-sm';
-                    row.innerHTML = `<div class="font-semibold text-gray-800">${n.title || 'Thông báo'}</div><div class="text-gray-600 mt-0.5">${n.message || ''}</div>`;
+                    row.className = 'p-3 text-sm hover:bg-gray-50';
+                    row.setAttribute('data-notif-item', 'true');
+                    const isRead = n.is_read;
+                    row.innerHTML = `
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${isRead ? 'bg-gray-100 text-gray-400' : 'bg-amber-50 text-amber-600'}">
+                                <i class="fas fa-bell text-xs"></i>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <div class="font-semibold ${isRead ? 'text-gray-700' : 'text-gray-900'}">${n.title || 'Thông báo'}</div>
+                                <div class="text-gray-600 mt-0.5">${n.message || ''}</div>
+                            </div>
+                        </div>
+                    `;
                     listEl.appendChild(row);
                 });
             };
@@ -592,10 +614,7 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
         }catch{}
     };
 
-    // Poll badge every 30s (only when authenticated)
-    @auth
-    setInterval(function(){ if (window.refreshNotifBadge) window.refreshNotifBadge(); }, 30000);
-    @endauth
+    // Notification polling handled by Count System background sync - no duplicate timer needed
 
     // Load list when user opens notification dropdown
     document.addEventListener('click', function(e){
@@ -606,4 +625,82 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
         if (window.refreshNotifBadge) window.refreshNotifBadge();
         @endauth
     });
+
+    // Handle mark all as read in dropdown
+    @auth
+    document.addEventListener('click', async function(e){
+        const markAllBtn = e.target.closest('#notif-mark-all, #notif-mark-all-mobile');
+        if (!markAllBtn) return;
+        
+        e.preventDefault();
+        
+        // Optimistic update - set count to 0 immediately
+        if (window.CountSystem) {
+            window.CountSystem.updateNotifications(0);
+        }
+        
+        // Disable button during request
+        const originalText = markAllBtn.textContent;
+        markAllBtn.disabled = true;
+        markAllBtn.textContent = 'Đang xử lý...';
+        
+        try {
+            const res = await fetch(`{{ route('notifications.read-all') }}`, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            });
+            
+            if (res.ok) {
+                // Update dropdown UI - mark all as read
+                const desktopList = document.getElementById('notif-menu-list');
+                const mobileList = document.getElementById('notif-menu-list-mobile');
+                
+                [desktopList, mobileList].forEach(list => {
+                    if (!list) return;
+                    // Update all notification items to read state
+                    list.querySelectorAll('[data-notif-item]').forEach(item => {
+                        const icon = item.querySelector('.w-8.h-8, .w-10.h-10');
+                        if (icon) {
+                            icon.classList.remove('bg-amber-50', 'text-amber-600');
+                            icon.classList.add('bg-gray-100', 'text-gray-400');
+                        }
+                        const title = item.querySelector('.font-semibold');
+                        if (title) {
+                            title.classList.remove('text-gray-900');
+                            title.classList.add('text-gray-700');
+                        }
+                    });
+                });
+                
+                // Confirm with server after delay
+                setTimeout(() => {
+                    if (window.refreshNotifBadge) window.refreshNotifBadge();
+                }, 200);
+                
+                if (typeof window.showMessage === 'function') {
+                    window.showMessage('Đã đánh dấu tất cả thông báo là đã đọc', 'success');
+                }
+            } else {
+                // Rollback optimistic update on error
+                if (window.CountSystem) {
+                    // Refresh from server to get correct count
+                    setTimeout(() => {
+                        if (window.refreshNotifBadge) window.refreshNotifBadge();
+                    }, 100);
+                }
+                throw new Error('Failed to mark as read');
+            }
+        } catch (error) {
+            if (typeof window.showMessage === 'function') {
+                window.showMessage('Không thể đánh dấu đã đọc. Vui lòng thử lại.', 'error');
+            }
+        } finally {
+            markAllBtn.disabled = false;
+            markAllBtn.textContent = originalText;
+        }
+    });
+    @endauth
 </script>

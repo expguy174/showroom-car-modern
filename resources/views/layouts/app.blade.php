@@ -5,6 +5,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    @auth
+    <meta name="user-authenticated" content="true">
+    @endauth
     <title>@yield('title', config('app.name', 'Laravel'))</title>
     @yield('meta')
     @stack('head')
@@ -1899,7 +1902,10 @@
                     body: fd
                 }).then(r => r.json()).then(res => {
                     if (res && res.success) {
-                        if (typeof updateCartCount === 'function' && (res.cart_count !== undefined)) updateCartCount(res.cart_count);
+                        // Simple: Server response → Update UI immediately
+                        if (res.cart_count !== undefined) {
+                            updateCartCount(res.cart_count);
+                        }
                         showMessage(res.message || 'Đã thêm vào giỏ hàng!', 'success');
                     } else {
                         showMessage((res && res.message) || 'Có lỗi xảy ra khi thêm vào giỏ hàng', 'error');
@@ -1930,61 +1936,40 @@
 
 
 
-        // Update cart count function (global) - using vanilla JS
+        // Simple cart count update - E-commerce style
         function updateCartCount(count) {
-            if (window.CountManager) { window.CountManager.setCart(parseInt(count) || 0); }
-        }
-
-        // Update wishlist count function (global) - using vanilla JS
-        function updateWishlistCount(count) {
-            if (window.CountManager) { window.CountManager.setWishlist(parseInt(count) || 0); }
-        }
-
-        // Refresh cart count from server
-        function refreshCartCount() {
-            fetch('{{ route("user.cart.count") }}', {
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                .then(function(r) {
-                    return r.json();
-                })
-                .then(function(response) {
-                    if (response && response.success) updateCartCount(response.cart_count);
-                })
-                .catch(function() {
-                    console.error('Failed to refresh cart count');
-                });
-        }
-
-        // Refresh wishlist count from server
-        function refreshWishlistCount() {
-            $.ajax({
-                url: '{{ route("wishlist.count") }}',
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                success: function(response) {
-                    if (response.success) {
-                        updateWishlistCount(response.wishlist_count);
-                    }
-                },
-                error: function() {
-                    console.error('Failed to refresh wishlist count');
+            console.log('🛒 Global updateCartCount called with:', count);
+            const num = parseInt(count) || 0;
+            const text = num > 99 ? '99+' : String(num);
+            
+            // Update all cart badges immediately
+            const elements = document.querySelectorAll('.cart-count, #cart-count-badge, #cart-count-badge-mobile, [data-cart-count]');
+            console.log('🛒 Found cart elements:', elements.length);
+            
+            elements.forEach(el => {
+                console.log('🛒 Updating element:', el.className || el.id);
+                el.textContent = text;
+                if (num > 0) {
+                    el.classList.remove('hidden');
+                    el.classList.add('flex');
+                    el.style.display = 'flex';
+                } else {
+                    el.classList.add('hidden');
+                    el.classList.remove('flex');
+                    el.style.display = 'none';
                 }
             });
+            
         }
 
-        // CountManager đã init tự reconcile; bỏ init trùng lặp tại layout
+        // Cart count handled by Count System (count-system.js)
+        // No need for duplicate CartCount system
 
-        // Force refresh counts function (global)
-        window.refreshCounts = function() {
-            console.log('Force refreshing counts...');
-            refreshWishlistCount();
-            refreshCartCount();
-        };
+        // Wishlist count handled by Count System (count-system.js)
+        // No need for duplicate updateWishlistCount function
+
+        // All count refreshing handled by Count System and individual managers
+        // No need for duplicate refresh functions
 
         // Handle newsletter form submission
         $(document).on('submit', '#newsletter-form', function(e) {
@@ -2332,7 +2317,39 @@
         }
     </script>
 
-    <script></script>
+    <script>
+        // Count system handled by count-system.js
+        
+        // Load counts from localStorage on page show - Count System ONLY
+        window.addEventListener('pageshow', function(){
+            // Cart: Load from localStorage and update via CountSystem
+            try {
+                const cartCount = parseInt(localStorage.getItem('cart_count') || '0', 10);
+                if (window.CountSystem) { 
+                    window.CountSystem.updateCart(cartCount); 
+                }
+            } catch(_) {}
+            
+            // Wishlist: Load from localStorage and update via CountSystem
+            try {
+                const wishlistCount = parseInt(localStorage.getItem('wishlist_count') || '0', 10);
+                if (window.CountSystem) { 
+                    window.CountSystem.updateWishlist(wishlistCount); 
+                }
+            } catch(_) {}
+            
+            // Notifications: Only load from localStorage if user is authenticated and has stored count
+            try {
+                if (document.querySelector('meta[name="user-authenticated"]')) {
+                    const storedCount = localStorage.getItem('notification_count');
+                    if (storedCount !== null && window.CountSystem) {
+                        const notificationCount = parseInt(storedCount, 10) || 0;
+                        window.CountSystem.updateNotifications(notificationCount);
+                    }
+                }
+            } catch(_) {}
+        });
+    </script>
 </body>
 
 </html>

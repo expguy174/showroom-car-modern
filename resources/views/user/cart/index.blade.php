@@ -309,7 +309,6 @@
 @endsection
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/cart.css') }}">
 <style>
     /* Responsive display control - Mobile first approach */
     /* Default: Show mobile layout */

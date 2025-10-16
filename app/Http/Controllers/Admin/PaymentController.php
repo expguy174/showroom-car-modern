@@ -245,6 +245,7 @@ class PaymentController extends Controller
 
         // Create OrderLog for refund status change
         if ($refund->paymentTransaction && $refund->paymentTransaction->order_id) {
+            $order = $refund->paymentTransaction->order;
             $statusLabels = [
                 'pending' => 'Chờ xử lý',
                 'processing' => 'Đang xử lý', 
@@ -253,7 +254,7 @@ class PaymentController extends Controller
             ];
 
             \App\Models\OrderLog::create([
-                'order_id' => $refund->paymentTransaction->order_id,
+                'order_id' => $order->id,
                 'user_id' => \Illuminate\Support\Facades\Auth::id(),
                 'action' => 'refund_status_updated',
                 'message' => 'Admin cập nhật trạng thái yêu cầu hoàn tiền',
@@ -271,6 +272,59 @@ class PaymentController extends Controller
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
             ]);
+            
+            // AUTO CANCEL ORDER when refund is completed
+            if ($request->refund_status === 'refunded' && $order->status !== 'cancelled') {
+                $oldOrderStatus = $order->status;
+                $oldPaymentStatus = $order->payment_status;
+                
+                // Cancel pending/overdue installments (if any)
+                $cancelledInstallments = 0;
+                if ($order->installments()->exists()) {
+                    $cancelledInstallments = $order->installments()
+                        ->whereIn('status', ['pending', 'overdue'])
+                        ->update([
+                            'status' => 'cancelled',
+                            'cancelled_at' => now()
+                        ]);
+                }
+                
+                // Cancel pending/processing payment transactions (if any)
+                $order->paymentTransactions()
+                    ->whereIn('status', ['pending', 'processing'])
+                    ->update([
+                        'status' => 'cancelled',
+                        'notes' => \Illuminate\Support\Facades\DB::raw("CONCAT(COALESCE(notes, ''), ' - Hủy do hoàn tiền')")
+                    ]);
+                
+                // Update order status
+                $order->update(['status' => 'cancelled']);
+                
+                // Update payment status (keep partial if installment had paid, otherwise cancelled)
+                if ($order->payment_status === 'pending') {
+                    $order->update(['payment_status' => 'cancelled']);
+                }
+                
+                // Log auto cancellation with full details
+                \App\Models\OrderLog::create([
+                    'order_id' => $order->id,
+                    'user_id' => \Illuminate\Support\Facades\Auth::id(),
+                    'action' => 'order_cancelled',
+                    'message' => 'Tự động hủy đơn hàng sau khi hoàn tiền thành công',
+                    'details' => [
+                        'order_status' => ['from' => $oldOrderStatus, 'to' => 'cancelled'],
+                        'payment_status' => ['from' => $oldPaymentStatus, 'to' => $order->payment_status],
+                        'reason' => 'Auto-cancelled after refund completed',
+                        'refund_id' => $refund->id,
+                        'refund_amount' => $refund->amount,
+                        'cancelled_installments' => $cancelledInstallments,
+                        'cancelled_by' => \Illuminate\Support\Facades\Auth::user()->name ?? 'Admin',
+                        'admin_id' => \Illuminate\Support\Facades\Auth::id(),
+                    ],
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                ]);
+            }
         }
 
         return response()->json([

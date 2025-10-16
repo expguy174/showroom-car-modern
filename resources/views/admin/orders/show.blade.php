@@ -225,7 +225,7 @@
                     @endif
                 </div>
                 
-                <div id="timeline-container">
+                <div id="timeline-container" class="max-h-[40rem] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                     @include('admin.orders.partials.timeline', ['logs' => $displayLogs])
                 </div>
                 
@@ -275,11 +275,11 @@
         <div class="space-y-6">
             {{-- Status & Actions --}}
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Trạng thái đơn hàng</h3>
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Trạng thái</h3>
                 
                 {{-- Order Status --}}
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Trạng thái giao hàng</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Trạng thái đơn hàng</label>
                     @if($order->status == 'pending')
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
                             <i class="fas fa-clock mr-2"></i>Chờ xử lý
@@ -294,7 +294,7 @@
                         </span>
                     @elseif($order->status == 'delivered')
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                            <i class="fas fa-check-double mr-2"></i>Đã giao
+                            <i class="fas fa-check mr-2"></i>Đã giao
                         </span>
                     @elseif($order->status == 'cancelled')
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
@@ -320,7 +320,7 @@
                         </span>
                     @elseif($order->payment_status == 'completed')
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                            <i class="fas fa-check-circle mr-2"></i>Đã thanh toán
+                            <i class="fas fa-check mr-2"></i>Đã thanh toán
                         </span>
                     @elseif($order->payment_status == 'failed')
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
@@ -328,7 +328,7 @@
                         </span>
                     @elseif($order->payment_status == 'cancelled')
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
-                            <i class="fas fa-ban mr-2"></i>Đã hủy
+                            <i class="fas fa-times-circle mr-2"></i>Đã hủy
                         </span>
                     @elseif($order->payment_status == 'partial')
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-800">
@@ -367,7 +367,18 @@
                                 $paidInstallments = $totalInstallments - $unpaidInstallments;
                             @endphp
                             
-                            @if($order->payment_status == 'completed')
+                            @if($order->status == 'cancelled')
+                                {{-- Read-only display for cancelled installment orders --}}
+                                <div class="flex items-center gap-2 px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+                                    <i class="fas fa-ban text-gray-600"></i>
+                                    <div class="flex-1">
+                                        <span class="text-sm font-medium text-gray-800">Đơn hàng trả góp đã hủy</span>
+                                        <div class="text-xs text-gray-600 mt-1">
+                                            Đã thanh toán: {{ $paidInstallments }}/{{ $totalInstallments }} kỳ trước khi hủy
+                                        </div>
+                                    </div>
+                                </div>
+                            @elseif($order->payment_status == 'completed')
                                 <div class="flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-200 rounded-lg">
                                     <i class="fas fa-check text-green-600"></i>
                                     <span class="text-sm font-medium text-green-800">Đã thanh toán</span>
@@ -394,19 +405,49 @@
                                 </div>
                             @endif
                         @else
-                            {{-- Editable dropdown for regular orders --}}
-                            <form method="POST" action="{{ route('admin.orders.update-payment-status', $order) }}" class="flex gap-2">
-                                @csrf
-                                @method('PATCH')
-                                <select name="payment_status" class="flex-1 text-sm border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-                                    <option value="pending" {{ $order->payment_status == 'pending' ? 'selected' : '' }}>Chờ thanh toán</option>
-                                    <option value="completed" {{ $order->payment_status == 'completed' ? 'selected' : '' }}>Đã thanh toán</option>
-                                    <option value="failed" {{ $order->payment_status == 'failed' ? 'selected' : '' }}>Thất bại</option>
-                                </select>
-                                <button type="submit" class="px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white text-xs font-medium rounded-lg transition">
-                                    Cập nhật
-                                </button>
-                            </form>
+                            {{-- Editable dropdown for regular orders (not cancelled) --}}
+                            @if($order->status == 'cancelled')
+                                {{-- Read-only display for cancelled orders --}}
+                                <div class="flex items-center gap-2 px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+                                    <i class="fas fa-ban text-gray-600"></i>
+                                    <span class="text-sm font-medium text-gray-800">{{ $order->payment_status == 'cancelled' ? 'Đã hủy' : ucfirst($order->payment_status) }}</span>
+                                    <span class="text-xs text-gray-600 ml-auto">(Đơn hàng đã hủy)</span>
+                                </div>
+                            @elseif($order->payment_status == 'completed')
+                                {{-- Read-only display for completed payments --}}
+                                <div class="flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-200 rounded-lg">
+                                    <i class="fas fa-check text-green-600"></i>
+                                    <span class="text-sm font-medium text-green-800">Đã thanh toán</span>
+                                    <span class="text-xs text-green-600 ml-auto">(Không thể thay đổi)</span>
+                                </div>
+                            @elseif($order->payment_status == 'failed')
+                                {{-- Allow retry for failed payments --}}
+                                <form method="POST" action="{{ route('admin.orders.update-payment-status', $order) }}" class="flex gap-2">
+                                    @csrf
+                                    @method('PATCH')
+                                    <select name="payment_status" class="flex-1 text-sm border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="failed" selected>Thất bại</option>
+                                        <option value="completed">Đã thanh toán</option>
+                                    </select>
+                                    <button type="submit" class="px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white text-xs font-medium rounded-lg transition">
+                                        Cập nhật
+                                    </button>
+                                </form>
+                            @else
+                                {{-- Pending status - only allow completed or failed --}}
+                                <form method="POST" action="{{ route('admin.orders.update-payment-status', $order) }}" class="flex gap-2">
+                                    @csrf
+                                    @method('PATCH')
+                                    <select name="payment_status" class="flex-1 text-sm border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="pending" selected>Chờ thanh toán</option>
+                                        <option value="completed">Đã thanh toán</option>
+                                        <option value="failed">Thất bại</option>
+                                    </select>
+                                    <button type="submit" class="px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white text-xs font-medium rounded-lg transition">
+                                        Cập nhật
+                                    </button>
+                                </form>
+                            @endif
                         @endif
                     </div>
 
@@ -442,24 +483,79 @@
                 </div>
 
                 {{-- Quick Actions --}}
-                @if($order->status != 'delivered' && $order->status != 'cancelled')
+                @php
+                    // Check if customer has any refund request (exclude only rejected/failed)
+                    $hasActiveRefund = $order->refunds()->whereIn('refunds.status', ['pending', 'processing', 'refunded'])->exists();
+                    $hasPendingRefund = $order->refunds()->whereIn('refunds.status', ['pending', 'processing'])->exists();
+                @endphp
+                @if($order->status != 'delivered' && $order->status != 'cancelled' && !$hasActiveRefund)
                 <div class="pt-4 border-t border-gray-200 space-y-2">
                     @if($order->status == 'pending')
-                    <form method="POST" action="{{ route('admin.orders.nextStatus', $order->id) }}" class="w-full">
-                        @csrf
-                        <button type="submit" class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
-                            <i class="fas fa-arrow-right mr-2"></i>
-                            Xác nhận đơn
-                        </button>
-                    </form>
+                        @if(in_array($order->payment_status, ['partial', 'completed']))
+                            {{-- Show confirm button when payment is partial or completed --}}
+                            <form method="POST" action="{{ route('admin.orders.nextStatus', $order->id) }}" class="w-full">
+                                @csrf
+                                <button type="submit" class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                    <i class="fas fa-arrow-right mr-2"></i>
+                                    Xác nhận đơn
+                                </button>
+                            </form>
+                        @elseif($order->finance_option_id && $order->down_payment_amount)
+                            {{-- Show down payment confirmation for installment orders --}}
+                            <div class="w-full space-y-2">
+                                <button onclick="openDownPaymentModal()" class="w-full inline-flex items-center justify-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                    <i class="fas fa-credit-card mr-2"></i>
+                                    Xác nhận tiền cọc
+                                </button>
+                                <button disabled class="w-full inline-flex items-center justify-center px-4 py-2 bg-gray-300 text-gray-500 text-sm font-medium rounded-lg cursor-not-allowed">
+                                    <i class="fas fa-lock mr-2"></i>
+                                    Xác nhận đơn
+                                </button>
+                                <p class="text-xs text-amber-600 mt-2 text-center">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    Vui lòng xác nhận tiền cọc {{ number_format($order->down_payment_amount) }} VNĐ trước
+                                </p>
+                            </div>
+                        @else
+                            {{-- Show disabled state for one-time payment orders --}}
+                            <div class="w-full">
+                                <button disabled class="w-full inline-flex items-center justify-center px-4 py-2 bg-gray-300 text-gray-500 text-sm font-medium rounded-lg cursor-not-allowed">
+                                    <i class="fas fa-lock mr-2"></i>
+                                    Xác nhận đơn
+                                </button>
+                                <p class="text-xs text-amber-600 mt-2 text-center">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    Vui lòng cập nhật trạng thái thanh toán thành "Đã thanh toán" trước
+                                </p>
+                            </div>
+                        @endif
                     @elseif($order->status == 'confirmed')
-                    <form method="POST" action="{{ route('admin.orders.nextStatus', $order->id) }}" class="w-full">
-                        @csrf
-                        <button type="submit" class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
-                            <i class="fas fa-arrow-right mr-2"></i>
-                            Bắt đầu giao hàng
-                        </button>
-                    </form>
+                        @if(in_array($order->payment_status, ['partial', 'completed']))
+                            {{-- Allow shipping when payment is partial or completed --}}
+                            <form method="POST" action="{{ route('admin.orders.nextStatus', $order->id) }}" class="w-full">
+                                @csrf
+                                <button type="submit" class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                    <i class="fas fa-arrow-right mr-2"></i>
+                                    Bắt đầu giao hàng
+                                </button>
+                            </form>
+                        @else
+                            {{-- Show disabled state when payment not completed --}}
+                            <div class="w-full">
+                                <button disabled class="w-full inline-flex items-center justify-center px-4 py-2 bg-gray-300 text-gray-500 text-sm font-medium rounded-lg cursor-not-allowed">
+                                    <i class="fas fa-lock mr-2"></i>
+                                    Bắt đầu giao hàng
+                                </button>
+                                <p class="text-xs text-amber-600 mt-2 text-center">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    @if($order->finance_option_id)
+                                        Cần xác nhận tiền cọc trước khi giao hàng
+                                    @else
+                                        Cần hoàn tất thanh toán trước khi giao hàng
+                                    @endif
+                                </p>
+                            </div>
+                        @endif
                     @elseif($order->status == 'shipping')
                     <form method="POST" action="{{ route('admin.orders.nextStatus', $order->id) }}" class="w-full">
                         @csrf
@@ -470,14 +566,83 @@
                     </form>
                     @endif
 
-                    <form method="POST" action="{{ route('admin.orders.cancel', $order->id) }}" class="w-full">
+                    @php
+                        // Check if order can be cancelled
+                        $canCancel = true;
+                        $cancelReason = '';
+                        
+                        // Cannot cancel delivered or already cancelled orders
+                        if (in_array($order->status, ['delivered', 'cancelled'])) {
+                            $canCancel = false;
+                            $cancelReason = $order->status === 'delivered' 
+                                ? 'Đơn hàng đã giao không thể hủy' 
+                                : 'Đơn hàng đã được hủy';
+                        }
+                        // Cannot cancel fully paid orders
+                        elseif ($order->payment_status === 'completed') {
+                            $canCancel = false;
+                            $cancelReason = 'Đơn hàng đã thanh toán đầy đủ không thể hủy';
+                        }
+                        // Cannot cancel installment orders with confirmed down payment
+                        elseif ($order->finance_option_id && $order->payment_status === 'partial') {
+                            $hasDownPayment = $order->paymentTransactions()
+                                ->where('notes', 'LIKE', '%Down payment%')
+                                ->where('status', 'completed')
+                                ->exists();
+                            if ($hasDownPayment) {
+                                $canCancel = false;
+                                $cancelReason = 'Đơn trả góp đã xác nhận tiền cọc không thể hủy';
+                            }
+                        }
+                    @endphp
+
+                    @if($canCancel)
+                    <form method="POST" action="{{ route('admin.orders.cancel', $order->id) }}" class="w-full" id="cancelOrderForm">
                         @csrf
-                        <button type="submit" class="w-full inline-flex items-center justify-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors" 
-                                onclick="return confirm('Bạn có chắc muốn hủy đơn hàng này?')">
+                        <input type="hidden" name="reason" id="cancelReason" value="">
+                        <button type="button" class="w-full inline-flex items-center justify-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors" 
+                                onclick="showCancelOrderModal()">
                             <i class="fas fa-times-circle mr-2"></i>
                             Hủy đơn hàng
                         </button>
                     </form>
+                    @else
+                    <div class="w-full p-3 bg-gray-100 border border-gray-200 rounded-lg text-center">
+                        <div class="text-sm text-gray-600">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            {{ $cancelReason }}
+                        </div>
+                    </div>
+                    @endif
+                </div>
+                @elseif($hasActiveRefund)
+                {{-- Show notice when customer has refund --}}
+                <div class="pt-4 border-t border-gray-200">
+                    @if($hasPendingRefund)
+                        <div class="w-full p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                            <div class="flex items-start gap-3">
+                                <i class="fas fa-hand-holding-usd text-amber-600 text-xl mt-0.5"></i>
+                                <div class="flex-1">
+                                    <h4 class="text-sm font-semibold text-amber-900 mb-1">Khách hàng yêu cầu hoàn tiền</h4>
+                                    <p class="text-xs text-amber-800 leading-relaxed">
+                                        Đơn hàng đang chờ xử lý hoàn tiền. Vui lòng phê duyệt hoặc từ chối yêu cầu trong trang Hoàn tiền.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    @else
+                        <div class="w-full p-4 bg-green-50 border border-green-200 rounded-lg">
+                            <div class="flex items-start gap-3">
+                                <i class="fas fa-check-circle text-green-600 text-xl mt-0.5"></i>
+                                <div class="flex-1">
+                                    <h4 class="text-sm font-semibold text-green-900 mb-1">Hoàn tiền đã hoàn tất</h4>
+                                    <p class="text-xs text-green-800 leading-relaxed">
+                                        Đơn hàng này đã được xử lý hoàn tiền thành công. Quy trình đã kết thúc.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
                 </div>
                 @endif
             </div>
@@ -951,6 +1116,229 @@ document.getElementById('refundForm').addEventListener('submit', function(e) {
     
     // All validation passed - submit form
     this.submit();
+});
+
+// Down Payment Modal Functions
+function openDownPaymentModal() {
+    document.getElementById('downPaymentModal').classList.remove('hidden');
+}
+
+function closeDownPaymentModal() {
+    document.getElementById('downPaymentModal').classList.add('hidden');
+    
+    // Reset form and button state
+    const form = document.getElementById('downPaymentForm');
+    const submitBtn = document.getElementById('downPaymentSubmitBtn');
+    const btnText = document.getElementById('downPaymentBtnText');
+    const btnSpinner = document.getElementById('downPaymentBtnSpinner');
+    
+    if (form) form.reset();
+    if (submitBtn) submitBtn.disabled = false;
+    if (btnText) btnText.classList.remove('hidden');
+    if (btnSpinner) btnSpinner.classList.add('hidden');
+}
+
+// Handle down payment form submission
+function handleDownPaymentSubmit(event) {
+    const submitBtn = document.getElementById('downPaymentSubmitBtn');
+    const btnText = document.getElementById('downPaymentBtnText');
+    const btnSpinner = document.getElementById('downPaymentBtnSpinner');
+    
+    // Show loading state
+    submitBtn.disabled = true;
+    btnText.classList.add('hidden');
+    btnSpinner.classList.remove('hidden');
+    
+    // Allow form to submit normally
+    return true;
+}
+
+// Close down payment modal when clicking outside
+@if($order->finance_option_id && $order->down_payment_amount && $order->payment_status === 'pending')
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('downPaymentModal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDownPaymentModal();
+            }
+        });
+    }
+});
+@endif
+</script>
+
+{{-- Down Payment Confirmation Modal --}}
+@if($order->finance_option_id && $order->down_payment_amount && $order->payment_status === 'pending')
+<div id="downPaymentModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div class="p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-credit-card text-green-600 mr-2"></i>
+                    Xác nhận tiền cọc
+                </h3>
+                
+                <div class="mb-4 p-4 bg-blue-50 rounded-lg">
+                    <p class="text-sm text-blue-800">
+                        <strong>Số tiền cọc:</strong> {{ number_format($order->down_payment_amount) }} VNĐ
+                    </p>
+                    <p class="text-sm text-blue-600 mt-1">
+                        Sau khi xác nhận tiền cọc, đơn hàng có thể được giao hàng.
+                    </p>
+                    <p class="text-xs text-amber-600 mt-2">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Chỉ chấp nhận phương thức thanh toán cần xác minh thủ công (tiền mặt/chuyển khoản) cho tiền cọc trả góp.
+                    </p>
+                </div>
+
+                <form id="downPaymentForm" method="POST" action="{{ route('admin.orders.confirm-down-payment', $order->id) }}" onsubmit="handleDownPaymentSubmit(event)">
+                    @csrf
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Phương thức thanh toán <span class="text-red-500">*</span>
+                            </label>
+                            <select name="payment_method_id" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">Chọn phương thức thanh toán</option>
+                                @foreach($manualPaymentMethods as $method)
+                                    <option value="{{ $method->id }}">{{ $method->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Ngày thanh toán <span class="text-red-500">*</span>
+                            </label>
+                            <input type="date" name="payment_date" required value="{{ date('Y-m-d') }}"
+                                   class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Ghi chú
+                            </label>
+                            <textarea name="notes" rows="3" placeholder="Ghi chú về việc thanh toán tiền cọc..."
+                                      class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-3 mt-6">
+                        <button type="button" onclick="closeDownPaymentModal()" 
+                                class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
+                            Hủy
+                        </button>
+                        <button type="submit" id="downPaymentSubmitBtn"
+                                class="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition">
+                            <span id="downPaymentBtnText">
+                                <i class="fas fa-check mr-2"></i>
+                                Xác nhận tiền cọc
+                            </span>
+                            <span id="downPaymentBtnSpinner" class="hidden">
+                                <i class="fas fa-spinner fa-spin mr-2"></i>
+                                Đang xử lý...
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
+{{-- Cancel Order Modal --}}
+<div id="cancelOrderModal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full transform transition-all duration-200">
+        <div class="p-6">
+            <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
+                <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 text-center mb-2">Xác nhận hủy đơn hàng</h3>
+            <p class="text-gray-600 text-center mb-4">
+                Bạn có chắc chắn muốn hủy đơn hàng <strong>#{{ $order->order_number ?? $order->id }}</strong>?
+            </p>
+            <p class="text-sm text-gray-500 text-center mb-6">
+                Giá trị: <strong>{{ number_format($order->grand_total, 0, ',', '.') }} VNĐ</strong>
+                @if($order->finance_option_id)
+                <br>Đơn hàng trả góp sẽ hủy tất cả kỳ chưa thanh toán.
+                @endif
+            </p>
+            
+            
+            @if($order->status === 'shipping')
+            <div class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <div class="flex items-start">
+                    <input type="checkbox" id="forceCancel" class="mt-0.5 mr-2">
+                    <label for="forceCancel" class="text-sm text-amber-800">
+                        <strong>Xác nhận:</strong> Tôi đã liên hệ đơn vị vận chuyển để dừng giao hàng
+                    </label>
+                </div>
+            </div>
+            @endif
+            
+            <div class="flex space-x-3">
+                <button type="button" onclick="closeCancelOrderModal()" 
+                        class="flex-1 px-4 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors duration-200">
+                    Hủy bỏ
+                </button>
+                <button type="button" onclick="confirmCancelOrder()" id="confirmCancelBtn"
+                        class="flex-1 px-4 py-2.5 text-white bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-colors duration-200">
+                    Xác nhận hủy
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Cancel Order Modal Functions
+function showCancelOrderModal() {
+    document.getElementById('cancelOrderModal').classList.remove('hidden');
+}
+
+function closeCancelOrderModal() {
+    document.getElementById('cancelOrderModal').classList.add('hidden');
+    @if($order->status === 'shipping')
+    document.getElementById('forceCancel').checked = false;
+    @endif
+}
+
+function confirmCancelOrder() {
+    const confirmBtn = document.getElementById('confirmCancelBtn');
+    
+    @if($order->status === 'shipping')
+    const forceCancel = document.getElementById('forceCancel').checked;
+    if (!forceCancel) {
+        alert('Vui lòng xác nhận đã liên hệ đơn vị vận chuyển');
+        return;
+    }
+    @endif
+    
+    // Show loading state
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Đang hủy...';
+    
+    // Set default reason and submit form
+    document.getElementById('cancelReason').value = 'Admin hủy đơn hàng';
+    @if($order->status === 'shipping')
+    // Add force_cancel field for shipping orders
+    const forceCancelInput = document.createElement('input');
+    forceCancelInput.type = 'hidden';
+    forceCancelInput.name = 'force_cancel';
+    forceCancelInput.value = '1';
+    document.getElementById('cancelOrderForm').appendChild(forceCancelInput);
+    @endif
+    
+    document.getElementById('cancelOrderForm').submit();
+}
+
+// Close modal when clicking outside
+document.getElementById('cancelOrderModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeCancelOrderModal();
+    }
 });
 </script>
 

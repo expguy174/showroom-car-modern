@@ -49,6 +49,10 @@
                     <div class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
                         <i class="fas fa-exchange-alt text-indigo-600 text-sm"></i>
                     </div>
+                @elseif($log->action == 'refund_request')
+                    <div class="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-hand-holding-usd text-amber-600 text-sm"></i>
+                    </div>
                 @elseif($log->action == 'installments_created')
                     <div class="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center">
                         <i class="fas fa-calendar-alt text-teal-600 text-sm"></i>
@@ -58,8 +62,16 @@
                         <i class="fas fa-money-check-alt text-cyan-600 text-sm"></i>
                     </div>
                 @elseif($log->action == 'installment_completed')
-                    <div class="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
-                        <i class="fas fa-trophy text-emerald-600 text-sm"></i>
+                    <div class="w-8 h-8 bg-cyan-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-money-check-alt text-cyan-600 text-sm"></i>
+                    </div>
+                @elseif($log->action == 'down_payment_confirmed')
+                    <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-hand-holding-usd text-green-600 text-sm"></i>
+                    </div>
+                @elseif($log->action == 'user_cancel')
+                    <div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user-times text-red-600 text-sm"></i>
                     </div>
                 @else
                     <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
@@ -95,12 +107,18 @@
                             Hoàn tiền
                         @elseif($log->action == 'refund_status_updated')
                             Cập nhật trạng thái hoàn tiền
+                        @elseif($log->action == 'refund_request')
+                            Yêu cầu hoàn tiền
                         @elseif($log->action == 'installments_created')
                             Tạo lịch trả góp
                         @elseif($log->action == 'installment_paid')
                             Thanh toán kỳ trả góp
                         @elseif($log->action == 'installment_completed')
-                            Hoàn thành trả góp
+                            Thanh toán kỳ cuối
+                        @elseif($log->action == 'down_payment_confirmed')
+                            Xác nhận tiền cọc
+                        @elseif($log->action == 'user_cancel')
+                            Khách hàng hủy đơn hàng
                         @else
                             {{ ucfirst(str_replace('_', ' ', $log->action)) }}
                         @endif
@@ -133,7 +151,7 @@
                             ];
                             
                             // Use payment translations if this is a payment-related action
-                            $translations = in_array($log->action, ['payment_status_changed', 'payment_refunded'])
+                            $translations = in_array($log->action, ['payment_status_changed', 'payment_refunded', 'payment_completed'])
                                 ? $paymentStatusTranslations 
                                 : $orderStatusTranslations;
                             
@@ -162,13 +180,6 @@
                             $statusText = $statusTranslations[$log->details['status']] ?? $log->details['status'];
                         @endphp
                         <span class="text-gray-500">Trạng thái:</span> <span class="font-medium">{{ $statusText }}</span>
-                    @endif
-                    
-                    @if(isset($log->details['reason']))
-                    <div class="mt-2 p-2 bg-amber-50 border border-amber-200 rounded">
-                        <span class="text-gray-700 font-medium">Lý do:</span>
-                        <p class="text-gray-600 mt-1">{{ $log->details['reason'] }}</p>
-                    </div>
                     @endif
                     
                     @if($log->action === 'payment_refunded' && isset($log->details['refund_amount']))
@@ -216,6 +227,58 @@
                     </div>
                     @endif
                     
+                    {{-- Show additional details for order_cancelled --}}
+                    @if($log->action === 'order_cancelled')
+                    <div class="mt-2 p-3 bg-red-50 border border-red-200 rounded space-y-2">
+                        @if(isset($log->details['order_status']))
+                        <div class="flex items-center gap-2 text-xs">
+                            <span class="text-gray-600">Trạng thái đơn:</span>
+                            <span class="text-gray-700">{{ $log->details['order_status']['from'] ?? '' }}</span>
+                            <i class="fas fa-arrow-right text-gray-400 text-xs"></i>
+                            <span class="font-medium text-red-600">{{ $log->details['order_status']['to'] ?? 'cancelled' }}</span>
+                        </div>
+                        @endif
+                        
+                        @if(isset($log->details['payment_status']))
+                        <div class="flex items-center gap-2 text-xs">
+                            <span class="text-gray-600">Thanh toán:</span>
+                            <span class="text-gray-700">{{ $log->details['payment_status']['from'] ?? '' }}</span>
+                            <i class="fas fa-arrow-right text-gray-400 text-xs"></i>
+                            <span class="font-medium text-red-600">{{ $log->details['payment_status']['to'] ?? '' }}</span>
+                        </div>
+                        @endif
+                        
+                        @if(isset($log->details['cancelled_installments']) && $log->details['cancelled_installments'] > 0)
+                        <div class="flex items-center gap-2 text-xs">
+                            <i class="fas fa-calendar-times text-red-500"></i>
+                            <span class="text-gray-600">Đã hủy:</span>
+                            <span class="font-medium text-red-700">{{ $log->details['cancelled_installments'] }} kỳ trả góp</span>
+                        </div>
+                        @endif
+                        
+                        @if(isset($log->details['refund_id']) && isset($log->details['refund_amount']))
+                        <div class="flex items-center justify-between text-xs bg-amber-50 border border-amber-200 rounded px-2 py-1.5">
+                            <span class="text-amber-700">Liên quan đến hoàn tiền:</span>
+                            <span class="font-bold text-amber-600">{{ number_format($log->details['refund_amount'], 0, ',', '.') }} VNĐ</span>
+                        </div>
+                        @endif
+                        
+                        @if(isset($log->details['reason']) && $log->details['reason'])
+                        <div class="text-xs">
+                            <span class="text-gray-600">Lý do:</span>
+                            <p class="text-gray-700 mt-1">{{ $log->details['reason'] }}</p>
+                        </div>
+                        @endif
+                        
+                        @if(isset($log->details['cancelled_by']))
+                        <div class="text-xs text-gray-500 flex items-center gap-1">
+                            <i class="fas fa-user-shield"></i>
+                            <span>Bởi: {{ $log->details['cancelled_by'] }}</span>
+                        </div>
+                        @endif
+                    </div>
+                    @endif
+                    
                     @if($log->action === 'installments_created' && isset($log->details['total_installments']))
                     <div class="mt-2 p-3 bg-teal-50 border border-teal-200 rounded">
                         <div class="flex items-center justify-between text-xs">
@@ -247,6 +310,37 @@
                                 <i class="fas fa-trophy mr-1"></i> Hoàn thành toàn bộ
                             </span>
                             @endif
+                        </div>
+                    </div>
+                    @endif
+                    
+                    {{-- Show additional details for down_payment_confirmed --}}
+                    @if($log->action === 'down_payment_confirmed' && isset($log->details['down_payment_amount']))
+                    <div class="mt-2 p-3 bg-green-50 border border-green-200 rounded">
+                        <div class="flex items-center justify-between text-xs">
+                            <div class="flex items-center gap-2">
+                                <span class="text-gray-600">Số tiền cọc:</span>
+                                <span class="font-medium text-green-700">{{ number_format($log->details['down_payment_amount'], 0, ',', '.') }} VNĐ</span>
+                            </div>
+                            @if(isset($log->details['payment_status_to']))
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {{ $log->details['payment_status_to'] === 'partial' ? 'Thanh toán một phần' : $log->details['payment_status_to'] }}
+                            </span>
+                            @endif
+                        </div>
+                        @if(isset($log->details['payment_method_id']))
+                        @php
+                            $paymentMethod = \App\Models\PaymentMethod::find($log->details['payment_method_id']);
+                            $paymentMethodName = $paymentMethod ? $paymentMethod->name : 'ID ' . $log->details['payment_method_id'];
+                        @endphp
+                        <div class="mt-1 text-xs">
+                            <span class="text-gray-600">Phương thức:</span>
+                            <span class="font-medium">{{ $paymentMethodName }}</span>
+                        </div>
+                        @endif
+                        <div class="mt-2 text-xs text-green-700 bg-green-100 px-2 py-1 rounded">
+                            <i class="fas fa-check-circle mr-1"></i>
+                            Đơn hàng có thể được giao hàng
                         </div>
                     </div>
                     @endif

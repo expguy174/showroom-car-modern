@@ -37,6 +37,9 @@ class Notification extends Model
             'lead' => 'fas fa-file-signature',
             'system' => 'fas fa-info-circle',
             'payment' => 'fas fa-credit-card',
+            'installment' => 'fas fa-calendar-check',
+            'payment_completed' => 'fas fa-check-circle',
+            'installments_completed' => 'fas fa-trophy',
         ];
         
         return $icons[$this->type] ?? 'fas fa-bell';
@@ -51,6 +54,9 @@ class Notification extends Model
             'lead' => 'text-indigo-600',
             'system' => 'text-gray-600',
             'payment' => 'text-orange-600',
+            'installment' => 'text-amber-600',
+            'payment_completed' => 'text-emerald-600',
+            'installments_completed' => 'text-yellow-600',
         ];
         
         return $colors[$this->type] ?? 'text-gray-600';

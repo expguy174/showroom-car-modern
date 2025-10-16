@@ -15,7 +15,7 @@ return new class extends Migration {
             $table->string('transaction_number')->unique();
             $table->decimal('amount', 15, 2)->unsigned();
             $table->string('currency', 10)->default('VND');
-            $table->enum('status', ['pending', 'processing', 'completed', 'failed', 'cancelled'])->default('pending');
+            $table->enum('status', ['pending', 'processing', 'completed', 'failed', 'cancelled', 'partial', 'refunded'])->default('pending');
             $table->dateTime('payment_date')->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();

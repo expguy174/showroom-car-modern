@@ -5,8 +5,11 @@ namespace App\Http\Controllers\User;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Models\Order;
 use App\Models\OrderLog;
+use App\Models\PaymentTransaction;
 use App\Services\NotificationService;
 
 class OrderController extends Controller
@@ -102,6 +105,8 @@ class OrderController extends Controller
         if (Auth::id() !== $order->user_id) {
             abort(403);
         }
+
+        // Order status validation
         if (!in_array($order->status, ['pending', 'confirmed'])) {
             $message = 'Đơn hàng không thể hủy ở trạng thái hiện tại.';
             if ($request->ajax()) {
@@ -109,8 +114,36 @@ class OrderController extends Controller
             }
             return back()->with('status', $message);
         }
+        
+        // Payment status validation
         if ($order->payment_status === 'completed') {
-            $message = 'Đơn hàng đã thanh toán, vui lòng liên hệ hỗ trợ để hủy.';
+            $message = 'Đơn hàng đã thanh toán đầy đủ, vui lòng liên hệ hỗ trợ để hủy.';
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'message' => $message], 422);
+            }
+            return back()->with('status', $message);
+        }
+        
+        // Special validation for installment orders with down payment
+        if ($order->finance_option_id && $order->payment_status === 'partial') {
+            $hasDownPayment = $order->paymentTransactions()
+                ->where('notes', 'LIKE', '%Down payment%')
+                ->where('status', 'completed')
+                ->exists();
+                
+            if ($hasDownPayment) {
+                $message = 'Đơn hàng trả góp đã xác nhận tiền cọc không thể hủy. Vui lòng liên hệ hỗ trợ.';
+                if ($request->ajax()) {
+                    return response()->json(['success' => false, 'message' => $message], 422);
+                }
+                return back()->with('status', $message);
+            }
+        }
+        
+        // Time-based restriction: 24 hours window for cancellation
+        $withinCancelWindow = $order->created_at->diffInHours(now()) <= 24;
+        if (!$withinCancelWindow) {
+            $message = 'Chỉ có thể hủy đơn hàng trong vòng 24 giờ sau khi đặt hàng.';
             if ($request->ajax()) {
                 return response()->json(['success' => false, 'message' => $message], 422);
             }
@@ -120,54 +153,167 @@ class OrderController extends Controller
         $oldStatus = $order->status;
         $oldPaymentStatus = $order->payment_status;
         
-        $order->status = 'cancelled';
-        // Update payment status based on current status
-        if ($order->payment_status === 'pending') {
-            $order->payment_status = 'cancelled';
-        } elseif ($order->payment_status === 'processing') {
-            $order->payment_status = 'failed'; // Processing payments become failed when order is cancelled
-        }
-        // Note: completed payments remain completed (handled by validation above)
+        DB::beginTransaction();
         
-        $order->save();
-
-        // Log action
         try {
-            OrderLog::create([
+            // Handle installments if order has them
+            $hasInstallments = $order->installments()->exists();
+            $installmentsSummary = null;
+            
+            if ($hasInstallments) {
+                $installments = $order->installments()->get();
+                $paidCount = $installments->where('status', 'paid')->count();
+                $pendingCount = $installments->whereIn('status', ['pending', 'overdue'])->count();
+                $totalPaid = $installments->where('status', 'paid')->sum('amount');
+                
+                // Cancel all pending installments
+                $order->installments()
+                    ->whereIn('status', ['pending', 'overdue'])
+                    ->update([
+                        'status' => 'cancelled',
+                        'cancelled_at' => now()
+                    ]);
+                
+                $installmentsSummary = [
+                    'total_installments' => $installments->count(),
+                    'paid_installments' => $paidCount,
+                    'cancelled_installments' => $pendingCount,
+                    'total_paid_amount' => $totalPaid,
+                    'refund_required' => $paidCount > 0
+                ];
+            }
+            
+            // Handle payment transactions
+            $paymentTransactionsSummary = null;
+            $transactions = $order->paymentTransactions()->get();
+            
+            if ($transactions->count() > 0) {
+                $pendingTransactions = $transactions->whereIn('status', ['pending', 'processing']);
+                $completedTransactions = $transactions->where('status', 'completed');
+                
+                // Cancel pending/processing transactions
+                foreach ($pendingTransactions as $transaction) {
+                    $transaction->update([
+                        'status' => 'cancelled',
+                        'notes' => ($transaction->notes ?? '') . ' - Hủy do khách hàng hủy đơn hàng'
+                    ]);
+                }
+                
+                // Mark completed transactions as needing refund (don't auto-refund)
+                foreach ($completedTransactions as $transaction) {
+                    $transaction->update([
+                        'notes' => ($transaction->notes ?? '') . ' - Cần hoàn tiền do khách hàng hủy đơn hàng'
+                    ]);
+                }
+                
+                $paymentTransactionsSummary = [
+                    'total_transactions' => $transactions->count(),
+                    'cancelled_transactions' => $pendingTransactions->count(),
+                    'completed_transactions' => $completedTransactions->count(),
+                    'total_completed_amount' => $completedTransactions->sum('amount'),
+                    'refund_required' => $completedTransactions->count() > 0
+                ];
+            }
+            
+            $order->status = 'cancelled';
+            // Update payment status based on current status
+            if ($order->payment_status === 'pending') {
+                $order->payment_status = 'cancelled'; // Pending payments become cancelled
+            } elseif ($order->payment_status === 'partial') {
+                // Keep partial status for installment orders (some payments already made)
+                $order->payment_status = 'partial';
+            }
+            // Note: completed and failed payments remain as-is
+            
+            $order->save();
+
+            // Log action
+            try {
+                $logMessage = $hasInstallments && $installmentsSummary 
+                    ? 'Khách hàng yêu cầu hủy đơn hàng trả góp'
+                    : 'Khách hàng yêu cầu hủy đơn hàng';
+                    
+                OrderLog::create([
+                    'order_id' => $order->id,
+                    'user_id' => Auth::id(),
+                    'action' => 'user_cancel',
+                    'message' => $logMessage,
+                    'details' => array_merge([
+                        'order_status' => ['from' => $oldStatus, 'to' => 'cancelled'],
+                        'payment_status' => ['from' => $oldPaymentStatus, 'to' => $order->payment_status],
+                        'has_installments' => $hasInstallments,
+                        'has_payment_transactions' => $transactions->count() > 0,
+                    ], 
+                    $installmentsSummary ? ['installments' => $installmentsSummary] : [],
+                    $paymentTransactionsSummary ? ['payment_transactions' => $paymentTransactionsSummary] : []),
+                    'ip_address' => $request->ip(),
+                    'user_agent' => (string) $request->userAgent(),
+                ]);
+            } catch (\Throwable $e) {}
+
+            // Notify user
+            try {
+                $orderNumber = $order->order_number ?? '#' . $order->id;
+                $notificationTitle = 'Đơn hàng đã được hủy thành công';
+                
+                // Build notification message based on refund status
+                $notificationMessage = "Đơn hàng {$orderNumber} đã được hủy theo yêu cầu của bạn.";
+                
+                if ($paymentTransactionsSummary && isset($paymentTransactionsSummary['refund_required']) && $paymentTransactionsSummary['refund_required']) {
+                    $refundAmount = number_format($paymentTransactionsSummary['total_completed_amount'], 0, ',', '.');
+                    $notificationMessage .= " Số tiền {$refundAmount}₫ sẽ được hoàn lại trong vòng 3-5 ngày làm việc.";
+                }
+                
+                if ($hasInstallments && $installmentsSummary && isset($installmentsSummary['cancelled_installments']) && $installmentsSummary['cancelled_installments'] > 0) {
+                    $notificationMessage .= " Đã hủy {$installmentsSummary['cancelled_installments']} kỳ trả góp còn lại.";
+                }
+                
+                app(NotificationService::class)->send(
+                    $order->user_id,
+                    'order_status',
+                    $notificationTitle,
+                    $notificationMessage
+                );
+            } catch (\Throwable $e) {}
+
+            DB::commit();
+
+            $message = 'Đã hủy đơn hàng thành công.';
+            
+            // Return JSON for AJAX requests
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $message
+                ]);
+            }
+            
+            return redirect()->route('user.orders.index')->with('status', $message);
+            
+        } catch (\Throwable $e) {
+            DB::rollback();
+            
+            // Log error for debugging
+            Log::error('User order cancellation failed', [
                 'order_id' => $order->id,
                 'user_id' => Auth::id(),
-                'action' => 'user_cancel',
-                'message' => 'Khách hàng yêu cầu hủy đơn hàng',
-                'details' => [
-                    'order_status' => ['from' => $oldStatus, 'to' => 'cancelled'],
-                    'payment_status' => ['from' => $oldPaymentStatus, 'to' => $order->payment_status],
-                ],
-                'ip_address' => $request->ip(),
-                'user_agent' => (string) $request->userAgent(),
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
             ]);
-        } catch (\Throwable $e) {}
-
-        // Notify user
-        try {
-            app(NotificationService::class)->send(
-                $order->user_id,
-                'order_status',
-                'Đơn hàng đã hủy',
-                'Đơn hàng ' . ($order->order_number ?? ('#'.$order->id)) . ' đã được hủy theo yêu cầu của bạn.'
-            );
-        } catch (\Throwable $e) {}
-
-        $message = 'Đã hủy đơn hàng thành công.';
-        
-        // Return JSON for AJAX requests
-        if ($request->ajax()) {
-            return response()->json([
-                'success' => true,
-                'message' => $message
-            ]);
+            
+            $errorMessage = 'Có lỗi xảy ra khi hủy đơn hàng. Vui lòng thử lại.';
+            
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMessage
+                ], 500);
+            }
+            
+            return back()->with('error', $errorMessage);
         }
-        
-        return redirect()->route('user.orders.index')->with('status', $message);
     }
 
     public function requestRefund(Request $request, Order $order)

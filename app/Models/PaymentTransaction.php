@@ -10,7 +10,7 @@ class PaymentTransaction extends Model
 {
     use HasFactory, SoftDeletes;
 
-    public const STATUSES = ['pending', 'processing', 'completed', 'failed', 'cancelled'];
+    public const STATUSES = ['pending', 'processing', 'completed', 'failed', 'cancelled', 'partial', 'refunded'];
 
     protected $fillable = [
         'order_id',

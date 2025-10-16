@@ -22,9 +22,11 @@ return new class extends Migration {
             $table->foreignId('payment_method_id')->nullable()->constrained('payment_methods')->onDelete('set null');
             $table->foreignId('finance_option_id')->nullable()->constrained('finance_options')->onDelete('set null');
             $table->decimal('down_payment_amount', 15, 2)->unsigned()->nullable();
+            $table->decimal('down_payment_percentage', 5, 2)->unsigned()->nullable()->comment('Phần trăm trả trước (VD: 30.00)');
+            $table->timestamp('down_payment_confirmed_at')->nullable()->comment('Thời điểm xác nhận tiền cọc');
             $table->unsignedSmallInteger('tenure_months')->nullable();
             $table->decimal('monthly_payment_amount', 15, 2)->unsigned()->nullable();
-            $table->string('payment_status')->default('pending');
+            $table->enum('payment_status', ['pending', 'partial', 'completed', 'failed', 'refunded', 'cancelled'])->default('pending');
             $table->enum('status', ['pending', 'confirmed', 'shipping', 'delivered', 'cancelled'])->default('pending');
 			$table->string('order_number', 64)->unique();
 

@@ -8,8 +8,10 @@ use App\Models\Order;
 use App\Models\OrderLog;
 use App\Models\PaymentMethod;
 use App\Models\PaymentTransaction;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -94,7 +96,22 @@ class InstallmentController extends Controller
                 ->with('warning', 'Đơn hàng này không có lịch trả góp.');
         }
 
-        return view('admin.installments.show', compact('order'));
+        // Get manual verification payment methods for installment confirmation
+        $manualPaymentMethods = $this->getManualPaymentMethods();
+        
+        return view('admin.installments.show', compact('order', 'manualPaymentMethods'));
+    }
+
+    /**
+     * Get manual verification payment methods for installment confirmation
+     * Excludes auto-confirm online gateways that don't allow admin control
+     */
+    private function getManualPaymentMethods()
+    {
+        return \App\Models\PaymentMethod::where('is_active', true)
+            ->whereNotIn('code', ['vnpay', 'momo', 'zalopay', 'paypal', 'stripe'])
+            ->orderBy('name')
+            ->get();
     }
 
     public function markAsPaid(Request $request, Installment $installment)
@@ -151,7 +168,7 @@ class InstallmentController extends Controller
 
             // 4. Log installment action FIRST (before payment status change)
             $logMessage = $isLastInstallment
-                ? "Đã xác nhận thanh toán kỳ cuối cùng (kỳ {$installment->installment_number}). Hoàn thành toàn bộ lịch trả góp!"
+                ? "Đã thanh toán kỳ cuối cùng (kỳ {$installment->installment_number}/{$installment->order->tenure_months})"
                 : "Đã xác nhận thanh toán kỳ {$installment->installment_number}";
 
             OrderLog::create([
@@ -172,45 +189,66 @@ class InstallmentController extends Controller
                 'user_agent' => $request->userAgent(),
             ]);
 
-            // 5. Update payment status AFTER logging installment completion
+            // 5. Installment payments don't change order payment_status
+            // Down payment confirmation handles payment_status = 'partial'
+            // Only last installment changes payment_status to 'completed'
+            
+            // Update payment status to 'completed' when all installments are paid
             if ($isLastInstallment) {
-                $oldPaymentStatus = $installment->order->payment_status;
-                $installment->order->update(['payment_status' => 'completed']);
-                
-                // Create payment status change log if status actually changed
-                if ($oldPaymentStatus !== 'completed') {
-                    OrderLog::create([
-                        'order_id' => $installment->order_id,
-                        'user_id' => Auth::id(),
-                        'action' => 'payment_status_changed',
-                        'message' => 'Trạng thái thanh toán được cập nhật tự động sau khi hoàn thành tất cả kỳ trả góp',
-                        'details' => [
-                            'from' => $oldPaymentStatus,
-                            'to' => 'completed',
-                            'trigger' => 'installment_completion',
-                            'last_installment_id' => $installment->id,
-                            'admin_id' => Auth::id(),
-                        ],
-                        'ip_address' => request()->ip(),
-                        'user_agent' => request()->userAgent(),
-                    ]);
-                }
+                $order = $installment->order;
+                $oldPaymentStatus = $order->payment_status;
+                $order->update(['payment_status' => 'completed']);
+
+                OrderLog::create([
+                    'order_id' => $installment->order_id,
+                    'user_id' => Auth::id(),
+                    'action' => 'payment_completed',
+                    'message' => 'Hoàn thành thanh toán đầy đủ sau khi hoàn thành tất cả kỳ trả góp',
+                    'details' => [
+                        'from' => $oldPaymentStatus,
+                        'to' => 'completed',
+                        'trigger' => 'installments_completed',
+                        'total_installments' => $order->tenure_months,
+                        'last_installment_id' => $installment->id,
+                        'admin_id' => Auth::id(),
+                    ],
+                    'ip_address' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                ]);
             }
 
-            // 6. Create notification for user
-            $notificationTitle = "Đơn hàng #{$installment->order->order_number}";
-            
-            $notificationMessage = $isLastInstallment
-                ? "🎉 Chúc mừng! Đã hoàn thành {$installment->order->tenure_months} kỳ trả góp. Cảm ơn bạn đã tin tưởng!"
-                : "Kỳ {$installment->installment_number} (" . number_format($installment->amount) . " VNĐ) đã được xác nhận thanh toán.";
+            // 6. Create notification for installment payment
+            if ($installment->installment_number == 1) {
+                // First installment paid - order can now be processed
+                Notification::create([
+                    'user_id' => $installment->user_id,
+                    'type' => 'payment_completed',
+                    'title' => "Kỳ đầu đã thanh toán - #{$installment->order->order_number}",
+                    'message' => "💳 Kỳ đầu tiên đã được xác nhận. Chúng tôi sẽ tiến hành xử lý và giao hàng. Bạn có thể tiếp tục thanh toán các kỳ tiếp theo theo lịch.",
+                    'is_read' => false,
+                ]);
+            } elseif ($isLastInstallment) {
+                // Last installment - comprehensive notification
+                Notification::create([
+                    'user_id' => $installment->user_id,
+                    'type' => 'payment_completed',
+                    'title' => "Hoàn thành thanh toán - #{$installment->order->order_number}",
+                    'message' => "🎉 Chúc mừng! Đã hoàn thành kỳ cuối ({$installment->installment_number}/{$installment->order->tenure_months}) và toàn bộ chương trình trả góp. Đơn hàng đã được thanh toán đầy đủ!",
+                    'is_read' => false,
+                ]);
+            } else {
+                // Regular installment payment
+                Notification::create([
+                    'user_id' => $installment->user_id,
+                    'type' => 'installment',
+                    'title' => "Đơn hàng #{$installment->order->order_number}",
+                    'message' => "Kỳ {$installment->installment_number} (" . number_format($installment->amount) . " VNĐ) đã được xác nhận thanh toán.",
+                    'is_read' => false,
+                ]);
+            }
 
-            \App\Models\Notification::create([
-                'user_id' => $installment->user_id,
-                'type' => 'installment',
-                'title' => $notificationTitle,
-                'message' => $notificationMessage,
-                'is_read' => false,
-            ]);
+            // Clear notification cache for user
+            $this->clearUserNotificationCache($installment->user_id);
 
             DB::commit();
 
@@ -313,6 +351,17 @@ class InstallmentController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->route('admin.installments.show', $installment->order_id)->with('error', 'Có lỗi xảy ra: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Clear notification cache for a specific user
+     */
+    private function clearUserNotificationCache($userId)
+    {
+        // Clear all pages for this user (same as NotificationController)
+        for ($page = 1; $page <= 10; $page++) {
+            Cache::forget("user_notifications_{$userId}_page_{$page}");
         }
     }
 }

@@ -137,10 +137,9 @@ class CartManager {
 
     init() {
         this.bindEvents();
-        this.loadCartCountFromStorage();
         
-        // Don't call checkServerCountAndReconcile here - let app.js handle it
-        // This prevents duplicate calls on initial load
+        // Cart count loading handled by Simple Count System - no duplicate loading
+        // Don't call checkServerCountAndReconcile here - let Simple Count System handle it
         
         this.initializeQuantityInputs();
         // Helper to update sections visibility when items become empty
@@ -190,24 +189,48 @@ class CartManager {
         // Listen for cart count changes from other pages/tabs
         window.addEventListener('storage', this.boundHandleStorageChange);
         
-        // Prevent duplicate global updates creating oscillation
-        // If some legacy code calls window.updateCartCount, ensure it doesn't recursively trigger manager updates
-        if (!window.__cartCountGuardInstalled) {
-            window.__cartCountGuardInstalled = true;
-            const original = window.updateCartCount;
-            window.updateCartCount = function(count){
-                const n = parseInt(count || 0, 10) || 0;
-                const prev = parseInt(localStorage.getItem('cart_count') || '0', 10) || 0;
-                if (n === prev) {
-                    // Only paint badges; skip LS write to avoid storage event loops
-                    const sels = ['.cart-count','#cart-count-badge','#cart-count-badge-mobile','[data-cart-count]'];
-                    if (window.paintBadge) { window.paintBadge(sels, n); }
-                    return;
-                }
-                // Write once then paint
-                try { localStorage.setItem('cart_count', String(n)); } catch(_) {}
-                if (window.paintBadge) { window.paintBadge(['.cart-count','#cart-count-badge','#cart-count-badge-mobile','[data-cart-count]'], n); }
+        // Don't override global updateCartCount - let layout handle it
+        // CartManager will use its own updateCartCount method
+        
+        // Cart count initialization handled by Count System - no double init
+        
+        // Cart count sync handled by layout pageshow event and Count System
+        // No need for duplicate pageshow handler
+    }
+    
+    initCartCount() {
+        // Load cart count from localStorage and update UI
+        const storedCount = localStorage.getItem('cart_count');
+        if (storedCount !== null) {
+            const count = parseInt(storedCount, 10) || 0;
+            this.updateCartCount(count);
+        } else {
+            // If no stored count, fetch from server
+            this.fetchCartCountFromServer();
+        }
+    }
+    
+    async fetchCartCountFromServer() {
+        try {
+            const response = await fetch('/user/cart/count', {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Cache-Control': 'no-store'
+                },
+                cache: 'no-store'
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                const count = parseInt(data.count || 0, 10);
+                this.updateCartCount(count);
+                localStorage.setItem('cart_count', String(count));
+                console.log('🛒 Fetched cart count from server:', count);
             }
+        } catch (error) {
+            console.warn('Failed to fetch cart count from server:', error);
+            // Default to 0 if server fetch fails
+            this.updateCartCount(0);
         }
     }
 
@@ -241,9 +264,9 @@ class CartManager {
             return;
         }
 
-        // CRITICAL: Optimistic UI - add to localStorage immediately
-        const updatedItems = this.addToLocalCart(itemType, itemId, quantity, colorId);
-        this.updateCartCount(this.computeLocalCount(updatedItems));
+        // Optimistic update like wishlist - update UI immediately
+        const currentCount = parseInt(localStorage.getItem('cart_count') || '0', 10);
+        this.updateCartCount(currentCount + quantity);
         
         // Mark as processing
         this.processing.add(itemKey);
@@ -297,9 +320,16 @@ class CartManager {
         .then(data => {
             if (data.success) {
                 this.showMessage(data.message || 'Đã thêm vào giỏ hàng!', 'success');
-                this.updateCartCount(parseInt(data.cart_count || 0, 10));
+                // Update count from server response and sync localStorage like wishlist
+                const serverCount = parseInt(data.cart_count || 0, 10);
+                this.updateCartCount(serverCount);
+                localStorage.setItem('cart_count', String(serverCount));
+                try { localStorage.setItem('cart_last_action', String(Date.now())); } catch(_) {}
             } else {
                 this.showMessage(data.message || 'Có lỗi xảy ra!', 'error');
+                // Revert optimistic update on error
+                const currentCount = parseInt(localStorage.getItem('cart_count') || '0', 10);
+                this.updateCartCount(Math.max(0, currentCount - quantity));
             }
         })
         .catch((error) => {
@@ -335,20 +365,9 @@ class CartManager {
             return;
         }
 
-        // CRITICAL: Optimistic UI - remove from localStorage immediately if we have enough info
-        // Try to read metadata from DOM; if missing, fallback to server recon after success
-        let performedLocalRemoval = false;
-        const cartItemElement = button.closest('.cart-item-desktop, .cart-item-row');
-        if (cartItemElement && cartItemElement.length) {
-            const itemType = cartItemElement.data('item-type');
-            const itemId = cartItemElement.data('item-id');
-            const colorId = cartItemElement.data('color-id');
-            if (itemType && itemId) {
-                const updatedItems = this.removeFromLocalCart(String(itemType), Number(itemId), colorId ?? null);
-                this.updateCartCount(this.computeLocalCount(updatedItems));
-                performedLocalRemoval = true;
-            }
-        }
+        // Optimistic update like wishlist - decrease count immediately
+        const currentCount = parseInt(localStorage.getItem('cart_count') || '0', 10);
+        this.updateCartCount(Math.max(0, currentCount - 1));
         
         // Mark as processing
         this.processing.add(itemKey);
@@ -429,17 +448,11 @@ class CartManager {
             console.log('Remove from cart data:', data);
             if (data.success) {
                 this.showMessage('Đã xóa sản phẩm khỏi giỏ hàng!', 'success');
-                // Fetch full cart from server immediately to sync LS and badges without delay
-                this.fetchAllCartFromServer().then((ok)=>{
-                    if (!ok) {
-                        // Fallback: at least sync count from server response
-                        if (typeof data.cart_count !== 'undefined') {
-                            this.updateCartCount(parseInt(data.cart_count, 10) || 0);
-                        } else {
-                            this.checkServerCountAndReconcile();
-                        }
-                    }
-                });
+                // Update count from server response and sync localStorage like wishlist
+                const serverCount = parseInt(data.cart_count || 0, 10);
+                this.updateCartCount(serverCount);
+                localStorage.setItem('cart_count', String(serverCount));
+                try { localStorage.setItem('cart_last_action', String(Date.now())); } catch(_) {}
             } else {
                 throw new Error(data.message || 'error');
             }
@@ -1189,11 +1202,7 @@ class CartManager {
             () => {
                 button.prop('disabled', true).addClass('opacity-50 cursor-not-allowed');
                 
-                // Optimistic update - clear local state and UI immediately AFTER user confirms
-                this.saveToStorage([]);
-                this.updateCartCount(0);
-                try { localStorage.setItem('cart_last_action', String(Date.now())); } catch(_) {}
-                // Optimistic update - clear UI immediately
+                // Simple: Clear UI immediately, update count from server response
                 this.clearCartUI();
                 
                 // Server call
@@ -1490,26 +1499,26 @@ class CartManager {
     }
 
     updateCartCount(count) {
-        const newCount = parseInt(count || 0, 10);
-        const prevCount = parseInt(localStorage.getItem('cart_count') || '0', 10);
-        
-        // Guard: Skip if count hasn't actually changed
-        if (newCount === prevCount) {
-            return;
-        }
-        
-        // Update all cart count badges
-        const selectors = ['.cart-count','#cart-count-badge','#cart-count-badge-mobile','[data-cart-count]'];
-        if (window.paintBadge) { 
-            window.paintBadge(selectors, newCount); 
-        }
-        
-        // Store count in localStorage for cross-page/tab synchronization
-        try {
-            localStorage.setItem('cart_count', newCount.toString());
-            localStorage.setItem('cart_last_action', String(Date.now()));
-        } catch (error) {
-            console.warn('Failed to update cart count in localStorage:', error);
+        // Use unified count system - EXACTLY like wishlist
+        const num = parseInt(count || 0, 10);
+        if (window.CountSystem) {
+            window.CountSystem.updateCart(num);
+        } else {
+            // Fallback if CountSystem not loaded yet - EXACTLY like wishlist
+            console.warn('CountSystem not available, using fallback');
+            const text = num > 99 ? '99+' : String(num);
+            document.querySelectorAll('.cart-count, #cart-count-badge, #cart-count-badge-mobile, [data-cart-count]').forEach(el => {
+                el.textContent = text;
+                if (num > 0) {
+                    el.classList.remove('hidden');
+                    el.classList.add('flex');
+                    el.style.display = 'flex';
+                } else {
+                    el.classList.add('hidden');
+                    el.classList.remove('flex');
+                    el.style.display = 'none';
+                }
+            });
         }
     }
 
@@ -1847,15 +1856,7 @@ $(document).ready(initializeCartManager);
 // Also initialize on page show (for browser navigation)
 $(window).on('pageshow', function(event) {
     if (window.cartManager) {
-        // Check if page was restored from cache (back/forward navigation)
-        if (event.originalEvent && event.originalEvent.persisted) {
-            // Page was restored from cache, refresh state immediately
-            window.cartManager.loadCartCountFromStorage();
-            console.log('Cart state refreshed from cache');
-        } else {
-            // Normal page load, load from storage first
-            window.cartManager.loadCartCountFromStorage();
-        }
+        // Cart count loading handled by Count System - no duplicate loading
         
         // Only reconcile if no operations in progress and not recently reconciled
         if (!window.cartManager.processing.size && !window.cartManager.reconciling) {
@@ -1863,12 +1864,7 @@ $(window).on('pageshow', function(event) {
             const now = Date.now();
             if (now - lastReconcile > 1500) { // reconcile sớm hơn để tránh cảm giác lag
                 window.cartManager.lastReconcile = now;
-                // Delay reconciliation slightly to let UI settle, but check debounce
-                setTimeout(() => {
-                    if (Date.now() - window.cartManager.lastCountCheck > window.cartManager.countCheckDebounceMs) {
-                    window.cartManager.checkServerCountAndReconcile();
-                    }
-                }, 60);
+                // Cart reconciliation handled by Count System - no duplicate reconcile
             }
         }
     }
@@ -1946,7 +1942,8 @@ window.refreshCartCount = function() {
     }
 };
 
-// Export cart manager globally
+// Export CartManager class and instance globally
+window.CartManager = CartManager;
 window.cartManager = window.cartManager || new CartManager();
 
 

@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import cart styles */
+@import './cart.css';
+
 /* Card hover foundation */
 .card-surface {
     @apply bg-white rounded-2xl border border-gray-100 shadow-md transform-gpu;

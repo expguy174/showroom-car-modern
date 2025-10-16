@@ -279,6 +279,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::patch('/{order}/update-payment-status', [OrderController::class, 'updatePaymentStatus'])->name('update-payment-status');
         Route::post('/{order}/refund', [OrderController::class, 'refund'])->name('refund');
         Route::post('/{order}/generate-installments', [OrderController::class, 'generateInstallments'])->name('generate-installments');
+        Route::post('/{order}/confirm-down-payment', [OrderController::class, 'confirmDownPayment'])->name('confirm-down-payment');
 
         // Edit & Logs pages removed - all functionality now on show page
         // Route::get('/edit/{order}', [OrderController::class, 'edit'])->name('edit');

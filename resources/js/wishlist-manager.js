@@ -103,67 +103,12 @@
     }
 
     function updateCountBadges(){
-        // Prevent multiple simultaneous updates
-        if (state.updatingCount) {
-            return;
-        }
-        
-        // Debounce rapid successive calls
-        const now = Date.now();
-        if (now - state.lastCountUpdate < state.countUpdateDebounceMs) {
-            return;
-        }
-        
-        state.updatingCount = true;
-        state.lastCountUpdate = now;
-        
-        try {
+        // Use Count System ONLY - no duplicate logic
         const c = count();
-        
-            // Always update localStorage to ensure consistency
-        try { 
-            localStorage.setItem(COUNT_KEY, String(c)); 
-            localStorage.setItem(STORAGE_KEY, c === 0 ? '[]' : JSON.stringify(Array.from(state.items.entries()).flatMap(([type, ids]) => 
-                Array.from(ids).map(id => ({ t: type, i: id }))
-            )));
-        } catch(_) {}
-        
-        // Update DOM directly with all possible selectors
-            if (window.paintBadge) { window.paintBadge(SELECTORS, c); }
-        
-        // Also update any other count elements that might exist
-        document.querySelectorAll('[class*="wishlist"][class*="count"], [id*="wishlist"][id*="count"]').forEach(el => {
-            if (el.textContent && !isNaN(parseInt(el.textContent))) {
-                const currentText = el.textContent;
-                const newText = c > 99 ? '99+' : String(c);
-                
-                    // Always update to ensure consistency
-                    el.textContent = newText;
-                
-                if (c > 0) {
-                    el.classList.remove('hidden');
-                    el.style.display = '';
-                } else {
-                    el.classList.add('hidden');
-                    el.style.display = 'none';
-                }
-            }
-        });
-        
-            // Guard: if any badge still shows 0 while c>0, force repaint textContent
-            if (c > 0) {
-                const all = document.querySelectorAll('[data-wishlist-count], .wishlist-count, #wishlist-count-badge, #wishlist-count-badge-mobile, .wishlist-count-badge');
-                all.forEach(el => {
-                    const txt = (el.textContent||'').trim();
-                    if (txt === '0' || txt === '') {
-                        el.textContent = c > 99 ? '99+' : String(c);
-                        el.classList && el.classList.remove('hidden');
-                        if (el.style) el.style.display = '';
-                    }
-                });
-            }
-        } finally {
-            state.updatingCount = false;
+        if (window.CountSystem) {
+            window.CountSystem.updateWishlist(c);
+        } else {
+            console.warn('CountSystem not available - wishlist count not updated');
         }
     }
 
@@ -1342,73 +1287,24 @@
     } else {
         init();
     }
-    window.addEventListener('pageshow', function(){
-        // Re-apply badge on BFCache return or logo nav instant paint
-        try {
-            const c = parseInt(localStorage.getItem(COUNT_KEY) || '0', 10);
-            if (window.WishlistCount) { window.WishlistCount.apply(c); }
-            else if (window.paintBadge) { window.paintBadge(SELECTORS, c); }
-        } catch(_) {}
-    });
+    // Wishlist count handled by Count System - no pageshow needed
+    
+    // Compatibility shims for existing code paths
+    window.wishlistManager = {
+        updateCount: (c)=>{ 
+            // Use Count System instead of direct DOM manipulation
+            if (window.CountSystem) {
+                window.CountSystem.updateWishlist(c);
+            }
+            try{ localStorage.setItem(COUNT_KEY, String(c)); localStorage.setItem('wishlist_last_action', String(Date.now())); }catch(_){} 
+        },
+        checkWishlistStatus: ()=>{ /* no-op: fast module uses local state */ },
+        addItem: (t, id) => { setIn(t, id); saveToStorage(); },
+        removeItem: (t, id) => { setOut(t, id); saveToStorage(); },
+        getCount: () => count(),
+        clearAll: () => { state.items.clear(); saveToStorage(); }
+    };
+    window.refreshWishlistStatus = function(){ reconcileWishlistState(); };
 })();
-
-// Lightweight Wishlist Count Sync (simple, robust)
-// - Source of truth for instant UX is localStorage('wishlist_count')
-// - Server is reconciled in background when needed
-// - Common pattern: load from LS on navigation/focus; write to LS on success responses
-window.WishlistCount = {
-    storageKey: 'wishlist_count',
-    initialized: false,
-    init() {
-        if (this.initialized) return; // Prevent duplicate initialization
-        this.initialized = true;
-        
-        this.load();
-        this.guardWindowMs = 1200; // bỏ qua server reconcile trong khoảng ngắn sau hành động local
-        // Note: Event listeners are handled by main wishlist manager to avoid duplicates
-    },
-    load() {
-        const count = parseInt(localStorage.getItem(this.storageKey) || '0', 10);
-        const lastAction = parseInt(localStorage.getItem('wishlist_last_action') || '0', 10);
-        const now = Date.now();
-        if (window.wishlistManager && Number.isFinite(count)) {
-            if (!lastAction || now - lastAction > this.guardWindowMs) {
-            try { window.wishlistManager.updateCount(count); } catch(_) {}
-            }
-        } else {
-            // Fallback update: touch all known selectors
-            const selectors = ['.wishlist-count','#wishlist-count-badge','#wishlist-count-badge-mobile','[data-wishlist-count]','.wishlist-count-badge','.js-wishlist-count'];
-            selectors.forEach(sel => {
-                document.querySelectorAll(sel).forEach(el => {
-                    el.textContent = count > 99 ? '99+' : String(count);
-                    if (count > 0) { el.classList.remove('hidden'); el.style.display = ''; } else { el.classList.add('hidden'); el.style.display = 'none'; }
-                });
-            });
-        }
-    },
-    apply(count) {
-        const n = parseInt(count || 0, 10);
-        try { localStorage.setItem(this.storageKey, String(n)); } catch (_) {}
-        // Apply ngay, không đợi guard
-        if (window.wishlistManager && Number.isFinite(n)) {
-            try { window.wishlistManager.updateCount(n); } catch(_) { this.load(); }
-        } else {
-        this.load();
-        }
-    },
-    async reconcile() {
-        try {
-            const r = await fetch('/wishlist/count', { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-            const data = r.ok ? await r.json() : null;
-            if (data && data.success && typeof data.wishlist_count !== 'undefined') {
-                const lastAction = parseInt(localStorage.getItem('wishlist_last_action') || '0', 10);
-                const now = Date.now();
-                if (!lastAction || now - lastAction > this.guardWindowMs) {
-                this.apply(data.wishlist_count);
-                }
-            }
-        } catch (_) {}
-    }
-};
 
 
