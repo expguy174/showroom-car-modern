@@ -66,7 +66,9 @@
                                 $paymentConfig = [
                                     'pending' => ['label' => 'Chờ thanh toán', 'color' => 'bg-gray-100 text-gray-800', 'icon' => 'fas fa-clock'],
                                     'processing' => ['label' => 'Đang xử lý', 'color' => 'bg-blue-100 text-blue-800', 'icon' => 'fas fa-spinner'],
+                                    'partial' => ['label' => 'Một phần', 'color' => 'bg-yellow-100 text-yellow-800', 'icon' => 'fas fa-hourglass-half'],
                                     'completed' => ['label' => 'Đã thanh toán', 'color' => 'bg-green-100 text-green-800', 'icon' => 'fas fa-check-circle'],
+                                    'refunded' => ['label' => 'Đã hoàn tiền', 'color' => 'bg-purple-100 text-purple-800', 'icon' => 'fas fa-undo'],
                                     'failed' => ['label' => 'Thất bại', 'color' => 'bg-red-100 text-red-800', 'icon' => 'fas fa-exclamation-circle'],
                                     'cancelled' => ['label' => 'Đã hủy', 'color' => 'bg-gray-100 text-gray-800', 'icon' => 'fas fa-ban']
                                 ];

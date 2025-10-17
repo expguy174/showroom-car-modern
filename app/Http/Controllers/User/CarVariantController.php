@@ -15,7 +15,7 @@ class CarVariantController extends Controller
                 'images',
                 'colors' => function($q){ $q->where('is_active', true)->orderBy('sort_order'); },
                 'featuresRelation' => function($q){ $q->where('is_active', true)->orderBy('sort_order'); },
-                'specifications' => function($q){ $q->ordered(); },
+                'specifications' => function($q){ $q->orderBy('sort_order'); },
                 'reviews' => function ($q) { $q->where('is_approved', true); }
             ])
             ->when(is_numeric($slugOrId), function ($q) use ($slugOrId) {

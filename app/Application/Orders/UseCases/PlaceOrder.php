@@ -121,7 +121,7 @@ class PlaceOrder
                 'tax_rate' => $payload['tax_rate'] ?? 0.10,
             ]);
 
-            // Decrement stock for each item (color stock takes precedence)
+            // Reserve stock for each item (increase reserved, decrease available automatically)
             foreach ($resolvedItems as $itemData) {
                 if ($itemData['item_type'] === 'car_variant') {
                     /** @var CarVariant $variant */
@@ -133,18 +133,31 @@ class PlaceOrder
                     $colorId = $itemData['color_id'] ?? null;
                     
                     if ($colorId) {
-                        // Check color-specific stock from color_inventory JSON
+                        // Reserve color-specific stock from color_inventory JSON
                         $inventory = $variant->color_inventory ?? [];
                         if (is_array($inventory) && isset($inventory[$colorId])) {
-                            $available = (int) ($inventory[$colorId]['available'] ?? $inventory[$colorId]['quantity'] ?? 0);
+                            $quantity = (int) ($inventory[$colorId]['quantity'] ?? 0);
+                            $reserved = (int) ($inventory[$colorId]['reserved'] ?? 0);
+                            $available = $quantity - $reserved;
+                            
                             if ($available < $qty) {
                                 throw new \RuntimeException('Insufficient color stock');
                             }
                             
-                            // Update the color_inventory JSON
+                            // Increase reserved (available auto-decreases since available = quantity - reserved)
+                            $inventory[$colorId]['reserved'] = $reserved + $qty;
                             $inventory[$colorId]['available'] = max(0, $available - $qty);
                             $variant->color_inventory = $inventory;
                             $variant->save();
+                            
+                            Log::info('Stock reserved for car variant color', [
+                                'variant_id' => $variant->id,
+                                'color_id' => $colorId,
+                                'quantity_reserved' => $qty,
+                                'old_reserved' => $reserved,
+                                'new_reserved' => $reserved + $qty,
+                                'available_after' => $available - $qty
+                            ]);
                         } else {
                             // If no color inventory data, check if color exists and is active
                             $color = $variant->colors()->find($colorId);
@@ -158,12 +171,14 @@ class PlaceOrder
                             ]);
                         }
                     } else {
-                        // Check total variant stock from color_inventory
+                        // Reserve from total variant stock (distribute across colors)
                         $inventory = $variant->color_inventory ?? [];
                         if (is_array($inventory) && !empty($inventory)) {
                             $totalAvailable = 0;
                             foreach ($inventory as $colorData) {
-                                $totalAvailable += (int) ($colorData['available'] ?? $colorData['quantity'] ?? 0);
+                                $q = (int) ($colorData['quantity'] ?? 0);
+                                $r = (int) ($colorData['reserved'] ?? 0);
+                                $totalAvailable += ($q - $r);
                             }
                             if ($totalAvailable < $qty) {
                                 throw new \RuntimeException('Insufficient variant stock');
@@ -171,13 +186,16 @@ class PlaceOrder
                             
                             // Distribute the quantity across available colors
                             $remaining = $qty;
-                            foreach ($inventory as $colorId => $colorData) {
+                            foreach ($inventory as $cId => $colorData) {
                                 if ($remaining <= 0) break;
-                                $available = (int) ($colorData['available'] ?? $colorData['quantity'] ?? 0);
-                                $toDeduct = min($remaining, $available);
-                                if ($toDeduct > 0) {
-                                    $inventory[$colorId]['available'] = max(0, $available - $toDeduct);
-                                    $remaining -= $toDeduct;
+                                $q = (int) ($colorData['quantity'] ?? 0);
+                                $r = (int) ($colorData['reserved'] ?? 0);
+                                $avail = $q - $r;
+                                $toReserve = min($remaining, $avail);
+                                if ($toReserve > 0) {
+                                    $inventory[$cId]['reserved'] = $r + $toReserve;
+                                    $inventory[$cId]['available'] = max(0, $avail - $toReserve);
+                                    $remaining -= $toReserve;
                                 }
                             }
                             $variant->color_inventory = $inventory;
@@ -193,6 +211,46 @@ class PlaceOrder
                             ]);
                         }
                     }
+                } elseif ($itemData['item_type'] === 'accessory') {
+                    /** @var Accessory $accessory */
+                    $accessory = Accessory::lockForUpdate()->find($itemData['item_id']);
+                    if (!$accessory) {
+                        throw new \RuntimeException('Accessory not found for stock update');
+                    }
+                    
+                    $qty = (int) $itemData['quantity'];
+                    $currentStock = (int) ($accessory->stock_quantity ?? 0);
+                    
+                    // Validate stock availability
+                    if ($currentStock < $qty) {
+                        throw new \RuntimeException("Không đủ hàng cho phụ kiện: {$accessory->name}. Còn lại: {$currentStock}, yêu cầu: {$qty}");
+                    }
+                    
+                    // Decrease stock
+                    $newStock = max(0, $currentStock - $qty);
+                    $accessory->stock_quantity = $newStock;
+                    
+                    // Auto-update stock_status based on remaining quantity
+                    if ($newStock === 0) {
+                        $accessory->stock_status = 'out_of_stock';
+                    } elseif ($newStock <= 5) {
+                        $accessory->stock_status = 'low_stock';
+                    } else {
+                        $accessory->stock_status = 'in_stock';
+                    }
+                    
+                    $accessory->save();
+                    
+                    // Log stock change for tracking
+                    Log::info('Accessory stock decreased', [
+                        'accessory_id' => $accessory->id,
+                        'accessory_name' => $accessory->name,
+                        'order_id' => $order->id ?? null,
+                        'quantity_sold' => $qty,
+                        'old_stock' => $currentStock,
+                        'new_stock' => $newStock,
+                        'new_status' => $accessory->stock_status
+                    ]);
                 }
             }
 

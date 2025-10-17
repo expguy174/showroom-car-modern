@@ -79,7 +79,7 @@ $finalPrice = $price;
 <!-- New Badge (Priority 4) - is_new -->
 @if(($accessory->is_new ?? false) && $badgeCount < $maxBadges)
   <div class="bg-gradient-to-r from-green-500 to-emerald-500 text-white text-[10px] px-2.5 py-1 rounded-full inline-flex items-center gap-1 leading-none font-bold shadow-lg">
-  <i class="fas fa-sparkles text-[12px] leading-none"></i> Mới
+  <i class="fas fa-certificate text-[12px] leading-none"></i> Mới
   </div>
   @php $badgeCount++; @endphp
   @endif
@@ -160,14 +160,16 @@ $finalPrice = $price;
         <span class="text-xs text-gray-400 line-through decoration-2 decoration-gray-400">{{ number_format($originalPrice, 0, ',', '.') }}₫</span>
         @endif
       </div>
-      @if($hasDiscount && $computedDiscount > 0)
-      <div class="flex items-center gap-1">
+      <div class="flex items-center gap-2 flex-wrap">
+        @if($hasDiscount && $computedDiscount > 0)
         <span class="inline-flex items-center px-2 py-1 bg-red-100 text-red-700 text-xs font-medium rounded-full">
           <i class="fas fa-tag mr-1"></i>
           Giảm {{ $computedDiscount }}%
         </span>
+        @endif
+        {{-- Stock badge for accessories --}}
+        <x-stock-badge :stock="$accessory->stock_quantity ?? 0" type="accessory" size="sm" />
       </div>
-      @endif
       @else
       <span class="text-gray-500 font-medium whitespace-nowrap">Liên hệ</span>
       @endif

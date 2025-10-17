@@ -252,9 +252,9 @@
                                             }
                                             $itemTotal = $unit * (int) $ci->quantity;
                                         @endphp
-                                        <div class="flex justify-between text-gray-600 text-sm product-summary-item">
-                                            <span class="truncate">{{ $itemName }} x{{ $ci->quantity }}</span>
-                                            <span class="font-semibold text-gray-900">{{ number_format($itemTotal, 0, ',', '.') }} đ</span>
+                                        <div class="flex justify-between items-center gap-2 text-gray-600 text-sm product-summary-item">
+                                            <span class="truncate cursor-help" title="{{ $itemName }} (x{{ $ci->quantity }})">{{ $itemName }} x{{ $ci->quantity }}</span>
+                                            <span class="font-semibold text-gray-900 whitespace-nowrap text-right">{{ number_format($itemTotal, 0, ',', '.') }} đ</span>
                                         </div>
                                     @endforeach
                                     
@@ -262,29 +262,29 @@
                                     <div class="border-t border-gray-200 my-3"></div>
                                     
                                     <!-- Subtotal -->
-                                    <div class="flex justify-between text-gray-600 text-sm">
-                                        <span>Tạm tính</span>
-                                        <span class="font-semibold text-gray-900"><span id="subtotal">{{ number_format($subtotal, 0, ',', '.') }}</span> đ</span>
+                                    <div class="flex justify-between items-center gap-2 text-gray-600 text-sm">
+                                        <span class="whitespace-nowrap">Tạm tính</span>
+                                        <span class="font-semibold text-gray-900 whitespace-nowrap text-right"><span id="subtotal">{{ number_format($subtotal, 0, ',', '.') }}</span> đ</span>
                                     </div>
                                     
                                     <!-- Tax -->
-                                    <div class="flex justify-between text-gray-600 text-sm">
-                                        <span>Thuế VAT (10%)</span>
-                                        <span class="font-semibold text-gray-900"><span id="tax-total">{{ number_format($taxTotal, 0, ',', '.') }}</span> đ</span>
+                                    <div class="flex justify-between items-center gap-2 text-gray-600 text-sm">
+                                        <span class="whitespace-nowrap">Thuế VAT (10%)</span>
+                                        <span class="font-semibold text-gray-900 whitespace-nowrap text-right"><span id="tax-total">{{ number_format($taxTotal, 0, ',', '.') }}</span> đ</span>
                                     </div>
                                     
                                     <!-- Shipping -->
-                                    <div class="flex justify-between text-gray-600 text-sm">
-                                        <span>Phí vận chuyển</span>
-                                        <span class="font-semibold text-emerald-600">Miễn phí</span>
+                                    <div class="flex justify-between items-center gap-2 text-gray-600 text-sm">
+                                        <span class="whitespace-nowrap">Phí vận chuyển</span>
+                                        <span class="font-semibold text-emerald-600 whitespace-nowrap">Miễn phí</span>
                                     </div>
                                 </div>
 
                                 <!-- Total -->
                                 <div class="border-t border-gray-200 pt-4">
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-lg font-bold text-gray-900">Tổng cộng:</span>
-                                        <span class="text-xl font-bold text-blue-600"><span id="cart-total">{{ number_format($subtotal + $taxTotal, 0, ',', '.') }}</span> đ</span>
+                                    <div class="flex justify-between items-center gap-2">
+                                        <span class="text-base font-bold text-gray-900 whitespace-nowrap flex-shrink-0">Tổng cộng:</span>
+                                        <span class="text-base sm:text-lg font-bold text-blue-600 text-right truncate cursor-help" title="{{ number_format($subtotal + $taxTotal, 0, ',', '.') }} đ"><span id="cart-total">{{ number_format($subtotal + $taxTotal, 0, ',', '.') }}</span> đ</span>
                                     </div>
                                 </div>
 
@@ -525,12 +525,12 @@ document.addEventListener('DOMContentLoaded', function() {
        // Insert product items before separator
        const separator = summaryContainer.querySelector('.border-t.border-gray-200.my-3');
        allCartItems.forEach(function(item, index) {
-         const productDiv = document.createElement('div');
-         productDiv.className = 'flex justify-between text-gray-600 text-sm product-summary-item';
-         productDiv.innerHTML = `
-           <span class="truncate">${item.name} x${item.quantity}</span>
-           <span class="font-semibold text-gray-900">${nf.format(item.total)} đ</span>
-         `;
+        const productDiv = document.createElement('div');
+        productDiv.className = 'flex justify-between items-center gap-2 text-gray-600 text-sm product-summary-item';
+        productDiv.innerHTML = `
+          <span class="truncate cursor-help" title="${item.name} (x${item.quantity})">${item.name} x${item.quantity}</span>
+          <span class="font-semibold text-gray-900 whitespace-nowrap text-right">${nf.format(item.total)} đ</span>
+        `;
          
          if (separator) {
            summaryContainer.insertBefore(productDiv, separator);
@@ -708,6 +708,12 @@ document.addEventListener('DOMContentLoaded', function() {
           window.updateCartCount(data.cart_count);
         }
         
+        // Inject stock data for new item
+        if (data.stock_data && data.cart_item_id) {
+          window.cartItemStockData = window.cartItemStockData || {};
+          window.cartItemStockData[data.cart_item_id] = data.stock_data;
+        }
+        
         // Add new line to cart immediately without page refresh
         if (data.cart_item_html) {
           // Add HTML directly to DOM
@@ -838,7 +844,135 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         return false;
       }
+      
+      // Check if any item has out of stock selected
+      const outOfStockItems = [];
+      
+      // Check car variants with colors
+      document.querySelectorAll('[data-item-type="car_variant"]').forEach(function(row) {
+        const itemId = row.getAttribute('data-id');
+        const colorId = row.getAttribute('data-color-id');
+        
+        if (itemId && colorId && window.cartItemStockData && window.cartItemStockData[itemId]) {
+          const stockData = window.cartItemStockData[itemId][colorId];
+          if (stockData && stockData.available === 0) {
+            // Get item name
+            const nameEl = row.querySelector('.font-bold a, .font-bold');
+            const itemName = nameEl ? nameEl.textContent.trim() : 'Sản phẩm';
+            const colorName = row.querySelector('.selected-color-name');
+            const colorText = colorName ? colorName.textContent.trim() : '';
+            
+            outOfStockItems.push(`${itemName} - Màu ${colorText}`);
+          }
+        }
+      });
+      
+      // Check accessories
+      document.querySelectorAll('[data-item-type="accessory"]').forEach(function(row) {
+        const stockBadge = row.querySelector('[id^="stock-badge"]');
+        if (stockBadge && stockBadge.textContent.includes('Hết hàng')) {
+          const nameEl = row.querySelector('.font-bold a, .font-bold');
+          const itemName = nameEl ? nameEl.textContent.trim() : 'Phụ kiện';
+          outOfStockItems.push(itemName);
+        }
+      });
+      
+      if (outOfStockItems.length > 0) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        let message = 'Không thể thanh toán! Các sản phẩm sau đã hết hàng:\n';
+        message += outOfStockItems.map((item, index) => `${index + 1}. ${item}`).join('\n');
+        message += '\nVui lòng xóa hoặc chọn màu khác.';
+        
+        if (typeof window.showMessage === 'function') {
+          window.showMessage(message.replace(/\n/g, '<br>'), 'error');
+        } else {
+          alert(message);
+        }
+        
+        // Highlight out of stock items
+        document.querySelectorAll('[data-item-type="car_variant"], [data-item-type="accessory"]').forEach(function(row) {
+          const itemId = row.getAttribute('data-id');
+          const colorId = row.getAttribute('data-color-id');
+          
+          let isOutOfStock = false;
+          
+          if (row.getAttribute('data-item-type') === 'car_variant' && colorId && window.cartItemStockData && window.cartItemStockData[itemId]) {
+            const stockData = window.cartItemStockData[itemId][colorId];
+            if (stockData && stockData.available === 0) {
+              isOutOfStock = true;
+            }
+          } else if (row.getAttribute('data-item-type') === 'accessory') {
+            const stockBadge = row.querySelector('[id^="stock-badge"]');
+            if (stockBadge && stockBadge.textContent.includes('Hết hàng')) {
+              isOutOfStock = true;
+            }
+          }
+          
+          if (isOutOfStock) {
+            row.style.border = '2px solid #ef4444';
+            row.style.backgroundColor = '#fef2f2';
+            setTimeout(() => {
+              row.style.border = '';
+              row.style.backgroundColor = '';
+            }, 5000);
+          }
+        });
+        
+        return false;
+      }
     });
+  });
+  
+  // Stock badge update functionality
+  window.renderStockBadge = function(badgeData) {
+    const sizeClasses = 'px-2 py-1 text-xs';
+    return `<span class="inline-flex items-center gap-1 ${sizeClasses} font-medium rounded ${badgeData.class}">
+      <span>${badgeData.icon}</span>
+      <span>${badgeData.text}</span>
+    </span>`;
+  };
+  
+  // Color change handler for stock badge
+  document.addEventListener('click', function(e) {
+    const colorBtn = e.target.closest('.color-option');
+    if (!colorBtn) return;
+    
+    const itemId = colorBtn.getAttribute('data-item-id');
+    const colorId = parseInt(colorBtn.getAttribute('data-color-id'));
+    
+    if (!itemId || !colorId) return;
+    if (!window.cartItemStockData || !window.cartItemStockData[itemId]) return;
+    
+    const stockData = window.cartItemStockData[itemId][colorId];
+    if (!stockData) return;
+    
+    // Update badge in both desktop and mobile views
+    const desktopBadge = document.getElementById('stock-badge-' + itemId);
+    const mobileBadge = document.getElementById('stock-badge-mobile-' + itemId);
+    
+    const badgeHTML = window.renderStockBadge(stockData.badge);
+    
+    if (desktopBadge) {
+      desktopBadge.innerHTML = badgeHTML;
+      desktopBadge.style.display = '';
+    }
+    if (mobileBadge) {
+      mobileBadge.innerHTML = badgeHTML;
+      mobileBadge.style.display = '';
+    }
+    
+    // Update data-color-id attribute for validation
+    const desktopRow = document.querySelector(`.cart-item-desktop[data-id="${itemId}"]`);
+    const mobileRow = document.querySelector(`.cart-item-row[data-id="${itemId}"]`);
+    
+    if (desktopRow) {
+      desktopRow.setAttribute('data-color-id', colorId);
+    }
+    if (mobileRow) {
+      mobileRow.setAttribute('data-color-id', colorId);
+    }
   });
 })();
 </script>

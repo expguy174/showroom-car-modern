@@ -101,7 +101,9 @@
                     :options="[
                         ['value' => 'pending', 'label' => 'Chờ thanh toán'],
                         ['value' => 'processing', 'label' => 'Đang xử lý'],
+                        ['value' => 'partial', 'label' => 'Thanh toán một phần'],
                         ['value' => 'completed', 'label' => 'Đã thanh toán'],
+                        ['value' => 'refunded', 'label' => 'Đã hoàn tiền'],
                         ['value' => 'failed', 'label' => 'Thất bại'],
                         ['value' => 'cancelled', 'label' => 'Đã hủy']
                     ]"
@@ -145,7 +147,7 @@
             @endif
             @if(request('payment_status'))
             <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                {{ ['pending' => 'Chờ thanh toán', 'processing' => 'Đang xử lý', 'completed' => 'Đã thanh toán', 'failed' => 'Thất bại', 'cancelled' => 'Đã hủy'][request('payment_status')] ?? request('payment_status') }}
+                {{ ['pending' => 'Chờ thanh toán', 'processing' => 'Đang xử lý', 'partial' => 'Thanh toán một phần', 'completed' => 'Đã thanh toán', 'refunded' => 'Đã hoàn tiền', 'failed' => 'Thất bại', 'cancelled' => 'Đã hủy'][request('payment_status')] ?? request('payment_status') }}
                 <button type="button" onclick="removeFilter('payment_status')" class="ml-2 hover:text-green-900">
                     <i class="fas fa-times"></i>
                 </button>

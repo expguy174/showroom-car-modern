@@ -312,23 +312,38 @@
 					}
 				});
 				if (res.ok) {
-					listEl.querySelectorAll('.btn-read').forEach(b => {
-						b.setAttribute('disabled', 'disabled');
-						b.classList.add('text-gray-400');
-						b.classList.remove('text-amber-700');
-					});
-					listEl.querySelectorAll('.w-10.h-10.rounded-full').forEach(icon => {
-						icon.classList.remove('bg-amber-50', 'text-amber-600');
-						icon.classList.add('bg-gray-100', 'text-gray-400');
-					});
-					listEl.querySelectorAll('.text-sm.font-semibold, .text-base.font-semibold').forEach(title => {
-						title.classList.remove('text-gray-900');
-						title.classList.add('text-gray-700');
-					});
-					// Delay to ensure server cache is cleared
-					setTimeout(() => {
-						if (window.refreshNotifBadge) window.refreshNotifBadge();
-					}, 200);
+					console.log('Mark all as read success');
+				
+				listEl.querySelectorAll('.btn-read').forEach(b => {
+					b.setAttribute('disabled', 'disabled');
+					b.classList.add('text-gray-400');
+					b.classList.remove('text-amber-700');
+				});
+				listEl.querySelectorAll('.w-10.h-10.rounded-full').forEach(icon => {
+					icon.classList.remove('bg-amber-50', 'text-amber-600');
+					icon.classList.add('bg-gray-100', 'text-gray-400');
+				});
+				listEl.querySelectorAll('.text-sm.font-semibold, .text-base.font-semibold').forEach(title => {
+					title.classList.remove('text-gray-900');
+					title.classList.add('text-gray-700');
+				});
+				
+				// OPTIMISTIC UPDATE: Set count to 0 immediately
+				if (window.CountSystem) {
+					window.CountSystem.updateNotifications(0);
+					console.log('Optimistic update: all marked as read, count = 0');
+				}
+				
+				// Confirm with server after longer delay (for accuracy)
+				setTimeout(() => {
+					console.log('Calling refreshNotifBadge from mark all (server sync)...');
+					if (typeof window.refreshNotifBadge === 'function') {
+						window.refreshNotifBadge();
+					} else {
+						console.error('window.refreshNotifBadge is not a function!');
+					}
+				}, 800);
+					
 					if (typeof window.showMessage === 'function') window.showMessage('Đã đánh dấu tất cả là đã đọc', 'success');
 				}
 			} catch {}
@@ -392,7 +407,18 @@
 				showEmptyState();
 				page = 1;
 				hasMore = false;
-				if (window.refreshNotifBadge) window.refreshNotifBadge();
+				try {
+					localStorage.setItem('notification_count', 0);
+					if (window.CountSystem) {
+						window.CountSystem.updateNotifications(0);
+					}
+					console.log('Optimistic update: all deleted, count = 0');
+				} catch(e) {
+					console.error('Failed optimistic update:', e);
+				}
+				setTimeout(() => {
+					if (window.refreshNotifBadge) window.refreshNotifBadge();
+				}, 500);
 				if (typeof window.showMessage === 'function') window.showMessage('Đã xóa tất cả thông báo', 'success');
 			} catch (e) {
 				if (typeof window.showMessage === 'function') window.showMessage('Không thể xóa tất cả. Vui lòng thử lại.', 'error');
@@ -408,14 +434,7 @@
 			// Thay thế đoạn mark as read hiện tại
 			if (readBtn) {
 				const id = readBtn.getAttribute('data-id');
-
-				// Optimistic update - giảm count ngay lập tức
-				if (window.CountSystem) {
-					const currentCount = parseInt(localStorage.getItem('notification_count') || '0', 10);
-					if (currentCount > 0) {
-						window.CountSystem.updateNotifications(currentCount - 1);
-					}
-				}
+				const row = readBtn.closest('[data-notif-id]');
 
 				const res = await fetch(`/notifications/${id}/read`, {
 					method: 'POST',
@@ -426,22 +445,54 @@
 				});
 
 				if (res.ok) {
-					// UI updates...
+					console.log('Mark as read success for notification:', id);
+					
+					// UI updates - mark as read
 					readBtn.setAttribute('disabled', 'disabled');
-					readBtn.classList.add('text-gray-400');
-					readBtn.classList.remove('text-amber-700');
-					// ... rest of UI updates
-
-					// Confirm with server after delay
-					setTimeout(() => {
-						if (window.refreshNotifBadge) window.refreshNotifBadge();
-					}, 200);
-				} else {
-					// Rollback optimistic update on error
-					if (window.CountSystem) {
-						const currentCount = parseInt(localStorage.getItem('notification_count') || '0', 10);
-						window.CountSystem.updateNotifications(currentCount + 1);
+					readBtn.classList.add('text-gray-400', 'cursor-not-allowed');
+					readBtn.classList.remove('text-amber-700', 'hover:bg-amber-50');
+					
+					// Update icon color
+					if (row) {
+						const icon = row.querySelector('.w-10.h-10.rounded-full');
+						if (icon) {
+							icon.classList.remove('bg-amber-50', 'text-amber-600');
+							icon.classList.add('bg-gray-100', 'text-gray-400');
+						}
+						
+						// Update title style
+						const title = row.querySelector('.font-semibold');
+						if (title) {
+							title.classList.remove('text-gray-900');
+							title.classList.add('text-gray-700');
+						}
 					}
+
+					try {
+						const currentCount = parseInt(localStorage.getItem('notification_count') || '0', 10);
+						if (currentCount > 0) {
+							const newCount = currentCount - 1;
+							localStorage.setItem('notification_count', newCount);
+							if (window.CountSystem) {
+								window.CountSystem.updateNotifications(newCount);
+							}
+							console.log('Optimistic update: count decreased to', newCount);
+						}
+					} catch(e) {
+						console.error('Failed optimistic update:', e);
+					}
+					
+					// Confirm with server after longer delay (for accuracy)
+					setTimeout(() => {
+						console.log('Calling refreshNotifBadge (server sync)...');
+						if (typeof window.refreshNotifBadge === 'function') {
+							window.refreshNotifBadge();
+						} else {
+							console.error('window.refreshNotifBadge is not a function!');
+						}
+					}, 800);
+				} else {
+					console.error('Failed to mark as read:', res.status);
 				}
 			}
 			if (delBtn) {
@@ -455,17 +506,51 @@
 				});
 				if (res.ok) {
 					const row = delBtn.closest('[data-notif-id]');
-					if (row) row.remove();
+					// OPTIMISTIC UPDATE: Decrease count if notification was unread
+					if (row) {
+						const icon = row.querySelector('.w-10.h-10.rounded-full');
+						const isUnread = icon && icon.classList.contains('bg-amber-50');
+						
+						if (isUnread) {
+							try {
+								const currentCount = parseInt(localStorage.getItem('notification_count') || '0', 10);
+								if (currentCount > 0) {
+									const newCount = currentCount - 1;
+									localStorage.setItem('notification_count', newCount);
+									if (window.CountSystem) {
+										window.CountSystem.updateNotifications(newCount);
+									}
+									console.log('Optimistic update after delete: count decreased to', newCount);
+								}
+							} catch(e) {
+								console.error('Failed optimistic update on delete:', e);
+							}
+						}
+						
+						row.remove();
+					}
+					
 					checkAndShowEmptyState();
 					const remaining = listEl.querySelectorAll('[data-notif-id]').length;
 					if (remaining === 0) {
 						updateControls(false, false);
 					}
+					
+					// Server sync after delay
+					setTimeout(() => {
+						if (window.refreshNotifBadge) window.refreshNotifBadge();
+					}, 500);
 				}
 			}
 		});
 
 		(function() {
+			// Debug: Check if refreshNotifBadge is available
+			console.log('window.refreshNotifBadge available:', typeof window.refreshNotifBadge);
+			if (typeof window.refreshNotifBadge !== 'function') {
+				console.warn('⚠️ window.refreshNotifBadge is not defined! Badge updates will not work.');
+			}
+			
 			const initialCount = Number(document.getElementById('notif-list').getAttribute('data-initial-count') || '0');
 			const initialHasMore = document.getElementById('notif-list').getAttribute('data-initial-has-more') === '1';
 			hasMore = initialHasMore;

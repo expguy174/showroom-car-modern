@@ -197,6 +197,9 @@ class PaymentController extends Controller
             $query->where(function($q) use ($search) {
                 $q->where('id', 'like', "%{$search}%")
                   ->orWhere('reason', 'like', "%{$search}%")
+                  ->orWhereHas('paymentTransaction.order', function($orderQuery) use ($search) {
+                      $orderQuery->where('order_number', 'like', "%{$search}%");
+                  })
                   ->orWhereHas('paymentTransaction.user', function($userQuery) use ($search) {
                       $userQuery->whereHas('userProfile', function($profileQuery) use ($search) {
                           $profileQuery->where('name', 'like', "%{$search}%");
@@ -228,7 +231,22 @@ class PaymentController extends Controller
             'admin_notes' => 'nullable|string|max:500',
         ]);
 
-        $data = ['refund_status' => $request->refund_status];
+        // Prevent duplicate status updates
+        if ($refund->status === $request->refund_status) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Trạng thái đã được cập nhật trước đó',
+                'status' => $refund->status,
+                'stats' => [
+                    'pending' => Refund::where('status', 'pending')->count(),
+                    'processing' => Refund::where('status', 'processing')->count(),
+                    'refunded' => Refund::where('status', 'refunded')->count(),
+                    'failed' => Refund::where('status', 'failed')->count(),
+                ]
+            ]);
+        }
+
+        $data = ['status' => $request->refund_status];
 
         if ($request->refund_status === 'processing') {
             $data['processed_at'] = now();
@@ -300,10 +318,10 @@ class PaymentController extends Controller
                 // Update order status
                 $order->update(['status' => 'cancelled']);
                 
-                // Update payment status (keep partial if installment had paid, otherwise cancelled)
-                if ($order->payment_status === 'pending') {
-                    $order->update(['payment_status' => 'cancelled']);
-                }
+                // Update payment status to 'refunded' since money has been returned
+                // This properly reflects that the payment has been refunded
+                $newPaymentStatus = 'refunded';
+                $order->update(['payment_status' => $newPaymentStatus]);
                 
                 // Log auto cancellation with full details
                 \App\Models\OrderLog::create([
@@ -313,7 +331,7 @@ class PaymentController extends Controller
                     'message' => 'Tự động hủy đơn hàng sau khi hoàn tiền thành công',
                     'details' => [
                         'order_status' => ['from' => $oldOrderStatus, 'to' => 'cancelled'],
-                        'payment_status' => ['from' => $oldPaymentStatus, 'to' => $order->payment_status],
+                        'payment_status' => ['from' => $oldPaymentStatus, 'to' => $newPaymentStatus],
                         'reason' => 'Auto-cancelled after refund completed',
                         'refund_id' => $refund->id,
                         'refund_amount' => $refund->amount,
@@ -327,10 +345,56 @@ class PaymentController extends Controller
             }
         }
 
+        // Send notification to user about refund status update
+        if ($refund->paymentTransaction && $refund->paymentTransaction->order) {
+            $order = $refund->paymentTransaction->order;
+            if ($order->user_id) {
+                try {
+                    $statusMessages = [
+                        'processing' => [
+                            'title' => 'Yêu cầu hoàn tiền đang được xử lý',
+                            'message' => 'Yêu cầu hoàn tiền ' . number_format($refund->amount, 0, ',', '.') . ' VNĐ cho đơn hàng ' . ($order->order_number ?? '#' . $order->id) . ' đang được xử lý.'
+                        ],
+                        'refunded' => [
+                            'title' => 'Hoàn tiền thành công',
+                            'message' => 'Đã hoàn ' . number_format($refund->amount, 0, ',', '.') . ' VNĐ cho đơn hàng ' . ($order->order_number ?? '#' . $order->id) . '. Tiền sẽ về tài khoản trong 3-5 ngày làm việc.'
+                        ],
+                        'failed' => [
+                            'title' => 'Yêu cầu hoàn tiền bị từ chối',
+                            'message' => 'Yêu cầu hoàn tiền cho đơn hàng ' . ($order->order_number ?? '#' . $order->id) . ' đã bị từ chối.' . ($request->admin_notes ? ' Lý do: ' . $request->admin_notes : '')
+                        ]
+                    ];
+                    
+                    if (isset($statusMessages[$request->refund_status])) {
+                        app(\App\Services\NotificationService::class)->send(
+                            $order->user_id,
+                            'refund_status',
+                            $statusMessages[$request->refund_status]['title'],
+                            $statusMessages[$request->refund_status]['message']
+                        );
+                    }
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::error('Failed to send refund notification', [
+                        'refund_id' => $refund->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+        }
+
+        // Get updated stats
+        $stats = [
+            'pending' => Refund::where('status', 'pending')->count(),
+            'processing' => Refund::where('status', 'processing')->count(),
+            'refunded' => Refund::where('status', 'refunded')->count(),
+            'failed' => Refund::where('status', 'failed')->count(),
+        ];
+
         return response()->json([
             'success' => true,
             'message' => 'Cập nhật trạng thái hoàn tiền thành công!',
-            'status' => $request->refund_status
+            'status' => $request->refund_status,
+            'stats' => $stats
         ]);
     }
 

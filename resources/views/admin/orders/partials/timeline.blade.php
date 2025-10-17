@@ -147,7 +147,8 @@
                                 'completed' => 'Đã thanh toán',
                                 'partial' => 'Thanh toán một phần',
                                 'failed' => 'Thất bại',
-                                'refunded' => 'Đã hoàn tiền'
+                                'refunded' => 'Đã hoàn tiền',
+                                'cancelled' => 'Đã hủy'
                             ];
                             
                             // Use payment translations if this is a payment-related action
@@ -198,30 +199,23 @@
                     @endif
                     
                     @if($log->action === 'refund_status_updated')
-                    <div class="mt-2 p-2 bg-indigo-50 border border-indigo-200 rounded">
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-700 font-medium">Trạng thái:</span>
-                            <div class="flex items-center gap-2">
-                                <span class="text-sm text-gray-600">{{ $log->details['from_label'] ?? $log->details['from_status'] }}</span>
-                                <i class="fas fa-arrow-right text-gray-400 text-xs"></i>
-                                <span class="text-sm font-medium text-indigo-600">{{ $log->details['to_label'] ?? $log->details['to_status'] }}</span>
-                            </div>
+                    <div class="mt-2 p-3 bg-indigo-50 border border-indigo-200 rounded space-y-2">
+                        <div class="flex items-center gap-2 text-xs">
+                            <span class="text-gray-600">Trạng thái:</span>
+                            <span class="text-gray-700">{{ $log->details['from_label'] ?? $log->details['from_status'] }}</span>
+                            <i class="fas fa-arrow-right text-gray-400 text-xs"></i>
+                            <span class="font-medium text-indigo-600">{{ $log->details['to_label'] ?? $log->details['to_status'] }}</span>
                         </div>
                         @if(isset($log->details['amount']))
-                        <div class="mt-1 flex justify-between items-center">
-                            <span class="text-gray-700 font-medium">Số tiền:</span>
-                            <span class="text-indigo-600 font-bold">{{ number_format($log->details['amount'], 0, ',', '.') }} VNĐ</span>
+                        <div class="flex items-center justify-between text-xs bg-white border border-indigo-200 rounded px-2 py-1.5">
+                            <span class="text-indigo-700">Số tiền hoàn:</span>
+                            <span class="font-bold text-indigo-600">{{ number_format($log->details['amount'], 0, ',', '.') }} VNĐ</span>
                         </div>
                         @endif
                         @if(isset($log->details['admin_notes']) && $log->details['admin_notes'])
-                        <div class="mt-1">
-                            <span class="text-gray-600 text-xs">Ghi chú:</span>
-                            <p class="text-gray-700 text-sm mt-1">{{ $log->details['admin_notes'] }}</p>
-                        </div>
-                        @endif
-                        @if(isset($log->details['admin_name']))
-                        <div class="mt-1 text-xs text-gray-500">
-                            Bởi: {{ $log->details['admin_name'] }}
+                        <div class="text-xs">
+                            <span class="text-gray-600">Ghi chú:</span>
+                            <p class="text-gray-700 mt-1">{{ $log->details['admin_notes'] }}</p>
                         </div>
                         @endif
                     </div>
@@ -230,21 +224,41 @@
                     {{-- Show additional details for order_cancelled --}}
                     @if($log->action === 'order_cancelled')
                     <div class="mt-2 p-3 bg-red-50 border border-red-200 rounded space-y-2">
+                        @php
+                            $orderStatusLabels = [
+                                'pending' => 'Chờ xử lý',
+                                'confirmed' => 'Đã xác nhận',
+                                'shipping' => 'Đang giao',
+                                'delivered' => 'Đã giao',
+                                'cancelled' => 'Đã hủy'
+                            ];
+                            $paymentStatusLabels = [
+                                'pending' => 'Chờ thanh toán',
+                                'partial' => 'Thanh toán một phần',
+                                'completed' => 'Đã thanh toán',
+                                'failed' => 'Thất bại',
+                                'refunded' => 'Đã hoàn tiền',
+                                'cancelled' => 'Đã hủy'
+                            ];
+                        @endphp
+                        
                         @if(isset($log->details['order_status']))
                         <div class="flex items-center gap-2 text-xs">
                             <span class="text-gray-600">Trạng thái đơn:</span>
-                            <span class="text-gray-700">{{ $log->details['order_status']['from'] ?? '' }}</span>
+                            <span class="text-gray-700">{{ $orderStatusLabels[$log->details['order_status']['from']] ?? $log->details['order_status']['from'] }}</span>
                             <i class="fas fa-arrow-right text-gray-400 text-xs"></i>
-                            <span class="font-medium text-red-600">{{ $log->details['order_status']['to'] ?? 'cancelled' }}</span>
+                            <span class="font-medium text-red-600">{{ $orderStatusLabels[$log->details['order_status']['to']] ?? 'Đã hủy' }}</span>
                         </div>
                         @endif
                         
                         @if(isset($log->details['payment_status']))
                         <div class="flex items-center gap-2 text-xs">
                             <span class="text-gray-600">Thanh toán:</span>
-                            <span class="text-gray-700">{{ $log->details['payment_status']['from'] ?? '' }}</span>
+                            <span class="text-gray-700">{{ $paymentStatusLabels[$log->details['payment_status']['from']] ?? $log->details['payment_status']['from'] }}</span>
                             <i class="fas fa-arrow-right text-gray-400 text-xs"></i>
-                            <span class="font-medium text-red-600">{{ $log->details['payment_status']['to'] ?? '' }}</span>
+                            <span class="font-medium {{ $log->details['payment_status']['to'] === 'refunded' ? 'text-green-600' : 'text-red-600' }}">
+                                {{ $paymentStatusLabels[$log->details['payment_status']['to']] ?? $log->details['payment_status']['to'] }}
+                            </span>
                         </div>
                         @endif
                         
@@ -266,7 +280,13 @@
                         @if(isset($log->details['reason']) && $log->details['reason'])
                         <div class="text-xs">
                             <span class="text-gray-600">Lý do:</span>
-                            <p class="text-gray-700 mt-1">{{ $log->details['reason'] }}</p>
+                            <p class="text-gray-700 mt-1">
+                                @if($log->details['reason'] === 'Auto-cancelled after refund completed')
+                                    Tự động hủy sau khi hoàn tiền thành công
+                                @else
+                                    {{ $log->details['reason'] }}
+                                @endif
+                            </p>
                         </div>
                         @endif
                         

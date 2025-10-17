@@ -105,6 +105,54 @@
                 </div>
             </div>
 
+            {{-- Color Inventory Section --}}
+            @if($carvariant->colors && $carvariant->colors->count() > 0)
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-warehouse text-blue-600 mr-2"></i>
+                    Tồn kho theo màu
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    @foreach($carvariant->colors as $color)
+                        @php
+                            $stockInfo = \App\Helpers\StockHelper::getCarColorStock($carvariant->color_inventory ?? [], $color->id);
+                            $colorHex = \App\Helpers\ColorHelper::getColorHex($color->color_name);
+                        @endphp
+                        <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="w-8 h-8 rounded-full border-2 border-gray-300" style="background-color: {{ $colorHex }}"></div>
+                                <div class="flex-1">
+                                    <div class="font-semibold text-gray-900">{{ $color->color_name }}</div>
+                                    @if($color->price_adjustment && $color->price_adjustment != 0)
+                                        <div class="text-xs text-gray-500">
+                                            {{ $color->price_adjustment > 0 ? '+' : '' }}{{ number_format($color->price_adjustment, 0, ',', '.') }} VNĐ
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                            
+                            {{-- Chi tiết tồn kho --}}
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Tổng số lượng:</span>
+                                    <span class="font-semibold text-gray-900">{{ $stockInfo['quantity'] ?? 0 }} xe</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Đang xử lý:</span>
+                                    <span class="font-semibold text-orange-600">{{ $stockInfo['reserved'] ?? 0 }} xe</span>
+                                </div>
+                                <div class="flex justify-between items-center pt-2 border-t border-gray-200">
+                                    <span class="text-gray-700 font-medium">Khả dụng:</span>
+                                    <span class="font-bold text-lg {{ $stockInfo['available'] > 0 ? 'text-green-600' : 'text-red-600' }}">
+                                        {{ $stockInfo['available'] }} xe
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
 
             {{-- Images Gallery with Slider --}}
             @if($carvariant->images->count() > 0)

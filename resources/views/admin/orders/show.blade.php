@@ -452,7 +452,7 @@
                     </div>
 
                     {{-- Refund Actions --}}
-                    @if($order->payment_status == 'completed')
+                    @if(in_array($order->payment_status, ['partial', 'completed']) && $totalPaid > 0)
                     @php
                         $hasUserRefundRequest = $order->hasPendingRefundRequest();
                     @endphp
@@ -1036,11 +1036,23 @@ function handleMarkAsPaid(event) {
                     <input type="number" 
                            id="refundAmount"
                            name="refund_amount" 
-                           max="{{ number_format($order->grand_total, 0, '.', '') }}"
-                           value="{{ number_format($order->grand_total, 0, '.', '') }}"
+                           max="{{ number_format($totalPaid ?? $order->grand_total, 0, '.', '') }}"
+                           value="{{ number_format($totalPaid ?? $order->grand_total, 0, '.', '') }}"
                            step="1000"
                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
-                    <p class="mt-1 text-xs text-gray-500">Tổng đơn hàng: {{ number_format($order->grand_total, 0, ',', '.') }} VNĐ</p>
+                    <div class="mt-1 space-y-1">
+                        <p class="text-xs text-gray-500">
+                            <span class="font-medium">Đã thanh toán:</span> {{ number_format($totalPaid ?? $order->grand_total, 0, ',', '.') }} VNĐ
+                        </p>
+                        @if($order->payment_status === 'partial')
+                        <p class="text-xs text-amber-600">
+                            <i class="fas fa-info-circle"></i> Đơn trả góp - Chỉ hoàn số tiền đã thanh toán
+                        </p>
+                        @endif
+                        <p class="text-xs text-gray-500">
+                            Tổng đơn hàng: {{ number_format($order->grand_total, 0, ',', '.') }} VNĐ
+                        </p>
+                    </div>
                 </div>
 
                 <div class="mb-4">
@@ -1083,7 +1095,7 @@ document.getElementById('refundForm').addEventListener('submit', function(e) {
     
     const amountInput = document.getElementById('refundAmount');
     const reasonInput = document.getElementById('refundReason');
-    const maxAmount = parseFloat('{{ number_format($order->grand_total, 0, ".", "") }}');
+    const maxAmount = parseFloat('{{ number_format($totalPaid ?? $order->grand_total, 0, ".", "") }}');
     
     const amount = parseFloat(amountInput.value);
     const reason = reasonInput.value.trim();

@@ -8,6 +8,7 @@ use App\Models\OrderLog;
 use App\Models\OrderItem;
 use App\Models\User;
 use App\Models\PaymentTransaction;
+use App\Models\Refund;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -16,6 +17,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Arr;
 use App\Services\NotificationService;
 use App\Traits\SendsOrderNotifications;
+use App\Application\Orders\UseCases\ConfirmOrder;
+use App\Application\Orders\UseCases\CancelOrder;
 
 class OrderController extends Controller
 {
@@ -97,7 +100,12 @@ class OrderController extends Controller
         // Get manual verification payment methods for down payment modal
         $manualPaymentMethods = $this->getManualPaymentMethods();
         
-        return view('admin.orders.show', compact('order', 'manualPaymentMethods'));
+        // Calculate total paid for refund form
+        $totalPaid = $order->paymentTransactions()
+            ->where('status', 'completed')
+            ->sum('amount');
+        
+        return view('admin.orders.show', compact('order', 'manualPaymentMethods', 'totalPaid'));
     }
 
     // Edit page removed - all editing done inline on show page
@@ -414,6 +422,31 @@ class OrderController extends Controller
 
         $order->update(['status' => $newStatus]);
         
+        // Handle stock management based on status change
+        if ($newStatus === 'confirmed' && $oldStatus === 'pending') {
+            try {
+                app(ConfirmOrder::class)->handle($order);
+                Log::info('Stock confirmed for order', ['order_id' => $order->id]);
+            } catch (\Exception $e) {
+                Log::error('Failed to confirm stock for order', [
+                    'order_id' => $order->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
+        
+        if ($newStatus === 'cancelled') {
+            try {
+                app(CancelOrder::class)->handle($order);
+                Log::info('Stock restored for cancelled order', ['order_id' => $order->id]);
+            } catch (\Exception $e) {
+                Log::error('Failed to restore stock for cancelled order', [
+                    'order_id' => $order->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
+        
         // Auto-complete payment for COD when delivered
         $oldPaymentStatus = $order->payment_status;
         if ($newStatus === 'delivered' && $order->paymentMethod && $order->paymentMethod->code === 'cod' && $order->payment_status === 'pending') {
@@ -686,24 +719,29 @@ class OrderController extends Controller
 
     public function refund(Request $request, Order $order)
     {
+        // Calculate total amount paid (including installments)
+        $totalPaid = $order->paymentTransactions()
+            ->where('status', 'completed')
+            ->sum('amount');
+        
         // Validate refund request
         $validated = $request->validate([
-            'refund_amount' => 'required|numeric|min:0|max:' . $order->grand_total,
+            'refund_amount' => 'required|numeric|min:0|max:' . $totalPaid,
             'refund_reason' => 'required|string|max:500',
         ], [
             'refund_amount.required' => 'Vui lòng nhập số tiền hoàn',
-            'refund_amount.max' => 'Số tiền hoàn không được vượt quá tổng đơn hàng',
+            'refund_amount.max' => 'Số tiền hoàn không được vượt quá số tiền đã thanh toán (' . number_format($totalPaid, 0, ',', '.') . ' VNĐ)',
             'refund_reason.required' => 'Vui lòng nhập lý do hoàn tiền',
         ]);
-
-        // Only allow refund for completed payments
-        if ($order->payment_status !== 'completed') {
-            return redirect()->back()->with('error', 'Chỉ có thể hoàn tiền cho đơn hàng đã thanh toán.');
+        
+        // Check if any payment has been made
+        if ($totalPaid <= 0) {
+            return redirect()->back()->with('error', 'Không thể hoàn tiền cho đơn hàng chưa có thanh toán nào.');
         }
 
         $oldPaymentStatus = $order->payment_status;
         $refundAmount = $validated['refund_amount'];
-        $isFullRefund = $refundAmount >= $order->grand_total;
+        $isFullRefund = $refundAmount >= $totalPaid;
 
         // Get or create payment transaction
         $paymentTransaction = $order->paymentTransactions()
@@ -740,7 +778,35 @@ class OrderController extends Controller
             ]),
         ]);
 
-        // Update payment status
+        // AUTO CANCEL ORDER when refund is processed (same logic as PaymentController)
+        $oldOrderStatus = $order->status;
+        $oldPaymentStatus = $order->payment_status;
+        
+        // Cancel pending/overdue installments (if any)
+        $cancelledInstallments = 0;
+        if ($order->installments()->exists()) {
+            $cancelledInstallments = $order->installments()
+                ->whereIn('status', ['pending', 'overdue'])
+                ->update([
+                    'status' => 'cancelled',
+                    'cancelled_at' => now()
+                ]);
+        }
+        
+        // Cancel pending/processing payment transactions (if any)
+        $order->paymentTransactions()
+            ->whereIn('status', ['pending', 'processing'])
+            ->update([
+                'status' => 'cancelled',
+                'notes' => \Illuminate\Support\Facades\DB::raw("CONCAT(COALESCE(notes, ''), ' - Hủy do hoàn tiền')")
+            ]);
+        
+        // Update order status to cancelled
+        if ($order->status !== 'cancelled') {
+            $order->update(['status' => 'cancelled']);
+        }
+        
+        // Update payment status to refunded
         $order->update(['payment_status' => 'refunded']);
 
         // Log refund in order_logs
@@ -748,7 +814,7 @@ class OrderController extends Controller
             'order_id' => $order->id,
             'user_id' => Auth::id(),
             'action' => 'payment_refunded',
-            'message' => $isFullRefund ? 'Hoàn tiền toàn bộ đơn hàng' : 'Hoàn tiền một phần',
+            'message' => $isFullRefund ? 'Admin hoàn tiền toàn bộ đơn hàng' : 'Admin hoàn tiền một phần',
             'details' => [
                 'from' => $oldPaymentStatus,
                 'to' => 'refunded',
@@ -763,6 +829,28 @@ class OrderController extends Controller
             'ip_address' => request()->ip(),
             'user_agent' => request()->userAgent(),
         ]);
+        
+        // Log order cancellation if order was not already cancelled
+        if ($oldOrderStatus !== 'cancelled') {
+            OrderLog::create([
+                'order_id' => $order->id,
+                'user_id' => Auth::id(),
+                'action' => 'order_cancelled',
+                'message' => 'Tự động hủy đơn hàng sau khi admin hoàn tiền',
+                'details' => [
+                    'order_status' => ['from' => $oldOrderStatus, 'to' => 'cancelled'],
+                    'payment_status' => ['from' => $oldPaymentStatus, 'to' => 'refunded'],
+                    'reason' => 'Tự động hủy đơn hàng sau khi admin hoàn tiền trực tiếp',
+                    'refund_id' => $refund->id,
+                    'refund_amount' => $refundAmount,
+                    'cancelled_installments' => $cancelledInstallments,
+                    'cancelled_by' => Auth::user()->name ?? 'Admin',
+                    'admin_id' => Auth::id(),
+                ],
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ]);
+        }
 
         // Notify user
         try {

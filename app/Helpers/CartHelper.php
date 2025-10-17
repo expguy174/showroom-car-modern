@@ -152,9 +152,25 @@ class CartHelper
         
         // Render appropriate partial based on item type
         $cartItemHtml = null;
+        $stockData = null;
+        
         if ($cartItem) {
             if ($cartItem->item instanceof \App\Models\CarVariant) {
                 $cartItemHtml = view('user.cart.partials.car-item', ['item' => $cartItem])->render();
+                
+                // Prepare stock data for all colors
+                $allColorStocks = [];
+                if ($cartItem->item->colors) {
+                    foreach ($cartItem->item->colors as $color) {
+                        $stockInfo = \App\Helpers\StockHelper::getCarColorStock($cartItem->item->color_inventory, $color->id);
+                        $allColorStocks[$color->id] = [
+                            'available' => $stockInfo['available'],
+                            'badge' => $stockInfo['badge']
+                        ];
+                    }
+                }
+                $stockData = $allColorStocks;
+                
             } elseif ($cartItem->item_type === 'accessory') {
                 $cartItemHtml = view('user.cart.partials.accessory-item', ['item' => $cartItem])->render();
             }
@@ -167,6 +183,7 @@ class CartHelper
             'item_total' => $itemTotal,
             'cart_item_id' => $cartItem ? $cartItem->id : null,
             'cart_item_html' => $cartItemHtml,
+            'stock_data' => $stockData,
         ];
     }
 

@@ -146,7 +146,7 @@ $computedDiscountPercentage = $hasAutoDiscount
 <!-- New Arrival Badge (Priority 4) - is_new_arrival -->
 @if(($variant->is_new_arrival ?? false) && $badgeCount < $maxBadges)
   <div class="bg-gradient-to-r from-green-500 to-emerald-500 text-white text-[10px] px-2.5 py-1 rounded-full inline-flex items-center gap-1 leading-none font-bold shadow-lg">
-  <i class="fas fa-sparkles text-[12px] leading-none"></i> Mới
+  <i class="fas fa-certificate text-[12px] leading-none"></i> Mới
   </div>
   @php $badgeCount++; @endphp
   @endif
@@ -209,14 +209,16 @@ $computedDiscountPercentage = $hasAutoDiscount
         <span class="text-xs text-gray-400 line-through decoration-2 decoration-gray-400">{{ number_format($originalPrice, 0, ',', '.') }}₫</span>
         @endif
       </div>
-      @if($hasAutoDiscount && $computedDiscountPercentage > 0)
-      <div class="flex items-center gap-1">
+      <div class="flex items-center gap-2 flex-wrap">
+        @if($hasAutoDiscount && $computedDiscountPercentage > 0)
         <span class="inline-flex items-center px-2 py-1 bg-red-100 text-red-700 text-xs font-medium rounded-full">
           <i class="fas fa-tag mr-1"></i>
           Giảm {{ $computedDiscountPercentage }}%
         </span>
+        @endif
+        {{-- Stock badge --}}
+        <x-stock-badge :stock="\App\Helpers\StockHelper::getCarTotalStock($variant->color_inventory ?? [])" type="car_variant" size="sm" />
       </div>
-      @endif
       @else
       <span class="text-gray-500 font-medium whitespace-nowrap">Liên hệ</span>
       @endif
@@ -225,12 +227,21 @@ $computedDiscountPercentage = $hasAutoDiscount
     <!-- Product Info removed per request -->
 
     @php($colorRequired = (isset($variant->colors) && method_exists($variant->colors, 'count') && $variant->colors->count() > 0))
+    @php($totalStock = \App\Helpers\StockHelper::getCarTotalStock($variant->color_inventory ?? []))
+    @php($isOutOfStock = $totalStock <= 0)
 
     <!-- Action Buttons -->
     <div class="grid grid-cols-1 gap-2">
-      <button type="button" class="action-btn w-full px-3 sm:px-4 py-3 text-sm font-semibold text-indigo-700 border border-indigo-200 rounded-xl hover:bg-indigo-50 hover:border-indigo-300 whitespace-nowrap leading-none truncate max-w-full min-h-[44px] flex items-center justify-center js-add-to-cart transition-all duration-300" aria-label="Thêm vào giỏ" title="Thêm vào giỏ" data-item-type="car_variant" data-item-id="{{ $variant->id }}">
-        <i class="fas fa-cart-plus mr-2"></i><span>Thêm vào giỏ</span>
-      </button>
+      @if($isOutOfStock)
+        <button disabled class="w-full px-3 sm:px-4 py-3 text-sm font-semibold text-gray-400 bg-gray-100 border border-gray-200 rounded-xl cursor-not-allowed min-h-[44px] flex items-center justify-center">
+          <i class="fas fa-times mr-2"></i>
+          <span>Hết hàng</span>
+        </button>
+      @else
+        <button type="button" class="action-btn w-full px-3 sm:px-4 py-3 text-sm font-semibold text-indigo-700 border border-indigo-200 rounded-xl hover:bg-indigo-50 hover:border-indigo-300 whitespace-nowrap leading-none truncate max-w-full min-h-[44px] flex items-center justify-center js-add-to-cart transition-all duration-300" aria-label="Thêm vào giỏ" title="Thêm vào giỏ" data-item-type="car_variant" data-item-id="{{ $variant->id }}">
+          <i class="fas fa-cart-plus mr-2"></i><span>Thêm vào giỏ</span>
+        </button>
+      @endif
     </div>
   </div>
   </div>
@@ -264,32 +275,6 @@ $computedDiscountPercentage = $hasAutoDiscount
             btn.title = 'Bạn đã có khoản đặt cọc đang hiệu lực cho mẫu xe này';
           }
         });
-
-        // Fetch stock counts for visible variants
-        try {
-          const stockUrl = '';
-          const stockRes = await fetch(stockUrl, {
-            headers: {
-              'X-Requested-With': 'XMLHttpRequest'
-            }
-          });
-          const stockData = await stockRes.json();
-          const countMap = (stockData && stockData.success && stockData.data) ? stockData.data : {};
-          document.querySelectorAll('.stock-badge').forEach(el => {
-            const id = parseInt(el.getAttribute('data-variant-id'));
-            const c = countMap[id] ?? 0;
-            el.textContent = c > 0 ? (`Còn ${c} xe`) : 'Hết hàng';
-            el.classList.toggle('text-emerald-700', c > 0);
-            el.classList.toggle('text-red-600', c === 0);
-            el.classList.toggle('border-emerald-200', c > 0);
-            el.classList.toggle('border-red-200', c === 0);
-            // Update Choose Inventory link with stock info
-            const chooseLink = null;
-            if (chooseLink) {
-              chooseLink.setAttribute('data-stock', String(c));
-            }
-          });
-        } catch {}
       } catch {}
     });
   </script>

@@ -105,7 +105,7 @@
                     Thông tin giá
                 </h2>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="bg-gray-50 rounded-lg p-4">
                         <div class="text-sm text-gray-600 mb-1">Giá hiện tại</div>
                         <div class="text-2xl font-bold text-green-600">
@@ -126,6 +126,14 @@
                             </div>
                         </div>
                     @endif
+                    
+                    {{-- Stock Information --}}
+                    <div class="bg-blue-50 rounded-lg p-4">
+                        <div class="text-sm text-blue-600 mb-1">Tồn kho</div>
+                        <div class="text-2xl font-bold {{ ($accessory->stock_quantity ?? 0) > 5 ? 'text-green-600' : (($accessory->stock_quantity ?? 0) > 0 ? 'text-orange-600' : 'text-red-600') }}">
+                            {{ $accessory->stock_quantity ?? 0 }} sản phẩm
+                        </div>
+                    </div>
                 </div>
             </div>
 

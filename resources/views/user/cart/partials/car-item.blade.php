@@ -24,6 +24,22 @@
     $selectedFeatures = !empty($featIds) ? \App\Models\CarVariantFeature::whereIn('id', $featIds)->get() : collect();
     $addonSum = 0;
     foreach ($selectedFeatures as $sf) { $addonSum += (float) ($sf->price ?? 0); }
+    
+    // Get stock info for selected color
+    $colorStockInfo = \App\Helpers\StockHelper::getCarColorStock($item->item->color_inventory, $item->color_id ?? 0);
+    
+    // Prepare stock data for all colors (for dynamic update)
+    $allColorStocks = [];
+    if ($item->item_type === 'car_variant' && isset($item->item->colors)) {
+        foreach ($item->item->colors as $color) {
+            $stockInfo = \App\Helpers\StockHelper::getCarColorStock($item->item->color_inventory, $color->id);
+            $allColorStocks[$color->id] = [
+                'available' => $stockInfo['available'],
+                'badge' => $stockInfo['badge']
+            ];
+        }
+    }
+    
     $displayUnit = $baseUnit + $addonSum;
     $itemTotal = $displayUnit * $item->quantity; 
     $baseTotal = $baseUnit * $item->quantity;
@@ -65,6 +81,12 @@
             @endif
             <div class="mt-2 text-sm text-gray-700">
                 Màu đã chọn: <span class="font-medium selected-color-name">{{ $item->color->color_name ?? 'Chưa chọn' }}</span>
+            </div>
+            {{-- Always render container for dynamic updates --}}
+            <div class="mt-1" id="stock-badge-{{ $item->id }}" @if(!$item->color_id) style="display:none" @endif>
+                @if($item->color_id && $colorStockInfo)
+                    <x-stock-badge :stock="$colorStockInfo['available']" type="car_variant" size="sm" />
+                @endif
             </div>
             @if($item->item_type === 'car_variant' && isset($item->item->colors) && $item->item->colors->count() > 0)
             <div class="mt-1 flex items-center gap-2">
@@ -259,6 +281,12 @@
                         @endforeach
                     </div>
                 </div>
+                {{-- Always render container for dynamic updates --}}
+                <div class="mt-2" id="stock-badge-mobile-{{ $item->id }}" @if(!$item->color_id) style="display:none" @endif>
+                    @if($item->color_id && $colorStockInfo)
+                        <x-stock-badge :stock="$colorStockInfo['available']" type="car_variant" size="sm" />
+                    @endif
+                </div>
             </div>
             @endif
 
@@ -378,3 +406,9 @@
         </div>
     </td>
 </tr>
+
+{{-- Inject stock data for this item --}}
+<script>
+window.cartItemStockData = window.cartItemStockData || {};
+window.cartItemStockData[{{ $item->id }}] = @json($allColorStocks);
+</script>

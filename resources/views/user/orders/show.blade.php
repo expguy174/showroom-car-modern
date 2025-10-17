@@ -657,112 +657,105 @@
             <!-- Cancelled Order Information -->
             @if($order->status === 'cancelled')
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
-                    <h3 class="text-base font-bold mb-4">Thông tin đơn hàng đã hủy</h3>
-                    <div class="bg-rose-50 border border-rose-200 rounded-lg p-4">
-                        <div class="flex items-start gap-3">
-                            <i class="fas fa-ban text-rose-600 mt-1"></i>
-                            <div class="flex-1">
-                                <h4 class="font-medium text-rose-800">Đơn hàng đã bị hủy</h4>
-                                @php
-                                    $cancelledRefunds = $order->refunds->whereIn('status', ['pending', 'processing', 'completed']);
-                                    $totalRefunded = $cancelledRefunds->where('status', 'completed')->sum('amount');
-                                    $pendingRefund = $cancelledRefunds->whereIn('status', ['pending', 'processing'])->first();
-                                @endphp
-                                
-                                @if($order->finance_option_id)
-                                    {{-- Installment order --}}
-                                    @php
-                                        $paidInstallments = $order->installments()->where('status', 'paid')->count();
-                                        $totalInstallments = $order->installments()->count();
-                                        $totalPaidAmount = $order->installments()->where('status', 'paid')->sum('amount');
-                                    @endphp
-                                    <p class="text-sm text-rose-700 mt-2">
-                                        <strong>Đơn hàng trả góp:</strong> Đã thanh toán {{ $paidInstallments }}/{{ $totalInstallments }} kỳ 
-                                        ({{ number_format($totalPaidAmount, 0, ',', '.') }} đ)
+                    <div class="flex items-center gap-2 mb-4">
+                        <i class="fas fa-ban text-rose-600"></i>
+                        <h3 class="text-base font-bold text-rose-800">Đơn hàng đã hủy</h3>
+                    </div>
+                    
+                    @php
+                        $cancelledRefunds = $order->refunds->whereIn('status', ['pending', 'processing', 'refunded']);
+                        $totalRefunded = $cancelledRefunds->where('status', 'refunded')->sum('amount');
+                        $pendingRefund = $cancelledRefunds->whereIn('status', ['pending', 'processing'])->first();
+                        
+                        // Calculate payment info
+                        if($order->finance_option_id) {
+                            $paidInstallments = $order->installments()->where('status', 'paid')->count();
+                            $totalInstallments = $order->installments()->count();
+                            $totalPaidAmount = $order->paymentTransactions()->where('status', 'completed')->sum('amount');
+                        } else {
+                            $totalPaidAmount = $order->paymentTransactions()->where('status', 'completed')->sum('amount');
+                        }
+                    @endphp
+                    
+                    <div class="space-y-3">
+                        {{-- Payment Status --}}
+                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <p class="text-xs text-gray-600 mb-1">Loại đơn hàng</p>
+                                    <p class="text-sm font-semibold text-gray-900">
+                                        @if($order->finance_option_id)
+                                            Trả góp
+                                        @else
+                                            Thanh toán 1 lần
+                                        @endif
                                     </p>
-                                @else
-                                    {{-- One-time payment order --}}
-                                    @if($order->payment_status === 'completed')
-                                        <p class="text-sm text-rose-700 mt-2">
-                                            <strong>Đơn thanh toán 1 lần:</strong> Đã thanh toán {{ number_format($order->grand_total, 0, ',', '.') }} đ
-                                        </p>
-                                    @else
-                                        <p class="text-sm text-rose-700 mt-2">
-                                            <strong>Đơn thanh toán 1 lần:</strong> Chưa thanh toán
-                                        </p>
-                                    @endif
-                                @endif
-                                
-                                @if($totalRefunded > 0)
-                                    <div class="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                                        <p class="text-sm text-green-800 font-medium">
-                                            <i class="fas fa-check-circle mr-1"></i> Đã hoàn tiền: {{ number_format($totalRefunded, 0, ',', '.') }} đ
-                                        </p>
-                                    </div>
-                                @elseif($pendingRefund)
-                                    <div class="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                                        <p class="text-sm text-yellow-800 font-medium">
-                                            <i class="fas fa-clock mr-1"></i> Đang xử lý hoàn tiền: {{ number_format($pendingRefund->amount, 0, ',', '.') }} đ
-                                        </p>
-                                        <p class="text-xs text-yellow-700 mt-1">
-                                            Lý do: {{ $pendingRefund->reason }}
-                                        </p>
-                                    </div>
-                                @elseif($order->payment_status === 'completed' || $order->payment_status === 'partial')
-                                    <div class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                                        <p class="text-sm text-blue-800">
-                                            <i class="fas fa-info-circle mr-1"></i> Tiền sẽ được hoàn lại trong vòng 3-5 ngày làm việc
-                                        </p>
-                                    </div>
-                                @endif
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-600 mb-1">Tổng giá trị</p>
+                                    <p class="text-sm font-semibold text-gray-900">
+                                        {{ number_format($order->grand_total, 0, ',', '.') }} đ
+                                    </p>
+                                </div>
                             </div>
+                            
+                            @if($order->finance_option_id)
+                            <div class="mt-3 pt-3 border-t border-gray-200">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-xs text-gray-600 mb-1">Tiến độ trả góp</p>
+                                        <p class="text-sm font-semibold text-gray-900">
+                                            {{ $paidInstallments }}/{{ $totalInstallments }} kỳ
+                                        </p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-xs text-gray-600 mb-1">Đã thanh toán</p>
+                                        <p class="text-sm font-semibold text-blue-600">
+                                            {{ number_format($totalPaidAmount, 0, ',', '.') }} đ
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            @else
+                            <div class="mt-3 pt-3 border-t border-gray-200">
+                                <div class="flex items-center justify-between">
+                                    <p class="text-xs text-gray-600">Đã thanh toán</p>
+                                    <p class="text-sm font-semibold text-blue-600">
+                                        {{ number_format($totalPaidAmount, 0, ',', '.') }} đ
+                                    </p>
+                                </div>
+                            </div>
+                            @endif
+                        </div>
+                        
+                        {{-- Cancellation Info --}}
+                        <div class="bg-rose-50 border border-rose-200 rounded-lg p-3">
+                            <p class="text-xs text-rose-700">
+                                <i class="fas fa-calendar-times mr-1"></i>
+                                Đơn hàng đã bị hủy vào {{ $order->updated_at->format('d/m/Y H:i') }}
+                            </p>
                         </div>
                     </div>
                 </div>
             @endif
 
-            <!-- Info Box for Installment Orders (Partial Payment) -->
-            @if($order->finance_option_id && $order->payment_status === 'partial' && $order->status !== 'cancelled')
-                @php
-                    $totalPaidAmount = $order->installments()->where('status', 'paid')->sum('amount');
-                    $paidInstallments = $order->installments()->where('status', 'paid')->count();
-                    $totalInstallments = $order->installments()->count();
-                @endphp
-                <div class="bg-blue-50 border border-blue-200 rounded-2xl shadow-sm p-4 sm:p-6">
-                    <h3 class="text-base font-bold mb-3 text-blue-900">
-                        <i class="fas fa-info-circle mr-2"></i>Thông tin thanh toán trả góp
-                    </h3>
-                    <div class="text-sm text-blue-800 space-y-2">
-                        <p>
-                            Đơn hàng này đang trong quá trình thanh toán trả góp. Bạn cần hoàn thành tất cả các kỳ trả góp trước khi có thể yêu cầu hoàn tiền.
-                        </p>
-                        @if($totalPaidAmount > 0)
-                            <div class="mt-3 p-3 bg-white border border-blue-200 rounded-lg">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <p class="text-xs text-blue-700 mb-1">Đã thanh toán</p>
-                                        <p class="text-base font-bold text-blue-900">{{ number_format($totalPaidAmount, 0, ',', '.') }} đ</p>
-                                        <p class="text-xs text-blue-600 mt-1">{{ $paidInstallments }}/{{ $totalInstallments }} kỳ</p>
-                                    </div>
-                                    <div class="text-right">
-                                        <i class="fas fa-check-circle text-green-500 text-2xl"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        @endif
-                        <p class="text-xs text-blue-700 mt-3">
-                            <i class="fas fa-lightbulb mr-1"></i>
-                            <strong>Lưu ý:</strong> Nếu muốn hủy đơn hàng, vui lòng sử dụng nút "Hủy đơn" ở trên. Số tiền đã thanh toán sẽ được xử lý hoàn trả.
-                        </p>
-                    </div>
-                </div>
-            @endif
 
-            <!-- Refund Section for Active Orders (Completed Payment Only) -->
-            @if($order->payment_status === 'completed' && $order->status !== 'cancelled')
+            <!-- Refund Section for Active Orders (Partial or Completed Payment) -->
+            @if(in_array($order->payment_status, ['partial', 'completed']) && $order->status !== 'cancelled')
                 @php
                     $existingRefund = $order->refunds->whereIn('status', ['pending', 'processing'])->first();
-                    $canRequestRefund = !$existingRefund && $order->created_at->diffInDays(now()) <= 30; // 30 days refund policy
+                    $hasFailedRefund = $order->refunds->where('status', 'failed')->count() > 0;
+                    
+                    // Refund policy:
+                    // - Within 30 days from order date
+                    // - No pending/processing refund
+                    // - No failed refund (once rejected, cannot request again)
+                    $canRequestRefund = !$existingRefund 
+                        && !$hasFailedRefund
+                        && $order->created_at->diffInDays(now()) <= 30;
+                    
+                    // Calculate total paid for partial payment orders
+                    $totalPaid = $order->paymentTransactions()->where('status', 'completed')->sum('amount');
                 @endphp
                 
                 @if($existingRefund)
@@ -802,25 +795,71 @@
                 @endif
             @endif
             
-            <!-- Completed Refunds Section (for all orders with refunded status) -->
-            @if($order->refunds->where('status', 'completed')->count() > 0 && $order->status !== 'cancelled')
+            <!-- Completed Refunds Section -->
+            @if($order->refunds->where('status', 'refunded')->count() > 0)
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
                     <h3 class="text-base font-bold mb-4">Lịch sử hoàn tiền</h3>
                     <div class="space-y-3">
-                        @foreach($order->refunds->where('status', 'completed') as $refund)
+                        @foreach($order->refunds->where('status', 'refunded') as $refund)
                             <div class="bg-green-50 border border-green-200 rounded-lg p-4">
                                 <div class="flex items-start gap-3">
                                     <i class="fas fa-check-circle text-green-600 mt-1"></i>
                                     <div class="flex-1">
                                         <h4 class="font-medium text-green-800">Hoàn tiền thành công</h4>
                                         <p class="text-sm text-green-700 mt-1">
-                                            Số tiền: <span class="font-medium">{{ number_format($refund->amount, 0, ',', '.') }} đ</span>
+                                            Số tiền: <span class="font-medium">{{ number_format($refund->amount, 0, ',', '.') }} VNĐ</span>
                                         </p>
                                         <p class="text-sm text-green-700">
                                             Lý do: {{ $refund->reason }}
                                         </p>
+                                        @if($refund->admin_notes)
+                                        <div class="mt-2 p-2 bg-green-100 border border-green-300 rounded">
+                                            <p class="text-xs text-green-800 font-medium">Ghi chú:</p>
+                                            <p class="text-sm text-green-900 mt-1">{{ $refund->admin_notes }}</p>
+                                        </div>
+                                        @endif
                                         <p class="text-xs text-green-600 mt-2">
-                                            Hoàn tiền lúc {{ $refund->refunded_at?->format('d/m/Y H:i') ?? $refund->updated_at->format('d/m/Y H:i') }}
+                                            Hoàn tiền lúc {{ $refund->processed_at?->format('d/m/Y H:i') ?? $refund->updated_at->format('d/m/Y H:i') }}
+                                        </p>
+                                        <p class="text-xs text-green-500 mt-1">
+                                            <i class="fas fa-info-circle"></i> Tiền sẽ về tài khoản trong vòng 3-5 ngày làm việc.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
+            <!-- Failed Refunds Section -->
+            @if($order->refunds->where('status', 'failed')->count() > 0)
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
+                    <h3 class="text-base font-bold mb-4">Yêu cầu hoàn tiền bị từ chối</h3>
+                    <div class="space-y-3">
+                        @foreach($order->refunds->where('status', 'failed') as $refund)
+                            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                                <div class="flex items-start gap-3">
+                                    <i class="fas fa-times-circle text-red-600 mt-1"></i>
+                                    <div class="flex-1">
+                                        <h4 class="font-medium text-red-800">Yêu cầu không được chấp nhận</h4>
+                                        <p class="text-sm text-red-700 mt-1">
+                                            Số tiền yêu cầu: <span class="font-medium">{{ number_format($refund->amount, 0, ',', '.') }} VNĐ</span>
+                                        </p>
+                                        <p class="text-sm text-red-700">
+                                            Lý do yêu cầu: {{ $refund->reason }}
+                                        </p>
+                                        @if($refund->admin_notes)
+                                        <div class="mt-2 p-2 bg-red-100 border border-red-300 rounded">
+                                            <p class="text-xs text-red-800 font-medium">Lý do từ chối:</p>
+                                            <p class="text-sm text-red-900 mt-1">{{ $refund->admin_notes }}</p>
+                                        </div>
+                                        @endif
+                                        <p class="text-xs text-red-600 mt-2">
+                                            Từ chối lúc {{ $refund->updated_at->format('d/m/Y H:i') }}
+                                        </p>
+                                        <p class="text-xs text-red-500 mt-2">
+                                            <i class="fas fa-info-circle"></i> Nếu có thắc mắc, vui lòng liên hệ bộ phận hỗ trợ.
                                         </p>
                                     </div>
                                 </div>
@@ -943,10 +982,13 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Số tiền hoàn (VND)</label>
                         <input type="number" name="amount" id="refundAmount"
-                               value="{{ intval($order->grand_total) }}"
+                               value="{{ intval($totalPaid) }}"
+                               max="{{ intval($totalPaid) }}"
                                class="w-full rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500"
                                placeholder="Nhập số tiền hoàn">
-                        <p class="text-xs text-gray-500 mt-1">Tối đa: {{ number_format($order->grand_total, 0, ',', '.') }} đ</p>
+                        <p class="text-xs text-gray-500 mt-1">
+                            Đã thanh toán: {{ number_format($totalPaid, 0, ',', '.') }} VNĐ
+                        </p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Lý do hoàn tiền</label>
@@ -1115,7 +1157,7 @@ function openRefundModal() {
 function closeRefundModal() {
     document.getElementById('refundModal').classList.add('hidden');
     document.getElementById('refundForm').reset();
-    document.getElementById('refundAmount').value = '{{ intval($order->grand_total) }}';
+    document.getElementById('refundAmount').value = '{{ intval($totalPaid) }}';
 }
 
 // Handle ESC key to close modal

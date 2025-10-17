@@ -241,15 +241,8 @@
                             </span>
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-bold">-{{ rtrim(rtrim(number_format($discountPct, 1), '0'), '.') }}%</span>
                             @endif
-                            @if($accessory->is_available)
-                            <div class="inline-flex items-center px-3 py-1.5 rounded-full bg-green-50 text-green-700 text-sm font-semibold" aria-live="polite">
-                                <i class="fas fa-check-circle mr-2"></i> Còn hàng
-                        </div>
-                        @else
-                            <div class="inline-flex items-center px-3 py-1.5 rounded-full bg-red-50 text-red-700 text-sm font-semibold" aria-live="polite">
-                                <i class="fas fa-times-circle mr-2"></i> Hết hàng
-                        </div>
-                        @endif
+                            {{-- Stock Badge --}}
+                            <x-stock-badge :stock="$accessory->stock_quantity ?? 0" type="accessory" size="md" />
                         </div>
                     </div>
                 </div>
@@ -268,8 +261,10 @@
                             <input type="hidden" name="item_type" value="accessory">
                             <input type="hidden" name="item_id" value="{{ $accessory->id }}">
                             <input type="hidden" name="quantity" value="1">
-                            <button type="submit" class="action-btn action-primary w-full">
-                                <i class="fas fa-cart-plus"></i><span>Thêm vào giỏ</span>
+                            <button type="submit" class="action-btn action-primary w-full" 
+                                @if(($accessory->stock_quantity ?? 0) <= 0) disabled @endif>
+                                <i class="fas fa-cart-plus"></i>
+                                <span>{{ ($accessory->stock_quantity ?? 0) > 0 ? 'Thêm vào giỏ' : 'Hết hàng' }}</span>
                             </button>
                         </form>
                     </div>

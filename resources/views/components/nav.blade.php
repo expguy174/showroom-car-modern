@@ -530,10 +530,15 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
     window.refreshNotifBadge = async function(){
         @auth
         try{
-            const res = await fetch(`{{ route('notifications.unread-count') }}`, { headers: { 'X-Requested-With':'XMLHttpRequest' } });
+            const res = await fetch(`{{ route('notifications.unread-count') }}?t=${Date.now()}`, { 
+                headers: { 'X-Requested-With':'XMLHttpRequest' },
+                cache: 'no-cache'
+            });
             const data = await res.json().catch(()=>({}));
             if (res.ok && data && data.data){
                 const count = data.data.unread_count || 0;
+                
+                console.log('Refreshing notification badge, count:', count); // Debug
                 
                 // Update localStorage
                 localStorage.setItem('notification_count', count);
@@ -553,7 +558,9 @@ $navUnreadNotifCount = isset($navUnreadNotifCount) ? $navUnreadNotifCount : 0;
                     el.classList.toggle('hidden', !(count > 0));
                 });
             }
-        }catch{}
+        }catch(err){
+            console.error('Error refreshing notification badge:', err);
+        }
         @endauth
     };
 

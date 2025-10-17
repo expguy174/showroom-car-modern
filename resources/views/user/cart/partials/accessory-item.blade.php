@@ -11,7 +11,10 @@
     // Accessory unit equals current price (no color/addon adjustments)
     $baseUnit = $currentPrice;
     $displayUnit = $baseUnit;
-    $itemTotal = $displayUnit * $item->quantity; 
+    $itemTotal = $displayUnit * $item->quantity;
+    
+    // Get stock info
+    $stockQuantity = (int) ($item->item->stock_quantity ?? 0); 
 
     // Image (align with components/accessory-card)
     $galleryRaw = $item->item->gallery ?? null;
@@ -58,6 +61,9 @@
             @if(!empty($item->item->short_description))
                 <div class="text-xs text-gray-500 mt-1 line-clamp-2">{{ Str::limit(strip_tags($item->item->short_description), 90) }}</div>
             @endif
+            <div class="mt-2">
+                <x-stock-badge :stock="$stockQuantity" type="accessory" size="sm" />
+            </div>
         </div>
     </td>
     <td class="align-top hidden md:table-cell mobile-hide" data-label="Số lượng">
@@ -114,6 +120,9 @@
                         @if(!empty($item->item->short_description))
                             <div class="text-xs text-gray-500 mt-1 line-clamp-2">{{ Str::limit(strip_tags($item->item->short_description), 80) }}</div>
                         @endif
+                        <div class="mt-2">
+                            <x-stock-badge :stock="$stockQuantity" type="accessory" size="sm" />
+                        </div>
                     </div>
                     
                     <!-- Delete Button -->

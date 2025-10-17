@@ -633,13 +633,17 @@ class CartController extends Controller
                         if (is_array($inventory) && isset($inventory[$colorId])) {
                             $available = (int) ($inventory[$colorId]['available'] ?? $inventory[$colorId]['quantity'] ?? 0);
                             if ($available <= 0) {
-                            return redirect()->route('user.cart.index')->with('error', 'Một số màu đã hết hàng');
-                        }
+                                $color = $variant->colors()->where('id', $colorId)->first();
+                                $colorName = $color ? $color->color_name : 'đã chọn';
+                                return redirect()->route('user.cart.index')
+                                    ->with('error', 'Không thể thanh toán! Xe "' . $variant->name . '" màu ' . $colorName . ' đã hết hàng. Vui lòng chọn màu khác hoặc xóa khỏi giỏ hàng.');
+                            }
                         } else {
                             // Fallback theo trạng thái của màu (availability) nếu được lưu
                             $color = $variant->colors()->where('id', $colorId)->first();
                             if ($color && isset($color->availability) && in_array($color->availability, ['out_of_stock','discontinued'], true)) {
-                                return redirect()->route('user.cart.index')->with('error', 'Một số màu đã hết hàng');
+                                return redirect()->route('user.cart.index')
+                                    ->with('error', 'Không thể thanh toán! Xe "' . $variant->name . '" màu ' . $color->color_name . ' đã hết hàng. Vui lòng chọn màu khác hoặc xóa khỏi giỏ hàng.');
                             }
                         }
                     } else {
@@ -656,11 +660,29 @@ class CartController extends Controller
                     }
                 } else if ($item->item_type === 'accessory') {
                     $acc = $item->item;
-                    if (isset($acc->stock_quantity) && $acc->stock_quantity !== null && (int)$acc->stock_quantity <= 0) {
-                        return redirect()->route('user.cart.index')->with('error', 'Một số phụ kiện đã hết hàng');
-                    }
+                    $requestedQty = (int) $item->quantity;
+                    $availableStock = (int) ($acc->stock_quantity ?? 0);
+                    
+                    // Check stock status
                     if (isset($acc->stock_status) && in_array($acc->stock_status, ['out_of_stock','discontinued'], true)) {
-                        return redirect()->route('user.cart.index')->with('error', 'Một số phụ kiện đã hết hàng');
+                        return redirect()->route('user.cart.index')
+                            ->with('error', 'Phụ kiện "' . $acc->name . '" đã hết hàng. Vui lòng xóa khỏi giỏ hàng.');
+                    }
+                    
+                    // Check quantity vs available stock
+                    if ($availableStock < $requestedQty) {
+                        if ($availableStock > 0) {
+                            return redirect()->route('user.cart.index')
+                                ->with('error', 'Phụ kiện "' . $acc->name . '" chỉ còn ' . $availableStock . ' sản phẩm, bạn đang đặt ' . $requestedQty . '. Vui lòng giảm số lượng.')
+                                ->with('stock_issue', [
+                                    'item_id' => $item->id,
+                                    'available' => $availableStock,
+                                    'requested' => $requestedQty
+                                ]);
+                        } else {
+                            return redirect()->route('user.cart.index')
+                                ->with('error', 'Phụ kiện "' . $acc->name . '" đã hết hàng. Vui lòng xóa khỏi giỏ hàng.');
+                        }
                     }
                 }
 

@@ -91,7 +91,10 @@ class OrderController extends Controller
             ];
         }
         
-        return view('user.orders.show', compact('order', 'installmentStats'));
+        // Calculate total paid for refund purposes
+        $totalPaid = $order->paymentTransactions()->where('status', 'completed')->sum('amount');
+        
+        return view('user.orders.show', compact('order', 'installmentStats', 'totalPaid'));
     }
 
     public function store(Request $request)
@@ -322,9 +325,22 @@ class OrderController extends Controller
             abort(403);
         }
 
+        // Calculate total amount paid (including installments)
+        $totalPaid = $order->paymentTransactions()
+            ->where('status', 'completed')
+            ->sum('amount');
+
         // Validate refund eligibility
-        if ($order->payment_status !== 'completed') {
-            $message = 'Chỉ có thể yêu cầu hoàn tiền cho đơn hàng đã thanh toán.';
+        if (!in_array($order->payment_status, ['partial', 'completed'])) {
+            $message = 'Chỉ có thể yêu cầu hoàn tiền cho đơn hàng đã thanh toán hoặc thanh toán một phần.';
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'message' => $message], 422);
+            }
+            return back()->with('error', $message);
+        }
+
+        if ($totalPaid <= 0) {
+            $message = 'Không thể yêu cầu hoàn tiền khi chưa có thanh toán nào.';
             if ($request->ajax()) {
                 return response()->json(['success' => false, 'message' => $message], 422);
             }
@@ -354,7 +370,13 @@ class OrderController extends Controller
 
         $request->validate([
             'reason' => 'required|string|max:1000',
-            'amount' => 'nullable|numeric|min:0|max:' . $order->grand_total
+            'amount' => 'nullable|numeric|min:0|max:' . intval($totalPaid)
+        ], [
+            'reason.required' => 'Vui lòng nhập lý do hoàn tiền',
+            'reason.max' => 'Lý do không được vượt quá 1000 ký tự',
+            'amount.numeric' => 'Số tiền hoàn phải là số',
+            'amount.min' => 'Số tiền hoàn phải lớn hơn 0',
+            'amount.max' => 'Số tiền hoàn không được vượt quá ' . number_format($totalPaid, 0, ',', '.') . ' VNĐ (số tiền đã thanh toán)',
         ]);
 
         // Get payment transaction for this order
@@ -373,7 +395,7 @@ class OrderController extends Controller
         // Create refund request
         $refund = \App\Models\Refund::create([
             'payment_transaction_id' => $paymentTransaction->id,
-            'amount' => $request->amount ?: $order->grand_total,
+            'amount' => $request->amount ?: $totalPaid,
             'reason' => $request->reason,
             'status' => 'pending'
         ]);

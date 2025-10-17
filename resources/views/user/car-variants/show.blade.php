@@ -301,13 +301,13 @@
                                 $colorMainImg = $resolveImage(optional($pickColorImg)->image_url, $variant->name . ' ' . ($color->color_name ?? ''));
                             @endphp
                             <button type="button"
-                                class="color-option flex flex-col items-center p-2.5 border border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-1 js-color-option"
+                                class="color-option flex flex-col items-center p-2.5 border border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-300 focus:outline-none js-color-option"
                                     data-color-id="{{ $color->id }}"
                                     data-color-name="{{ $color->color_name }}"
                                     data-image-url="{{ $colorMainImg }}"
                                     data-hex="{{ \App\Helpers\ColorHelper::getColorHex($color->color_name) }}"
                                     data-price-adjustment="{{ (int) ($color->price_adjustment ?? 0) }}">
-                            <div class="relative w-6 h-6 sm:w-7 sm:h-7 rounded-full mb-1.5 ring-1 ring-inset ring-gray-300" data-bg-hex="{{ \App\Helpers\ColorHelper::getColorHex($color->color_name) }}" data-color-name="{{ $color->color_name }}">
+                            <div class="relative w-6 h-6 sm:w-7 sm:h-7 rounded-full mb-1.5 border-2 border-gray-300" data-bg-hex="{{ \App\Helpers\ColorHelper::getColorHex($color->color_name) }}" data-color-name="{{ $color->color_name }}">
                                 <i class="fas fa-check text-white text-[10px] absolute inset-0 m-auto w-3 h-3 flex items-center justify-center hidden"></i>
                             </div>
                             <span class="text-xs text-gray-700 font-medium truncate max-w-[90px]">{{ $color->color_name }}</span>
@@ -315,6 +315,30 @@
                         @endforeach
                     </div>
                 </div>
+                
+                {{-- Inject stock data for colors --}}
+                @if($variant->colors->count() > 0)
+                    @php
+                        $colorStocksData = [];
+                        foreach ($variant->colors as $color) {
+                            $stockInfo = \App\Helpers\StockHelper::getCarColorStock($variant->color_inventory, $color->id);
+                            $colorStocksData[$color->id] = [
+                                'available' => $stockInfo['available'],
+                                'badge' => $stockInfo['badge']
+                            ];
+                        }
+                    @endphp
+                    <script>
+                        window.variantColorStockData = @json($colorStocksData);
+                        window.renderStockBadge = window.renderStockBadge || function(badgeData) {
+                            const sizeClasses = 'px-2 py-1 text-xs';
+                            return `<span class="inline-flex items-center gap-1 ${sizeClasses} font-medium rounded ${badgeData.class}">
+                                <span>${badgeData.icon}</span>
+                                <span>${badgeData.text}</span>
+                            </span>`;
+                        };
+                    </script>
+                @endif
                 @endif
 
                 <!-- Price + Inline Actions -->
@@ -339,15 +363,8 @@
                                 </span>
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-bold">-{{ rtrim(rtrim(number_format($discountPct, 1), '0'), '.') }}%</span>
                             @endif
-                            @if($variant->is_available)
-                            <div class="inline-flex items-center px-3 py-1.5 rounded-full bg-green-50 text-green-700 text-sm font-semibold" aria-live="polite">
-                                <i class="fas fa-check-circle mr-2"></i> Còn hàng
-                            </div>
-                            @else
-                            <div class="inline-flex items-center px-3 py-1.5 rounded-full bg-red-50 text-red-700 text-sm font-semibold" aria-live="polite">
-                                <i class="fas fa-times-circle mr-2"></i> Hết hàng
-                            </div>
-                            @endif
+                            {{-- Stock badge container - updates when color selected --}}
+                            <div id="color-stock-badge" style="display:none"></div>
                         </div>
                         @if($variant->is_available)
                         <form action="{{ route('user.cart.add') }}" method="POST" class="add-to-cart-form flex items-center gap-2" data-item-type="car_variant" data-item-id="{{ $variant->id }}">
@@ -951,8 +968,17 @@ document.addEventListener('DOMContentLoaded', function() {
             } catch(_) {}
             // Update UI to show selected color
             if (selectedColorText) {
-                const dot = `<span class=\"inline-block w-3.5 h-3.5 rounded-full align-middle mr-2\" style=\"background:${colorHex}\"></span>`;
+                const dot = `<span class=\"inline-block w-3.5 h-3.5 rounded-full align-middle mr-2 border-2 border-gray-300\" style=\"background:${colorHex}\"></span>`;
                 selectedColorText.innerHTML = `Màu đã chọn: ${dot}<span class=\"font-medium\">${colorName}</span>`;
+            }
+            
+            // Update stock badge
+            const stockBadgeContainer = document.getElementById('color-stock-badge');
+            if (stockBadgeContainer && window.variantColorStockData && window.variantColorStockData[colorId]) {
+                const stockData = window.variantColorStockData[colorId];
+                const badgeHTML = window.renderStockBadge(stockData.badge);
+                stockBadgeContainer.innerHTML = badgeHTML;
+                stockBadgeContainer.style.display = '';
             }
             // Simple logic: find thumbnail with matching color and activate it
             try {
