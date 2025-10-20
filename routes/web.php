@@ -366,7 +366,9 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/{appointment}/edit', [ServiceAppointmentController::class, 'edit'])->name('edit');
         Route::put('/{appointment}', [ServiceAppointmentController::class, 'update'])->name('update');
         Route::delete('/{appointment}', [ServiceAppointmentController::class, 'destroy'])->name('destroy');
-        Route::put('/{appointment}/status', [ServiceAppointmentController::class, 'updateStatus'])->name('update-status');
+        Route::patch('/{appointment}/confirm', [ServiceAppointmentController::class, 'confirm'])->name('confirm');
+        Route::patch('/{appointment}/cancel', [ServiceAppointmentController::class, 'cancel'])->name('cancel');
+        Route::patch('/{appointment}/update-status', [ServiceAppointmentController::class, 'updateStatus'])->name('update-status');
         Route::get('/export', [ServiceAppointmentController::class, 'export'])->name('export');
     });
 

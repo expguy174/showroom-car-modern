@@ -74,8 +74,7 @@ unset($__defined_vars); ?>
     $sizeClasses = $size === 'large' ? 'p-8' : 'p-6';
 ?>
 
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 <?php echo e($cardClasses); ?> <?php echo e($sizeClasses); ?>"
-     data-stat="<?php echo e($dataStat ?? strtolower(str_replace(' ', '-', $title))); ?>">
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 <?php echo e($cardClasses); ?> <?php echo e($sizeClasses); ?>">
     
     <div class="flex items-center">
         
@@ -90,7 +89,7 @@ unset($__defined_vars); ?>
             <div class="flex items-center justify-between">
                 <div class="min-w-0 flex-1">
                     <p class="text-sm font-medium text-gray-600 whitespace-nowrap truncate" title="<?php echo e($title); ?>"><?php echo e($title); ?></p>
-                    <p class="text-2xl font-bold text-gray-900"><?php echo e($value); ?></p>
+                    <p class="text-2xl font-bold text-gray-900" data-stat="<?php echo e($dataStat ?? strtolower(str_replace(' ', '-', $title))); ?>"><?php echo e($value); ?></p>
                 </div>
                 
                 

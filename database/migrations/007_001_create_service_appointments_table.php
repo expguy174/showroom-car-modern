@@ -26,8 +26,7 @@ return new class extends Migration {
             $table->text('requested_services')->nullable();
             $table->text('service_description')->nullable();
 
-            $table->enum('status', ['scheduled','confirmed','in_progress','completed','cancelled','no_show','rescheduled'])->default('scheduled');
-            $table->enum('priority', ['low','medium','high','urgent'])->default('medium');
+            $table->enum('status', ['scheduled','confirmed','in_progress','completed','cancelled'])->default('scheduled');
 
             // Bảo hành (tối giản cờ)
             $table->boolean('is_warranty_work')->default(false);

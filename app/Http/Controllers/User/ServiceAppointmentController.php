@@ -560,41 +560,42 @@ class ServiceAppointmentController extends Controller
         return redirect()->route('user.service-appointments.index')->with('success', 'Đã hủy lịch bảo dưỡng thành công!');
     }
 
-    public function reschedule(Request $request, ServiceAppointment $appointment)
-    {
-        // Check if user owns this appointment and it can be rescheduled
-        if ($appointment->user_id !== Auth::id() || !in_array($appointment->status, ['pending', 'confirmed'])) {
-            abort(403);
-        }
+    // DISABLED: Reschedule feature is temporarily disabled
+    // public function reschedule(Request $request, ServiceAppointment $appointment)
+    // {
+    //     // Check if user owns this appointment and it can be rescheduled
+    //     if ($appointment->user_id !== Auth::id() || !in_array($appointment->status, ['scheduled', 'confirmed'])) {
+    //         abort(403);
+    //     }
 
-        $request->validate([
-            'appointment_date' => 'required|date|after:today',
-            'appointment_time' => 'required|string',
-        ]);
+    //     $request->validate([
+    //         'appointment_date' => 'required|date|after:today',
+    //         'appointment_time' => 'required|string',
+    //     ]);
 
-        $normalizedTime = preg_match('/^\d{2}:\d{2}:\d{2}$/', (string) $request->appointment_time)
-            ? $request->appointment_time
-            : ($request->appointment_time . ':00');
+    //     $normalizedTime = preg_match('/^\d{2}:\d{2}:\d{2}$/', (string) $request->appointment_time)
+    //         ? $request->appointment_time
+    //         : ($request->appointment_time . ':00');
 
-        $appointment->update([
-            'appointment_date' => $request->appointment_date,
-            'appointment_time' => $normalizedTime,
-            'status' => 'scheduled',
-        ]);
+    //     $appointment->update([
+    //         'appointment_date' => $request->appointment_date,
+    //         'appointment_time' => $normalizedTime,
+    //         'status' => 'rescheduled', // User reschedule -> set rescheduled status
+    //     ]);
 
-        // Notify user about reschedule
-        try {
-            app(NotificationService::class)->send(
-                $appointment->user_id,
-                'service_appointment',
-                'Đã đổi lịch bảo dưỡng',
-                'Lịch bảo dưỡng #' . $appointment->id . ' đã được cập nhật.'
-            );
-        } catch (\Throwable $e) {}
+    //     // Notify user about reschedule
+    //     try {
+    //         app(NotificationService::class)->send(
+    //             $appointment->user_id,
+    //             'service_appointment',
+    //             'Đã đổi lịch bảo dưỡng',
+    //             'Lịch bảo dưỡng #' . $appointment->id . ' đã được dời sang thời gian mới. Vui lòng chờ admin xác nhận lại.'
+    //         );
+    //     } catch (\Throwable $e) {}
 
-        return redirect()->route('user.service-appointments.show', $appointment->id)
-            ->with('success', 'Đã yêu cầu đổi lịch thành công! Chúng tôi sẽ xác nhận trong thời gian sớm nhất.');
-    }
+    //     return redirect()->route('user.service-appointments.show', $appointment->id)
+    //         ->with('success', 'Đã yêu cầu đổi lịch thành công! Admin sẽ xác nhận lại lịch hẹn mới của bạn.');
+    // }
 
     public function rate(Request $request, ServiceAppointment $appointment)
     {

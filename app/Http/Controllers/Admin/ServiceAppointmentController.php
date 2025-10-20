@@ -15,7 +15,7 @@ class ServiceAppointmentController extends Controller
 {
     public function index(Request $request)
     {
-        $query = ServiceAppointment::with(['user.userProfile', 'showroom', 'carVariant.carModel.carBrand', 'service']);
+        $query = ServiceAppointment::with(['user.userProfile', 'showroom', 'service']);
 
         // Filter by showroom
         if ($request->has('showroom_id') && $request->showroom_id) {
@@ -32,33 +32,57 @@ class ServiceAppointmentController extends Controller
             $query->where('service_id', $request->service_id);
         }
 
-        // Filter by date range
-        if ($request->has('date_from') && $request->date_from) {
-            $query->whereDate('appointment_date', '>=', $request->date_from);
-        }
-
-        if ($request->has('date_to') && $request->date_to) {
-            $query->whereDate('appointment_date', '<=', $request->date_to);
-        }
-
-        // Search
+        // Search - in appointment fields, user email, and userProfile name
         if ($request->has('search') && $request->search) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('appointment_number', 'like', '%' . $search . '%')
-                  ->orWhere('customer_name', 'like', '%' . $search . '%')
-                  ->orWhere('customer_phone', 'like', '%' . $search . '%')
-                  ->orWhere('customer_email', 'like', '%' . $search . '%')
-                  ->orWhere('vehicle_license_plate', 'like', '%' . $search . '%');
+                  ->orWhere('vehicle_registration', 'like', '%' . $search . '%')
+                  ->orWhereHas('user', function($userQuery) use ($search) {
+                      $userQuery->where('email', 'like', '%' . $search . '%')
+                               ->orWhereHas('userProfile', function($profileQuery) use ($search) {
+                                   $profileQuery->where('name', 'like', '%' . $search . '%');
+                               });
+                  });
             });
         }
 
-        $appointments = $query->orderBy('appointment_date', 'asc')->paginate(15);
-        $showrooms = Showroom::where('is_active', true)->get();
-        $services = Service::where('is_active', true)->get();
-        $statuses = ['pending', 'confirmed', 'in_progress', 'completed', 'cancelled'];
+        $appointments = $query->orderBy('appointment_date', 'desc')->paginate(15);
+        
+        // Calculate stats - use actual statuses from database (scheduled, not pending)
+        $totalAppointments = ServiceAppointment::count();
+        $pendingAppointments = ServiceAppointment::where('status', 'scheduled')->count();
+        $confirmedAppointments = ServiceAppointment::where('status', 'confirmed')->count();
+        $inProgressAppointments = ServiceAppointment::where('status', 'in_progress')->count();
+        $completedAppointments = ServiceAppointment::where('status', 'completed')->count();
+        
+        $services = Service::where('is_active', true)->orderBy('name')->get();
+        
+        // Handle AJAX requests
+        if ($request->ajax()) {
+            // Stats only request
+            if ($request->has('stats_only')) {
+                return response()->json([
+                    'total' => $totalAppointments,
+                    'pending' => $pendingAppointments,
+                    'confirmed' => $confirmedAppointments,
+                    'in_progress' => $inProgressAppointments,
+                    'completed' => $completedAppointments
+                ]);
+            }
+            
+            return view('admin.service-appointments.partials.table', compact('appointments'))->render();
+        }
 
-        return view('admin.service-appointments.index', compact('appointments', 'showrooms', 'services', 'statuses'));
+        return view('admin.service-appointments.index', compact(
+            'appointments', 
+            'services',
+            'totalAppointments',
+            'pendingAppointments',
+            'confirmedAppointments',
+            'inProgressAppointments',
+            'completedAppointments'
+        ));
     }
 
     public function show(ServiceAppointment $appointment)
@@ -137,19 +161,11 @@ class ServiceAppointmentController extends Controller
             $data['cancelled_at'] = now();
         }
 
-        $appointment->update($data);
 
         return redirect()->route('admin.service-appointments.index')
             ->with('success', 'Cập nhật lịch bảo dưỡng thành công!');
     }
 
-    public function destroy(ServiceAppointment $appointment)
-    {
-        $appointment->delete();
-
-        return redirect()->route('admin.service-appointments.index')
-            ->with('success', 'Đã xóa lịch bảo dưỡng thành công!');
-    }
 
     public function updateStatus(Request $request, ServiceAppointment $appointment)
     {
@@ -158,29 +174,52 @@ class ServiceAppointmentController extends Controller
             'notes' => 'nullable|string|max:500',
         ]);
 
-        $data = ['status' => $request->status];
+        $newStatus = $request->status;
+        
+        // Validate status transitions (Simple workflow)
+        $validTransitions = [
+            'scheduled' => ['confirmed', 'cancelled'],
+            'confirmed' => ['in_progress', 'cancelled'],
+            'in_progress' => ['completed'],
+        ];
+
+        if (isset($validTransitions[$appointment->status])) {
+            if (!in_array($newStatus, $validTransitions[$appointment->status])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không thể chuyển từ trạng thái hiện tại sang trạng thái này'
+                ], 400);
+            }
+        }
+
+        $data = ['status' => $newStatus];
 
         // Add completion date if status is completed
-        if ($request->status === 'completed') {
+        if ($newStatus === 'completed') {
             $data['completed_at'] = now();
         }
 
         // Add cancellation date if status is cancelled
-        if ($request->status === 'cancelled') {
+        if ($newStatus === 'cancelled') {
             $data['cancelled_at'] = now();
             $data['cancellation_reason'] = $request->notes ?? 'Cancelled by admin';
         }
 
         // Add technician notes if provided
-        if ($request->notes && $request->status !== 'cancelled') {
+        if ($request->notes && $newStatus !== 'cancelled') {
             $data['technician_notes'] = $request->notes;
         }
 
         $appointment->update($data);
 
+        $messages = [
+            'in_progress' => 'Đã bắt đầu thực hiện dịch vụ!',
+            'completed' => 'Đã hoàn thành dịch vụ!'
+        ];
+
         return response()->json([
             'success' => true,
-            'message' => 'Cập nhật trạng thái thành công!',
+            'message' => $messages[$newStatus] ?? 'Cập nhật trạng thái thành công!',
             'status' => $request->status
         ]);
     }
@@ -309,6 +348,71 @@ class ServiceAppointmentController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    public function confirm(ServiceAppointment $appointment)
+    {
+        if ($appointment->status !== 'scheduled') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Chỉ có thể xác nhận lịch hẹn ở trạng thái đã đặt lịch'
+            ], 400);
+        }
+
+        $appointment->update([
+            'status' => 'confirmed'
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Đã xác nhận lịch hẹn thành công!'
+        ]);
+    }
+
+    public function cancel(ServiceAppointment $appointment)
+    {
+        if (!in_array($appointment->status, ['scheduled', 'confirmed', 'rescheduled'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không thể hủy lịch hẹn ở trạng thái này'
+            ], 400);
+        }
+
+        $appointment->update([
+            'status' => 'cancelled'
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Đã hủy lịch hẹn thành công!'
+        ]);
+    }
+
+    public function destroy(ServiceAppointment $appointment)
+    {
+        try {
+            $appointment->delete();
+
+            if (request()->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Đã xóa lịch hẹn thành công!'
+                ]);
+            }
+
+            return redirect()->route('admin.service-appointments.index')
+                ->with('success', 'Đã xóa lịch hẹn thành công!');
+        } catch (\Exception $e) {
+            if (request()->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Có lỗi xảy ra khi xóa lịch hẹn'
+                ], 500);
+            }
+
+            return redirect()->back()
+                ->with('error', 'Có lỗi xảy ra khi xóa lịch hẹn');
+        }
     }
 
     private function getStatusColor($status)

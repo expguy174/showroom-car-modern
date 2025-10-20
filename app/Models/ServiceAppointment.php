@@ -9,9 +9,8 @@ class ServiceAppointment extends Model
 {
     use HasFactory;
 
-    public const STATUSES = ['scheduled','confirmed','in_progress','completed','cancelled','no_show','rescheduled'];
-    public const PRIORITIES = ['low','medium','high','urgent'];
-    // Removed payment constants due to simplified schema
+    public const STATUSES = ['scheduled','confirmed','in_progress','completed','cancelled'];
+    // Removed priority and payment constants due to simplified schema
 
     protected $fillable = [
         'user_id',
@@ -26,7 +25,6 @@ class ServiceAppointment extends Model
         'requested_services',
         'service_description',
         'status',
-        'priority',
         'is_warranty_work',
         'estimated_cost',
         'satisfaction_rating',
@@ -79,21 +77,10 @@ class ServiceAppointment extends Model
         return $statuses[$this->status] ?? $this->status;
     }
 
-    public function getPriorityDisplayAttribute(): string
-    {
-        $priorities = [
-            'low' => 'Thấp',
-            'medium' => 'Trung bình',
-            'high' => 'Cao',
-            'urgent' => 'Khẩn',
-        ];
-        return $priorities[$this->priority] ?? $this->priority;
-    }
-
     public function getFormattedEstimatedCostAttribute(): ?string
     {
         return $this->estimated_cost !== null
-            ? number_format($this->estimated_cost, 0, ',', '.') . ' VNĐ'
+            ? number_format($this->estimated_cost, 2, ',', '.') . ' VNĐ'
             : null;
     }
 

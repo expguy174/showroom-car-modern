@@ -78,7 +78,6 @@
               <dl class="space-y-2 text-sm">
                 <div class="flex justify-between"><dt class="text-gray-500">Mã lịch:</dt><dd class="font-medium">{{ $appointment->appointment_number }}</dd></div>
                 <div class="flex justify-between"><dt class="text-gray-500">Trạng thái:</dt><dd><span class="px-2 py-0.5 rounded-full text-xs {{ \App\Helpers\ServiceAppointmentHelper::statusBadgeClass($appointment->status) }}">{{ \App\Helpers\ServiceAppointmentHelper::statusLabel($appointment->status) }}</span></dd></div>
-                <div class="flex justify-between"><dt class="text-gray-500">Ưu tiên:</dt><dd class="font-medium">{{ \App\Helpers\ServiceAppointmentHelper::priorityLabel($appointment->priority) }}</dd></div>
                 <div class="flex justify-between"><dt class="text-gray-500">Bảo hành:</dt><dd class="font-medium">{{ $appointment->is_warranty_work ? 'Có' : 'Không' }}</dd></div>
               </dl>
             </div>

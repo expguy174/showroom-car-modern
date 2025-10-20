@@ -24,8 +24,6 @@
                         <div class="flex items-center justify-between">
                             <div class="flex flex-wrap items-center gap-2 sm:gap-3 text-[11px] sm:text-xs text-gray-500">
                                 <span>Showroom: <span class="font-medium text-gray-700">{{ $appointment->showroom->name }}</span></span>
-                                <span class="hidden xs:inline">•</span>
-                                <span>Ưu tiên: <span class="font-medium text-gray-700">{{ \App\Helpers\ServiceAppointmentHelper::priorityLabel($appointment->priority) }}</span></span>
                             </div>
                             <div class="flex items-center gap-2">
                                 <a href="{{ route('user.service-appointments.show', $appointment->id) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 text-xs"><i class="fas fa-eye"></i> Chi tiết</a>
