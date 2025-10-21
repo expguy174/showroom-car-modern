@@ -2,6 +2,27 @@
 
 <?php $__env->startSection('content'); ?>
 <div class="container mx-auto px-4 py-6">
+    <?php if (isset($component)) { $__componentOriginaldb1b157d84f8f63332f3508c9e385c0a = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginaldb1b157d84f8f63332f3508c9e385c0a = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.admin.flash-messages','data' => []] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('admin.flash-messages'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes([]); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginaldb1b157d84f8f63332f3508c9e385c0a)): ?>
+<?php $attributes = $__attributesOriginaldb1b157d84f8f63332f3508c9e385c0a; ?>
+<?php unset($__attributesOriginaldb1b157d84f8f63332f3508c9e385c0a); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginaldb1b157d84f8f63332f3508c9e385c0a)): ?>
+<?php $component = $__componentOriginaldb1b157d84f8f63332f3508c9e385c0a; ?>
+<?php unset($__componentOriginaldb1b157d84f8f63332f3508c9e385c0a); ?>
+<?php endif; ?>
+    
     
     <div class="flex items-center justify-between mb-6">
         <div class="flex items-center space-x-4">

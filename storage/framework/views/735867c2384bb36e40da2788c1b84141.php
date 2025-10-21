@@ -2,6 +2,27 @@
 
 <?php $__env->startSection('content'); ?>
 <div class="container mx-auto px-4 py-6">
+    <?php if (isset($component)) { $__componentOriginaldb1b157d84f8f63332f3508c9e385c0a = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginaldb1b157d84f8f63332f3508c9e385c0a = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.admin.flash-messages','data' => []] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('admin.flash-messages'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes([]); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginaldb1b157d84f8f63332f3508c9e385c0a)): ?>
+<?php $attributes = $__attributesOriginaldb1b157d84f8f63332f3508c9e385c0a; ?>
+<?php unset($__attributesOriginaldb1b157d84f8f63332f3508c9e385c0a); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginaldb1b157d84f8f63332f3508c9e385c0a)): ?>
+<?php $component = $__componentOriginaldb1b157d84f8f63332f3508c9e385c0a; ?>
+<?php unset($__componentOriginaldb1b157d84f8f63332f3508c9e385c0a); ?>
+<?php endif; ?>
+    
     
     <div class="flex items-center justify-between mb-6">
         <div class="flex items-center space-x-4">
@@ -19,8 +40,8 @@
         <div id="statusBadgeContainer">
             <?php switch($appointment->status):
                 case ('scheduled'): ?>
-                    <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                        <i class="fas fa-calendar mr-2"></i>
+                    <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                        <i class="fas fa-clock mr-2"></i>
                         Đã đặt lịch
                     </span>
                     <?php break; ?>
@@ -37,7 +58,7 @@
                     </span>
                     <?php break; ?>
                 <?php case ('completed'): ?>
-                    <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-teal-100 text-teal-800">
+                    <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
                         <i class="fas fa-flag-checkered mr-2"></i>
                         Hoàn thành
                     </span>
@@ -573,10 +594,10 @@ function updateUIAfterStatusChange(newStatus) {
     
     // Update badge
     const statusBadges = {
-        'scheduled': '<span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-blue-100 text-blue-800"><i class="fas fa-calendar mr-2"></i>Đã đặt lịch</span>',
+        'scheduled': '<span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800"><i class="fas fa-clock mr-2"></i>Đã đặt lịch</span>',
         'confirmed': '<span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-green-100 text-green-800"><i class="fas fa-check-circle mr-2"></i>Đã xác nhận</span>',
         'in_progress': '<span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-purple-100 text-purple-800"><i class="fas fa-cog mr-2"></i>Đang thực hiện</span>',
-        'completed': '<span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-teal-100 text-teal-800"><i class="fas fa-flag-checkered mr-2"></i>Hoàn thành</span>',
+        'completed': '<span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-blue-100 text-blue-800"><i class="fas fa-flag-checkered mr-2"></i>Hoàn thành</span>',
         'cancelled': '<span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-red-100 text-red-800"><i class="fas fa-times-circle mr-2"></i>Đã hủy</span>'
     };
     

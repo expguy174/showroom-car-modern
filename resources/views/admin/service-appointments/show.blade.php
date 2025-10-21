@@ -4,6 +4,8 @@
 
 @section('content')
 <div class="container mx-auto px-4 py-6">
+    <x-admin.flash-messages />
+    
     {{-- Header --}}
     <div class="flex items-center justify-between mb-6">
         <div class="flex items-center space-x-4">
