@@ -134,6 +134,26 @@
 <script>
 // Flash messages are now handled by FlashMessages component
 
+// Update stats cards from toggle response
+window.updateStatsFromServer = function(stats) {
+    const statsMapping = {
+        'totalModels': 'total',
+        'activeModels': 'active',
+        'inactiveModels': 'inactive',
+        'featuredModels': 'featured',
+        'newModels': 'new'
+    };
+    
+    Object.entries(statsMapping).forEach(([serverKey, cardKey]) => {
+        if (stats[serverKey] !== undefined) {
+            const statElement = document.querySelector(`p[data-stat="${cardKey}"]`);
+            if (statElement) {
+                statElement.textContent = stats[serverKey];
+            }
+        }
+    });
+};
+
 // AJAX Functions - Now handled by AjaxTable component
 // loadCarModels function is automatically created by the component
 
@@ -348,29 +368,6 @@ window.confirmDelete = function(data) {
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     initializeEventListeners();
-    
-    // Function to update stats cards from server data (delete/toggle)
-    window.updateStatsFromServer = function(stats) {
-        // Update all stats cards with server data
-        const totalCard = document.querySelector('[data-stat="total"] .text-2xl');
-        const activeCard = document.querySelector('[data-stat="active"] .text-2xl');
-        const inactiveCard = document.querySelector('[data-stat="inactive"] .text-2xl');
-        const featuredCard = document.querySelector('[data-stat="featured"] .text-2xl');
-        
-        // Update cards directly without animation
-        if (totalCard && stats.totalModels !== undefined) {
-            totalCard.textContent = stats.totalModels;
-        }
-        if (activeCard && stats.activeModels !== undefined) {
-            activeCard.textContent = stats.activeModels;
-        }
-        if (inactiveCard && stats.inactiveModels !== undefined) {
-            inactiveCard.textContent = stats.inactiveModels;
-        }
-        if (featuredCard && stats.featuredModels !== undefined) {
-            featuredCard.textContent = stats.featuredModels;
-        }
-    };
 });
 </script>
 @endpush

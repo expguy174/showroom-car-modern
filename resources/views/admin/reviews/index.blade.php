@@ -71,9 +71,11 @@
                 <x-admin.custom-dropdown
                     name="status"
                     :options="[
-                        'approved' => 'Đã duyệt',
-                        'pending' => 'Chờ duyệt'
+                        ['value' => 'approved', 'label' => 'Đã duyệt'],
+                        ['value' => 'pending', 'label' => 'Chờ duyệt']
                     ]"
+                    optionValue="value"
+                    optionText="label"
                     :selected="request('status')"
                     placeholder="Tất cả"
                     onchange="loadReviewsFromDropdown"
@@ -113,6 +115,26 @@
 
 @push('scripts')
 <script>
+// Flash messages are now handled by FlashMessages component
+
+// Update stats cards from toggle response
+window.updateStatsFromServer = function(stats) {
+    const statsMapping = {
+        'total': 'total',
+        'approved': 'approved',
+        'pending': 'pending'
+    };
+    
+    Object.entries(statsMapping).forEach(([serverKey, cardKey]) => {
+        if (stats[serverKey] !== undefined) {
+            const statElement = document.querySelector(`p[data-stat="${cardKey}"]`);
+            if (statElement) {
+                statElement.textContent = stats[serverKey];
+            }
+        }
+    });
+};
+
 // Initialize event listeners
 function initializeEventListeners() {
     // Delete buttons
@@ -263,23 +285,6 @@ function attachDeleteListener(button) {
         }
     });
 }
-
-// Function to update stats cards from server data
-window.updateStatsFromServer = function(stats) {
-    const totalCard = document.querySelector('[data-stat="total"] .text-2xl');
-    const approvedCard = document.querySelector('[data-stat="approved"] .text-2xl');
-    const pendingCard = document.querySelector('[data-stat="pending"] .text-2xl');
-    
-    if (totalCard && stats.total !== undefined) {
-        totalCard.textContent = stats.total;
-    }
-    if (approvedCard && stats.approved !== undefined) {
-        approvedCard.textContent = stats.approved;
-    }
-    if (pendingCard && stats.pending !== undefined) {
-        pendingCard.textContent = stats.pending;
-    }
-};
 
 // Dropdown callback
 window.loadReviewsFromDropdown = function() {

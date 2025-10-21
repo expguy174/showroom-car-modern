@@ -1,145 +1,303 @@
-@extends('layouts.admin')
+<?php $__env->startSection('title', 'Quản lý lái thử'); ?>
 
-@section('title', 'Quản lý lái thử')
+<?php $__env->startSection('content'); ?>
 
-@section('content')
-{{-- Flash Messages Component --}}
-<x-admin.flash-messages 
-    :show-icons="true"
-    :dismissible="true"
-    position="top-right"
-    :auto-dismiss="5000" />
+<?php if (isset($component)) { $__componentOriginaldb1b157d84f8f63332f3508c9e385c0a = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginaldb1b157d84f8f63332f3508c9e385c0a = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.admin.flash-messages','data' => ['showIcons' => true,'dismissible' => true,'position' => 'top-right','autoDismiss' => 5000]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('admin.flash-messages'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['show-icons' => true,'dismissible' => true,'position' => 'top-right','auto-dismiss' => 5000]); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginaldb1b157d84f8f63332f3508c9e385c0a)): ?>
+<?php $attributes = $__attributesOriginaldb1b157d84f8f63332f3508c9e385c0a; ?>
+<?php unset($__attributesOriginaldb1b157d84f8f63332f3508c9e385c0a); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginaldb1b157d84f8f63332f3508c9e385c0a)): ?>
+<?php $component = $__componentOriginaldb1b157d84f8f63332f3508c9e385c0a; ?>
+<?php unset($__componentOriginaldb1b157d84f8f63332f3508c9e385c0a); ?>
+<?php endif; ?>
 
 <div class="space-y-3 sm:space-y-4 lg:space-y-6 px-2 sm:px-0">
-    {{-- Header --}}
-    <x-admin.page-header
-        title="Quản lý lái thử"
-        description="Danh sách tất cả yêu cầu lái thử xe"
-        icon="fas fa-car">
-    </x-admin.page-header>
+    
+    <?php if (isset($component)) { $__componentOriginalcb19cb35a534439097b02b8af91726ee = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalcb19cb35a534439097b02b8af91726ee = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.admin.page-header','data' => ['title' => 'Quản lý lái thử','description' => 'Danh sách tất cả yêu cầu lái thử xe','icon' => 'fas fa-car']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('admin.page-header'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['title' => 'Quản lý lái thử','description' => 'Danh sách tất cả yêu cầu lái thử xe','icon' => 'fas fa-car']); ?>
+     <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalcb19cb35a534439097b02b8af91726ee)): ?>
+<?php $attributes = $__attributesOriginalcb19cb35a534439097b02b8af91726ee; ?>
+<?php unset($__attributesOriginalcb19cb35a534439097b02b8af91726ee); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalcb19cb35a534439097b02b8af91726ee)): ?>
+<?php $component = $__componentOriginalcb19cb35a534439097b02b8af91726ee; ?>
+<?php unset($__componentOriginalcb19cb35a534439097b02b8af91726ee); ?>
+<?php endif; ?>
 
-    {{-- Stats Cards --}}
+    
     <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-4">
-        <x-admin.stats-card 
-            title="Tổng lái thử"
-            :value="$totalTestDrives ?? 0"
-            icon="fas fa-car"
-            color="gray"
-            description="Tất cả lái thử"
-            dataStat="total" />
+        <?php if (isset($component)) { $__componentOriginal14dadb7763529f6bc7d89e29f3674f2f = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal14dadb7763529f6bc7d89e29f3674f2f = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.admin.stats-card','data' => ['title' => 'Tổng lái thử','value' => $totalTestDrives ?? 0,'icon' => 'fas fa-car','color' => 'gray','description' => 'Tất cả lái thử','dataStat' => 'total']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('admin.stats-card'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['title' => 'Tổng lái thử','value' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($totalTestDrives ?? 0),'icon' => 'fas fa-car','color' => 'gray','description' => 'Tất cả lái thử','dataStat' => 'total']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal14dadb7763529f6bc7d89e29f3674f2f)): ?>
+<?php $attributes = $__attributesOriginal14dadb7763529f6bc7d89e29f3674f2f; ?>
+<?php unset($__attributesOriginal14dadb7763529f6bc7d89e29f3674f2f); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal14dadb7763529f6bc7d89e29f3674f2f)): ?>
+<?php $component = $__componentOriginal14dadb7763529f6bc7d89e29f3674f2f; ?>
+<?php unset($__componentOriginal14dadb7763529f6bc7d89e29f3674f2f); ?>
+<?php endif; ?>
         
-        <x-admin.stats-card 
-            title="Đã đặt lịch"
-            :value="$pendingTestDrives ?? 0"
-            icon="fas fa-clock"
-            color="yellow"
-            description="Chờ xác nhận"
-            dataStat="pending" />
+        <?php if (isset($component)) { $__componentOriginal14dadb7763529f6bc7d89e29f3674f2f = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal14dadb7763529f6bc7d89e29f3674f2f = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.admin.stats-card','data' => ['title' => 'Đã đặt lịch','value' => $pendingTestDrives ?? 0,'icon' => 'fas fa-clock','color' => 'yellow','description' => 'Chờ xác nhận','dataStat' => 'pending']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('admin.stats-card'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['title' => 'Đã đặt lịch','value' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($pendingTestDrives ?? 0),'icon' => 'fas fa-clock','color' => 'yellow','description' => 'Chờ xác nhận','dataStat' => 'pending']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal14dadb7763529f6bc7d89e29f3674f2f)): ?>
+<?php $attributes = $__attributesOriginal14dadb7763529f6bc7d89e29f3674f2f; ?>
+<?php unset($__attributesOriginal14dadb7763529f6bc7d89e29f3674f2f); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal14dadb7763529f6bc7d89e29f3674f2f)): ?>
+<?php $component = $__componentOriginal14dadb7763529f6bc7d89e29f3674f2f; ?>
+<?php unset($__componentOriginal14dadb7763529f6bc7d89e29f3674f2f); ?>
+<?php endif; ?>
         
-        <x-admin.stats-card 
-            title="Đã xác nhận"
-            :value="$confirmedTestDrives ?? 0"
-            icon="fas fa-check-circle"
-            color="green"
-            description="Đã xác nhận"
-            dataStat="confirmed" />
+        <?php if (isset($component)) { $__componentOriginal14dadb7763529f6bc7d89e29f3674f2f = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal14dadb7763529f6bc7d89e29f3674f2f = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.admin.stats-card','data' => ['title' => 'Đã xác nhận','value' => $confirmedTestDrives ?? 0,'icon' => 'fas fa-check-circle','color' => 'green','description' => 'Đã xác nhận','dataStat' => 'confirmed']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('admin.stats-card'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['title' => 'Đã xác nhận','value' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($confirmedTestDrives ?? 0),'icon' => 'fas fa-check-circle','color' => 'green','description' => 'Đã xác nhận','dataStat' => 'confirmed']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal14dadb7763529f6bc7d89e29f3674f2f)): ?>
+<?php $attributes = $__attributesOriginal14dadb7763529f6bc7d89e29f3674f2f; ?>
+<?php unset($__attributesOriginal14dadb7763529f6bc7d89e29f3674f2f); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal14dadb7763529f6bc7d89e29f3674f2f)): ?>
+<?php $component = $__componentOriginal14dadb7763529f6bc7d89e29f3674f2f; ?>
+<?php unset($__componentOriginal14dadb7763529f6bc7d89e29f3674f2f); ?>
+<?php endif; ?>
         
-        <x-admin.stats-card 
-            title="Hoàn thành"
-            :value="$completedTestDrives ?? 0"
-            icon="fas fa-flag-checkered"
-            color="blue"
-            description="Đã hoàn thành"
-            dataStat="completed" />
+        <?php if (isset($component)) { $__componentOriginal14dadb7763529f6bc7d89e29f3674f2f = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal14dadb7763529f6bc7d89e29f3674f2f = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.admin.stats-card','data' => ['title' => 'Hoàn thành','value' => $completedTestDrives ?? 0,'icon' => 'fas fa-flag-checkered','color' => 'blue','description' => 'Đã hoàn thành','dataStat' => 'completed']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('admin.stats-card'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['title' => 'Hoàn thành','value' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($completedTestDrives ?? 0),'icon' => 'fas fa-flag-checkered','color' => 'blue','description' => 'Đã hoàn thành','dataStat' => 'completed']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal14dadb7763529f6bc7d89e29f3674f2f)): ?>
+<?php $attributes = $__attributesOriginal14dadb7763529f6bc7d89e29f3674f2f; ?>
+<?php unset($__attributesOriginal14dadb7763529f6bc7d89e29f3674f2f); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal14dadb7763529f6bc7d89e29f3674f2f)): ?>
+<?php $component = $__componentOriginal14dadb7763529f6bc7d89e29f3674f2f; ?>
+<?php unset($__componentOriginal14dadb7763529f6bc7d89e29f3674f2f); ?>
+<?php endif; ?>
         
-        <x-admin.stats-card 
-            title="Đã hủy"
-            :value="$cancelledTestDrives ?? 0"
-            icon="fas fa-times-circle"
-            color="red"
-            description="Đã hủy"
-            dataStat="cancelled" />
+        <?php if (isset($component)) { $__componentOriginal14dadb7763529f6bc7d89e29f3674f2f = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal14dadb7763529f6bc7d89e29f3674f2f = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.admin.stats-card','data' => ['title' => 'Đã hủy','value' => $cancelledTestDrives ?? 0,'icon' => 'fas fa-times-circle','color' => 'red','description' => 'Đã hủy','dataStat' => 'cancelled']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('admin.stats-card'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['title' => 'Đã hủy','value' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($cancelledTestDrives ?? 0),'icon' => 'fas fa-times-circle','color' => 'red','description' => 'Đã hủy','dataStat' => 'cancelled']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal14dadb7763529f6bc7d89e29f3674f2f)): ?>
+<?php $attributes = $__attributesOriginal14dadb7763529f6bc7d89e29f3674f2f; ?>
+<?php unset($__attributesOriginal14dadb7763529f6bc7d89e29f3674f2f); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal14dadb7763529f6bc7d89e29f3674f2f)): ?>
+<?php $component = $__componentOriginal14dadb7763529f6bc7d89e29f3674f2f; ?>
+<?php unset($__componentOriginal14dadb7763529f6bc7d89e29f3674f2f); ?>
+<?php endif; ?>
     </div>
 
-    {{-- Filters --}}
+    
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
         <form id="filterForm" 
               class="grid grid-cols-1 md:grid-cols-[1fr_minmax(min-content,_auto)_minmax(min-content,_auto)_auto] gap-4 items-end"
-              data-base-url="{{ route('admin.test-drives.index') }}">
+              data-base-url="<?php echo e(route('admin.test-drives.index')); ?>">
             
-            {{-- Search --}}
+            
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Tìm kiếm</label>
-                <x-admin.search-input 
-                    name="search"
-                    placeholder="Tên, email, SĐT khách hàng..."
-                    :value="request('search')"
-                    callbackName="handleSearch"
-                    :debounceTime="500"
-                    size="small"
-                    :showIcon="true"
-                    :showClearButton="true" />
+                <?php if (isset($component)) { $__componentOriginal5cb383ddee3a6dc44b6e82e90e14b261 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal5cb383ddee3a6dc44b6e82e90e14b261 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.admin.search-input','data' => ['name' => 'search','placeholder' => 'Tên, email, SĐT khách hàng...','value' => request('search'),'callbackName' => 'handleSearch','debounceTime' => 500,'size' => 'small','showIcon' => true,'showClearButton' => true]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('admin.search-input'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['name' => 'search','placeholder' => 'Tên, email, SĐT khách hàng...','value' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request('search')),'callbackName' => 'handleSearch','debounceTime' => 500,'size' => 'small','showIcon' => true,'showClearButton' => true]); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal5cb383ddee3a6dc44b6e82e90e14b261)): ?>
+<?php $attributes = $__attributesOriginal5cb383ddee3a6dc44b6e82e90e14b261; ?>
+<?php unset($__attributesOriginal5cb383ddee3a6dc44b6e82e90e14b261); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal5cb383ddee3a6dc44b6e82e90e14b261)): ?>
+<?php $component = $__componentOriginal5cb383ddee3a6dc44b6e82e90e14b261; ?>
+<?php unset($__componentOriginal5cb383ddee3a6dc44b6e82e90e14b261); ?>
+<?php endif; ?>
             </div>
             
-            {{-- Status Filter --}}
+            
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label>
-                <x-admin.custom-dropdown 
-                    name="status"
-                    :options="[
+                <?php if (isset($component)) { $__componentOriginal42eccf6ae0cbd0d224265b5df2422179 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal42eccf6ae0cbd0d224265b5df2422179 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.admin.custom-dropdown','data' => ['name' => 'status','options' => [
                         ['value' => 'scheduled', 'text' => 'Đã đặt lịch'],
                         ['value' => 'confirmed', 'text' => 'Đã xác nhận'],
                         ['value' => 'completed', 'text' => 'Hoàn thành'],
                         ['value' => 'cancelled', 'text' => 'Đã hủy']
-                    ]"
-                    placeholder="Tất cả"
-                    optionValue="value"
-                    optionText="text"
-                    :selected="request('status')"
-                    onchange="loadTestDrivesFromDropdown"
-                    :maxVisible="5"
-                    :searchable="false"
-                    width="w-full" />
+                    ],'placeholder' => 'Tất cả','optionValue' => 'value','optionText' => 'text','selected' => request('status'),'onchange' => 'loadTestDrivesFromDropdown','maxVisible' => 5,'searchable' => false,'width' => 'w-full']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('admin.custom-dropdown'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['name' => 'status','options' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute([
+                        ['value' => 'scheduled', 'text' => 'Đã đặt lịch'],
+                        ['value' => 'confirmed', 'text' => 'Đã xác nhận'],
+                        ['value' => 'completed', 'text' => 'Hoàn thành'],
+                        ['value' => 'cancelled', 'text' => 'Đã hủy']
+                    ]),'placeholder' => 'Tất cả','optionValue' => 'value','optionText' => 'text','selected' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request('status')),'onchange' => 'loadTestDrivesFromDropdown','maxVisible' => 5,'searchable' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(false),'width' => 'w-full']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal42eccf6ae0cbd0d224265b5df2422179)): ?>
+<?php $attributes = $__attributesOriginal42eccf6ae0cbd0d224265b5df2422179; ?>
+<?php unset($__attributesOriginal42eccf6ae0cbd0d224265b5df2422179); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal42eccf6ae0cbd0d224265b5df2422179)): ?>
+<?php $component = $__componentOriginal42eccf6ae0cbd0d224265b5df2422179; ?>
+<?php unset($__componentOriginal42eccf6ae0cbd0d224265b5df2422179); ?>
+<?php endif; ?>
             </div>
             
-            {{-- Showroom Filter --}}
+            
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Showroom</label>
-                <x-admin.custom-dropdown 
-                    name="showroom_id"
-                    :options="$showrooms ?? []"
-                    placeholder="Tất cả"
-                    optionValue="id"
-                    optionText="name"
-                    :selected="request('showroom_id')"
-                    onchange="loadTestDrivesFromDropdown"
-                    :maxVisible="6"
-                    :searchable="false"
-                    width="w-full" />
+                <?php if (isset($component)) { $__componentOriginal42eccf6ae0cbd0d224265b5df2422179 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal42eccf6ae0cbd0d224265b5df2422179 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.admin.custom-dropdown','data' => ['name' => 'showroom_id','options' => $showrooms ?? [],'placeholder' => 'Tất cả','optionValue' => 'id','optionText' => 'name','selected' => request('showroom_id'),'onchange' => 'loadTestDrivesFromDropdown','maxVisible' => 6,'searchable' => false,'width' => 'w-full']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('admin.custom-dropdown'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['name' => 'showroom_id','options' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($showrooms ?? []),'placeholder' => 'Tất cả','optionValue' => 'id','optionText' => 'name','selected' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request('showroom_id')),'onchange' => 'loadTestDrivesFromDropdown','maxVisible' => 6,'searchable' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(false),'width' => 'w-full']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal42eccf6ae0cbd0d224265b5df2422179)): ?>
+<?php $attributes = $__attributesOriginal42eccf6ae0cbd0d224265b5df2422179; ?>
+<?php unset($__attributesOriginal42eccf6ae0cbd0d224265b5df2422179); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal42eccf6ae0cbd0d224265b5df2422179)): ?>
+<?php $component = $__componentOriginal42eccf6ae0cbd0d224265b5df2422179; ?>
+<?php unset($__componentOriginal42eccf6ae0cbd0d224265b5df2422179); ?>
+<?php endif; ?>
             </div>
             
-            {{-- Reset --}}
+            
             <div>
-                <x-admin.reset-button 
-                    formId="#filterForm" 
-                    callback="loadTestDrivesWithStats" />
+                <?php if (isset($component)) { $__componentOriginal35d15732c183da7413f992a7a23872b6 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal35d15732c183da7413f992a7a23872b6 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.admin.reset-button','data' => ['formId' => '#filterForm','callback' => 'loadTestDrivesWithStats']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('admin.reset-button'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['formId' => '#filterForm','callback' => 'loadTestDrivesWithStats']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal35d15732c183da7413f992a7a23872b6)): ?>
+<?php $attributes = $__attributesOriginal35d15732c183da7413f992a7a23872b6; ?>
+<?php unset($__attributesOriginal35d15732c183da7413f992a7a23872b6); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal35d15732c183da7413f992a7a23872b6)): ?>
+<?php $component = $__componentOriginal35d15732c183da7413f992a7a23872b6; ?>
+<?php unset($__componentOriginal35d15732c183da7413f992a7a23872b6); ?>
+<?php endif; ?>
             </div>
         </form>
     </div>
 
-    {{-- AJAX Table Component --}}
-    <x-admin.ajax-table 
-        table-id="test-drives-content"
-        loading-id="loading-state"
-        empty-message="Không có lịch lái thử nào"
-        empty-icon="fas fa-car">
+    
+    <?php if (isset($component)) { $__componentOriginal119bc853f16f4c649986104253e7a999 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal119bc853f16f4c649986104253e7a999 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.admin.ajax-table','data' => ['tableId' => 'test-drives-content','loadingId' => 'loading-state','emptyMessage' => 'Không có lịch lái thử nào','emptyIcon' => 'fas fa-car']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('admin.ajax-table'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['table-id' => 'test-drives-content','loading-id' => 'loading-state','empty-message' => 'Không có lịch lái thử nào','empty-icon' => 'fas fa-car']); ?>
         <div class="bg-white rounded-xl shadow-sm border border-gray-200">
-            @include('admin.test-drives.partials.table')
+            <?php echo $__env->make('admin.test-drives.partials.table', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
         </div>
-    </x-admin.ajax-table>
+     <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal119bc853f16f4c649986104253e7a999)): ?>
+<?php $attributes = $__attributesOriginal119bc853f16f4c649986104253e7a999; ?>
+<?php unset($__attributesOriginal119bc853f16f4c649986104253e7a999); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal119bc853f16f4c649986104253e7a999)): ?>
+<?php $component = $__componentOriginal119bc853f16f4c649986104253e7a999; ?>
+<?php unset($__componentOriginal119bc853f16f4c649986104253e7a999); ?>
+<?php endif; ?>
 </div>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script>
 let currentStatus = '';
 
@@ -720,18 +878,31 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeEventListeners();
 });
 </script>
-@endpush
+<?php $__env->stopPush(); ?>
 
-{{-- Delete Modal Component --}}
-<x-admin.delete-modal 
-    modal-id="deleteModal"
-    title="Xác nhận xóa lịch lái thử"
-    entity-name="lịch lái thử"
-    warning-text="Bạn có chắc chắn muốn xóa"
-    confirm-text="Xóa"
-    cancel-text="Hủy" />
 
-{{-- Confirm Modal --}}
+<?php if (isset($component)) { $__componentOriginalaa3b824e4662c5ae30529397669d1c1d = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalaa3b824e4662c5ae30529397669d1c1d = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.admin.delete-modal','data' => ['modalId' => 'deleteModal','title' => 'Xác nhận xóa lịch lái thử','entityName' => 'lịch lái thử','warningText' => 'Bạn có chắc chắn muốn xóa','confirmText' => 'Xóa','cancelText' => 'Hủy']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('admin.delete-modal'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['modal-id' => 'deleteModal','title' => 'Xác nhận xóa lịch lái thử','entity-name' => 'lịch lái thử','warning-text' => 'Bạn có chắc chắn muốn xóa','confirm-text' => 'Xóa','cancel-text' => 'Hủy']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalaa3b824e4662c5ae30529397669d1c1d)): ?>
+<?php $attributes = $__attributesOriginalaa3b824e4662c5ae30529397669d1c1d; ?>
+<?php unset($__attributesOriginalaa3b824e4662c5ae30529397669d1c1d); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalaa3b824e4662c5ae30529397669d1c1d)): ?>
+<?php $component = $__componentOriginalaa3b824e4662c5ae30529397669d1c1d; ?>
+<?php unset($__componentOriginalaa3b824e4662c5ae30529397669d1c1d); ?>
+<?php endif; ?>
+
+
 <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
         <div class="flex items-center mb-4">
@@ -758,7 +929,7 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
 </div>
 
-{{-- Complete Modal --}}
+
 <div id="completeModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
         <div class="flex items-center mb-4">
@@ -785,7 +956,7 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
 </div>
 
-{{-- Cancel Modal --}}
+
 <div id="cancelModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
         <div class="flex items-center mb-4">
@@ -813,4 +984,6 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
 </div>
 
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\forev\showroom-car-modern\resources\views/admin/test-drives/index.blade.php ENDPATH**/ ?>

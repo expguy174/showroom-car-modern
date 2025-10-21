@@ -36,6 +36,9 @@ class PaymentMethodController extends Controller
         
         $paymentMethods = $query->orderBy('sort_order')->paginate(15);
         
+        // Append query parameters to pagination links
+        $paymentMethods->appends($request->except(['page', 'ajax', 'with_stats']));
+        
         // Return partial view for AJAX requests
         if ($request->ajax() || $request->wantsJson()) {
             return view('admin.payment-methods.partials.table', compact('paymentMethods'))->render();

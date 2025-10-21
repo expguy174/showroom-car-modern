@@ -130,6 +130,25 @@
 
 @push('scripts')
 <script>
+// Update stats cards from toggle response
+window.updateStatsFromServer = function(stats) {
+    const statsMapping = {
+        'totalPromotions': 'total',
+        'activePromotions': 'active',
+        'inactivePromotions': 'inactive',
+        'expiredPromotions': 'expired'
+    };
+    
+    Object.entries(statsMapping).forEach(([serverKey, cardKey]) => {
+        if (stats[serverKey] !== undefined) {
+            const statElement = document.querySelector(`p[data-stat="${cardKey}"]`);
+            if (statElement) {
+                statElement.textContent = stats[serverKey];
+            }
+        }
+    });
+};
+
 // Initialize event listeners
 function initializeEventListeners() {
     initializeStatusToggle();
@@ -194,31 +213,14 @@ async function handleStatusToggle(e) {
                 window.updateStatusBadge(promotionId, newStatus, 'promotion');
             }
             
-            // Update stats cards
-            if (window.loadPromotionsWithStats) {
-                const searchForm = document.getElementById('filterForm');
-                const formData = new FormData(searchForm);
-                const statsUrl = '{{ route("admin.promotions.index") }}?' + new URLSearchParams(formData).toString() + '&stats_only=1';
-                
-                fetch(statsUrl, {
-                    method: 'GET',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    }
-                })
-                .then(response => response.json())
-                .then(stats => {
-                    if (window.updateStatsFromServer) {
-                        window.updateStatsFromServer(stats);
-                    }
-                })
-                .catch(error => console.log('Stats update failed:', error));
+            // Update stats cards from response
+            if (data.stats && window.updateStatsFromServer) {
+                window.updateStatsFromServer(data.stats);
             }
             
-            // Show success message using flash-message component
-            if (window.showMessage) {
-                window.showMessage(data.message || 'Cập nhật trạng thái thành công!', 'success');
+            // Show message
+            if (data.message && window.showMessage) {
+                window.showMessage(data.message, 'success');
             }
             
         } else {
@@ -434,19 +436,6 @@ window.handleSearch = function(searchTerm, inputElement) {
         const url = '{{ route("admin.promotions.index") }}?' + new URLSearchParams(formData).toString();
         window.loadPromotionsWithStats(url);
     }
-};
-
-// Update stats from server
-window.updateStatsFromServer = function(stats) {
-    const totalCard = document.querySelector('[data-stat="total"] .text-2xl');
-    const activeCard = document.querySelector('[data-stat="active"] .text-2xl');
-    const inactiveCard = document.querySelector('[data-stat="inactive"] .text-2xl');
-    const expiredCard = document.querySelector('[data-stat="expired"] .text-2xl');
-    
-    if (totalCard && stats.total !== undefined) totalCard.textContent = stats.total;
-    if (activeCard && stats.active !== undefined) activeCard.textContent = stats.active;
-    if (inactiveCard && stats.inactive !== undefined) inactiveCard.textContent = stats.inactive;
-    if (expiredCard && stats.expired !== undefined) expiredCard.textContent = stats.expired;
 };
 
 // Initialize on page load

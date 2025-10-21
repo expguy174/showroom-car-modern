@@ -37,6 +37,9 @@ class FinanceOptionController extends Controller
         
         $financeOptions = $query->orderBy('sort_order')->paginate(15);
         
+        // Append query parameters to pagination links
+        $financeOptions->appends($request->except(['page', 'ajax', 'with_stats']));
+        
         // Return partial view for AJAX requests
         if ($request->ajax() || $request->wantsJson()) {
             return view('admin.finance-options.partials.table', compact('financeOptions'))->render();

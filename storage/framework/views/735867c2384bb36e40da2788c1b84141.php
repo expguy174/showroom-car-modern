@@ -37,7 +37,7 @@
                     </span>
                     <?php break; ?>
                 <?php case ('completed'): ?>
-                    <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                    <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-teal-100 text-teal-800">
                         <i class="fas fa-flag-checkered mr-2"></i>
                         Hoàn thành
                     </span>
@@ -272,18 +272,22 @@
                         <p class="text-xs text-gray-500">Cập nhật lần cuối</p>
                         <p class="text-sm font-medium text-gray-900" id="updatedAtValue"><?php echo e($appointment->updated_at->format('d/m/Y H:i')); ?></p>
                     </div>
-                    <?php if($appointment->completed_at): ?>
-                    <div>
+                    <div id="confirmedAtContainer" class="<?php echo e($appointment->confirmed_at ? '' : 'hidden'); ?>">
+                        <p class="text-xs text-gray-500">Ngày xác nhận</p>
+                        <p class="text-sm font-medium text-gray-900" id="confirmedAtValue"><?php echo e($appointment->confirmed_at ? $appointment->confirmed_at->format('d/m/Y H:i') : ''); ?></p>
+                    </div>
+                    <div id="inProgressAtContainer" class="<?php echo e($appointment->in_progress_at ? '' : 'hidden'); ?>">
+                        <p class="text-xs text-gray-500">Ngày bắt đầu thực hiện</p>
+                        <p class="text-sm font-medium text-gray-900" id="inProgressAtValue"><?php echo e($appointment->in_progress_at ? $appointment->in_progress_at->format('d/m/Y H:i') : ''); ?></p>
+                    </div>
+                    <div id="completedAtContainer" class="<?php echo e($appointment->completed_at ? '' : 'hidden'); ?>">
                         <p class="text-xs text-gray-500">Ngày hoàn thành</p>
-                        <p class="text-sm font-medium text-gray-900"><?php echo e($appointment->completed_at->format('d/m/Y H:i')); ?></p>
+                        <p class="text-sm font-medium text-gray-900" id="completedAtValue"><?php echo e($appointment->completed_at ? $appointment->completed_at->format('d/m/Y H:i') : ''); ?></p>
                     </div>
-                    <?php endif; ?>
-                    <?php if($appointment->cancelled_at): ?>
-                    <div>
+                    <div id="cancelledAtContainer" class="<?php echo e($appointment->cancelled_at ? '' : 'hidden'); ?>">
                         <p class="text-xs text-gray-500">Ngày hủy</p>
-                        <p class="text-sm font-medium text-gray-900"><?php echo e($appointment->cancelled_at->format('d/m/Y H:i')); ?></p>
+                        <p class="text-sm font-medium text-gray-900" id="cancelledAtValue"><?php echo e($appointment->cancelled_at ? $appointment->cancelled_at->format('d/m/Y H:i') : ''); ?></p>
                     </div>
-                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -572,7 +576,7 @@ function updateUIAfterStatusChange(newStatus) {
         'scheduled': '<span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-blue-100 text-blue-800"><i class="fas fa-calendar mr-2"></i>Đã đặt lịch</span>',
         'confirmed': '<span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-green-100 text-green-800"><i class="fas fa-check-circle mr-2"></i>Đã xác nhận</span>',
         'in_progress': '<span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-purple-100 text-purple-800"><i class="fas fa-cog mr-2"></i>Đang thực hiện</span>',
-        'completed': '<span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-green-100 text-green-800"><i class="fas fa-flag-checkered mr-2"></i>Hoàn thành</span>',
+        'completed': '<span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-teal-100 text-teal-800"><i class="fas fa-flag-checkered mr-2"></i>Hoàn thành</span>',
         'cancelled': '<span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-red-100 text-red-800"><i class="fas fa-times-circle mr-2"></i>Đã hủy</span>'
     };
     
@@ -583,12 +587,50 @@ function updateUIAfterStatusChange(newStatus) {
     }
     
     // Update "Cập nhật lần cuối" timestamp
+    const now = new Date();
+    const formattedDate = now.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + 
+                         now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false });
+    
     const updatedAtValue = document.getElementById('updatedAtValue');
     if (updatedAtValue) {
-        const now = new Date();
-        const formattedDate = now.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + 
-                             now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false });
         updatedAtValue.textContent = formattedDate;
+    }
+    
+    // Update status-specific timestamps (backend will save to database)
+    if (newStatus === 'confirmed') {
+        const confirmedAtContainer = document.getElementById('confirmedAtContainer');
+        const confirmedAtValue = document.getElementById('confirmedAtValue');
+        if (confirmedAtContainer && confirmedAtValue) {
+            confirmedAtContainer.classList.remove('hidden');
+            confirmedAtValue.textContent = formattedDate;
+        }
+    }
+    
+    if (newStatus === 'in_progress') {
+        const inProgressAtContainer = document.getElementById('inProgressAtContainer');
+        const inProgressAtValue = document.getElementById('inProgressAtValue');
+        if (inProgressAtContainer && inProgressAtValue) {
+            inProgressAtContainer.classList.remove('hidden');
+            inProgressAtValue.textContent = formattedDate;
+        }
+    }
+    
+    if (newStatus === 'completed') {
+        const completedAtContainer = document.getElementById('completedAtContainer');
+        const completedAtValue = document.getElementById('completedAtValue');
+        if (completedAtContainer && completedAtValue) {
+            completedAtContainer.classList.remove('hidden');
+            completedAtValue.textContent = formattedDate;
+        }
+    }
+    
+    if (newStatus === 'cancelled') {
+        const cancelledAtContainer = document.getElementById('cancelledAtContainer');
+        const cancelledAtValue = document.getElementById('cancelledAtValue');
+        if (cancelledAtContainer && cancelledAtValue) {
+            cancelledAtContainer.classList.remove('hidden');
+            cancelledAtValue.textContent = formattedDate;
+        }
     }
     
     // Update actions panel

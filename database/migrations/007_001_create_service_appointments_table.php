@@ -38,6 +38,12 @@ return new class extends Migration {
             $table->tinyInteger('satisfaction_rating')->unsigned()->nullable(); // 1-5 stars
             $table->text('feedback')->nullable(); // Customer feedback
 
+            // Status timestamps (giống test_drives)
+            $table->dateTime('confirmed_at')->nullable();
+            $table->dateTime('in_progress_at')->nullable();
+            $table->dateTime('completed_at')->nullable();
+            $table->dateTime('cancelled_at')->nullable();
+
             $table->timestamps();
 
             // Indexes tối ưu hóa (đơn giản hoá)

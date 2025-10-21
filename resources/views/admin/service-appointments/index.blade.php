@@ -24,7 +24,7 @@
             title="Tổng lịch hẹn"
             :value="$totalAppointments ?? 0"
             icon="fas fa-calendar-alt"
-            color="blue"
+            color="gray"
             description="Tất cả lịch hẹn"
             dataStat="total" />
             
@@ -56,7 +56,7 @@
             title="Hoàn thành"
             :value="$completedAppointments ?? 0"
             icon="fas fa-flag-checkered"
-            color="indigo"
+            color="blue"
             description="Đã hoàn thành"
             dataStat="completed" />
     </div>
@@ -115,7 +115,7 @@
                     :selected="request('service_id')"
                     onchange="loadAppointmentsFromDropdown"
                     :maxVisible="6"
-                    :searchable="true"
+                    :searchable="false"
                     width="w-full" />
             </div>
             
@@ -574,10 +574,10 @@ function updateAppointmentStatus(appointmentId, newStatus) {
 // Get status badge HTML based on status
 function getStatusBadgeHTML(status) {
     const badges = {
-        'scheduled': '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"><i class="fas fa-calendar mr-1"></i>Đã đặt lịch</span>',
+        'scheduled': '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"><i class="fas fa-clock mr-1"></i>Đã đặt lịch</span>',
         'confirmed': '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"><i class="fas fa-check-circle mr-1"></i>Đã xác nhận</span>',
         'in_progress': '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800"><i class="fas fa-cog mr-1"></i>Đang thực hiện</span>',
-        'completed': '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"><i class="fas fa-flag-checkered mr-1"></i>Hoàn thành</span>',
+        'completed': '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"><i class="fas fa-flag-checkered mr-1"></i>Hoàn thành</span>',
         'cancelled': '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800"><i class="fas fa-times-circle mr-1"></i>Đã hủy</span>'
     };
     return badges[status] || status;
@@ -740,17 +740,22 @@ window.handleSearch = function(searchTerm, inputElement) {
 };
 
 window.updateStatsFromServer = function(stats) {
-    const totalCard = document.querySelector('[data-stat="total"] .text-2xl');
-    const pendingCard = document.querySelector('[data-stat="pending"] .text-2xl');
-    const confirmedCard = document.querySelector('[data-stat="confirmed"] .text-2xl');
-    const inProgressCard = document.querySelector('[data-stat="in_progress"] .text-2xl');
-    const completedCard = document.querySelector('[data-stat="completed"] .text-2xl');
+    const statsMapping = {
+        'total': 'total',
+        'pending': 'pending',
+        'confirmed': 'confirmed',
+        'inProgress': 'in_progress',
+        'completed': 'completed'
+    };
     
-    if (totalCard && stats.total !== undefined) totalCard.textContent = stats.total;
-    if (pendingCard && stats.pending !== undefined) pendingCard.textContent = stats.pending;
-    if (confirmedCard && stats.confirmed !== undefined) confirmedCard.textContent = stats.confirmed;
-    if (inProgressCard && stats.in_progress !== undefined) inProgressCard.textContent = stats.in_progress;
-    if (completedCard && stats.completed !== undefined) completedCard.textContent = stats.completed;
+    Object.entries(statsMapping).forEach(([serverKey, cardKey]) => {
+        if (stats[serverKey] !== undefined) {
+            const statElement = document.querySelector(`p[data-stat="${cardKey}"]`);
+            if (statElement) {
+                statElement.textContent = stats[serverKey];
+            }
+        }
+    });
 };
 
 document.addEventListener('DOMContentLoaded', function() {

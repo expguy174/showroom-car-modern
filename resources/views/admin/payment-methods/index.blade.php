@@ -119,6 +119,24 @@
 
 @push('scripts')
 <script>
+// Update stats cards from toggle response
+window.updateStatsFromServer = function(stats) {
+    const statsMapping = {
+        'total': 'total',
+        'active': 'active',
+        'inactive': 'inactive'
+    };
+    
+    Object.entries(statsMapping).forEach(([serverKey, cardKey]) => {
+        if (stats[serverKey] !== undefined) {
+            const statElement = document.querySelector(`p[data-stat="${cardKey}"]`);
+            if (statElement) {
+                statElement.textContent = stats[serverKey];
+            }
+        }
+    });
+};
+
 // Initialize event listeners
 function initializeEventListeners() {
     // Status toggle buttons
@@ -292,23 +310,6 @@ window.confirmDeletePayment = function(data) {
             window.showMessage(errorMessage, 'error');
         }
     });
-};
-
-// Function to update stats cards from server data
-window.updateStatsFromServer = function(stats) {
-    const totalCard = document.querySelector('[data-stat="total"] .text-2xl');
-    const activeCard = document.querySelector('[data-stat="active"] .text-2xl');
-    const inactiveCard = document.querySelector('[data-stat="inactive"] .text-2xl');
-    
-    if (totalCard && stats.total !== undefined) {
-        totalCard.textContent = stats.total;
-    }
-    if (activeCard && stats.active !== undefined) {
-        activeCard.textContent = stats.active;
-    }
-    if (inactiveCard && stats.inactive !== undefined) {
-        inactiveCard.textContent = stats.inactive;
-    }
 };
 
 // Initialize on page load

@@ -337,9 +337,10 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/', [TestDriveController::class, 'index'])->name('index');
         Route::get('/export', [TestDriveController::class, 'export'])->name('export');
         Route::get('/{testDrive}', [TestDriveController::class, 'show'])->name('show');
+        Route::patch('/{testDrive}/confirm', [TestDriveController::class, 'confirm'])->name('confirm');
+        Route::patch('/{testDrive}/complete', [TestDriveController::class, 'complete'])->name('complete');
+        Route::patch('/{testDrive}/cancel', [TestDriveController::class, 'cancel'])->name('cancel');
         Route::put('/{testDrive}/status', [TestDriveController::class, 'updateStatus'])->name('update_status');
-        Route::put('/{testDrive}/confirm', [TestDriveController::class, 'confirm'])->name('confirm');
-        Route::put('/{testDrive}/cancel', [TestDriveController::class, 'cancel'])->name('cancel');
         Route::delete('/{testDrive}', [TestDriveController::class, 'destroy'])->name('destroy');
     });
 

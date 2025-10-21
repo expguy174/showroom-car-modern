@@ -18,16 +18,7 @@
             icon="fas fa-undo">
         </x-admin.page-header>
 
-        {{-- Stats Cards --}}
-        @php
-            $stats = [
-                'pending' => $refunds->where('status', 'pending')->count(),
-                'processing' => $refunds->where('status', 'processing')->count(),
-                'refunded' => $refunds->where('status', 'refunded')->count(),
-                'failed' => $refunds->where('status', 'failed')->count(),
-            ];
-        @endphp
-        
+        {{-- Stats Cards (passed from controller) --}}
         <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-6">
             <x-admin.stats-card 
                 title="Chờ xử lý"
@@ -188,6 +179,25 @@
 
 @push('scripts')
 <script>
+// Update stats cards from server response
+window.updateStatsFromServer = function(stats) {
+    const statsMapping = {
+        'pending': 'pending',
+        'processing': 'processing',
+        'refunded': 'refunded',
+        'failed': 'failed'
+    };
+    
+    Object.entries(statsMapping).forEach(([serverKey, cardKey]) => {
+        if (stats[serverKey] !== undefined) {
+            const statElement = document.querySelector(`p[data-stat="${cardKey}"]`);
+            if (statElement) {
+                statElement.textContent = stats[serverKey];
+            }
+        }
+    });
+};
+
 // Initialize event listeners
 function initializeRefundEventListeners() {
     // Handle pagination clicks
@@ -487,19 +497,90 @@ function confirmUpdateStatus() {
             }
             
             // Update stats if available
-            if (data.stats) {
-                updateStatsDisplay(data.stats);
+            if (data.stats && window.updateStatsFromServer) {
+                window.updateStatsFromServer(data.stats);
             }
             
-            // Reload table content with a small delay to ensure backend cache is cleared
-            setTimeout(() => {
-                const form = document.getElementById('filterForm');
-                if (form) {
-                    const formData = new FormData(form);
-                    const url = '{{ route("admin.payments.refunds") }}?' + new URLSearchParams(formData).toString() + '&t=' + Date.now();
-                    window.loadRefunds(url);
+            // Update status badge in table without reload
+            if (data.status && currentRefundId) {
+                const row = document.querySelector(`tr[data-refund-id="${currentRefundId}"]`);
+                if (row) {
+                    // Update status badge
+                    const statusCell = row.querySelector('.status-badge');
+                    if (statusCell) {
+                        const statusBadges = {
+                            'pending': '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"><i class="fas fa-clock mr-1"></i>Chờ xử lý</span>',
+                            'processing': '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"><i class="fas fa-spinner mr-1"></i>Đang xử lý</span>',
+                            'refunded': '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"><i class="fas fa-check-circle mr-1"></i>Đã hoàn tiền</span>',
+                            'failed': '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800"><i class="fas fa-times-circle mr-1"></i>Thất bại</span>'
+                        };
+                        statusCell.innerHTML = statusBadges[data.status] || statusCell.innerHTML;
+                    }
+                    
+                    // Update action column
+                    const actionCells = row.querySelectorAll('td');
+                    const actionCell = actionCells[actionCells.length - 1]; // Last column is action
+                    if (actionCell) {
+                        const actionButtons = {
+                            'pending': `
+                                <div class="flex items-center justify-center gap-1">
+                                    <button onclick="updateRefundStatus(${currentRefundId}, 'processing')" 
+                                            class="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors"
+                                            title="Bắt đầu xử lý yêu cầu hoàn tiền">
+                                        <i class="fas fa-arrow-right mr-1"></i>
+                                        Xử lý
+                                    </button>
+                                    <div class="relative group">
+                                        <button class="inline-flex items-center px-1 py-1 text-xs text-gray-500 hover:text-gray-700 rounded"
+                                                title="Thao tác nhanh">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <div class="absolute right-0 top-full mt-1 w-32 bg-white rounded-md shadow-lg border border-gray-200 z-10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                                            <button onclick="updateRefundStatus(${currentRefundId}, 'refunded')" 
+                                                    class="block w-full text-left px-3 py-2 text-xs text-green-700 hover:bg-green-50">
+                                                <i class="fas fa-check mr-1"></i>Hoàn tiền ngay
+                                            </button>
+                                            <button onclick="updateRefundStatus(${currentRefundId}, 'failed')" 
+                                                    class="block w-full text-left px-3 py-2 text-xs text-red-700 hover:bg-red-50">
+                                                <i class="fas fa-times mr-1"></i>Từ chối ngay
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `,
+                            'processing': `
+                                <div class="flex items-center justify-center gap-1">
+                                    <button onclick="updateRefundStatus(${currentRefundId}, 'refunded')" 
+                                            class="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 transition-colors"
+                                            title="Chấp nhận và thực hiện hoàn tiền">
+                                        <i class="fas fa-check mr-1"></i>
+                                        Hoàn tiền
+                                    </button>
+                                    <button onclick="updateRefundStatus(${currentRefundId}, 'failed')" 
+                                            class="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-red-600 rounded hover:bg-red-700 transition-colors"
+                                            title="Từ chối yêu cầu hoàn tiền">
+                                        <i class="fas fa-times mr-1"></i>
+                                        Từ chối
+                                    </button>
+                                </div>
+                            `,
+                            'refunded': `
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <i class="fas fa-check-circle mr-1"></i>
+                                    Hoàn thành
+                                </span>
+                            `,
+                            'failed': `
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                    <i class="fas fa-times-circle mr-1"></i>
+                                    Đã từ chối
+                                </span>
+                            `
+                        };
+                        actionCell.innerHTML = actionButtons[data.status] || actionCell.innerHTML;
+                    }
                 }
-            }, 300);
+            }
         } else {
             throw new Error(data.message || 'Có lỗi xảy ra');
         }
@@ -517,22 +598,6 @@ function confirmUpdateStatus() {
         // Show error message
         if (typeof window.showMessage === 'function') {
             window.showMessage(error.message || 'Có lỗi xảy ra khi cập nhật trạng thái', 'error');
-        }
-    });
-}
-
-function updateStatsDisplay(stats) {
-    // Update stats cards
-    const statsElements = {
-        'pending': document.querySelector('[data-stat="pending"] .text-3xl'),
-        'processing': document.querySelector('[data-stat="processing"] .text-3xl'),
-        'refunded': document.querySelector('[data-stat="refunded"] .text-3xl'),
-        'failed': document.querySelector('[data-stat="failed"] .text-3xl')
-    };
-    
-    Object.keys(stats).forEach(key => {
-        if (statsElements[key]) {
-            statsElements[key].textContent = stats[key];
         }
     });
 }

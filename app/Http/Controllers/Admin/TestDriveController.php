@@ -11,14 +11,19 @@ class TestDriveController extends Controller
 {
     public function index(Request $request)
     {
-        $query = TestDrive::with(['user', 'carVariant.carModel.carBrand']);
+        $query = TestDrive::with(['user.userProfile', 'carVariant.carModel.carBrand', 'showroom']);
 
+        // Search via user relationship
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                $q->whereHas('user', function($userQuery) use ($search) {
+                    $userQuery->where('email', 'like', "%{$search}%")
+                              ->orWhereHas('userProfile', function($profileQuery) use ($search) {
+                                  $profileQuery->where('name', 'like', "%{$search}%")
+                                               ->orWhere('phone', 'like', "%{$search}%");
+                              });
+                });
             });
         }
 
@@ -26,14 +31,75 @@ class TestDriveController extends Controller
             $query->where('status', $request->status);
         }
 
-        $testDrives = $query->orderBy('created_at', 'desc')->paginate(20);
+        if ($request->filled('date_from')) {
+            $query->whereDate('preferred_date', '>=', $request->date_from);
+        }
 
-        return view('admin.test-drives.index', compact('testDrives'));
+        if ($request->filled('date_to')) {
+            $query->whereDate('preferred_date', '<=', $request->date_to);
+        }
+
+        if ($request->filled('showroom_id')) {
+            $query->where('showroom_id', $request->showroom_id);
+        }
+
+        $testDrives = $query->orderBy('created_at', 'desc')->paginate(20);
+        
+        // Append query parameters to pagination links (exclude ajax and with_stats)
+        $testDrives->appends($request->except(['page', 'ajax', 'with_stats']));
+
+        // Calculate stats
+        $totalTestDrives = TestDrive::count();
+        $pendingTestDrives = TestDrive::where('status', 'scheduled')->count();
+        $confirmedTestDrives = TestDrive::where('status', 'confirmed')->count();
+        $completedTestDrives = TestDrive::where('status', 'completed')->count();
+        $cancelledTestDrives = TestDrive::where('status', 'cancelled')->count();
+
+        // Get showrooms for filter
+        $showrooms = \App\Models\Showroom::orderBy('name')->get();
+
+        // AJAX support
+        if ($request->ajax() || $request->has('ajax')) {
+            // For pagination and regular AJAX - return HTML only
+            if (!$request->has('with_stats')) {
+                return view('admin.test-drives.partials.table', compact('testDrives'));
+            }
+            
+            // For with_stats requests - return JSON
+            $html = view('admin.test-drives.partials.table', compact('testDrives'))->render();
+            return response()->json([
+                'html' => $html,
+                'stats' => [
+                    'total' => $totalTestDrives,
+                    'pending' => $pendingTestDrives,
+                    'confirmed' => $confirmedTestDrives,
+                    'completed' => $completedTestDrives,
+                    'cancelled' => $cancelledTestDrives
+                ]
+            ]);
+        }
+
+        return view('admin.test-drives.index', compact(
+            'testDrives',
+            'totalTestDrives',
+            'pendingTestDrives',
+            'confirmedTestDrives',
+            'completedTestDrives',
+            'cancelledTestDrives',
+            'showrooms'
+        ));
     }
 
     public function show(TestDrive $testDrive)
     {
-        $testDrive->load(['user', 'carVariant.carModel.carBrand']);
+        $testDrive->load([
+            'user.userProfile',
+            'user.addresses' => function($query) {
+                $query->where('is_default', true);
+            },
+            'carVariant.carModel.carBrand',
+            'showroom'
+        ]);
         return view('admin.test-drives.show', compact('testDrive'));
     }
 
@@ -51,7 +117,7 @@ class TestDriveController extends Controller
         // Send notification to user
         if ($testDrive->user_id && $oldStatus !== $newStatus) {
             $statusLabels = [
-                'pending' => 'Chờ xử lý',
+                'scheduled' => 'Đã đặt lịch',
                 'confirmed' => 'Đã xác nhận',
                 'completed' => 'Hoàn thành',
                 'cancelled' => 'Đã hủy'
@@ -154,21 +220,162 @@ class TestDriveController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
-    public function confirm(TestDrive $testDrive)
+    public function confirm(Request $request, TestDrive $testDrive)
     {
-        $testDrive->update(['status' => 'confirmed']);
+        if ($testDrive->status !== 'scheduled') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Chỉ có thể xác nhận lịch ở trạng thái đã đặt lịch'
+            ], 400);
+        }
+
+        $testDrive->update([
+            'status' => 'confirmed',
+            'confirmed_at' => now()
+        ]);
+
+        // Send notification
+        if ($testDrive->user_id) {
+            \App\Models\Notification::create([
+                'user_id' => $testDrive->user_id,
+                'type' => 'test_drive',
+                'title' => 'Lịch lái thử đã được xác nhận',
+                'message' => "Lịch lái thử {$testDrive->car_full_name} vào ngày {$testDrive->preferred_date->format('d/m/Y')} đã được xác nhận.",
+                'is_read' => false,
+            ]);
+        }
+
+        // Get updated stats
+        $stats = [
+            'total' => TestDrive::count(),
+            'pending' => TestDrive::where('status', 'scheduled')->count(),
+            'confirmed' => TestDrive::where('status', 'confirmed')->count(),
+            'completed' => TestDrive::where('status', 'completed')->count(),
+            'cancelled' => TestDrive::where('status', 'cancelled')->count()
+        ];
+
+        if ($request->ajax() || $request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Lịch lái thử đã được xác nhận!',
+                'stats' => $stats
+            ]);
+        }
+
         return redirect()->back()->with('success', 'Lịch lái thử đã được xác nhận!');
     }
 
-    public function cancel(TestDrive $testDrive)
+    public function complete(Request $request, TestDrive $testDrive)
     {
-        $testDrive->update(['status' => 'cancelled']);
-        return redirect()->back()->with('success', 'Lịch lái thử đã được hủy!');
+        if ($testDrive->status !== 'confirmed') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Chỉ có thể hoàn thành lịch đã xác nhận'
+            ], 400);
+        }
+
+        $testDrive->update([
+            'status' => 'completed',
+            'completed_at' => now()
+        ]);
+
+        // Send notification
+        if ($testDrive->user_id) {
+            \App\Models\Notification::create([
+                'user_id' => $testDrive->user_id,
+                'type' => 'test_drive',
+                'title' => 'Lịch lái thử đã hoàn thành',
+                'message' => "Lịch lái thử {$testDrive->car_full_name} đã hoàn thành. Cảm ơn bạn đã tin tưởng!",
+                'is_read' => false,
+            ]);
+        }
+
+        // Get updated stats
+        $stats = [
+            'total' => TestDrive::count(),
+            'pending' => TestDrive::where('status', 'scheduled')->count(),
+            'confirmed' => TestDrive::where('status', 'confirmed')->count(),
+            'completed' => TestDrive::where('status', 'completed')->count(),
+            'cancelled' => TestDrive::where('status', 'cancelled')->count()
+        ];
+
+        if ($request->ajax() || $request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Lịch lái thử đã hoàn thành!',
+                'stats' => $stats
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Lịch lái thử đã hoàn thành!');
     }
 
-    public function destroy(TestDrive $testDrive)
+    public function cancel(Request $request, TestDrive $testDrive)
+    {
+        if (!in_array($testDrive->status, ['scheduled', 'confirmed'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không thể hủy lịch lái thử này'
+            ], 400);
+        }
+
+        $testDrive->update([
+            'status' => 'cancelled',
+            'cancelled_at' => now()
+        ]);
+
+        // Send notification
+        if ($testDrive->user_id) {
+            \App\Models\Notification::create([
+                'user_id' => $testDrive->user_id,
+                'type' => 'test_drive',
+                'title' => 'Lịch lái thử đã bị hủy',
+                'message' => "Lịch lái thử {$testDrive->car_full_name} vào ngày {$testDrive->preferred_date->format('d/m/Y')} đã bị hủy.",
+                'is_read' => false,
+            ]);
+        }
+
+        // Get updated stats
+        $stats = [
+            'total' => TestDrive::count(),
+            'pending' => TestDrive::where('status', 'scheduled')->count(),
+            'confirmed' => TestDrive::where('status', 'confirmed')->count(),
+            'completed' => TestDrive::where('status', 'completed')->count(),
+            'cancelled' => TestDrive::where('status', 'cancelled')->count()
+        ];
+
+        if ($request->ajax() || $request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Lịch lái thử đã bị hủy!',
+                'stats' => $stats
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Lịch lái thử đã bị hủy!');
+    }
+
+    public function destroy(Request $request, TestDrive $testDrive)
     {
         $testDrive->delete();
-        return redirect()->back()->with('success', 'Lịch lái thử đã được xóa!');
+        
+        // Get updated stats
+        $stats = [
+            'total' => TestDrive::count(),
+            'pending' => TestDrive::where('status', 'scheduled')->count(),
+            'confirmed' => TestDrive::where('status', 'confirmed')->count(),
+            'completed' => TestDrive::where('status', 'completed')->count(),
+            'cancelled' => TestDrive::where('status', 'cancelled')->count()
+        ];
+        
+        if ($request->ajax() || $request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã xóa lịch lái thử thành công!',
+                'stats' => $stats
+            ]);
+        }
+        
+        return redirect()->back()->with('success', 'Đã xóa lịch lái thử thành công!');
     }
 } 

@@ -51,6 +51,9 @@ class PaymentController extends Controller
         }
 
         $transactions = $query->orderBy('created_at', 'desc')->paginate(15);
+        
+        // Append query parameters to pagination links
+        $transactions->appends($request->except(['page', 'ajax', 'with_stats']));
         $paymentMethods = PaymentMethod::all();
         $statuses = \App\Models\PaymentTransaction::STATUSES;
         $paymentTypes = [];
@@ -215,12 +218,23 @@ class PaymentController extends Controller
         
         $refunds = $query->orderBy('created_at', 'desc')->paginate(15);
         
+        // Append query parameters to pagination links
+        $refunds->appends($request->except(['page', 'ajax', 'with_stats']));
+        
+        // Calculate stats from entire DB (not paginated collection)
+        $stats = [
+            'pending' => Refund::where('status', 'pending')->count(),
+            'processing' => Refund::where('status', 'processing')->count(),
+            'refunded' => Refund::where('status', 'refunded')->count(),
+            'failed' => Refund::where('status', 'failed')->count(),
+        ];
+        
         // Handle AJAX requests
         if ($request->ajax()) {
             return view('admin.payments.partials.refunds-table', compact('refunds'))->render();
         }
 
-        return view('admin.payments.refunds', compact('refunds'));
+        return view('admin.payments.refunds', compact('refunds', 'stats'));
     }
 
     public function updateRefundStatus(Request $request, Refund $refund)

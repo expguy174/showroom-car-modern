@@ -52,6 +52,9 @@ class OrderController extends Controller
         }
 
         $orders = $query->orderByDesc('created_at')->paginate(10);
+        
+        // Append query parameters to pagination links
+        $orders->appends($request->except(['page', 'ajax', 'with_stats']));
 
         // Calculate statistics (from all orders, not just current page)
         $totalOrders = Order::count();

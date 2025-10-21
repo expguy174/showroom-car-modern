@@ -46,6 +46,10 @@ unset($__defined_vars); ?>
                 return ['light' => 'bg-purple-100', 'text' => 'text-purple-600'];
             case 'pink':
                 return ['light' => 'bg-pink-100', 'text' => 'text-pink-600'];
+            case 'teal':
+                return ['light' => 'bg-teal-100', 'text' => 'text-teal-600'];
+            case 'indigo':
+                return ['light' => 'bg-indigo-100', 'text' => 'text-indigo-600'];
             case 'gray':
                 return ['light' => 'bg-gray-100', 'text' => 'text-gray-600'];
             default:

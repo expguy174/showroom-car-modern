@@ -31,6 +31,9 @@ class ReviewController extends Controller
         }
 
         $reviews = $query->orderBy('created_at', 'desc')->paginate(20);
+        
+        // Append query parameters to pagination links
+        $reviews->appends($request->except(['page', 'ajax', 'with_stats']));
 
         // Return partial view for AJAX requests
         if ($request->ajax() || $request->wantsJson()) {

@@ -172,6 +172,25 @@
 <script>
 let deleteFormId = null;
 
+// Update stats cards from toggle response
+window.updateStatsFromServer = function(stats) {
+    const statsMapping = {
+        'totalVariants': 'total',
+        'activeVariants': 'active',
+        'inactiveVariants': 'inactive',
+        'featuredVariants': 'featured'
+    };
+    
+    Object.entries(statsMapping).forEach(([serverKey, cardKey]) => {
+        if (stats[serverKey] !== undefined) {
+            const statElement = document.querySelector(`p[data-stat="${cardKey}"]`);
+            if (statElement) {
+                statElement.textContent = stats[serverKey];
+            }
+        }
+    });
+};
+
 // Flash messages are now handled by FlashMessages component
 
 // AJAX Functions - Now handled by AjaxTable component
@@ -384,86 +403,6 @@ window.confirmDelete = function(data) {
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     initializeEventListeners();
-    
-    // Simple re-initialization - no wrapper needed
-    // The AJAX table component will handle reloading
-    
-    // Function to update stats cards from server data (delete/toggle)
-    window.updateStatsFromServer = function(stats) {
-        // Update all stats cards with server data
-        const totalCard = document.querySelector('[data-stat="total"] .text-2xl');
-        const activeCard = document.querySelector('[data-stat="active"] .text-2xl');
-        const inactiveCard = document.querySelector('[data-stat="inactive"] .text-2xl');
-        const featuredCard = document.querySelector('[data-stat="featured"] .text-2xl');
-        const onSaleCard = document.querySelector('[data-stat="on_sale"] .text-2xl');
-        const newArrivalCard = document.querySelector('[data-stat="new_arrival"] .text-2xl');
-        
-        // Update cards directly without animation
-        if (totalCard && stats.totalVariants !== undefined) {
-            totalCard.textContent = stats.totalVariants;
-        }
-        if (activeCard && stats.activeVariants !== undefined) {
-            activeCard.textContent = stats.activeVariants;
-        }
-        if (inactiveCard && stats.inactiveVariants !== undefined) {
-            inactiveCard.textContent = stats.inactiveVariants;
-        }
-        if (featuredCard && stats.featuredVariants !== undefined) {
-            featuredCard.textContent = stats.featuredVariants;
-        }
-        if (onSaleCard && stats.onSaleVariants !== undefined) {
-            onSaleCard.textContent = stats.onSaleVariants;
-        }
-        if (newArrivalCard && stats.newArrivalVariants !== undefined) {
-            newArrivalCard.textContent = stats.newArrivalVariants;
-        }
-        
-        // Also handle bestseller if exists
-        const bestsellerCard = document.querySelector('[data-stat="bestseller"] .text-2xl');
-        if (bestsellerCard && stats.bestsellerVariants !== undefined) {
-            bestsellerCard.textContent = stats.bestsellerVariants;
-        }
-    };
-    
-    // Function to update stats cards when toggle status changes (manual calculation)
-    window.updateStatsCards = function(wasActive, newStatus) {
-        const activeCard = document.querySelector('[data-stat="active"] .text-2xl');
-        const inactiveCard = document.querySelector('[data-stat="inactive"] .text-2xl');
-        
-        if (!activeCard || !inactiveCard) {
-            return;
-        }
-        
-        let activeCount = parseInt(activeCard.textContent) || 0;
-        let inactiveCount = parseInt(inactiveCard.textContent) || 0;
-        
-        // Update counts based on status change
-        if (wasActive && !newStatus) {
-            activeCount = Math.max(0, activeCount - 1);
-            inactiveCount = inactiveCount + 1;
-        } else if (!wasActive && newStatus) {
-            activeCount = activeCount + 1;
-            inactiveCount = Math.max(0, inactiveCount - 1);
-        } else {
-            return;
-        }
-        
-        // Update the display with animation
-        activeCard.textContent = activeCount;
-        inactiveCard.textContent = inactiveCount;
-        
-        // Add visual feedback
-        const activeCardContainer = activeCard.closest('[data-stat="active"]');
-        const inactiveCardContainer = inactiveCard.closest('[data-stat="inactive"]');
-        
-        if (wasActive && !newStatus) {
-            inactiveCardContainer.classList.add('ring-2', 'ring-red-300');
-            setTimeout(() => inactiveCardContainer.classList.remove('ring-2', 'ring-red-300'), 1000);
-        } else if (!wasActive && newStatus) {
-            activeCardContainer.classList.add('ring-2', 'ring-green-300');
-            setTimeout(() => activeCardContainer.classList.remove('ring-2', 'ring-green-300'), 1000);
-        }
-    };
 });
 </script>
 @endpush

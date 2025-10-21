@@ -66,6 +66,9 @@ class CarModelController extends Controller
         }
 
         $carModels = $query->orderBy('sort_order', 'asc')->orderBy('name', 'asc')->paginate(15);
+        
+        // Append query parameters to pagination links
+        $carModels->appends($request->except(['page', 'ajax', 'with_stats']));
         $brands = \App\Models\CarBrand::orderBy('sort_order')->orderBy('name')->get();
 
         // Check if this is an AJAX request

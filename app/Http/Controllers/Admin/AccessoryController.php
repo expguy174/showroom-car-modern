@@ -67,6 +67,9 @@ class AccessoryController extends Controller
             ->orderByDesc('id')
             ->paginate(15);
 
+        // Append query parameters to pagination links
+        $accessories->appends($request->except(['page', 'ajax', 'with_stats']));
+
         // Calculate statistics
         $totalAccessories = Accessory::count();
         $activeAccessories = Accessory::where('is_active', true)->count();

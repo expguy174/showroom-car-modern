@@ -50,14 +50,14 @@
     <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-4 mb-6">
         <?php if (isset($component)) { $__componentOriginal14dadb7763529f6bc7d89e29f3674f2f = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal14dadb7763529f6bc7d89e29f3674f2f = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.admin.stats-card','data' => ['title' => 'Tổng lịch hẹn','value' => $totalAppointments ?? 0,'icon' => 'fas fa-calendar-alt','color' => 'blue','description' => 'Tất cả lịch hẹn','dataStat' => 'total']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.admin.stats-card','data' => ['title' => 'Tổng lịch hẹn','value' => $totalAppointments ?? 0,'icon' => 'fas fa-calendar-alt','color' => 'gray','description' => 'Tất cả lịch hẹn','dataStat' => 'total']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('admin.stats-card'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['title' => 'Tổng lịch hẹn','value' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($totalAppointments ?? 0),'icon' => 'fas fa-calendar-alt','color' => 'blue','description' => 'Tất cả lịch hẹn','dataStat' => 'total']); ?>
+<?php $component->withAttributes(['title' => 'Tổng lịch hẹn','value' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($totalAppointments ?? 0),'icon' => 'fas fa-calendar-alt','color' => 'gray','description' => 'Tất cả lịch hẹn','dataStat' => 'total']); ?>
 <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginal14dadb7763529f6bc7d89e29f3674f2f)): ?>
@@ -134,14 +134,14 @@
             
         <?php if (isset($component)) { $__componentOriginal14dadb7763529f6bc7d89e29f3674f2f = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal14dadb7763529f6bc7d89e29f3674f2f = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.admin.stats-card','data' => ['title' => 'Hoàn thành','value' => $completedAppointments ?? 0,'icon' => 'fas fa-flag-checkered','color' => 'indigo','description' => 'Đã hoàn thành','dataStat' => 'completed']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.admin.stats-card','data' => ['title' => 'Hoàn thành','value' => $completedAppointments ?? 0,'icon' => 'fas fa-flag-checkered','color' => 'blue','description' => 'Đã hoàn thành','dataStat' => 'completed']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('admin.stats-card'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['title' => 'Hoàn thành','value' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($completedAppointments ?? 0),'icon' => 'fas fa-flag-checkered','color' => 'indigo','description' => 'Đã hoàn thành','dataStat' => 'completed']); ?>
+<?php $component->withAttributes(['title' => 'Hoàn thành','value' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($completedAppointments ?? 0),'icon' => 'fas fa-flag-checkered','color' => 'blue','description' => 'Đã hoàn thành','dataStat' => 'completed']); ?>
 <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginal14dadb7763529f6bc7d89e29f3674f2f)): ?>
@@ -227,14 +227,14 @@
                 <label class="block text-sm font-medium text-gray-700 mb-2">Dịch vụ</label>
                 <?php if (isset($component)) { $__componentOriginal42eccf6ae0cbd0d224265b5df2422179 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal42eccf6ae0cbd0d224265b5df2422179 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.admin.custom-dropdown','data' => ['name' => 'service_id','options' => $services ?? [],'placeholder' => 'Tất cả','optionValue' => 'id','optionText' => 'name','selected' => request('service_id'),'onchange' => 'loadAppointmentsFromDropdown','maxVisible' => 6,'searchable' => true,'width' => 'w-full']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.admin.custom-dropdown','data' => ['name' => 'service_id','options' => $services ?? [],'placeholder' => 'Tất cả','optionValue' => 'id','optionText' => 'name','selected' => request('service_id'),'onchange' => 'loadAppointmentsFromDropdown','maxVisible' => 6,'searchable' => false,'width' => 'w-full']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('admin.custom-dropdown'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['name' => 'service_id','options' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($services ?? []),'placeholder' => 'Tất cả','optionValue' => 'id','optionText' => 'name','selected' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request('service_id')),'onchange' => 'loadAppointmentsFromDropdown','maxVisible' => 6,'searchable' => true,'width' => 'w-full']); ?>
+<?php $component->withAttributes(['name' => 'service_id','options' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($services ?? []),'placeholder' => 'Tất cả','optionValue' => 'id','optionText' => 'name','selected' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request('service_id')),'onchange' => 'loadAppointmentsFromDropdown','maxVisible' => 6,'searchable' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(false),'width' => 'w-full']); ?>
 <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginal42eccf6ae0cbd0d224265b5df2422179)): ?>
@@ -744,10 +744,10 @@ function updateAppointmentStatus(appointmentId, newStatus) {
 // Get status badge HTML based on status
 function getStatusBadgeHTML(status) {
     const badges = {
-        'scheduled': '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"><i class="fas fa-calendar mr-1"></i>Đã đặt lịch</span>',
+        'scheduled': '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"><i class="fas fa-clock mr-1"></i>Đã đặt lịch</span>',
         'confirmed': '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"><i class="fas fa-check-circle mr-1"></i>Đã xác nhận</span>',
         'in_progress': '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800"><i class="fas fa-cog mr-1"></i>Đang thực hiện</span>',
-        'completed': '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"><i class="fas fa-flag-checkered mr-1"></i>Hoàn thành</span>',
+        'completed': '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"><i class="fas fa-flag-checkered mr-1"></i>Hoàn thành</span>',
         'cancelled': '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800"><i class="fas fa-times-circle mr-1"></i>Đã hủy</span>'
     };
     return badges[status] || status;
@@ -910,17 +910,22 @@ window.handleSearch = function(searchTerm, inputElement) {
 };
 
 window.updateStatsFromServer = function(stats) {
-    const totalCard = document.querySelector('[data-stat="total"] .text-2xl');
-    const pendingCard = document.querySelector('[data-stat="pending"] .text-2xl');
-    const confirmedCard = document.querySelector('[data-stat="confirmed"] .text-2xl');
-    const inProgressCard = document.querySelector('[data-stat="in_progress"] .text-2xl');
-    const completedCard = document.querySelector('[data-stat="completed"] .text-2xl');
+    const statsMapping = {
+        'total': 'total',
+        'pending': 'pending',
+        'confirmed': 'confirmed',
+        'inProgress': 'in_progress',
+        'completed': 'completed'
+    };
     
-    if (totalCard && stats.total !== undefined) totalCard.textContent = stats.total;
-    if (pendingCard && stats.pending !== undefined) pendingCard.textContent = stats.pending;
-    if (confirmedCard && stats.confirmed !== undefined) confirmedCard.textContent = stats.confirmed;
-    if (inProgressCard && stats.in_progress !== undefined) inProgressCard.textContent = stats.in_progress;
-    if (completedCard && stats.completed !== undefined) completedCard.textContent = stats.completed;
+    Object.entries(statsMapping).forEach(([serverKey, cardKey]) => {
+        if (stats[serverKey] !== undefined) {
+            const statElement = document.querySelector(`p[data-stat="${cardKey}"]`);
+            if (statElement) {
+                statElement.textContent = stats[serverKey];
+            }
+        }
+    });
 };
 
 document.addEventListener('DOMContentLoaded', function() {

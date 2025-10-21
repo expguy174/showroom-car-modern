@@ -35,7 +35,7 @@ use Illuminate\Support\Str;
             icon="fas fa-industry"
             color="blue"
             description="Tất cả thương hiệu"
-            dataStat="total" />
+            data-stat="total" />
         
         <x-admin.stats-card 
             title="Hoạt động"
@@ -43,7 +43,7 @@ use Illuminate\Support\Str;
             icon="fas fa-check-circle"
             color="green"
             description="Đang kinh doanh"
-            dataStat="active" />
+            data-stat="active" />
         
         <x-admin.stats-card 
             title="Tạm dừng"
@@ -51,7 +51,7 @@ use Illuminate\Support\Str;
             icon="fas fa-pause-circle"
             color="red"
             description="Ngừng hoạt động"
-            dataStat="inactive" />
+            data-stat="inactive" />
         
         <x-admin.stats-card 
             title="Nổi bật"
@@ -59,7 +59,7 @@ use Illuminate\Support\Str;
             icon="fas fa-star"
             color="yellow"
             description="Thương hiệu nổi bật"
-            dataStat="featured" />
+            data-stat="featured" />
     </div>
 
     {{-- Filters --}}
@@ -141,6 +141,25 @@ use Illuminate\Support\Str;
 @push('scripts')
 <script>
 // Flash messages are now handled by FlashMessages component
+
+// Update stats cards from toggle response
+window.updateStatsFromServer = function(stats) {
+    const statsMapping = {
+        'totalCars': 'total',
+        'activeCars': 'active',
+        'inactiveCars': 'inactive',
+        'featuredCars': 'featured'
+    };
+    
+    Object.entries(statsMapping).forEach(([serverKey, cardKey]) => {
+        if (stats[serverKey] !== undefined) {
+            const statElement = document.querySelector(`p[data-stat="${cardKey}"]`);
+            if (statElement) {
+                statElement.textContent = stats[serverKey];
+            }
+        }
+    });
+};
 
 // AJAX Functions - Now handled by AjaxTable component
 // loadCarBrands function is automatically created by the component
@@ -351,29 +370,6 @@ window.confirmDelete = function(data) {
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     initializeEventListeners();
-    
-    // Function to update stats cards from server data (delete/toggle)
-    window.updateStatsFromServer = function(stats) {
-        // Update all stats cards with server data
-        const totalCard = document.querySelector('[data-stat="total"] .text-2xl');
-        const activeCard = document.querySelector('[data-stat="active"] .text-2xl');
-        const inactiveCard = document.querySelector('[data-stat="inactive"] .text-2xl');
-        const featuredCard = document.querySelector('[data-stat="featured"] .text-2xl');
-        
-        // Update cards directly without animation
-        if (totalCard && stats.totalCars !== undefined) {
-            totalCard.textContent = stats.totalCars;
-        }
-        if (activeCard && stats.activeCars !== undefined) {
-            activeCard.textContent = stats.activeCars;
-        }
-        if (inactiveCard && stats.inactiveCars !== undefined) {
-            inactiveCard.textContent = stats.inactiveCars;
-        }
-        if (featuredCard && stats.featuredCars !== undefined) {
-            featuredCard.textContent = stats.featuredCars;
-        }
-    };
 });
 </script>
 @endpush

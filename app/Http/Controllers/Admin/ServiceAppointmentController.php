@@ -49,6 +49,9 @@ class ServiceAppointmentController extends Controller
 
         $appointments = $query->orderBy('appointment_date', 'desc')->paginate(15);
         
+        // Append query parameters to pagination links (exclude ajax and with_stats)
+        $appointments->appends($request->except(['page', 'ajax', 'with_stats']));
+        
         // Calculate stats - use actual statuses from database (scheduled, not pending)
         $totalAppointments = ServiceAppointment::count();
         $pendingAppointments = ServiceAppointment::where('status', 'scheduled')->count();
@@ -194,12 +197,19 @@ class ServiceAppointmentController extends Controller
 
         $data = ['status' => $newStatus];
 
-        // Add completion date if status is completed
+        // Add status timestamps
+        if ($newStatus === 'confirmed') {
+            $data['confirmed_at'] = now();
+        }
+        
+        if ($newStatus === 'in_progress') {
+            $data['in_progress_at'] = now();
+        }
+        
         if ($newStatus === 'completed') {
             $data['completed_at'] = now();
         }
 
-        // Add cancellation date if status is cancelled
         if ($newStatus === 'cancelled') {
             $data['cancelled_at'] = now();
             $data['cancellation_reason'] = $request->notes ?? 'Cancelled by admin';
@@ -360,12 +370,27 @@ class ServiceAppointmentController extends Controller
         }
 
         $appointment->update([
-            'status' => 'confirmed'
+            'status' => 'confirmed',
+            'confirmed_at' => now()
         ]);
+
+        // Get updated stats
+        $totalAppointments = ServiceAppointment::count();
+        $pendingAppointments = ServiceAppointment::where('status', 'scheduled')->count();
+        $confirmedAppointments = ServiceAppointment::where('status', 'confirmed')->count();
+        $inProgressAppointments = ServiceAppointment::where('status', 'in_progress')->count();
+        $completedAppointments = ServiceAppointment::where('status', 'completed')->count();
 
         return response()->json([
             'success' => true,
-            'message' => 'Đã xác nhận lịch hẹn thành công!'
+            'message' => 'Đã xác nhận lịch hẹn thành công!',
+            'stats' => [
+                'total' => $totalAppointments,
+                'pending' => $pendingAppointments,
+                'confirmed' => $confirmedAppointments,
+                'inProgress' => $inProgressAppointments,
+                'completed' => $completedAppointments
+            ]
         ]);
     }
 
@@ -379,12 +404,27 @@ class ServiceAppointmentController extends Controller
         }
 
         $appointment->update([
-            'status' => 'cancelled'
+            'status' => 'cancelled',
+            'cancelled_at' => now()
         ]);
+
+        // Get updated stats
+        $totalAppointments = ServiceAppointment::count();
+        $pendingAppointments = ServiceAppointment::where('status', 'scheduled')->count();
+        $confirmedAppointments = ServiceAppointment::where('status', 'confirmed')->count();
+        $inProgressAppointments = ServiceAppointment::where('status', 'in_progress')->count();
+        $completedAppointments = ServiceAppointment::where('status', 'completed')->count();
 
         return response()->json([
             'success' => true,
-            'message' => 'Đã hủy lịch hẹn thành công!'
+            'message' => 'Đã hủy lịch hẹn thành công!',
+            'stats' => [
+                'total' => $totalAppointments,
+                'pending' => $pendingAppointments,
+                'confirmed' => $confirmedAppointments,
+                'inProgress' => $inProgressAppointments,
+                'completed' => $completedAppointments
+            ]
         ]);
     }
 

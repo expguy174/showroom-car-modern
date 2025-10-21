@@ -172,6 +172,25 @@
 
 @push('scripts')
 <script>
+// Update stats cards from toggle response
+window.updateStatsFromServer = function(stats) {
+    const statsMapping = {
+        'totalAccessories': 'total',
+        'activeAccessories': 'active',
+        'inactiveAccessories': 'inactive',
+        'featuredAccessories': 'featured'
+    };
+    
+    Object.entries(statsMapping).forEach(([serverKey, cardKey]) => {
+        if (stats[serverKey] !== undefined) {
+            const statElement = document.querySelector(`p[data-stat="${cardKey}"]`);
+            if (statElement) {
+                statElement.textContent = stats[serverKey];
+            }
+        }
+    });
+};
+
 // Initialize all event listeners
 function initializeEventListeners() {
     initializeDeleteButtons();
@@ -444,29 +463,6 @@ window.confirmDelete = function(data) {
             window.showMessage('Có lỗi xảy ra khi xóa phụ kiện!', 'error');
         }
     });
-};
-
-// Function to update stats cards from server data (toggle/delete)
-window.updateStatsFromServer = function(stats) {
-    // Update all stats cards with server data
-    const totalCard = document.querySelector('[data-stat="total"] .text-2xl');
-    const activeCard = document.querySelector('[data-stat="active"] .text-2xl');
-    const inactiveCard = document.querySelector('[data-stat="inactive"] .text-2xl');
-    const featuredCard = document.querySelector('[data-stat="featured"] .text-2xl');
-    
-    // Update cards directly without animation
-    if (totalCard && stats.total !== undefined) {
-        totalCard.textContent = stats.total;
-    }
-    if (activeCard && stats.active !== undefined) {
-        activeCard.textContent = stats.active;
-    }
-    if (inactiveCard && stats.inactive !== undefined) {
-        inactiveCard.textContent = stats.inactive;
-    }
-    if (featuredCard && stats.featured !== undefined) {
-        featuredCard.textContent = stats.featured;
-    }
 };
 
 </script>

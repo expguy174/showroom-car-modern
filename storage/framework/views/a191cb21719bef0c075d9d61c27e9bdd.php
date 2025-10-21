@@ -62,8 +62,8 @@
                     <td class="px-6 py-4 whitespace-nowrap text-center">
                         <?php switch($appointment->status):
                             case ('scheduled'): ?>
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                    <i class="fas fa-calendar mr-1"></i>
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                    <i class="fas fa-clock mr-1"></i>
                                     Đã đặt lịch
                                 </span>
                                 <?php break; ?>
@@ -80,7 +80,7 @@
                                 </span>
                                 <?php break; ?>
                             <?php case ('completed'): ?>
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                     <i class="fas fa-flag-checkered mr-1"></i>
                                     Hoàn thành
                                 </span>

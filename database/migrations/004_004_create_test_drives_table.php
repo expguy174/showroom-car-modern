@@ -22,10 +22,14 @@ return new class extends Migration {
             $table->text('special_requirements')->nullable();
             $table->boolean('has_experience')->default(false);
             $table->string('experience_level')->nullable();
-            $table->enum('status', ['pending', 'confirmed', 'completed', 'cancelled'])->default('pending');
+            $table->enum('status', ['scheduled', 'confirmed', 'completed', 'cancelled'])->default('scheduled');
             $table->enum('test_drive_type', ['individual', 'group', 'virtual'])->default('individual');
+            
+            // Status timestamps
             $table->dateTime('confirmed_at')->nullable();
             $table->dateTime('completed_at')->nullable();
+            $table->dateTime('cancelled_at')->nullable();
+            
             $table->text('feedback')->nullable();
             $table->decimal('satisfaction_rating', 3, 2)->nullable();
             

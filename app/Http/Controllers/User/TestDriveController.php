@@ -35,7 +35,7 @@ class TestDriveController extends Controller
             abort(403);
         }
 
-        if (!in_array($testDrive->status, ['pending','confirmed'])) {
+        if (!in_array($testDrive->status, ['scheduled','confirmed'])) {
             return redirect()->route('test-drives.show', $testDrive)
                 ->with('success', 'Đặt lịch lái thử thành công! Chúng tôi sẽ liên hệ xác nhận.');
         }
@@ -274,7 +274,7 @@ class TestDriveController extends Controller
         if ($testDrive->user_id !== Auth::id()) {
             abort(403);
         }
-        if (!in_array($testDrive->status, ['pending','confirmed'])) {
+        if (!in_array($testDrive->status, ['scheduled','confirmed'])) {
             return $request->ajax()
                 ? response()->json(['success' => false, 'message' => 'Lịch không thể hủy ở trạng thái hiện tại'], 422)
                 : back()->with('error', 'Lịch không thể hủy ở trạng thái hiện tại');
@@ -299,7 +299,7 @@ class TestDriveController extends Controller
         if ($testDrive->user_id !== Auth::id()) {
             abort(403);
         }
-        if (!in_array($testDrive->status, ['pending','confirmed'])) {
+        if (!in_array($testDrive->status, ['scheduled','confirmed'])) {
             return $request->ajax()
                 ? response()->json(['success' => false, 'message' => 'Lịch không thể đổi giờ ở trạng thái hiện tại'], 422)
                 : back()->with('error', 'Lịch không thể đổi giờ ở trạng thái hiện tại');
@@ -385,7 +385,7 @@ class TestDriveController extends Controller
 
         // Get existing test drives for this date (and showroom if specified)
         $query = TestDrive::whereDate('preferred_date', $date)
-            ->whereIn('status', ['pending', 'confirmed', 'in_progress']);
+            ->whereIn('status', ['scheduled', 'confirmed', 'in_progress']);
 
         if ($showroomId) {
             $query->where('showroom_id', $showroomId);

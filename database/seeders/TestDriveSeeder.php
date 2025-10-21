@@ -27,7 +27,7 @@ class TestDriveSeeder extends Seeder
             $dateBase = $isFuture ? now()->addDays(rand(1,20)) : now()->subDays(rand(1,20));
             $date = $dateBase;
             $time = str_pad((string) rand(9,16), 2, '0', STR_PAD_LEFT) . ':' . (rand(0,1) ? '00' : '30');
-            $statusOptions = ['pending','confirmed','completed','cancelled'];
+            $statusOptions = ['scheduled','confirmed','completed','cancelled'];
             $status = $statusOptions[array_rand($statusOptions)];
             $confirmedAt = in_array($status, ['confirmed','completed']) ? now()->subDays(rand(1,3)) : null;
             $completedAt = $status === 'completed' ? now()->subDays(rand(0,2)) : null;

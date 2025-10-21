@@ -56,6 +56,9 @@ class CarBrandController extends Controller
                      ->orderBy('name', 'asc')
                      ->paginate(15);
         
+        // Append query parameters to pagination links
+        $carbrands->appends($request->except(['page', 'ajax', 'with_stats']));
+        
         // Check if this is an AJAX request
         if ($request->ajax()) {
             return view('admin.carbrands.partials.table', compact('carbrands'))->render();

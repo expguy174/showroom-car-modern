@@ -29,6 +29,10 @@ class ServiceAppointment extends Model
         'estimated_cost',
         'satisfaction_rating',
         'feedback',
+        'confirmed_at',
+        'in_progress_at',
+        'completed_at',
+        'cancelled_at',
     ];
 
     protected $casts = [
@@ -38,6 +42,10 @@ class ServiceAppointment extends Model
         'estimated_cost' => 'decimal:2',
         'is_warranty_work' => 'boolean',
         'satisfaction_rating' => 'integer',
+        'confirmed_at' => 'datetime',
+        'in_progress_at' => 'datetime',
+        'completed_at' => 'datetime',
+        'cancelled_at' => 'datetime',
     ];
 
 
@@ -71,8 +79,6 @@ class ServiceAppointment extends Model
             'in_progress' => 'Đang thực hiện',
             'completed' => 'Hoàn thành',
             'cancelled' => 'Đã hủy',
-            'no_show' => 'Không đến',
-            'rescheduled' => 'Đã dời lịch',
         ];
         return $statuses[$this->status] ?? $this->status;
     }

@@ -15,7 +15,7 @@
         </thead>
             <tbody class="bg-white divide-y divide-gray-200">
                 @forelse($refunds as $refund)
-                <tr class="hover:bg-gray-50">
+                <tr class="hover:bg-gray-50" data-refund-id="{{ $refund->id }}">
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div>
                             <div class="text-sm font-medium text-gray-900">
@@ -48,7 +48,7 @@
                             {{ $refund->reason ? Str::limit($refund->reason, 100) : 'Không có lý do' }}
                         </div>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                    <td class="px-6 py-4 whitespace-nowrap text-center status-badge">
                         @if($refund->status === 'pending')
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                                 <i class="fas fa-clock mr-1"></i>

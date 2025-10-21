@@ -45,6 +45,9 @@ class PromotionController extends Controller
 
         $promotions = $query->orderBy('created_at', 'desc')->paginate(15);
         
+        // Append query parameters to pagination links
+        $promotions->appends($request->except(['page', 'ajax', 'with_stats']));
+        
         // Get statistics
         $totalPromotions = Promotion::count();
         $activePromotions = Promotion::where('is_active', true)
@@ -156,10 +159,28 @@ class PromotionController extends Controller
 
             $status = $promotion->is_active ? 'kích hoạt' : 'tạm dừng';
             
+            // Get updated stats
+            $totalPromotions = Promotion::count();
+            $activePromotions = Promotion::where('is_active', true)
+                ->where(function($q) {
+                    $q->whereNull('start_date')->orWhere('start_date', '<=', now());
+                })
+                ->where(function($q) {
+                    $q->whereNull('end_date')->orWhere('end_date', '>=', now());
+                })->count();
+            $inactivePromotions = Promotion::where('is_active', false)->count();
+            $expiredPromotions = Promotion::where('end_date', '<', now())->count();
+            
             return response()->json([
                 'success' => true,
                 'message' => "Đã {$status} khuyến mãi thành công!",
-                'is_active' => $promotion->is_active
+                'is_active' => $promotion->is_active,
+                'stats' => [
+                    'totalPromotions' => $totalPromotions,
+                    'activePromotions' => $activePromotions,
+                    'inactivePromotions' => $inactivePromotions,
+                    'expiredPromotions' => $expiredPromotions
+                ]
             ]);
         } catch (\Exception $e) {
             return response()->json([
