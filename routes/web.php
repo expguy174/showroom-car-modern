@@ -441,6 +441,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/{service}', [AdminServiceController::class, 'show'])->name('show');
         Route::get('/{service}/edit', [AdminServiceController::class, 'edit'])->name('edit');
         Route::put('/{service}', [AdminServiceController::class, 'update'])->name('update');
+        Route::patch('/{service}/toggle-status', [AdminServiceController::class, 'toggleStatus'])->name('toggle-status');
         Route::delete('/{service}', [AdminServiceController::class, 'destroy'])->name('destroy');
     });
 

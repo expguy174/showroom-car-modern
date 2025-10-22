@@ -39,7 +39,7 @@ class Service extends Model
         'compatible_car_brands' => 'array',
         'compatible_car_models' => 'array',
         'compatible_car_years' => 'array',
-        'price' => 'decimal:2',
+        'price' => 'integer',
         'is_active' => 'boolean',
         'is_featured' => 'boolean',
         'service_center_required' => 'boolean',
