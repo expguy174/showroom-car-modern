@@ -13,16 +13,20 @@ class TestDriveController extends Controller
     {
         $query = TestDrive::with(['user.userProfile', 'carVariant.carModel.carBrand', 'showroom']);
 
-        // Search via user relationship
+        // Search via user and car variant relationships
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
+                // Search in user info
                 $q->whereHas('user', function($userQuery) use ($search) {
                     $userQuery->where('email', 'like', "%{$search}%")
                               ->orWhereHas('userProfile', function($profileQuery) use ($search) {
-                                  $profileQuery->where('name', 'like', "%{$search}%")
-                                               ->orWhere('phone', 'like', "%{$search}%");
+                                  $profileQuery->where('name', 'like', "%{$search}%");
                               });
+                })
+                // Search in car variant name
+                ->orWhereHas('carVariant', function($variantQuery) use ($search) {
+                    $variantQuery->where('name', 'like', "%{$search}%");
                 });
             });
         }
@@ -141,15 +145,23 @@ class TestDriveController extends Controller
 
     public function export(Request $request)
     {
-        $query = TestDrive::with(['user', 'carVariant.carModel.carBrand']);
+        $query = TestDrive::with(['user.userProfile', 'carVariant.carModel.carBrand', 'showroom']);
 
         // Apply same filters as index
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                // Search in user info
+                $q->whereHas('user', function($userQuery) use ($search) {
+                    $userQuery->where('email', 'like', "%{$search}%")
+                              ->orWhereHas('userProfile', function($profileQuery) use ($search) {
+                                  $profileQuery->where('name', 'like', "%{$search}%");
+                              });
+                })
+                // Search in car variant name
+                ->orWhereHas('carVariant', function($variantQuery) use ($search) {
+                    $variantQuery->where('name', 'like', "%{$search}%");
+                });
             });
         }
 

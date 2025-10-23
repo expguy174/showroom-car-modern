@@ -445,6 +445,18 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::delete('/{service}', [AdminServiceController::class, 'destroy'])->name('destroy');
     });
 
+    // Users
+    Route::prefix('users')->name('users.')->group(function () {
+        Route::get('/', [UserController::class, 'index'])->name('index');
+        Route::get('/create', [UserController::class, 'create'])->name('create');
+        Route::post('/', [UserController::class, 'store'])->name('store');
+        Route::get('/{user}', [UserController::class, 'show'])->name('show');
+        Route::get('/{user}/edit', [UserController::class, 'edit'])->name('edit');
+        Route::put('/{user}', [UserController::class, 'update'])->name('update');
+        Route::post('/{user}/toggle', [UserController::class, 'toggle'])->name('toggle');
+        Route::delete('/{user}', [UserController::class, 'destroy'])->name('destroy');
+    });
+
     // Showrooms
     Route::prefix('showrooms')->name('showrooms.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\ShowroomController::class, 'index'])->name('index');

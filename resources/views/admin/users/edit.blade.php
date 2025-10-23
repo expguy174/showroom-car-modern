@@ -3,238 +3,985 @@
 @section('title', 'Chỉnh sửa người dùng')
 
 @section('content')
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 max-w-4xl mx-auto">
+{{-- Flash Messages --}}
+<x-admin.flash-messages 
+    :show-icons="true"
+    :dismissible="true"
+    position="top-right"
+    :auto-hide="5000" />
+
+<div class="px-2 sm:px-0">
     {{-- Header --}}
-    <div class="px-6 py-4 border-b border-gray-200">
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-xl font-semibold text-gray-900">
-                    <i class="fas fa-user-edit text-blue-600 mr-3"></i>
-                    Cập nhật người dùng: {{ $user->name }}
-                </h1>
-                <p class="text-sm text-gray-600 mt-1">Chỉnh sửa thông tin tài khoản người dùng</p>
-            </div>
-            <a href="{{ route('admin.users.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors">
-                <i class="fas fa-arrow-left mr-2"></i>
-                Quay lại
-            </a>
-        </div>
-    </div>
+    <x-admin.page-header
+        title="Chỉnh sửa người dùng"
+        description="Cập nhật thông tin người dùng #{{ $user->id }}"
+        icon="fas fa-user-edit">
+        <a href="{{ route('admin.users.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors">
+            <i class="fas fa-arrow-left mr-2"></i>
+            Quay lại
+        </a>
+    </x-admin.page-header>
 
     {{-- Form --}}
-    <form action="{{ route('admin.users.update', $user) }}" method="POST" enctype="multipart/form-data" class="p-6">
+    <form id="userForm" class="mt-6">
         @csrf
         @method('PUT')
+        
+        {{-- Tabs Navigation --}}
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+            <div class="border-b border-gray-200">
+                <nav class="flex space-x-8 px-6" aria-label="Tabs">
+                    <button type="button" data-tab="account" 
+                            class="tab-button py-4 px-1 border-b-2 border-blue-500 font-medium text-sm text-blue-600"
+                            onclick="switchTab('account')">
+                        <i class="fas fa-user-lock mr-2"></i>
+                        Tài khoản
+                    </button>
+                    <button type="button" data-tab="profile"
+                            class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                            onclick="switchTab('profile')">
+                        <i class="fas fa-id-card mr-2"></i>
+                        Hồ sơ
+                    </button>
+                    <button type="button" data-tab="address"
+                            class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                            onclick="switchTab('address')">
+                        <i class="fas fa-map-marker-alt mr-2"></i>
+                        Địa chỉ
+                    </button>
+                </nav>
+            </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {{-- Left Column - Basic Info --}}
-            <div class="space-y-6">
-                <div>
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">
-                        <i class="fas fa-info-circle text-blue-600 mr-2"></i>
-                        Thông tin cơ bản
-                    </h3>
-                    
-                    <div class="space-y-4">
-                        <div>
-                            <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
-                                Họ và tên <span class="text-red-500">*</span>
+            {{-- Tab 1: Account Info --}}
+            <div id="account-tab" class="tab-content p-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">
+                    <i class="fas fa-user-lock text-blue-600 mr-2"></i>
+                    Thông tin tài khoản
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {{-- Email --}}
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                            Email <span class="text-red-500">*</span>
+                        </label>
+                        <input type="email" name="email" id="email"
+                               value="{{ old('email', $user->email) }}"
+                               class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    {{-- Role --}}
+                    <div>
+                        <label for="role" class="block text-sm font-medium text-gray-700 mb-2">
+                            Vai trò <span class="text-red-500">*</span>
+                        </label>
+                        <select name="role" id="role" onchange="toggleEmployeeFields()"
+                                class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Chọn vai trò</option>
+                            <option value="user" {{ old('role', $user->role) == 'user' ? 'selected' : '' }}>Người dùng</option>
+                            <option value="admin" {{ old('role', $user->role) == 'admin' ? 'selected' : '' }}>Quản trị viên</option>
+                            <option value="manager" {{ old('role', $user->role) == 'manager' ? 'selected' : '' }}>Quản lý</option>
+                            <option value="sales_person" {{ old('role', $user->role) == 'sales_person' ? 'selected' : '' }}>NV Kinh doanh</option>
+                            <option value="technician" {{ old('role', $user->role) == 'technician' ? 'selected' : '' }}>Kỹ thuật viên</option>
+                        </select>
+                    </div>
+
+                    {{-- Password --}}
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+                            Mật khẩu mới
+                        </label>
+                        <input type="password" name="password" id="password"
+                               class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                               placeholder="Để trống nếu không đổi">
+                        <p class="mt-1 text-xs text-gray-500">Để trống nếu không muốn thay đổi mật khẩu</p>
+                    </div>
+
+                    {{-- Password Confirmation --}}
+                    <div>
+                        <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-2">
+                            Xác nhận mật khẩu mới
+                        </label>
+                        <input type="password" name="password_confirmation" id="password_confirmation"
+                               class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                               placeholder="Nhập lại mật khẩu mới">
+                    </div>
+
+                    {{-- Account Status --}}
+                    <div class="md:col-span-2 space-y-3">
+                        <div class="flex items-center space-x-6">
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" name="is_active" id="is_active" value="1"
+                                       {{ old('is_active', $user->is_active) ? 'checked' : '' }}
+                                       class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+                                <span class="ml-2 text-sm font-medium text-gray-700">
+                                    Tài khoản đang hoạt động
+                                </span>
                             </label>
-                            <input type="text" name="name" id="name" 
-                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('name') border-red-300 @enderror" 
-                                   value="{{ old('name', $user->name) }}" placeholder="Nhập họ và tên">
-                            @error('name')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
 
-                        <div>
-                            <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
-                                Email <span class="text-red-500">*</span>
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" name="email_verified" id="email_verified" value="1"
+                                       {{ old('email_verified', $user->email_verified) ? 'checked' : '' }}
+                                       class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+                                <span class="ml-2 text-sm font-medium text-gray-700">
+                                    Email đã xác thực
+                                </span>
                             </label>
-                            <input type="email" name="email" id="email" 
-                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('email') border-red-300 @enderror" 
-                                   value="{{ old('email', $user->email) }}" placeholder="example@email.com">
-                            @error('email')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
+                        </div>
+                        <p class="text-xs text-gray-500 ml-1">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Quản lý trạng thái tài khoản và xác thực email
+                        </p>
+                    </div>
+                </div>
+
+                {{-- Employee Fields (hidden by default) --}}
+                <div id="employee-fields" class="{{ $user->role !== 'user' ? '' : 'hidden' }} mt-6">
+                    <h4 class="text-md font-medium text-gray-900 mb-4">Thông tin nhân viên</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {{-- Employee ID --}}
+                        <div>
+                            <label for="employee_id" class="block text-sm font-medium text-gray-700 mb-2">
+                                Mã nhân viên
+                            </label>
+                            <input type="text" name="employee_id" id="employee_id"
+                                   value="{{ old('employee_id', $user->employee_id) }}"
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="NV001">
                         </div>
 
+                        {{-- Department --}}
                         <div>
-                            <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">Số điện thoại</label>
-                            <input type="tel" name="phone" id="phone" 
-                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('phone') border-red-300 @enderror" 
-                                   value="{{ old('phone', $user->phone) }}" placeholder="0123456789">
-                            @error('phone')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
+                            <label for="department" class="block text-sm font-medium text-gray-700 mb-2">
+                                Phòng ban
+                            </label>
+                            <input type="text" name="department" id="department"
+                                   value="{{ old('department', $user->department) }}"
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="Phòng kinh doanh">
                         </div>
 
+                        {{-- Position --}}
                         <div>
-                            <label for="address" class="block text-sm font-medium text-gray-700 mb-2">Địa chỉ</label>
-                            <textarea name="address" id="address" rows="3" 
-                                      class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('address') border-red-300 @enderror" 
-                                      placeholder="Nhập địa chỉ...">{{ old('address', $user->address) }}</textarea>
-                            @error('address')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
+                            <label for="position" class="block text-sm font-medium text-gray-700 mb-2">
+                                Chức vụ
+                            </label>
+                            <input type="text" name="position" id="position"
+                                   value="{{ old('position', $user->position) }}"
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="Trưởng phòng">
+                        </div>
+
+                        {{-- Hire Date --}}
+                        <div>
+                            <label for="hire_date" class="block text-sm font-medium text-gray-700 mb-2">
+                                Ngày tuyển dụng
+                            </label>
+                            <input type="date" name="hire_date" id="hire_date"
+                                   value="{{ old('hire_date', $user->hire_date ? \Carbon\Carbon::parse($user->hire_date)->format('Y-m-d') : '') }}"
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                         </div>
                     </div>
                 </div>
             </div>
 
-            {{-- Right Column - Current Avatar & Settings --}}
-            <div class="space-y-6">
-                <div>
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">
-                        <i class="fas fa-shield-alt text-blue-600 mr-2"></i>
-                        Avatar & Cài đặt
-                    </h3>
-                    
-                    <div class="space-y-4">
-                        {{-- Current Avatar --}}
-                        @if($user->avatar)
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Avatar hiện tại</label>
-                            <div class="flex items-center justify-center w-24 h-24 bg-gray-50 border border-gray-200 rounded-full">
-                                <img src="{{ $user->avatar }}" alt="Current Avatar" class="w-full h-full object-cover rounded-full">
-                            </div>
-                        </div>
-                        @endif
+            {{-- Tab 2: Profile Info --}}
+            <div id="profile-tab" class="tab-content hidden p-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">
+                    <i class="fas fa-id-card text-blue-600 mr-2"></i>
+                    Thông tin cá nhân
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {{-- Name --}}
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+                            Họ và tên <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" name="name" id="name"
+                               value="{{ old('name', $user->userProfile->name ?? '') }}"
+                               class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
 
-                        {{-- New Avatar Upload --}}
-                        <div>
-                            <label for="avatar" class="block text-sm font-medium text-gray-700 mb-2">
-                                {{ $user->avatar ? 'Thay đổi avatar' : 'Tải lên avatar' }}
-                            </label>
-                            <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-gray-400 transition-colors">
-                                <div class="space-y-1 text-center">
-                                    <i class="fas fa-user-circle text-gray-400 text-3xl"></i>
-                                    <div class="flex text-sm text-gray-600">
-                                        <label for="avatar" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
-                                            <span>{{ $user->avatar ? 'Chọn avatar mới' : 'Tải lên avatar' }}</span>
-                                            <input id="avatar" name="avatar" type="file" class="sr-only" accept="image/*">
-                                        </label>
-                                        <p class="pl-1">hoặc kéo thả</p>
-                                    </div>
-                                    <p class="text-xs text-gray-500">PNG, JPG, GIF tối đa 5MB</p>
-                                </div>
-                            </div>
-                            @error('avatar')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
+                    {{-- Phone --}}
+                    <div>
+                        <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">
+                            Số điện thoại
+                        </label>
+                        <input type="text" name="phone" id="phone"
+                               value="{{ old('phone', $user->userProfile->phone ?? '') }}"
+                               class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                               placeholder="0987654321">
+                    </div>
 
-                        <div>
-                            <label for="role" class="block text-sm font-medium text-gray-700 mb-2">
-                                Vai trò <span class="text-red-500">*</span>
-                            </label>
-                            <select name="role" id="role" 
-                                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('role') border-red-300 @enderror">
-                                <option value="">Chọn vai trò...</option>
-                                <option value="user" {{ old('role', $user->role) == 'user' ? 'selected' : '' }}>Người dùng</option>
-                                <option value="admin" {{ old('role', $user->role) == 'admin' ? 'selected' : '' }}>Quản trị viên</option>
-                            </select>
-                            @error('role')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
+                    {{-- Birth Date --}}
+                    <div>
+                        <label for="birth_date" class="block text-sm font-medium text-gray-700 mb-2">
+                            Ngày sinh
+                        </label>
+                        <input type="date" name="birth_date" id="birth_date"
+                               value="{{ old('birth_date', $user->userProfile && $user->userProfile->birth_date ? \Carbon\Carbon::parse($user->userProfile->birth_date)->format('Y-m-d') : '') }}"
+                               class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
 
-                        <div class="flex items-center">
-                            <input type="hidden" name="is_active" value="0">
-                            <input type="checkbox" name="is_active" id="is_active" value="1" 
-                                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
-                                   {{ old('is_active', $user->is_active) ? 'checked' : '' }}>
-                            <label for="is_active" class="ml-2 block text-sm text-gray-900">
-                                <i class="fas fa-check-circle text-green-500 mr-1"></i>
-                                Kích hoạt tài khoản
-                            </label>
-                        </div>
+                    {{-- Gender --}}
+                    <div>
+                        <label for="gender" class="block text-sm font-medium text-gray-700 mb-2">
+                            Giới tính
+                        </label>
+                        <select name="gender" id="gender"
+                                class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Chọn giới tính</option>
+                            <option value="male" {{ old('gender', $user->userProfile->gender ?? '') == 'male' ? 'selected' : '' }}>Nam</option>
+                            <option value="female" {{ old('gender', $user->userProfile->gender ?? '') == 'female' ? 'selected' : '' }}>Nữ</option>
+                            <option value="other" {{ old('gender', $user->userProfile->gender ?? '') == 'other' ? 'selected' : '' }}>Khác</option>
+                        </select>
+                    </div>
 
-                        {{-- Password Change Section --}}
-                        <div class="pt-4 border-t border-gray-200">
-                            <h4 class="text-sm font-medium text-gray-900 mb-3">
-                                <i class="fas fa-key text-gray-600 mr-2"></i>
-                                Thay đổi mật khẩu (tùy chọn)
-                            </h4>
-                            
-                            <div class="space-y-3">
-                                <div>
-                                    <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Mật khẩu mới</label>
-                                    <input type="password" name="password" id="password" 
-                                           class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('password') border-red-300 @enderror" 
-                                           placeholder="Để trống nếu không thay đổi">
-                                    @error('password')
-                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <div>
-                                    <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-1">Xác nhận mật khẩu mới</label>
-                                    <input type="password" name="password_confirmation" id="password_confirmation" 
-                                           class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                           placeholder="Nhập lại mật khẩu mới">
-                                </div>
-                            </div>
+                    {{-- Avatar --}}
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Ảnh đại diện
+                        </label>
+                        <input type="file" name="avatar" id="avatar" accept="image/*" onchange="previewAvatar(this)"
+                               class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                        <p class="mt-1 text-sm text-gray-500">PNG, JPG, GIF tối đa 2MB</p>
+                        
+                        {{-- Avatar Preview --}}
+                        <div id="avatarPreview" class="hidden mt-4">
+                            <img id="avatarPreviewImage" src="" alt="Avatar preview" class="w-32 h-32 object-cover rounded-full border-2 border-gray-200">
                         </div>
                     </div>
+                </div>
+
+                {{-- Driver License Info --}}
+                <div class="mt-6">
+                    <h4 class="text-md font-medium text-gray-900 mb-4">Thông tin bằng lái xe</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="driver_license_number" class="block text-sm font-medium text-gray-700 mb-2">
+                                Số bằng lái
+                            </label>
+                            <input type="text" name="driver_license_number" id="driver_license_number"
+                                   value="{{ old('driver_license_number', $user->userProfile->driver_license_number ?? '') }}"
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+
+                        <div>
+                            <label for="driver_license_class" class="block text-sm font-medium text-gray-700 mb-2">
+                                Hạng bằng lái
+                            </label>
+                            <input type="text" name="driver_license_class" id="driver_license_class"
+                                   value="{{ old('driver_license_class', $user->userProfile->driver_license_class ?? '') }}"
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="B1, B2, C...">
+                        </div>
+
+                        <div>
+                            <label for="driver_license_issue_date" class="block text-sm font-medium text-gray-700 mb-2">
+                                Ngày cấp
+                            </label>
+                            <input type="date" name="driver_license_issue_date" id="driver_license_issue_date"
+                                   value="{{ old('driver_license_issue_date', $user->userProfile && $user->userProfile->driver_license_issue_date ? \Carbon\Carbon::parse($user->userProfile->driver_license_issue_date)->format('Y-m-d') : '') }}"
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+
+                        <div>
+                            <label for="driver_license_expiry_date" class="block text-sm font-medium text-gray-700 mb-2">
+                                Ngày hết hạn
+                            </label>
+                            <input type="date" name="driver_license_expiry_date" id="driver_license_expiry_date"
+                                   value="{{ old('driver_license_expiry_date', $user->userProfile && $user->userProfile->driver_license_expiry_date ? \Carbon\Carbon::parse($user->userProfile->driver_license_expiry_date)->format('Y-m-d') : '') }}"
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+
+                        <div>
+                            <label for="driving_experience_years" class="block text-sm font-medium text-gray-700 mb-2">
+                                Số năm kinh nghiệm lái xe
+                            </label>
+                            <input type="number" name="driving_experience_years" id="driving_experience_years"
+                                   value="{{ old('driving_experience_years', $user->userProfile->driving_experience_years ?? '') }}"
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Customer Preferences (only for customers) --}}
+                <div id="customer-preferences" class="mt-6 hidden">
+                    <h4 class="text-md font-medium text-gray-900 mb-4">
+                        <i class="fas fa-heart text-red-600 mr-2"></i>
+                        Sở thích & Ngân sách
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {{-- Budget Min --}}
+                        <div>
+                            <label for="budget_min" class="block text-sm font-medium text-gray-700 mb-2">
+                                Ngân sách tối thiểu (VND)
+                            </label>
+                            <input type="number" name="budget_min" id="budget_min" step="1000000"
+                                   value="{{ old('budget_min', $user->userProfile && $user->userProfile->budget_min ? (int)$user->userProfile->budget_min : '') }}"
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="500000000">
+                        </div>
+
+                        {{-- Budget Max --}}
+                        <div>
+                            <label for="budget_max" class="block text-sm font-medium text-gray-700 mb-2">
+                                Ngân sách tối đa (VND)
+                            </label>
+                            <input type="number" name="budget_max" id="budget_max" step="1000000"
+                                   value="{{ old('budget_max', $user->userProfile && $user->userProfile->budget_max ? (int)$user->userProfile->budget_max : '') }}"
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="1000000000">
+                        </div>
+
+                        {{-- Purchase Purpose --}}
+                        <div>
+                            <label for="purchase_purpose" class="block text-sm font-medium text-gray-700 mb-2">
+                                Mục đích mua xe
+                            </label>
+                            <select name="purchase_purpose" id="purchase_purpose"
+                                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">Chọn mục đích</option>
+                                <option value="personal" {{ old('purchase_purpose', $user->userProfile->purchase_purpose ?? '') == 'personal' ? 'selected' : '' }}>Cá nhân</option>
+                                <option value="business" {{ old('purchase_purpose', $user->userProfile->purchase_purpose ?? '') == 'business' ? 'selected' : '' }}>Kinh doanh</option>
+                                <option value="family" {{ old('purchase_purpose', $user->userProfile->purchase_purpose ?? '') == 'family' ? 'selected' : '' }}>Gia đình</option>
+                                <option value="investment" {{ old('purchase_purpose', $user->userProfile->purchase_purpose ?? '') == 'investment' ? 'selected' : '' }}>Đầu tư</option>
+                            </select>
+                        </div>
+
+                        {{-- Customer Type --}}
+                        <div>
+                            <label for="customer_type" class="block text-sm font-medium text-gray-700 mb-2">
+                                Loại khách hàng
+                            </label>
+                            <select name="customer_type" id="customer_type"
+                                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="new" {{ old('customer_type', $user->userProfile->customer_type ?? 'new') == 'new' ? 'selected' : '' }}>Mới</option>
+                                <option value="returning" {{ old('customer_type', $user->userProfile->customer_type ?? '') == 'returning' ? 'selected' : '' }}>Quay lại</option>
+                                <option value="vip" {{ old('customer_type', $user->userProfile->customer_type ?? '') == 'vip' ? 'selected' : '' }}>VIP</option>
+                                <option value="prospect" {{ old('customer_type', $user->userProfile->customer_type ?? '') == 'prospect' ? 'selected' : '' }}>Tiềm năng</option>
+                            </select>
+                        </div>
+
+                        {{-- Preferred Car Types --}}
+                        <div>
+                            <label for="preferred_car_types" class="block text-sm font-medium text-gray-700 mb-2">
+                                Loại xe ưa thích
+                            </label>
+                            <input type="text" name="preferred_car_types" id="preferred_car_types"
+                                   value="{{ old('preferred_car_types', $user->userProfile && $user->userProfile->preferred_car_types ? implode(', ', $user->userProfile->preferred_car_types) : '') }}"
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="Sedan, SUV, Hatchback... (phân cách bởi dấu phẩy)">
+                            <p class="mt-1 text-xs text-gray-500">Ví dụ: Sedan, SUV, Hatchback</p>
+                        </div>
+
+                        {{-- Preferred Brands --}}
+                        <div>
+                            <label for="preferred_brands" class="block text-sm font-medium text-gray-700 mb-2">
+                                Thương hiệu ưa thích
+                            </label>
+                            <input type="text" name="preferred_brands" id="preferred_brands"
+                                   value="{{ old('preferred_brands', $user->userProfile && $user->userProfile->preferred_brands ? implode(', ', $user->userProfile->preferred_brands) : '') }}"
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="Toyota, Honda, Mercedes... (phân cách bởi dấu phẩy)">
+                            <p class="mt-1 text-xs text-gray-500">Ví dụ: Toyota, Honda, BMW</p>
+                        </div>
+
+                        {{-- Preferred Colors --}}
+                        <div>
+                            <label for="preferred_colors" class="block text-sm font-medium text-gray-700 mb-2">
+                                Màu sắc ưa thích
+                            </label>
+                            <input type="text" name="preferred_colors" id="preferred_colors"
+                                   value="{{ old('preferred_colors', $user->userProfile && $user->userProfile->preferred_colors ? implode(', ', $user->userProfile->preferred_colors) : '') }}"
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="Trắng, Đen, Bạc... (phân cách bởi dấu phẩy)">
+                            <p class="mt-1 text-xs text-gray-500">Ví dụ: Trắng, Đen, Xanh</p>
+                        </div>
+
+                        {{-- VIP Status --}}
+                        <div class="md:col-span-2">
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="checkbox" name="is_vip" id="is_vip" value="1"
+                                       {{ old('is_vip', $user->userProfile->is_vip ?? false) ? 'checked' : '' }}
+                                       class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+                                <span class="text-sm font-medium text-gray-700">
+                                    Đánh dấu là khách hàng VIP
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Employee Info (only for non-user roles) --}}
+                <div id="employee-info" class="mt-6 hidden">
+                    <h4 class="text-md font-medium text-gray-900 mb-4">
+                        <i class="fas fa-briefcase text-green-600 mr-2"></i>
+                        Thông tin nhân viên
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {{-- Employee Salary --}}
+                        <div>
+                            <label for="employee_salary" class="block text-sm font-medium text-gray-700 mb-2">
+                                Lương (VND/tháng)
+                            </label>
+                            <input type="number" name="employee_salary" id="employee_salary" min="0" step="100000"
+                                   value="{{ old('employee_salary', $user->userProfile->employee_salary ?? '') }}"
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="15000000">
+                        </div>
+
+                        {{-- Employee Skills --}}
+                        <div>
+                            <label for="employee_skills" class="block text-sm font-medium text-gray-700 mb-2">
+                                Kỹ năng chuyên môn
+                            </label>
+                            <textarea name="employee_skills" id="employee_skills" rows="3"
+                                      class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      placeholder="Kỹ năng bán hàng, tư vấn khách hàng...">{{ old('employee_skills', $user->userProfile->employee_skills ?? '') }}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Tab 3: Address Info --}}
+            <div id="address-tab" class="tab-content hidden p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-900">
+                            <i class="fas fa-map-marker-alt text-blue-600 mr-2"></i>
+                            Địa chỉ liên hệ
+                        </h3>
+                        <p class="text-sm text-gray-500 mt-1">Có thể thêm nhiều địa chỉ, chọn 1 làm mặc định</p>
+                    </div>
+                    <button type="button" onclick="addAddressCard()" 
+                            class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+                        <i class="fas fa-plus mr-2"></i>
+                        Thêm địa chỉ
+                    </button>
+                </div>
+
+                {{-- Error Message for Duplicate Addresses --}}
+                @error('addresses')
+                    <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                        <div class="flex items-center">
+                            <i class="fas fa-exclamation-circle text-red-600 mr-2"></i>
+                            <span class="text-sm text-red-600 font-medium">{{ $message }}</span>
+                        </div>
+                    </div>
+                @enderror
+
+                {{-- Addresses Container --}}
+                <div id="addressesContainer" class="space-y-4">
+                    {{-- Load existing addresses --}}
+                    @foreach($user->addresses as $index => $address)
+                        <div class="address-card bg-white border border-gray-300 rounded-lg p-6" data-index="{{ $index }}">
+                            <div class="flex items-center justify-between mb-4">
+                                <h4 class="text-md font-medium text-gray-900">
+                                    <i class="fas fa-map-marker-alt text-blue-600 mr-2"></i>
+                                    Địa chỉ #{{ $index + 1 }}
+                                </h4>
+                                <div class="flex items-center space-x-2">
+                                    <label class="inline-flex items-center cursor-pointer">
+                                        <input type="radio" name="default_address_index" value="{{ $index }}" 
+                                               {{ $address->is_default ? 'checked' : '' }}
+                                               onchange="setDefaultAddress({{ $index }})"
+                                               class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500">
+                                        <span class="ml-2 text-sm text-gray-700">Địa chỉ mặc định</span>
+                                    </label>
+                                    <button type="button" onclick="removeAddressCard({{ $index }})" 
+                                            class="text-red-600 hover:text-red-800 p-1">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Loại địa chỉ</label>
+                                    <select name="addresses[{{ $index }}][type]" class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="home" {{ $address->type == 'home' ? 'selected' : '' }}>Nhà riêng</option>
+                                        <option value="work" {{ $address->type == 'work' ? 'selected' : '' }}>Cơ quan</option>
+                                        <option value="billing" {{ $address->type == 'billing' ? 'selected' : '' }}>Thanh toán</option>
+                                        <option value="shipping" {{ $address->type == 'shipping' ? 'selected' : '' }}>Giao hàng</option>
+                                        <option value="other" {{ $address->type == 'other' ? 'selected' : '' }}>Khác</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Tên người liên hệ</label>
+                                    <input type="text" name="addresses[{{ $index }}][contact_name]" value="{{ $address->contact_name }}" class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
+                                    <input type="text" name="addresses[{{ $index }}][phone]" value="{{ $address->phone }}" class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Thành phố</label>
+                                    <input type="text" name="addresses[{{ $index }}][city]" value="{{ $address->city }}" class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Quận/Huyện</label>
+                                    <input type="text" name="addresses[{{ $index }}][state]" value="{{ $address->state }}" class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Mã bưu điện</label>
+                                    <input type="text" name="addresses[{{ $index }}][postal_code]" value="{{ $address->postal_code }}" class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Quốc gia</label>
+                                    <select name="addresses[{{ $index }}][country]" class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="Vietnam" {{ $address->country == 'Vietnam' ? 'selected' : '' }}>Việt Nam</option>
+                                        <option value="China" {{ $address->country == 'China' ? 'selected' : '' }}>Trung Quốc</option>
+                                        <option value="Japan" {{ $address->country == 'Japan' ? 'selected' : '' }}>Nhật Bản</option>
+                                        <option value="South Korea" {{ $address->country == 'South Korea' ? 'selected' : '' }}>Hàn Quốc</option>
+                                        <option value="Thailand" {{ $address->country == 'Thailand' ? 'selected' : '' }}>Thái Lan</option>
+                                        <option value="Singapore" {{ $address->country == 'Singapore' ? 'selected' : '' }}>Singapore</option>
+                                        <option value="Malaysia" {{ $address->country == 'Malaysia' ? 'selected' : '' }}>Malaysia</option>
+                                        <option value="United States" {{ $address->country == 'United States' ? 'selected' : '' }}>Hoa Kỳ</option>
+                                        <option value="United Kingdom" {{ $address->country == 'United Kingdom' ? 'selected' : '' }}>Anh</option>
+                                        <option value="Germany" {{ $address->country == 'Germany' ? 'selected' : '' }}>Đức</option>
+                                        <option value="France" {{ $address->country == 'France' ? 'selected' : '' }}>Pháp</option>
+                                        <option value="Other" {{ $address->country == 'Other' ? 'selected' : '' }}>Khác</option>
+                                    </select>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Địa chỉ chi tiết</label>
+                                    <textarea name="addresses[{{ $index }}][address]" rows="2" class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">{{ $address->address }}</textarea>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Ghi chú</label>
+                                    <textarea name="addresses[{{ $index }}][notes]" rows="2" class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">{{ $address->notes }}</textarea>
+                                </div>
+                                <input type="hidden" name="addresses[{{ $index }}][is_default]" value="{{ $address->is_default ? '1' : '0' }}" class="is-default-input">
+                                <input type="hidden" name="addresses[{{ $index }}][id]" value="{{ $address->id }}">
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+
+                {{-- Empty State --}}
+                <div id="addressesEmptyState" class="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 {{ $user->addresses->count() > 0 ? 'hidden' : '' }}">
+                    <i class="fas fa-map-marker-alt text-gray-400 text-4xl mb-3"></i>
+                    <p class="text-gray-500 mb-2">Chưa có địa chỉ nào</p>
+                    <p class="text-sm text-gray-400">Nhấn "Thêm địa chỉ" để bắt đầu</p>
                 </div>
             </div>
         </div>
 
-        {{-- Action Buttons --}}
-        <div class="mt-8 pt-6 border-t border-gray-200">
-            <div class="flex items-center justify-end gap-4">
-                <a href="{{ route('admin.users.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-                    <i class="fas fa-times mr-2"></i>
-                    Hủy bỏ
-                </a>
-                <button type="submit" class="inline-flex items-center px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-                    <i class="fas fa-save mr-2"></i>
-                    Cập nhật người dùng
-                </button>
-            </div>
+        {{-- Form Actions --}}
+        <div class="flex justify-between space-x-3 pt-6 border-t border-gray-200">
+            <a href="{{ route('admin.users.index') }}" 
+               class="inline-flex items-center px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors">
+                <i class="fas fa-times mr-2"></i>
+                Hủy
+            </a>
+            <button type="submit" 
+                    class="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+                <i class="fas fa-save mr-2"></i>
+                Cập nhật
+            </button>
         </div>
     </form>
 </div>
 
 <script>
-// Avatar preview functionality
-document.getElementById('avatar').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            // Create preview if doesn't exist
-            let preview = document.getElementById('avatar-preview');
-            if (!preview) {
-                preview = document.createElement('div');
-                preview.id = 'avatar-preview';
-                preview.className = 'mt-4';
-                e.target.closest('.space-y-1').appendChild(preview);
-            }
-            preview.innerHTML = `
-                <div class="flex items-center justify-center">
-                    <img src="${e.target.result}" alt="New avatar preview" class="h-20 w-20 object-cover border border-gray-200 rounded-full">
-                </div>
-            `;
-        };
-        reader.readAsDataURL(file);
-    }
-});
+// DOMContentLoaded wrapper
+document.addEventListener('DOMContentLoaded', function() {
+    // Tab switching
+    window.switchTab = function(tabName) {
+        // Hide all tabs
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.add('hidden');
+        });
+        
+        // Remove active state from all buttons
+        document.querySelectorAll('.tab-button').forEach(btn => {
+            btn.classList.remove('border-blue-500', 'text-blue-600');
+            btn.classList.add('border-transparent', 'text-gray-500');
+        });
+        
+        // Show target tab
+        const targetTab = document.getElementById(tabName + '-tab');
+        if (targetTab) {
+            targetTab.classList.remove('hidden');
+        }
+        
+        // Activate button
+        const targetBtn = document.querySelector(`[data-tab="${tabName}"]`);
+        if (targetBtn) {
+            targetBtn.classList.remove('border-transparent', 'text-gray-500');
+            targetBtn.classList.add('border-blue-500', 'text-blue-600');
+        }
+    };
 
-// Password confirmation validation
-document.getElementById('password_confirmation').addEventListener('input', function(e) {
-    const password = document.getElementById('password').value;
-    const confirmation = e.target.value;
-    
-    if (confirmation && password !== confirmation) {
-        e.target.classList.add('border-red-300');
-        e.target.classList.remove('border-gray-300');
-    } else {
-        e.target.classList.remove('border-red-300');
-        e.target.classList.add('border-gray-300');
+    // Toggle employee fields and customer preferences based on role
+    window.toggleEmployeeFields = function() {
+        const role = document.getElementById('role').value;
+        const employeeFields = document.getElementById('employee-fields');
+        const customerPreferences = document.getElementById('customer-preferences');
+        const employeeInfo = document.getElementById('employee-info');
+        
+        if (role && role !== 'user') {
+            // Employee/Admin/Manager/Sales/Technician
+            employeeFields.classList.remove('hidden');
+            employeeInfo.classList.remove('hidden');
+            customerPreferences.classList.add('hidden');
+        } else {
+            // Customer
+            employeeFields.classList.add('hidden');
+            employeeInfo.classList.add('hidden');
+            customerPreferences.classList.remove('hidden');
+        }
+    };
+
+    // Avatar preview
+    window.previewAvatar = function(input) {
+        if (input.files && input.files[0]) {
+            // File size validation (2MB)
+            if (input.files[0].size > 2 * 1024 * 1024) {
+                window.showMessage('Kích thước ảnh không được vượt quá 2MB', 'error');
+                input.value = '';
+                return;
+            }
+            
+            // File type validation
+            if (!input.files[0].type.match('image.*')) {
+                window.showMessage('Vui lòng chọn file ảnh hợp lệ', 'error');
+                input.value = '';
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('avatarPreviewImage').src = e.target.result;
+                document.getElementById('avatarPreview').classList.remove('hidden');
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    };
+
+    // Validation function
+    function validateUserForm() {
+        // 1. Email validation
+        const emailField = document.getElementById('email');
+        if (!emailField.value.trim()) {
+            return {
+                isValid: false,
+                element: emailField,
+                message: 'Vui lòng nhập email.',
+                tabId: 'account'
+            };
+        }
+        
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailPattern.test(emailField.value.trim())) {
+            return {
+                isValid: false,
+                element: emailField,
+                message: 'Email không hợp lệ.',
+                tabId: 'account'
+            };
+        }
+
+        // 2. Role validation
+        const roleField = document.getElementById('role');
+        if (!roleField.value) {
+            return {
+                isValid: false,
+                element: roleField,
+                message: 'Vui lòng chọn vai trò.',
+                tabId: 'account'
+            };
+        }
+
+        // 3. Password validation (OPTIONAL in edit mode - để trống nếu không đổi)
+        const passwordField = document.getElementById('password');
+        const passwordConfirmField = document.getElementById('password_confirmation');
+        
+        // Chỉ validate nếu user nhập password (muốn đổi password)
+        if (passwordField.value.trim()) {
+            // Nếu nhập password, phải đủ 8 ký tự
+            if (passwordField.value.length < 8) {
+                return {
+                    isValid: false,
+                    element: passwordField,
+                    message: 'Mật khẩu phải có ít nhất 8 ký tự.',
+                    tabId: 'account'
+                };
+            }
+
+            // Nếu nhập password, phải nhập confirmation
+            if (!passwordConfirmField.value.trim()) {
+                return {
+                    isValid: false,
+                    element: passwordConfirmField,
+                    message: 'Vui lòng xác nhận mật khẩu.',
+                    tabId: 'account'
+                };
+            }
+            
+            // Confirmation phải khớp với password
+            if (passwordField.value !== passwordConfirmField.value) {
+                return {
+                    isValid: false,
+                    element: passwordConfirmField,
+                    message: 'Mật khẩu xác nhận không khớp.',
+                    tabId: 'account'
+                };
+            }
+        }
+
+        // 5. Name validation (Profile tab)
+        const nameField = document.getElementById('name');
+        if (!nameField.value.trim()) {
+            return {
+                isValid: false,
+                element: nameField,
+                message: 'Vui lòng nhập họ và tên.',
+                tabId: 'profile'
+            };
+        }
+        
+        if (nameField.value.trim().length < 2) {
+            return {
+                isValid: false,
+                element: nameField,
+                message: 'Họ và tên phải có ít nhất 2 ký tự.',
+                tabId: 'profile'
+            };
+        }
+
+        return { isValid: true };
     }
+
+    // Form submission
+    document.getElementById('userForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Client-side validation
+        const validationResult = validateUserForm();
+        if (!validationResult.isValid) {
+            // Switch to tab with error
+            if (validationResult.tabId) {
+                window.switchTab(validationResult.tabId);
+            }
+            
+            // Focus field with error
+            if (validationResult.element) {
+                validationResult.element.focus();
+                validationResult.element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            
+            // Show error message
+            window.showMessage(validationResult.message, 'error');
+            return;
+        }
+        
+        // Show loading state
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Đang xử lý...';
+        
+        // Prepare form data
+        const formData = new FormData(this);
+        
+        // AJAX submission
+        fetch('{{ route("admin.users.update", $user) }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        })
+        .then(async response => {
+            const data = await response.json();
+            
+            if (!response.ok) {
+                // Handle validation errors (422)
+                if (response.status === 422 && data.errors) {
+                    const firstError = Object.values(data.errors)[0];
+                    window.showMessage(firstError, 'error');
+                } else {
+                    window.showMessage(data.message || 'Có lỗi xảy ra', 'error');
+                }
+                
+                // Restore button
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+                return;
+            }
+            
+            // Success
+            if (data.success) {
+                window.showMessage(data.message, 'success');
+                
+                // Redirect after short delay
+                setTimeout(() => {
+                    window.location.href = data.redirect;
+                }, 1500);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            window.showMessage('Có lỗi xảy ra khi cập nhật người dùng', 'error');
+            
+            // Restore button
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        })
+        .finally(() => {
+            // Restore button if not redirecting
+            setTimeout(() => {
+                if (submitBtn.disabled) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                }
+            }, 2000);
+        });
+    });
+
+    // === ADDRESS MANAGEMENT ===
+    let addressIndex = {{ $user->addresses->count() }}; // Start from existing count
+
+    function toggleEmptyState() {
+        const container = document.getElementById('addressesContainer');
+        const emptyState = document.getElementById('addressesEmptyState');
+        const hasAddresses = container.children.length > 0;
+        
+        if (hasAddresses) {
+            emptyState.classList.add('hidden');
+        } else {
+            emptyState.classList.remove('hidden');
+        }
+    }
+
+    window.addAddressCard = function() {
+        const container = document.getElementById('addressesContainer');
+        const index = addressIndex++;
+        
+        const addressCard = document.createElement('div');
+        addressCard.className = 'address-card bg-white border border-gray-300 rounded-lg p-6';
+        addressCard.dataset.index = index;
+        
+        const isFirst = container.children.length === 0;
+        
+        addressCard.innerHTML = `
+            <div class="flex items-center justify-between mb-4">
+                <h4 class="text-md font-medium text-gray-900">
+                    <i class="fas fa-map-marker-alt text-blue-600 mr-2"></i>
+                    Địa chỉ #${index + 1}
+                </h4>
+                <div class="flex items-center space-x-2">
+                    <label class="inline-flex items-center cursor-pointer">
+                        <input type="radio" name="default_address_index" value="${index}" 
+                               ${isFirst ? 'checked' : ''}
+                               onchange="setDefaultAddress(${index})"
+                               class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500">
+                        <span class="ml-2 text-sm text-gray-700">Địa chỉ mặc định</span>
+                    </label>
+                    <button type="button" onclick="removeAddressCard(${index})" 
+                            class="text-red-600 hover:text-red-800 p-1">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Loại địa chỉ <span class="text-red-500">*</span></label>
+                    <select name="addresses[${index}][type]" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                        <option value="home">Nhà riêng</option>
+                        <option value="work">Cơ quan</option>
+                        <option value="billing">Thanh toán</option>
+                        <option value="shipping">Giao hàng</option>
+                        <option value="other">Khác</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tên người liên hệ <span class="text-red-500">*</span></label>
+                    <input type="text" name="addresses[${index}][contact_name]" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="Họ và tên">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
+                    <input type="text" name="addresses[${index}][phone]" class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="0912345678">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Thành phố <span class="text-red-500">*</span></label>
+                    <input type="text" name="addresses[${index}][city]" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="Hồ Chí Minh, Hà Nội...">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Quận/Huyện</label>
+                    <input type="text" name="addresses[${index}][state]" class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="Quận 1, Củ Chi...">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Mã bưu điện</label>
+                    <input type="text" name="addresses[${index}][postal_code]" class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="700000">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Quốc gia <span class="text-red-500">*</span></label>
+                    <select name="addresses[${index}][country]" required class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                        <option value="Vietnam" selected>Việt Nam</option>
+                        <option value="China">Trung Quốc</option>
+                        <option value="Japan">Nhật Bản</option>
+                        <option value="South Korea">Hàn Quốc</option>
+                        <option value="Thailand">Thái Lan</option>
+                        <option value="Singapore">Singapore</option>
+                        <option value="Malaysia">Malaysia</option>
+                        <option value="United States">Hoa Kỳ</option>
+                        <option value="United Kingdom">Anh</option>
+                        <option value="Germany">Đức</option>
+                        <option value="France">Pháp</option>
+                        <option value="Other">Khác</option>
+                    </select>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Địa chỉ chi tiết <span class="text-red-500">*</span></label>
+                    <textarea name="addresses[${index}][address]" required rows="2" class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="Số nhà, tên đường, phường/xã..."></textarea>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Ghi chú</label>
+                    <textarea name="addresses[${index}][notes]" rows="2" class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="Ghi chú thêm..."></textarea>
+                </div>
+                <input type="hidden" name="addresses[${index}][is_default]" value="${isFirst ? '1' : '0'}" class="is-default-input">
+            </div>
+        `;
+        
+        container.appendChild(addressCard);
+        toggleEmptyState();
+    };
+
+    window.removeAddressCard = function(index) {
+        const card = document.querySelector(`.address-card[data-index="${index}"]`);
+        if (card) {
+            const wasDefault = card.querySelector('input[type="radio"]').checked;
+            card.remove();
+            toggleEmptyState();
+            
+            if (wasDefault) {
+                const allCards = document.querySelectorAll('.address-card');
+                if (allCards.length > 0) {
+                    const firstCard = allCards[0];
+                    const firstIndex = firstCard.dataset.index;
+                    const firstRadio = firstCard.querySelector('input[type="radio"]');
+                    firstRadio.checked = true;
+                    setDefaultAddress(firstIndex);
+                }
+            }
+        }
+    };
+
+    window.setDefaultAddress = function(index) {
+        document.querySelectorAll('.is-default-input').forEach(input => input.value = '0');
+        const card = document.querySelector(`.address-card[data-index="${index}"]`);
+        if (card) {
+            card.querySelector('.is-default-input').value = '1';
+        }
+    };
+
+    // Initialize toggle on page load
+    toggleEmployeeFields();
 });
 </script>
 @endsection

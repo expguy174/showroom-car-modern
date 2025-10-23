@@ -15,11 +15,31 @@
         <tbody class="divide-y divide-gray-200">
             @forelse($reviews as $review)
             <tr class="hover:bg-gray-50" data-review-id="{{ $review->id }}">
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm font-medium text-gray-900">
-                        {{ $review->user->userProfile->name ?? $review->user->email }}
+                <td class="px-6 py-4">
+                    <div class="flex items-center space-x-3">
+                        {{-- Avatar --}}
+                        <div class="flex-shrink-0">
+                            @if($review->user->userProfile && $review->user->userProfile->avatar_path)
+                                <img class="h-10 w-10 rounded-full object-cover border-2 border-gray-200" 
+                                     src="{{ Storage::url($review->user->userProfile->avatar_path) }}" 
+                                     alt="{{ $review->user->userProfile->name ?? $review->user->email }}">
+                            @else
+                                <div class="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
+                                    <span class="text-white font-semibold text-sm">
+                                        {{ strtoupper(mb_substr($review->user->userProfile->name ?? $review->user->email, 0, 2, 'UTF-8')) }}
+                                    </span>
+                                </div>
+                            @endif
+                        </div>
+                        
+                        {{-- User Details --}}
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm font-medium text-gray-900 truncate">
+                                {{ $review->user->userProfile->name ?? $review->user->email }}
+                            </div>
+                            <div class="text-xs text-gray-500">{{ $review->created_at->format('d/m/Y H:i') }}</div>
+                        </div>
                     </div>
-                    <div class="text-xs text-gray-500">{{ $review->created_at->format('d/m/Y H:i') }}</div>
                 </td>
                 <td class="px-6 py-4">
                     <div class="text-sm text-gray-900 whitespace-nowrap">

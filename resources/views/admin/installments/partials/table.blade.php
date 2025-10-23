@@ -43,12 +43,39 @@
                         {{-- Customer --}}
                         <td class="px-6 py-3">
                             @if($order->user)
-                                <div class="text-sm font-medium text-gray-900">
-                                    {{ $order->user->userProfile->name ?? $order->user->email }}
+                                <div class="flex items-center space-x-3">
+                                    {{-- Avatar --}}
+                                    <div class="flex-shrink-0">
+                                        @if($order->user->userProfile && $order->user->userProfile->avatar_path)
+                                            <img class="h-10 w-10 rounded-full object-cover border-2 border-gray-200" 
+                                                 src="{{ Storage::url($order->user->userProfile->avatar_path) }}" 
+                                                 alt="{{ $order->user->userProfile->name ?? $order->user->email }}">
+                                        @else
+                                            <div class="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
+                                                <span class="text-white font-semibold text-sm">
+                                                    {{ strtoupper(mb_substr($order->user->userProfile->name ?? $order->user->email, 0, 2, 'UTF-8')) }}
+                                                </span>
+                                            </div>
+                                        @endif
+                                    </div>
+                                    
+                                    {{-- Customer Details --}}
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-sm font-medium text-gray-900 truncate">
+                                            {{ $order->user->userProfile->name ?? $order->user->email }}
+                                        </div>
+                                        <div class="text-sm text-gray-500 truncate">
+                                            <i class="fas fa-envelope text-gray-400 mr-1"></i>
+                                            {{ $order->user->email }}
+                                        </div>
+                                        @if($order->user->userProfile && $order->user->userProfile->phone)
+                                            <div class="text-sm text-gray-500 truncate">
+                                                <i class="fas fa-phone text-gray-400 mr-1"></i>
+                                                {{ $order->user->userProfile->phone }}
+                                            </div>
+                                        @endif
+                                    </div>
                                 </div>
-                                @if($order->user->userProfile && $order->user->userProfile->phone)
-                                <div class="text-xs text-gray-500">{{ $order->user->userProfile->phone }}</div>
-                                @endif
                             @else
                                 <span class="text-sm text-gray-400">N/A</span>
                             @endif

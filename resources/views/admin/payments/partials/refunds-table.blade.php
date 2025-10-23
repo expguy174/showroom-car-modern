@@ -30,12 +30,39 @@
                             </div>
                         </div>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm text-gray-900">
-                            {{ $refund->paymentTransaction->user->userProfile->name ?? $refund->paymentTransaction->user->email ?? 'N/A' }}
-                        </div>
-                        <div class="text-sm text-gray-500">
-                            {{ $refund->paymentTransaction->user->email ?? '' }}
+                    <td class="px-6 py-4">
+                        <div class="flex items-center space-x-3">
+                            {{-- Avatar --}}
+                            <div class="flex-shrink-0">
+                                @if($refund->paymentTransaction->user && $refund->paymentTransaction->user->userProfile && $refund->paymentTransaction->user->userProfile->avatar_path)
+                                    <img class="h-10 w-10 rounded-full object-cover border-2 border-gray-200" 
+                                         src="{{ Storage::url($refund->paymentTransaction->user->userProfile->avatar_path) }}" 
+                                         alt="{{ $refund->paymentTransaction->user->userProfile->name ?? $refund->paymentTransaction->user->email }}">
+                                @else
+                                    <div class="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
+                                        <span class="text-white font-semibold text-sm">
+                                            {{ strtoupper(mb_substr($refund->paymentTransaction->user && $refund->paymentTransaction->user->userProfile ? $refund->paymentTransaction->user->userProfile->name : ($refund->paymentTransaction->user ? $refund->paymentTransaction->user->email : 'NA'), 0, 2, 'UTF-8')) }}
+                                        </span>
+                                    </div>
+                                @endif
+                            </div>
+                            
+                            {{-- Customer Details --}}
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm font-medium text-gray-900 truncate">
+                                    {{ $refund->paymentTransaction->user && $refund->paymentTransaction->user->userProfile ? $refund->paymentTransaction->user->userProfile->name : ($refund->paymentTransaction->user ? $refund->paymentTransaction->user->email : 'N/A') }}
+                                </div>
+                                <div class="text-sm text-gray-500 truncate">
+                                    <i class="fas fa-envelope text-gray-400 mr-1"></i>
+                                    {{ $refund->paymentTransaction->user ? $refund->paymentTransaction->user->email : 'N/A' }}
+                                </div>
+                                @if($refund->paymentTransaction->user && $refund->paymentTransaction->user->userProfile && $refund->paymentTransaction->user->userProfile->phone)
+                                    <div class="text-sm text-gray-500 truncate">
+                                        <i class="fas fa-phone text-gray-400 mr-1"></i>
+                                        {{ $refund->paymentTransaction->user->userProfile->phone }}
+                                    </div>
+                                @endif
+                            </div>
                         </div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">

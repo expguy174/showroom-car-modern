@@ -15,19 +15,49 @@
             <tbody class="bg-white divide-y divide-gray-200">
                 <?php $__empty_1 = true; $__currentLoopData = $testDrives ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $testDrive): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                 <tr class="hover:bg-gray-50" data-test-drive-id="<?php echo e($testDrive->id); ?>">
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm">
-                            <div class="font-medium text-gray-900"><?php echo e($testDrive->customer_name); ?></div>
-                            <div class="text-gray-500 mt-1 text-xs">
-                                <i class="fas fa-envelope text-xs mr-1"></i><?php echo e($testDrive->customer_email); ?>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center space-x-3">
+                            
+                            <div class="flex-shrink-0">
+                                <?php if($testDrive->user && $testDrive->user->userProfile && $testDrive->user->userProfile->avatar_path): ?>
+                                    <img class="h-10 w-10 rounded-full object-cover border-2 border-gray-200" 
+                                         src="<?php echo e(Storage::url($testDrive->user->userProfile->avatar_path)); ?>" 
+                                         alt="<?php echo e($testDrive->user->userProfile->name ?? $testDrive->user->email); ?>">
+                                <?php else: ?>
+                                    <div class="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
+                                        <span class="text-white font-semibold text-sm">
+                                            <?php echo e(strtoupper(mb_substr($testDrive->user && $testDrive->user->userProfile ? $testDrive->user->userProfile->name : ($testDrive->user ? $testDrive->user->email : $testDrive->customer_name), 0, 2, 'UTF-8'))); ?>
 
+                                        </span>
+                                    </div>
+                                <?php endif; ?>
                             </div>
-                            <?php if($testDrive->test_drive_number): ?>
-                            <div class="text-gray-400 text-xs mt-1">
-                                <i class="fas fa-hashtag text-xs"></i><?php echo e($testDrive->test_drive_number); ?>
+                            
+                            
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm font-medium text-gray-900 truncate">
+                                    <?php echo e($testDrive->user && $testDrive->user->userProfile ? $testDrive->user->userProfile->name : ($testDrive->user ? $testDrive->user->email : $testDrive->customer_name)); ?>
 
+                                </div>
+                                <div class="text-sm text-gray-500 truncate">
+                                    <i class="fas fa-envelope text-gray-400 mr-1"></i>
+                                    <?php echo e($testDrive->user ? $testDrive->user->email : $testDrive->customer_email); ?>
+
+                                </div>
+                                <?php if($testDrive->user && $testDrive->user->userProfile && $testDrive->user->userProfile->phone): ?>
+                                    <div class="text-sm text-gray-500 truncate">
+                                        <i class="fas fa-phone text-gray-400 mr-1"></i>
+                                        <?php echo e($testDrive->user->userProfile->phone); ?>
+
+                                    </div>
+                                <?php elseif($testDrive->customer_phone): ?>
+                                    <div class="text-sm text-gray-500 truncate">
+                                        <i class="fas fa-phone text-gray-400 mr-1"></i>
+                                        <?php echo e($testDrive->customer_phone); ?>
+
+                                    </div>
+                                <?php endif; ?>
                             </div>
-                            <?php endif; ?>
                         </div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">

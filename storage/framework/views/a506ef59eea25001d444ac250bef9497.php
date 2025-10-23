@@ -1,32 +1,60 @@
-@extends('layouts.admin')
+<?php $__env->startSection('title', 'Thêm người dùng'); ?>
 
-@section('title', 'Thêm người dùng')
+<?php $__env->startSection('content'); ?>
 
-@section('content')
-{{-- Flash Messages --}}
-<x-admin.flash-messages 
-    :show-icons="true"
-    :dismissible="true"
-    position="top-right"
-    :auto-hide="5000" />
+<?php if (isset($component)) { $__componentOriginaldb1b157d84f8f63332f3508c9e385c0a = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginaldb1b157d84f8f63332f3508c9e385c0a = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.admin.flash-messages','data' => ['showIcons' => true,'dismissible' => true,'position' => 'top-right','autoHide' => 5000]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('admin.flash-messages'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['show-icons' => true,'dismissible' => true,'position' => 'top-right','auto-hide' => 5000]); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginaldb1b157d84f8f63332f3508c9e385c0a)): ?>
+<?php $attributes = $__attributesOriginaldb1b157d84f8f63332f3508c9e385c0a; ?>
+<?php unset($__attributesOriginaldb1b157d84f8f63332f3508c9e385c0a); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginaldb1b157d84f8f63332f3508c9e385c0a)): ?>
+<?php $component = $__componentOriginaldb1b157d84f8f63332f3508c9e385c0a; ?>
+<?php unset($__componentOriginaldb1b157d84f8f63332f3508c9e385c0a); ?>
+<?php endif; ?>
 
 <div class="px-2 sm:px-0">
-    {{-- Header --}}
-    <x-admin.page-header
-        title="Thêm người dùng"
-        description="Tạo tài khoản người dùng mới"
-        icon="fas fa-user-plus">
-        <a href="{{ route('admin.users.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors">
+    
+    <?php if (isset($component)) { $__componentOriginalcb19cb35a534439097b02b8af91726ee = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalcb19cb35a534439097b02b8af91726ee = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.admin.page-header','data' => ['title' => 'Thêm người dùng','description' => 'Tạo tài khoản người dùng mới','icon' => 'fas fa-user-plus']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('admin.page-header'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['title' => 'Thêm người dùng','description' => 'Tạo tài khoản người dùng mới','icon' => 'fas fa-user-plus']); ?>
+        <a href="<?php echo e(route('admin.users.index')); ?>" class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors">
             <i class="fas fa-arrow-left mr-2"></i>
             Quay lại
         </a>
-    </x-admin.page-header>
+     <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalcb19cb35a534439097b02b8af91726ee)): ?>
+<?php $attributes = $__attributesOriginalcb19cb35a534439097b02b8af91726ee; ?>
+<?php unset($__attributesOriginalcb19cb35a534439097b02b8af91726ee); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalcb19cb35a534439097b02b8af91726ee)): ?>
+<?php $component = $__componentOriginalcb19cb35a534439097b02b8af91726ee; ?>
+<?php unset($__componentOriginalcb19cb35a534439097b02b8af91726ee); ?>
+<?php endif; ?>
 
-    {{-- Form --}}
+    
     <form id="userForm" class="mt-6">
-        @csrf
+        <?php echo csrf_field(); ?>
         
-        {{-- Tabs Navigation --}}
+        
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
             <div class="border-b border-gray-200">
                 <nav class="flex space-x-8 px-6" aria-label="Tabs">
@@ -51,7 +79,7 @@
                 </nav>
             </div>
 
-            {{-- Tab 1: Account Info --}}
+            
             <div id="account-tab" class="tab-content p-6">
                 <h3 class="text-lg font-medium text-gray-900 mb-4">
                     <i class="fas fa-user-lock text-blue-600 mr-2"></i>
@@ -59,7 +87,7 @@
                 </h3>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {{-- Email --}}
+                    
                     <div>
                         <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
                             Email <span class="text-red-500">*</span>
@@ -69,7 +97,7 @@
                                placeholder="user@example.com">
                     </div>
 
-                    {{-- Role --}}
+                    
                     <div>
                         <label for="role" class="block text-sm font-medium text-gray-700 mb-2">
                             Vai trò <span class="text-red-500">*</span>
@@ -85,7 +113,7 @@
                         </select>
                     </div>
 
-                    {{-- Password --}}
+                    
                     <div>
                         <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
                             Mật khẩu <span class="text-red-500">*</span>
@@ -95,7 +123,7 @@
                                placeholder="Tối thiểu 8 ký tự">
                     </div>
 
-                    {{-- Password Confirmation --}}
+                    
                     <div>
                         <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-2">
                             Xác nhận mật khẩu <span class="text-red-500">*</span>
@@ -105,7 +133,7 @@
                                placeholder="Nhập lại mật khẩu">
                     </div>
 
-                    {{-- Account Status --}}
+                    
                     <div class="md:col-span-2 space-y-3">
                         <div class="flex items-center space-x-6">
                             <label class="flex items-center cursor-pointer">
@@ -131,11 +159,11 @@
                     </div>
                 </div>
 
-                {{-- Employee Fields (hidden by default) --}}
+                
                 <div id="employee-fields" class="hidden mt-6">
                     <h4 class="text-md font-medium text-gray-900 mb-4">Thông tin nhân viên</h4>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {{-- Employee ID --}}
+                        
                         <div>
                             <label for="employee_id" class="block text-sm font-medium text-gray-700 mb-2">
                                 Mã nhân viên
@@ -145,7 +173,7 @@
                                    placeholder="NV001">
                         </div>
 
-                        {{-- Department --}}
+                        
                         <div>
                             <label for="department" class="block text-sm font-medium text-gray-700 mb-2">
                                 Phòng ban
@@ -155,7 +183,7 @@
                                    placeholder="Phòng kinh doanh">
                         </div>
 
-                        {{-- Position --}}
+                        
                         <div>
                             <label for="position" class="block text-sm font-medium text-gray-700 mb-2">
                                 Chức vụ
@@ -165,7 +193,7 @@
                                    placeholder="Trưởng phòng">
                         </div>
 
-                        {{-- Hire Date --}}
+                        
                         <div>
                             <label for="hire_date" class="block text-sm font-medium text-gray-700 mb-2">
                                 Ngày tuyển dụng
@@ -177,7 +205,7 @@
                 </div>
             </div>
 
-            {{-- Tab 2: Profile Info --}}
+            
             <div id="profile-tab" class="tab-content hidden p-6">
                 <h3 class="text-lg font-medium text-gray-900 mb-4">
                     <i class="fas fa-id-card text-blue-600 mr-2"></i>
@@ -185,7 +213,7 @@
                 </h3>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {{-- Name --}}
+                    
                     <div>
                         <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
                             Họ và tên <span class="text-red-500">*</span>
@@ -195,7 +223,7 @@
                                placeholder="Nguyễn Văn A">
                     </div>
 
-                    {{-- Phone --}}
+                    
                     <div>
                         <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">
                             Số điện thoại
@@ -205,7 +233,7 @@
                                placeholder="0987654321">
                     </div>
 
-                    {{-- Birth Date --}}
+                    
                     <div>
                         <label for="birth_date" class="block text-sm font-medium text-gray-700 mb-2">
                             Ngày sinh
@@ -214,7 +242,7 @@
                                class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     </div>
 
-                    {{-- Gender --}}
+                    
                     <div>
                         <label for="gender" class="block text-sm font-medium text-gray-700 mb-2">
                             Giới tính
@@ -228,7 +256,7 @@
                         </select>
                     </div>
 
-                    {{-- Avatar --}}
+                    
                     <div class="md:col-span-2">
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             Ảnh đại diện
@@ -237,14 +265,14 @@
                                class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                         <p class="mt-1 text-sm text-gray-500">PNG, JPG, GIF tối đa 2MB</p>
                         
-                        {{-- Avatar Preview --}}
+                        
                         <div id="avatarPreview" class="hidden mt-4">
                             <img id="avatarPreviewImage" src="" alt="Avatar preview" class="w-32 h-32 object-cover rounded-full border-2 border-gray-200">
                         </div>
                     </div>
                 </div>
 
-                {{-- Driver License Info --}}
+                
                 <div class="mt-6">
                     <h4 class="text-md font-medium text-gray-900 mb-4">Thông tin bằng lái xe</h4>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -291,7 +319,7 @@
                     </div>
                 </div>
 
-                {{-- Customer Preferences (for customers only) --}}
+                
                 <div id="customer-preferences" class="mt-6 hidden">
                     <h4 class="text-md font-medium text-gray-900 mb-4">
                         <i class="fas fa-heart text-red-600 mr-2"></i>
@@ -378,7 +406,7 @@
                     </div>
                 </div>
 
-                {{-- Employee Info (for employees only) --}}
+                
                 <div id="employee-info" class="mt-6 hidden">
                     <h4 class="text-md font-medium text-gray-900 mb-4">
                         <i class="fas fa-briefcase text-green-600 mr-2"></i>
@@ -405,7 +433,7 @@
                 </div>
             </div>
 
-            {{-- Tab 3: Address Info --}}
+            
             <div id="address-tab" class="tab-content hidden p-6">
                 <div class="flex items-center justify-between mb-4">
                     <div>
@@ -422,22 +450,29 @@
                     </button>
                 </div>
 
-                {{-- Error Message for Duplicate Addresses --}}
-                @error('addresses')
+                
+                <?php $__errorArgs = ['addresses'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
                     <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
                         <div class="flex items-center">
                             <i class="fas fa-exclamation-circle text-red-600 mr-2"></i>
-                            <span class="text-sm text-red-600 font-medium">{{ $message }}</span>
+                            <span class="text-sm text-red-600 font-medium"><?php echo e($message); ?></span>
                         </div>
                     </div>
-                @enderror
+                <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
 
-                {{-- Addresses Container --}}
+                
                 <div id="addressesContainer" class="space-y-4">
-                    {{-- Address cards will be added here --}}
+                    
                 </div>
 
-                {{-- Empty State --}}
+                
                 <div id="addressesEmptyState" class="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
                     <i class="fas fa-map-marker-alt text-gray-400 text-4xl mb-3"></i>
                     <p class="text-gray-500 mb-2">Chưa có địa chỉ nào</p>
@@ -446,9 +481,9 @@
             </div>
         </div>
 
-        {{-- Form Actions --}}
+        
         <div class="flex justify-between space-x-3 pt-6 border-t border-gray-200">
-            <a href="{{ route('admin.users.index') }}" 
+            <a href="<?php echo e(route('admin.users.index')); ?>" 
                class="inline-flex items-center px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors">
                 <i class="fas fa-times mr-2"></i>
                 Hủy
@@ -806,10 +841,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = new FormData(this);
         
         // AJAX submission
-        fetch('{{ route("admin.users.store") }}', {
+        fetch('<?php echo e(route("admin.users.store")); ?>', {
             method: 'POST',
             headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>',
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
             },
@@ -863,4 +898,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\forev\showroom-car-modern\resources\views/admin/users/create.blade.php ENDPATH**/ ?>

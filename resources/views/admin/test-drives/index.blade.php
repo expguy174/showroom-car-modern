@@ -72,7 +72,7 @@
                 <label class="block text-sm font-medium text-gray-700 mb-2">Tìm kiếm</label>
                 <x-admin.search-input 
                     name="search"
-                    placeholder="Tên, email, SĐT khách hàng..."
+                    placeholder="Tên, email, tên xe..."
                     :value="request('search')"
                     callbackName="handleSearch"
                     :debounceTime="500"

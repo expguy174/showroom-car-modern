@@ -3,269 +3,349 @@
 @section('title', 'Quản lý người dùng')
 
 @section('content')
-<div class="space-y-6">
-    {{-- Header --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-2xl font-bold text-gray-900">
-                    <i class="fas fa-users text-blue-600 mr-3"></i>
-                    Quản lý người dùng
-                </h1>
-                <p class="text-gray-600 mt-1">Quản lý tất cả người dùng và nhân viên trong hệ thống</p>
-            </div>
-            <a href="{{ route('admin.users.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
-                <i class="fas fa-plus mr-2"></i>
-                Thêm người dùng
-            </a>
-        </div>
-    </div>
+{{-- Flash Messages Component --}}
+<x-admin.flash-messages 
+    :show-icons="true"
+    :dismissible="true"
+    position="top-right"
+    :auto-hide="5000" />
 
-    {{-- Success/Error Messages --}}
-    @if(session('success'))
-    <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
-        <div class="flex items-center">
-            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-            </svg>
-            {{ session('success') }}
-        </div>
-    </div>
-    @endif
+<div class="space-y-3 sm:space-y-4 lg:space-y-6 px-2 sm:px-0">
+    {{-- Header --}}
+    <x-admin.page-header
+        title="Quản lý người dùng"
+        description="Danh sách tất cả người dùng và nhân viên"
+        icon="fas fa-users">
+        <a href="{{ route('admin.users.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+            <i class="fas fa-plus mr-2"></i>
+            Thêm người dùng
+        </a>
+    </x-admin.page-header>
 
     {{-- Stats Cards --}}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div class="flex items-center">
-                <div class="p-3 rounded-full bg-blue-100">
-                    <i class="fas fa-users text-blue-600 text-xl"></i>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600">Tổng người dùng</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ $roleCounts['all'] }}</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div class="flex items-center">
-                <div class="p-3 rounded-full bg-red-100">
-                    <i class="fas fa-crown text-red-600 text-xl"></i>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600">Quản trị viên</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ $roleCounts['admin'] }}</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div class="flex items-center">
-                <div class="p-3 rounded-full bg-purple-100">
-                    <i class="fas fa-user-tie text-purple-600 text-xl"></i>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600">Quản lý</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ $roleCounts['manager'] }}</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div class="flex items-center">
-                <div class="p-3 rounded-full bg-green-100">
-                    <i class="fas fa-handshake text-green-600 text-xl"></i>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600">Nhân viên KD</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ $roleCounts['sales_person'] }}</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div class="flex items-center">
-                <div class="p-3 rounded-full bg-orange-100">
-                    <i class="fas fa-user text-orange-600 text-xl"></i>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600">Khách hàng</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ $roleCounts['user'] }}</p>
-                </div>
-            </div>
-        </div>
+    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
+        <x-admin.stats-card 
+            title="Tổng người dùng"
+            :value="$stats['total']"
+            icon="fas fa-users"
+            color="gray"
+            description="Tất cả người dùng"
+            dataStat="total"
+            clickAction="filterAllUsers" />
+        
+        <x-admin.stats-card 
+            title="Đang hoạt động"
+            :value="$stats['active']"
+            icon="fas fa-check-circle"
+            color="green"
+            description="Hoạt động"
+            dataStat="active"
+            clickAction="filterActiveUsers" />
+        
+        <x-admin.stats-card 
+            title="Tạm khóa"
+            :value="$stats['inactive']"
+            icon="fas fa-ban"
+            color="red"
+            description="Đã tạm khóa"
+            dataStat="inactive"
+            clickAction="filterInactiveUsers" />
     </div>
 
     {{-- Filters --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <form method="GET" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <form id="filterForm" 
+              class="grid grid-cols-1 md:grid-cols-[1fr_minmax(min-content,_auto)_minmax(min-content,_auto)_auto] gap-4 items-end"
+              data-base-url="{{ route('admin.users.index') }}">
+            
+            {{-- Search --}}
             <div>
-                <label for="search" class="block text-sm font-medium text-gray-700 mb-2">Tìm kiếm</label>
-                <input type="text" name="search" id="search" value="{{ $search }}" 
-                       class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                       placeholder="Email, tên, số điện thoại...">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Tìm kiếm</label>
+                <x-admin.search-input 
+                    name="search"
+                    placeholder="Tên, email, điện thoại, mã NV..."
+                    :value="request('search')"
+                    callbackName="handleSearch"
+                    :debounceTime="500"
+                    size="small"
+                    :showIcon="true"
+                    :showClearButton="true" />
             </div>
-
+            
+            {{-- Role Filter --}}
             <div>
-                <label for="role" class="block text-sm font-medium text-gray-700 mb-2">Vai trò</label>
-                <select name="role" id="role" class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                    <option value="">Tất cả vai trò</option>
-                    <option value="admin" {{ $role == 'admin' ? 'selected' : '' }}>Quản trị viên</option>
-                    <option value="manager" {{ $role == 'manager' ? 'selected' : '' }}>Quản lý</option>
-                    <option value="sales_person" {{ $role == 'sales_person' ? 'selected' : '' }}>Nhân viên kinh doanh</option>
-                    <option value="technician" {{ $role == 'technician' ? 'selected' : '' }}>Kỹ thuật viên</option>
-                    <option value="user" {{ $role == 'user' ? 'selected' : '' }}>Khách hàng</option>
-                </select>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Vai trò</label>
+                <x-admin.custom-dropdown 
+                    name="role"
+                    :options="[
+                        ['value' => 'user', 'text' => 'Người dùng', 'count' => $roleCounts['user']],
+                        ['value' => 'admin', 'text' => 'Quản trị viên', 'count' => $roleCounts['admin']],
+                        ['value' => 'manager', 'text' => 'Quản lý', 'count' => $roleCounts['manager']],
+                        ['value' => 'sales_person', 'text' => 'NV Kinh doanh', 'count' => $roleCounts['sales_person']],
+                        ['value' => 'technician', 'text' => 'Kỹ thuật viên', 'count' => $roleCounts['technician']]
+                    ]"
+                    placeholder="Tất cả"
+                    optionValue="value"
+                    optionText="text"
+                    :selected="request('role')"
+                    onchange="loadUsersFromDropdown"
+                    :maxVisible="5"
+                    :searchable="false"
+                    width="w-full" />
             </div>
-
-            <div class="flex items-end">
-                <button type="submit" class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
-                    <i class="fas fa-search mr-2"></i>
-                    Lọc
-                </button>
+            
+            {{-- Status Filter --}}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label>
+                <x-admin.custom-dropdown 
+                    name="status"
+                    :options="[
+                        ['value' => 'active', 'text' => 'Hoạt động'],
+                        ['value' => 'inactive', 'text' => 'Tạm khóa']
+                    ]"
+                    placeholder="Tất cả"
+                    optionValue="value"
+                    optionText="text"
+                    :selected="request('status')"
+                    onchange="loadUsersFromDropdown"
+                    :maxVisible="3"
+                    :searchable="false"
+                    width="w-full" />
+            </div>
+            
+            {{-- Reset Button --}}
+            <div>
+                <x-admin.reset-button 
+                    formId="#filterForm" 
+                    callback="loadUsers" />
             </div>
         </form>
     </div>
 
-    {{-- Users Table --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Người dùng</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vai trò</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thông tin nhân viên</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày tạo</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    @forelse ($users as $user)
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0 h-12 w-12">
-                                    <div class="h-12 w-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
-                                        {{ strtoupper(substr(optional($user->userProfile)->name ?? $user->email, 0, 1)) }}
-                                    </div>
-                                </div>
-                                <div class="ml-4">
-                                    <div class="text-sm font-medium text-gray-900">
-                                        {{ optional($user->userProfile)->name ?? 'Chưa cập nhật tên' }}
-                                    </div>
-                                    <div class="text-sm text-gray-500">{{ $user->email }}</div>
-                                    @if(optional($user->userProfile)->phone)
-                                    <div class="text-sm text-gray-500">
-                                        <i class="fas fa-phone text-gray-400 mr-1"></i>
-                                        {{ $user->userProfile->phone }}
-                                    </div>
-                                    @endif
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $user->getRoleColor() }}">
-                                {{ $user->getRoleLabel() }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            @if($user->isStaff())
-                                <div class="text-sm text-gray-900">
-                                    @if($user->employee_id)
-                                        <div><strong>ID:</strong> {{ $user->employee_id }}</div>
-                                    @endif
-                                    @if($user->department)
-                                        <div><strong>Phòng ban:</strong> {{ $user->department }}</div>
-                                    @endif
-                                    @if($user->position)
-                                        <div><strong>Chức vụ:</strong> {{ $user->position }}</div>
-                                    @endif
-                                    @if($user->hire_date)
-                                        <div class="text-xs text-gray-500 mt-1">
-                                            Ngày vào: {{ $user->hire_date->format('d/m/Y') }}
-                                        </div>
-                                    @endif
-                                </div>
-                            @else
-                                <span class="text-sm text-gray-500">Khách hàng</span>
-                            @endif
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="flex flex-col space-y-1">
-                                @if($user->is_active)
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                        <i class="fas fa-check-circle mr-1"></i>
-                                        Hoạt động
-                                    </span>
-                                @else
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                        <i class="fas fa-times-circle mr-1"></i>
-                                        Ngừng hoạt động
-                                    </span>
-                                @endif
-                                
-                                @if($user->email_verified)
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                        <i class="fas fa-envelope-check mr-1"></i>
-                                        Email đã xác thực
-                                    </span>
-                                @else
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                        <i class="fas fa-envelope mr-1"></i>
-                                        Chưa xác thực email
-                                    </span>
-                                @endif
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <div>{{ $user->created_at->format('d/m/Y') }}</div>
-                            <div class="text-xs">{{ $user->created_at->format('H:i') }}</div>
-                            @if($user->last_login_at)
-                                <div class="text-xs text-gray-400 mt-1">
-                                    Đăng nhập: {{ $user->last_login_at->format('d/m/Y H:i') }}
-                                </div>
-                            @endif
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <div class="flex items-center space-x-2">
-                                <a href="{{ route('admin.users.edit', $user) }}" class="text-indigo-600 hover:text-indigo-900" title="Chỉnh sửa">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                @if($user->role !== 'admin' || auth()->user()->isAdmin())
-                                <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa người dùng này?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="text-red-600 hover:text-red-900" title="Xóa">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                                @endif
-                            </div>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="6" class="px-6 py-12 text-center">
-                            <div class="flex flex-col items-center">
-                                <i class="fas fa-users text-gray-400 text-4xl mb-4"></i>
-                                <p class="text-gray-500 text-lg">Không tìm thấy người dùng nào</p>
-                                <p class="text-gray-400 text-sm mt-1">Thử thay đổi bộ lọc hoặc tìm kiếm</p>
-                            </div>
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-
-        {{-- Pagination --}}
-        @if($users->hasPages())
-        <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
-            {{ $users->appends(request()->query())->links() }}
-        </div>
-        @endif
-    </div>
+    {{-- AJAX Table Component --}}
+    <x-admin.ajax-table 
+        table-id="users-content"
+        loading-id="loading-state"
+        form-id="#filterForm"
+        base-url="{{ route('admin.users.index') }}"
+        callback-name="loadUsers"
+        empty-message="Không có người dùng nào"
+        empty-icon="fas fa-users"
+        :show-pagination="false">
+        @include('admin.users.partials.table', ['users' => $users])
+    </x-admin.ajax-table>
 </div>
+
+{{-- Delete Modal Component --}}
+<x-admin.delete-modal 
+    modal-id="deleteUserModal"
+    title="Xác nhận xóa người dùng"
+    confirm-text="Xóa"
+    cancel-text="Hủy"
+    delete-callback-name="confirmDeleteUser"
+    entity-type="user" />
+
+@push('scripts')
+<script>
+// Update stats from server response (giống Services)
+window.updateStatsFromServer = function(stats) {
+    const statsMapping = {
+        'total': 'total',
+        'active': 'active',
+        'inactive': 'inactive'
+    };
+    
+    Object.entries(statsMapping).forEach(([serverKey, cardKey]) => {
+        if (stats[serverKey] !== undefined) {
+            const statElement = document.querySelector(`p[data-stat="${cardKey}"]`);
+            if (statElement) {
+                statElement.textContent = stats[serverKey];
+            }
+        }
+    });
+};
+
+// Handle search
+window.handleSearch = function(searchTerm, inputElement) {
+    const searchForm = document.getElementById('filterForm');
+    if (searchForm) {
+        const formData = new FormData(searchForm);
+        const url = '{{ route("admin.users.index") }}?' + new URLSearchParams(formData).toString();
+        if (window.loadUsers) {
+            window.loadUsers(url);
+        }
+    }
+};
+
+// Handle dropdown change
+window.loadUsersFromDropdown = function(selectedValue, dropdownElement) {
+    const searchForm = document.getElementById('filterForm');
+    if (searchForm) {
+        const formData = new FormData(searchForm);
+        const url = '{{ route("admin.users.index") }}?' + new URLSearchParams(formData).toString();
+        if (window.loadUsers) {
+            window.loadUsers(url);
+        }
+    }
+};
+
+// Initialize event listeners (make it global for ajax-table component)
+window.initializeEventListeners = function() {
+    // Status toggle buttons
+    document.querySelectorAll('.status-toggle').forEach(button => {
+        button.addEventListener('click', async function(e) {
+            e.preventDefault();
+            const userId = this.dataset.userId;
+            const newStatus = this.dataset.status === 'true';
+            const buttonElement = this;
+            const originalIcon = buttonElement.querySelector('i').className;
+            
+            // Show loading spinner
+            buttonElement.querySelector('i').className = 'fas fa-spinner fa-spin w-4 h-4';
+            buttonElement.disabled = true;
+            
+            try {
+                const response = await fetch(`/admin/users/${userId}/toggle`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Update button appearance
+                    if (newStatus) {
+                        buttonElement.className = 'text-orange-600 hover:text-orange-900 status-toggle w-4 h-4 flex items-center justify-center';
+                        buttonElement.title = 'Tạm dừng';
+                        buttonElement.dataset.status = 'false';
+                        buttonElement.querySelector('i').className = 'fas fa-pause w-4 h-4';
+                    } else {
+                        buttonElement.className = 'text-green-600 hover:text-green-900 status-toggle w-4 h-4 flex items-center justify-center';
+                        buttonElement.title = 'Kích hoạt';
+                        buttonElement.dataset.status = 'true';
+                        buttonElement.querySelector('i').className = 'fas fa-play w-4 h-4';
+                    }
+                    
+                    // Update status badge
+                    if (window.updateStatusBadge) {
+                        window.updateStatusBadge(userId, newStatus, 'user');
+                    }
+                    
+                    // Update stats cards if provided
+                    if (data.stats && window.updateStatsFromServer) {
+                        window.updateStatsFromServer(data.stats);
+                    }
+                    
+                    // Show message
+                    if (window.showMessage) {
+                        window.showMessage(data.message, 'success');
+                    }
+                } else {
+                    throw new Error(data.message || 'Có lỗi xảy ra');
+                }
+            } catch (error) {
+                console.error('Toggle error:', error);
+                // Restore original state on error
+                buttonElement.querySelector('i').className = originalIcon;
+                if (window.showMessage) {
+                    window.showMessage(error.message || 'Có lỗi khi thay đổi trạng thái', 'error');
+                }
+            } finally {
+                buttonElement.disabled = false;
+            }
+        });
+    });
+    
+    // Delete buttons
+    document.querySelectorAll('.delete-btn').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const userId = this.dataset.userId;
+            const userName = this.dataset.userName;
+            const deleteUrl = this.dataset.deleteUrl;
+            
+            if (window.deleteModalManager_deleteUserModal) {
+                window.deleteModalManager_deleteUserModal.show({
+                    entityName: `người dùng ${userName}`,
+                    details: 'Hành động này không thể hoàn tác.',
+                    deleteUrl: deleteUrl
+                });
+            }
+        });
+    });
+};
+
+// Delete confirmation function (giống Services)
+window.confirmDeleteUser = function(data) {
+    if (!data || !data.deleteUrl) return;
+    
+    if (window.deleteModalManager_deleteUserModal) {
+        window.deleteModalManager_deleteUserModal.setLoading(true);
+    }
+    
+    fetch(data.deleteUrl, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (window.deleteModalManager_deleteUserModal) {
+                window.deleteModalManager_deleteUserModal.hide();
+            }
+            
+            if (window.showMessage) {
+                window.showMessage(data.message || 'Xóa người dùng thành công', 'success');
+            }
+            
+            // Reload table
+            if (window.loadUsers) {
+                window.loadUsers();
+            }
+        } else {
+            throw new Error(data.message || 'Có lỗi khi xóa người dùng');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        if (window.deleteModalManager_deleteUserModal) {
+            window.deleteModalManager_deleteUserModal.setLoading(false);
+        }
+        
+        const errorMsg = error.message || 'Có lỗi khi xóa người dùng';
+        if (window.showMessage) {
+            window.showMessage(errorMsg, 'error');
+        }
+    });
+};
+
+// Legacy delete handlers (backward compatibility)
+window.handleDeleteSuccess = function(data) {
+    window.showMessage(data.message || 'Xóa người dùng thành công', 'success');
+    // Reload table via ajax-table component
+    if (window.loadUsers) {
+        window.loadUsers();
+    }
+};
+
+window.handleDeleteError = function(error) {
+    window.showMessage(error.message || 'Có lỗi xảy ra khi xóa người dùng', 'error');
+};
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.initializeEventListeners) {
+        window.initializeEventListeners();
+    }
+});
+</script>
+@endpush
 @endsection

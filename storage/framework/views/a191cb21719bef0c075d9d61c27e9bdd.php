@@ -16,19 +16,43 @@
             <tbody class="bg-white divide-y divide-gray-200">
                 <?php $__empty_1 = true; $__currentLoopData = $appointments ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $appointment): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                 <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm">
-                            <div class="font-medium text-gray-900"><?php echo e($appointment->user->userProfile->name ?? 'N/A'); ?></div>
-                            <div class="text-gray-500 mt-1 text-xs">
-                                <i class="fas fa-envelope text-xs mr-1"></i><?php echo e($appointment->user->email ?? '-'); ?>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center space-x-3">
+                            
+                            <div class="flex-shrink-0">
+                                <?php if($appointment->user->userProfile && $appointment->user->userProfile->avatar_path): ?>
+                                    <img class="h-10 w-10 rounded-full object-cover border-2 border-gray-200" 
+                                         src="<?php echo e(Storage::url($appointment->user->userProfile->avatar_path)); ?>" 
+                                         alt="<?php echo e($appointment->user->userProfile->name ?? $appointment->user->email); ?>">
+                                <?php else: ?>
+                                    <div class="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
+                                        <span class="text-white font-semibold text-sm">
+                                            <?php echo e(strtoupper(mb_substr($appointment->user->userProfile->name ?? $appointment->user->email, 0, 2, 'UTF-8'))); ?>
 
+                                        </span>
+                                    </div>
+                                <?php endif; ?>
                             </div>
-                            <?php if($appointment->appointment_number): ?>
-                            <div class="text-gray-400 text-xs mt-1">
-                                <i class="fas fa-hashtag text-xs"></i><?php echo e($appointment->appointment_number); ?>
+                            
+                            
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm font-medium text-gray-900 truncate">
+                                    <?php echo e($appointment->user->userProfile->name ?? 'N/A'); ?>
 
+                                </div>
+                                <div class="text-sm text-gray-500 truncate">
+                                    <i class="fas fa-envelope text-gray-400 mr-1"></i>
+                                    <?php echo e($appointment->user->email ?? '-'); ?>
+
+                                </div>
+                                <?php if($appointment->user->userProfile && $appointment->user->userProfile->phone): ?>
+                                    <div class="text-sm text-gray-500 truncate">
+                                        <i class="fas fa-phone text-gray-400 mr-1"></i>
+                                        <?php echo e($appointment->user->userProfile->phone); ?>
+
+                                    </div>
+                                <?php endif; ?>
                             </div>
-                            <?php endif; ?>
                         </div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
