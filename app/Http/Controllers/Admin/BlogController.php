@@ -13,14 +13,48 @@ class BlogController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
+        $status = $request->input('status');
         $query = Blog::query();
 
         if ($search) {
-            $query->where('title', 'like', "%$search%");
+            $query->where(function($q) use ($search) {
+                $q->where('title', 'like', "%$search%")
+                  ->orWhere('excerpt', 'like', "%$search%")
+                  ->orWhere('content', 'like', "%$search%");
+            });
         }
 
-        $blogs = $query->orderBy('created_at', 'desc')->paginate(10);
-        return view('admin.blogs.index', compact('blogs', 'search'));
+        if ($status && $status !== '') {
+            if ($status === 'published') {
+                $query->where('is_published', true);
+            } elseif ($status === 'draft') {
+                $query->where('is_published', false);
+            }
+        }
+
+        $blogs = $query->orderBy('created_at', 'desc')->paginate(15);
+
+        // Return partial view for AJAX requests
+        if ($request->ajax() || $request->wantsJson()) {
+            return view('admin.blogs.partials.table', compact('blogs'))->render();
+        }
+        
+        return view('admin.blogs.index', compact('blogs', 'search', 'status'));
+    }
+
+    public function getStats(Request $request)
+    {
+        $stats = [
+            'total' => Blog::count(),
+            'published' => Blog::where('is_published', true)->count(),
+            'draft' => Blog::where('is_published', false)->count(),
+        ];
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json($stats);
+        }
+
+        return $stats;
     }
 
     public function create()
@@ -94,6 +128,22 @@ class BlogController extends Controller
         }
 
         $blog->delete();
+
+        // Get updated stats
+        $stats = [
+            'total' => Blog::count(),
+            'published' => Blog::where('is_published', true)->count(),
+            'draft' => Blog::where('is_published', false)->count(),
+        ];
+
+        // Return JSON for AJAX requests
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Xóa bài viết thành công!',
+                'stats' => $stats
+            ]);
+        }
 
         return redirect()->route('admin.blogs.index')->with('success', 'Xóa bài viết thành công!');
     }

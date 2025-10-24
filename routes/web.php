@@ -307,6 +307,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     // Blogs
     Route::prefix('blogs')->name('blogs.')->group(function () {
         Route::get('/', [BlogController::class, 'index'])->name('index');
+        Route::get('/stats', [BlogController::class, 'getStats'])->name('stats');
         Route::get('/create', [BlogController::class, 'create'])->name('create');
         Route::post('/store', [BlogController::class, 'store'])->name('store');
         Route::get('/edit/{blog}', [BlogController::class, 'edit'])->name('edit');
