@@ -1,49 +1,63 @@
-@extends('layouts.admin')
+<?php $__env->startSection('title', 'Chỉnh sửa bài viết: ' . $blog->title); ?>
 
-@section('title', 'Chỉnh sửa bài viết: ' . $blog->title)
+<?php $__env->startSection('content'); ?>
 
-@section('content')
-{{-- Flash Messages Component --}}
-<x-admin.flash-messages 
-    :show-icons="true"
-    :dismissible="true"
-    position="top-right"
-    :auto-dismiss="5000" />
+<?php if (isset($component)) { $__componentOriginaldb1b157d84f8f63332f3508c9e385c0a = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginaldb1b157d84f8f63332f3508c9e385c0a = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.admin.flash-messages','data' => ['showIcons' => true,'dismissible' => true,'position' => 'top-right','autoDismiss' => 5000]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('admin.flash-messages'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['show-icons' => true,'dismissible' => true,'position' => 'top-right','auto-dismiss' => 5000]); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginaldb1b157d84f8f63332f3508c9e385c0a)): ?>
+<?php $attributes = $__attributesOriginaldb1b157d84f8f63332f3508c9e385c0a; ?>
+<?php unset($__attributesOriginaldb1b157d84f8f63332f3508c9e385c0a); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginaldb1b157d84f8f63332f3508c9e385c0a)): ?>
+<?php $component = $__componentOriginaldb1b157d84f8f63332f3508c9e385c0a; ?>
+<?php unset($__componentOriginaldb1b157d84f8f63332f3508c9e385c0a); ?>
+<?php endif; ?>
 
-@if(session('success'))
+<?php if(session('success')): ?>
 <script>
     // Auto redirect after 2 seconds
     setTimeout(function() {
-        window.location.href = "{{ route('admin.blogs.index') }}";
+        window.location.href = "<?php echo e(route('admin.blogs.index')); ?>";
     }, 2000);
 </script>
-@endif
+<?php endif; ?>
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 max-w-7xl mx-auto">
-    {{-- Header --}}
+    
     <div class="px-6 py-4 border-b border-gray-200">
         <div class="flex items-center justify-between">
             <div>
                 <h1 class="text-xl font-semibold text-gray-900">
                     <i class="fas fa-edit text-blue-600 mr-3"></i>
-                    Chỉnh sửa bài viết: {{ $blog->title }}
+                    Chỉnh sửa bài viết: <?php echo e($blog->title); ?>
+
                 </h1>
                 <p class="text-sm text-gray-600 mt-1">Cập nhật thông tin bài viết</p>
             </div>
-            <a href="{{ route('admin.blogs.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors">
+            <a href="<?php echo e(route('admin.blogs.index')); ?>" class="inline-flex items-center px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors">
                 <i class="fas fa-arrow-left mr-2"></i>
                 Quay lại
             </a>
         </div>
     </div>
 
-    {{-- Form --}}
-    <form id="blogForm" action="{{ route('admin.blogs.update', $blog) }}" method="POST" enctype="multipart/form-data" class="p-6">
-        @csrf
-        @method('PUT')
+    
+    <form id="blogForm" action="<?php echo e(route('admin.blogs.update', $blog)); ?>" method="POST" enctype="multipart/form-data" class="p-6">
+        <?php echo csrf_field(); ?>
+        <?php echo method_field('PUT'); ?>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {{-- Left Column - Basic Info --}}
+            
             <div class="space-y-6">
                 <div class="bg-gray-50 rounded-lg p-5">
                     <h3 class="text-lg font-medium text-gray-900 mb-4">
@@ -57,12 +71,26 @@
                                 Tiêu đề bài viết <span class="text-red-500">*</span>
                             </label>
                             <input type="text" name="title" id="title"
-                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('title') border-red-300 @enderror" 
-                                   value="{{ old('title', $blog->title) }}" 
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 <?php $__errorArgs = ['title'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> border-red-300 <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>" 
+                                   value="<?php echo e(old('title', $blog->title)); ?>" 
                                    placeholder="Nhập tiêu đề bài viết...">
-                            @error('title')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
+                            <?php $__errorArgs = ['title'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                <p class="mt-1 text-sm text-red-600"><?php echo e($message); ?></p>
+                            <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                         </div>
 
                         <div>
@@ -70,17 +98,31 @@
                                 Nội dung bài viết <span class="text-red-500">*</span>
                             </label>
                             <textarea name="content" id="content" rows="8" 
-                                      class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('content') border-red-300 @enderror" 
-                                      placeholder="Nhập nội dung bài viết...">{{ old('content', $blog->content) }}</textarea>
-                            @error('content')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
+                                      class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 <?php $__errorArgs = ['content'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> border-red-300 <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>" 
+                                      placeholder="Nhập nội dung bài viết..."><?php echo e(old('content', $blog->content)); ?></textarea>
+                            <?php $__errorArgs = ['content'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                <p class="mt-1 text-sm text-red-600"><?php echo e($message); ?></p>
+                            <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {{-- Right Column - Media & Settings --}}
+            
             <div class="space-y-6">
                 <div class="bg-gray-50 rounded-lg p-5">
                     <h3 class="text-lg font-medium text-gray-900 mb-4">
@@ -89,12 +131,12 @@
                     </h3>
                     
                     <div class="space-y-4">
-                        {{-- Current Image --}}
-                        @if($blog->image_path)
+                        
+                        <?php if($blog->image_path): ?>
                         <div id="currentImage" class="mb-4">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Hình ảnh hiện tại</label>
                             <div class="relative">
-                                <img src="{{ Storage::url($blog->image_path) }}" 
+                                <img src="<?php echo e(Storage::url($blog->image_path)); ?>" 
                                      alt="Current image" 
                                      class="w-full h-48 object-cover rounded-lg border border-gray-200">
                                 <div class="absolute top-2 right-2">
@@ -104,9 +146,9 @@
                                 </div>
                             </div>
                         </div>
-                        @endif
+                        <?php endif; ?>
 
-                        {{-- New Image Preview --}}
+                        
                         <div id="newImagePreview" class="hidden mb-4">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Hình ảnh mới</label>
                             <div class="relative">
@@ -119,10 +161,11 @@
                             </div>
                         </div>
 
-                        {{-- Upload New Image --}}
+                        
                         <div>
                             <label for="image_path" class="block text-sm font-medium text-gray-700 mb-2">
-                                {{ $blog->image_path ? 'Thay đổi hình ảnh' : 'Hình ảnh bài viết' }}
+                                <?php echo e($blog->image_path ? 'Thay đổi hình ảnh' : 'Hình ảnh bài viết'); ?>
+
                             </label>
                             <div id="uploadArea" class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-gray-400 transition-colors">
                                 <div class="space-y-1 text-center">
@@ -131,7 +174,7 @@
                                     </svg>
                                     <div class="flex text-sm text-gray-600">
                                         <label for="image_path" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
-                                            <span id="uploadText">{{ $blog->image_path ? 'Upload hình mới' : 'Upload hình ảnh' }}</span>
+                                            <span id="uploadText"><?php echo e($blog->image_path ? 'Upload hình mới' : 'Upload hình ảnh'); ?></span>
                                             <input id="image_path" name="image_path" type="file" class="sr-only" accept="image/*">
                                         </label>
                                         <p class="pl-1">hoặc kéo thả vào đây</p>
@@ -139,9 +182,16 @@
                                     <p class="text-xs text-gray-500">PNG, JPG, GIF tối đa 2MB</p>
                                 </div>
                             </div>
-                            @error('image_path')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
+                            <?php $__errorArgs = ['image_path'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                <p class="mt-1 text-sm text-red-600"><?php echo e($message); ?></p>
+                            <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                         </div>
                     </div>
                 </div>
@@ -157,7 +207,8 @@
                             <input type="checkbox" 
                                    name="is_active" 
                                    value="1"
-                                   {{ old('is_active', $blog->is_active) ? 'checked' : '' }}
+                                   <?php echo e(old('is_active', $blog->is_active) ? 'checked' : ''); ?>
+
                                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                             <label class="ml-3 text-sm text-gray-700">
                                 <span class="font-medium">Hiển thị</span>
@@ -169,7 +220,8 @@
                             <input type="checkbox" 
                                    name="is_featured" 
                                    value="1"
-                                   {{ old('is_featured', $blog->is_featured) ? 'checked' : '' }}
+                                   <?php echo e(old('is_featured', $blog->is_featured) ? 'checked' : ''); ?>
+
                                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                             <label class="ml-3 text-sm text-gray-700">
                                 <span class="font-medium">Nổi bật</span>
@@ -181,9 +233,9 @@
             </div>
         </div>
 
-        {{-- Actions --}}
+        
         <div class="mt-8 flex items-center justify-between pt-6 border-t border-gray-200">
-            <a href="{{ route('admin.blogs.index') }}" 
+            <a href="<?php echo e(route('admin.blogs.index')); ?>" 
                class="px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                 Hủy
             </a>
@@ -294,7 +346,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Wait 2 seconds then redirect
             setTimeout(() => {
-                window.location.href = data.redirect || '{{ route("admin.blogs.index") }}';
+                window.location.href = data.redirect || '<?php echo e(route("admin.blogs.index")); ?>';
             }, 2000);
         })
         .catch(error => {
@@ -380,4 +432,5 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\forev\showroom-car-modern\resources\views/admin/blogs/edit.blade.php ENDPATH**/ ?>

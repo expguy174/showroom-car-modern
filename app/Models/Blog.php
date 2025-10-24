@@ -10,25 +10,22 @@ class Blog extends Model
     use HasFactory;
 
     protected $fillable = [
-        'admin_id',
+        'user_id',
         'title',
         'content',
         'image_path',
-        'is_published',
-        'published_at',
         'is_active',
-        'status',
+        'is_featured',
     ];
 
     protected $casts = [
-        'is_published' => 'boolean',
         'is_active' => 'boolean',
-        'published_at' => 'datetime',
+        'is_featured' => 'boolean',
     ];
 
-    public function admin()
+    public function user()
     {
-        return $this->belongsTo(User::class, 'admin_id');
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function getImageUrlAttribute()

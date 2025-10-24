@@ -18,36 +18,44 @@
         icon="fas fa-newspaper">
         <a href="{{ route('admin.blogs.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
             <i class="fas fa-plus mr-2"></i>
-            Thêm bài viết
-        </a>
+                Thêm bài viết
+            </a>
     </x-admin.page-header>
 
     {{-- Stats Cards --}}
-    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
+    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
         <x-admin.stats-card 
             title="Tổng bài viết"
-            :value="0"
+            :value="$stats['total'] ?? 0"
             icon="fas fa-newspaper"
             color="blue"
             description="Tất cả bài viết"
             dataStat="total" />
         
         <x-admin.stats-card 
-            title="Đã đăng"
-            :value="0"
-            icon="fas fa-check-circle"
+            title="Đang hiển thị"
+            :value="$stats['active'] ?? 0"
+            icon="fas fa-eye"
             color="green"
-            description="Bài viết đã đăng"
-            dataStat="published" />
+            description="Hiển thị trên website"
+            dataStat="active" />
         
         <x-admin.stats-card 
-            title="Bản nháp"
-            :value="0"
-            icon="fas fa-edit"
+            title="Đã ẩn"
+            :value="$stats['inactive'] ?? 0"
+            icon="fas fa-eye-slash"
+            color="red"
+            description="Ẩn khỏi website"
+            dataStat="inactive" />
+        
+        <x-admin.stats-card 
+            title="Nổi bật"
+            :value="$stats['featured'] ?? 0"
+            icon="fas fa-star"
             color="yellow"
-            description="Đang soạn"
-            dataStat="draft" />
-    </div>
+            description="Bài viết nổi bật"
+            dataStat="featured" />
+        </div>
 
     {{-- Filters --}}
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
@@ -67,24 +75,26 @@
                     size="small"
                     :showIcon="true"
                     :showClearButton="true" />
-            </div>
-            
+    </div>
+
             {{-- Status Filter --}}
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label>
                 <x-admin.custom-dropdown
                     name="status"
                     :options="[
-                        'published' => 'Đã đăng',
-                        'draft' => 'Bản nháp'
+                        'active' => 'Hiển thị',
+                        'inactive' => 'Ẩn',
+                        'featured' => 'Nổi bật',
+                        'normal' => 'Thường'
                     ]"
                     :selected="request('status')"
                     placeholder="Tất cả"
                     onchange="loadBlogsFromDropdown"
                     :searchable="false"
                     width="w-full" />
-            </div>
-            
+    </div>
+
             {{-- Reset --}}
             <div>
                 <x-admin.reset-button 
@@ -106,7 +116,7 @@
         after-load-callback="initializeEventListenersAndUpdateStats">
         @include('admin.blogs.partials.table', ['blogs' => $blogs])
     </x-admin.ajax-table>
-</div>
+        </div>
 
 {{-- Delete Modal --}}
 <x-admin.delete-modal 
@@ -157,6 +167,86 @@ async function fetchAndUpdateStats() {
 
 // Initialize event listeners
 function initializeEventListeners() {
+    // Status toggle buttons
+    document.querySelectorAll('.status-toggle').forEach(button => {
+        button.addEventListener('click', async function(e) {
+            e.preventDefault();
+            const blogId = this.dataset.blogId;
+            const newStatus = this.dataset.status === 'true';
+            const buttonElement = this;
+            const originalIcon = buttonElement.querySelector('i').className;
+            
+            // Show loading spinner
+            buttonElement.querySelector('i').className = 'fas fa-spinner fa-spin w-4 h-4';
+            buttonElement.disabled = true;
+            
+            try {
+                const response = await fetch(`/admin/blogs/${blogId}/toggle`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Update button appearance
+                    if (newStatus) {
+                        buttonElement.className = 'text-orange-600 hover:text-orange-900 status-toggle w-4 h-4 flex items-center justify-center';
+                        buttonElement.title = 'Tạm dừng';
+                        buttonElement.dataset.status = 'false';
+                        buttonElement.querySelector('i').className = 'fas fa-pause w-4 h-4';
+                    } else {
+                        buttonElement.className = 'text-green-600 hover:text-green-900 status-toggle w-4 h-4 flex items-center justify-center';
+                        buttonElement.title = 'Kích hoạt';
+                        buttonElement.dataset.status = 'true';
+                        buttonElement.querySelector('i').className = 'fas fa-play w-4 h-4';
+                    }
+                    
+                    // Update active status badge in table
+                    const row = buttonElement.closest('tr');
+                    const statusCell = row.querySelector('td:nth-child(3)'); // Cột thứ 3 (Trạng thái)
+                    if (statusCell) {
+                        const activeBadge = statusCell.querySelector('span');
+                        if (activeBadge) {
+                            if (newStatus) {
+                                activeBadge.className = 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800';
+                                activeBadge.innerHTML = '<i class="fas fa-eye-slash mr-1"></i>Ẩn';
+                            } else {
+                                activeBadge.className = 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800';
+                                activeBadge.innerHTML = '<i class="fas fa-eye mr-1"></i>Hiển thị';
+                            }
+                        }
+                    }
+                    
+                    // Update stats cards if provided
+                    if (data.stats && window.updateStatsCards) {
+                        window.updateStatsCards(data.stats);
+                    }
+                    
+                    // Show message
+                    if (window.showMessage) {
+                        window.showMessage(data.message, 'success');
+                    }
+                } else {
+                    throw new Error(data.message || 'Có lỗi xảy ra');
+                }
+            } catch (error) {
+                console.error('Toggle error:', error);
+                // Restore original state on error
+                buttonElement.querySelector('i').className = originalIcon;
+                if (window.showMessage) {
+                    window.showMessage(error.message || 'Có lỗi khi thay đổi trạng thái', 'error');
+                }
+            } finally {
+                buttonElement.disabled = false;
+            }
+        });
+    });
+    
     // Delete buttons
     document.querySelectorAll('.delete-btn').forEach(button => {
         button.removeEventListener('click', handleDeleteButtonClick);
@@ -186,8 +276,10 @@ window.loadBlogsFromDropdown = function() {
         const statusInput = searchForm.querySelector('input[name="status"]');
         if (statusInput) {
             const statusMap = {
-                'Đã đăng': 'published',
-                'Bản nháp': 'draft'
+                'Hiển thị': 'active',
+                'Ẩn': 'inactive',
+                'Nổi bật': 'featured',
+                'Thường': 'normal'
             };
             
             if (statusMap[statusInput.value]) {
@@ -236,6 +328,11 @@ window.confirmDeleteBlog = function(data) {
             
             if (window.showMessage) {
                 window.showMessage(responseData.message || 'Đã xóa bài viết thành công!', 'success');
+            }
+            
+            // Update stats cards if provided
+            if (responseData.stats && window.updateStatsCards) {
+                window.updateStatsCards(responseData.stats);
             }
             
             // Reload table

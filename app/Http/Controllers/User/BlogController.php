@@ -10,7 +10,7 @@ class BlogController extends Controller
 {
     public function index()
     {
-        $blogs = Blog::where('is_published', true)
+        $blogs = Blog::where('is_active', true)
             ->orderBy('created_at', 'desc')
             ->paginate(9);
 
@@ -19,11 +19,11 @@ class BlogController extends Controller
 
     public function show(Blog $blog)
     {
-        if (!$blog->is_published) {
+        if (!$blog->is_active) {
             abort(404);
         }
 
-        $recentBlogs = Blog::where('is_published', true)
+        $recentBlogs = Blog::where('is_active', true)
             ->where('id', '!=', $blog->id)
             ->orderBy('created_at', 'desc')
             ->take(3)

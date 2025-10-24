@@ -314,18 +314,18 @@ function attachDeleteButtonListeners() {
 }
 
 function handleDeleteButtonClick(e) {
-    e.preventDefault();
-    const messageId = this.dataset.messageId;
-    const senderName = this.dataset.messageName;
-    const subject = this.dataset.messageSubject;
-    
-    if (window.deleteModalManager_deleteMessageModal) {
-        window.deleteModalManager_deleteMessageModal.show({
-            entityName: `tin nhắn từ ${senderName}`,
-            details: `<strong>Tiêu đề:</strong> ${subject}<br>Hành động này không thể hoàn tác.`,
-            deleteUrl: `/admin/contact-messages/${messageId}`
-        });
-    }
+            e.preventDefault();
+            const messageId = this.dataset.messageId;
+            const senderName = this.dataset.messageName;
+            const subject = this.dataset.messageSubject;
+            
+            if (window.deleteModalManager_deleteMessageModal) {
+                window.deleteModalManager_deleteMessageModal.show({
+                    entityName: `tin nhắn từ ${senderName}`,
+                    details: `<strong>Tiêu đề:</strong> ${subject}<br>Hành động này không thể hoàn tác.`,
+                    deleteUrl: `/admin/contact-messages/${messageId}`
+                });
+            }
 }
 
 // Initialize event listeners

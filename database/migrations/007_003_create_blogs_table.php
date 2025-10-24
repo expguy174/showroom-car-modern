@@ -9,18 +9,16 @@ return new class extends Migration {
     {
         Schema::create('blogs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('admin_id')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->string('title');
             $table->text('content');
             $table->string('image_path')->nullable();
-            $table->boolean('is_published')->default(false);
-            $table->timestamp('published_at')->nullable();
             $table->boolean('is_active')->default(true);
-            $table->string('status')->default('draft'); // draft, published, archived
+            $table->boolean('is_featured')->default(false);
             $table->timestamps();
 
-            $table->index(['status', 'is_active', 'created_at']);
-            $table->index(['is_published', 'created_at']);
+            $table->index(['is_active', 'created_at']);
+            $table->index(['is_featured', 'is_active', 'created_at']);
         });
     }
 

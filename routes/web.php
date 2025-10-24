@@ -310,8 +310,10 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/stats', [BlogController::class, 'getStats'])->name('stats');
         Route::get('/create', [BlogController::class, 'create'])->name('create');
         Route::post('/store', [BlogController::class, 'store'])->name('store');
+        Route::get('/{blog}', [BlogController::class, 'show'])->name('show');
         Route::get('/edit/{blog}', [BlogController::class, 'edit'])->name('edit');
         Route::put('/update/{blog}', [BlogController::class, 'update'])->name('update');
+        Route::post('/{blog}/toggle', [BlogController::class, 'toggle'])->name('toggle');
         Route::delete('/delete/{blog}', [BlogController::class, 'destroy'])->name('destroy');
     });
 

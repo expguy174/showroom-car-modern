@@ -58,12 +58,10 @@ class HomeController extends Controller
 
         // Latest blogs/news (limit to 3) - Optimized with caching
         $blogs = Cache::remember('home_latest_blogs', now()->addHours(6), function () {
-            $allBlogs = Blog::where('status', 'published')
-                ->where('is_active', 1)
-                ->where('is_published', 1)
-                ->with(['admin.userProfile:id,user_id,name'])
+            $allBlogs = Blog::where('is_active', 1)
+                ->with(['user.userProfile:id,user_id,name'])
                 ->orderBy('created_at', 'desc')
-                ->get(['id', 'admin_id', 'title', 'content', 'image_path', 'created_at']);
+                ->get(['id', 'user_id', 'title', 'content', 'image_path', 'created_at']);
             
             // Ensure only 3 blogs are returned
             return $allBlogs->take(3);

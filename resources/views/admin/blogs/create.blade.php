@@ -1,18 +1,34 @@
 @extends('layouts.admin')
 
-@section('title', 'Thêm bài viết mới')
+@section('title', 'Tạo bài viết')
 
 @section('content')
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 max-w-4xl mx-auto">
+{{-- Flash Messages Component --}}
+<x-admin.flash-messages 
+    :show-icons="true"
+    :dismissible="true"
+    position="top-right"
+    :auto-dismiss="5000" />
+
+@if(session('success'))
+<script>
+    // Auto redirect after 2 seconds
+    setTimeout(function() {
+        window.location.href = "{{ route('admin.blogs.index') }}";
+    }, 2000);
+</script>
+@endif
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 max-w-7xl mx-auto">
     {{-- Header --}}
     <div class="px-6 py-4 border-b border-gray-200">
         <div class="flex items-center justify-between">
             <div>
                 <h1 class="text-xl font-semibold text-gray-900">
                     <i class="fas fa-plus-circle text-blue-600 mr-3"></i>
-                    Thêm bài viết mới
+                    Tạo bài viết mới
                 </h1>
-                <p class="text-sm text-gray-600 mt-1">Tạo bài viết blog mới</p>
+                <p class="text-sm text-gray-600 mt-1">Viết bài viết mới cho blog</p>
             </div>
             <a href="{{ route('admin.blogs.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors">
                 <i class="fas fa-arrow-left mr-2"></i>
@@ -21,36 +37,17 @@
         </div>
     </div>
 
-    {{-- Error Messages --}}
-    @if($errors->any())
-    <div class="mx-6 mt-4 bg-red-50 border border-red-200 rounded-lg p-4">
-        <div class="flex">
-            <div class="flex-shrink-0">
-                <i class="fas fa-exclamation-circle text-red-400"></i>
-            </div>
-            <div class="ml-3">
-                <h3 class="text-sm font-medium text-red-800">Có lỗi xảy ra:</h3>
-                <ul class="mt-2 text-sm text-red-700 list-disc list-inside">
-                    @foreach($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        </div>
-    </div>
-    @endif
-
     {{-- Form --}}
-    <form action="{{ route('admin.blogs.store') }}" method="POST" enctype="multipart/form-data" class="p-6">
+    <form id="blogForm" action="{{ route('admin.blogs.store') }}" method="POST" enctype="multipart/form-data" class="p-6">
         @csrf
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {{-- Left Column - Content --}}
+            {{-- Left Column - Basic Info --}}
             <div class="space-y-6">
-                <div>
+                <div class="bg-gray-50 rounded-lg p-5">
                     <h3 class="text-lg font-medium text-gray-900 mb-4">
-                        <i class="fas fa-edit text-blue-600 mr-2"></i>
-                        Nội dung bài viết
+                        <i class="fas fa-info-circle text-blue-600 mr-2"></i>
+                        Thông tin cơ bản
                     </h3>
                     
                     <div class="space-y-4">
@@ -60,29 +57,20 @@
                             </label>
                             <input type="text" name="title" id="title" 
                                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('title') border-red-300 @enderror" 
-                                   value="{{ old('title') }}" required placeholder="Nhập tiêu đề bài viết...">
+                                   value="{{ old('title') }}" 
+                                   placeholder="Nhập tiêu đề bài viết...">
                             @error('title')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
 
                         <div>
-                            <label for="excerpt" class="block text-sm font-medium text-gray-700 mb-2">Tóm tắt</label>
-                            <textarea name="excerpt" id="excerpt" rows="3" 
-                                      class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('excerpt') border-red-300 @enderror" 
-                                      placeholder="Tóm tắt ngắn gọn về bài viết...">{{ old('excerpt') }}</textarea>
-                            @error('excerpt')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div>
                             <label for="content" class="block text-sm font-medium text-gray-700 mb-2">
-                                Nội dung <span class="text-red-500">*</span>
+                                Nội dung bài viết <span class="text-red-500">*</span>
                             </label>
                             <textarea name="content" id="content" rows="8" 
                                       class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('content') border-red-300 @enderror" 
-                                      required placeholder="Viết nội dung bài viết...">{{ old('content') }}</textarea>
+                                      placeholder="Nhập nội dung bài viết...">{{ old('content') }}</textarea>
                             @error('content')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -93,77 +81,81 @@
 
             {{-- Right Column - Media & Settings --}}
             <div class="space-y-6">
-                <div>
+                <div class="bg-gray-50 rounded-lg p-5">
                     <h3 class="text-lg font-medium text-gray-900 mb-4">
                         <i class="fas fa-image text-blue-600 mr-2"></i>
-                        Hình ảnh & Cài đặt
+                        Hình ảnh
                     </h3>
                     
                     <div class="space-y-4">
                         <div>
-                            <label for="image_path" class="block text-sm font-medium text-gray-700 mb-2">Hình ảnh đại diện</label>
-                            <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-gray-400 transition-colors">
+                            <label for="image_path" class="block text-sm font-medium text-gray-700 mb-2">
+                                Hình ảnh bài viết
+                            </label>
+                            
+                            {{-- Image Preview --}}
+                            <div id="imagePreview" class="hidden mb-4">
+                                <div class="relative">
+                                    <img id="previewImg" src="" alt="Preview" class="w-full h-48 object-cover rounded-lg border border-gray-200">
+                                    <div class="absolute top-2 right-2">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                            <i class="fas fa-upload mr-1"></i>Mới upload
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {{-- Upload Area --}}
+                            <div id="uploadArea" class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-gray-400 transition-colors">
                                 <div class="space-y-1 text-center">
-                                    <i class="fas fa-cloud-upload-alt text-gray-400 text-3xl"></i>
+                                    <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg>
                                     <div class="flex text-sm text-gray-600">
                                         <label for="image_path" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
-                                            <span>Tải lên hình ảnh</span>
+                                            <span id="uploadText">Upload hình ảnh</span>
                                             <input id="image_path" name="image_path" type="file" class="sr-only" accept="image/*">
                                         </label>
-                                        <p class="pl-1">hoặc kéo thả</p>
+                                        <p class="pl-1">hoặc kéo thả vào đây</p>
                                     </div>
-                                    <p class="text-xs text-gray-500">PNG, JPG, GIF tối đa 10MB</p>
+                                    <p class="text-xs text-gray-500">PNG, JPG, GIF tối đa 2MB</p>
                                 </div>
                             </div>
                             @error('image_path')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
-
-                        <div>
-                            <label for="tags" class="block text-sm font-medium text-gray-700 mb-2">Tags</label>
-                            <input type="text" name="tags" id="tags" 
-                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('tags') border-red-300 @enderror" 
-                                   value="{{ old('tags') }}" placeholder="xe hơi, ô tô, showroom...">
-                            <p class="mt-1 text-xs text-gray-500">Phân cách bằng dấu phẩy</p>
-                            @error('tags')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
+                    </div>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label for="sort_order" class="block text-sm font-medium text-gray-700 mb-2">Thứ tự sắp xếp</label>
-                                <input type="number" name="sort_order" id="sort_order" 
-                                       class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('sort_order') border-red-300 @enderror" 
-                                       value="{{ old('sort_order', 0) }}" min="0" placeholder="0">
-                                @error('sort_order')
-                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <div class="flex items-center pt-8">
+                <div class="bg-gray-50 rounded-lg p-5">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">
+                        <i class="fas fa-cog text-blue-600 mr-2"></i>
+                        Cài đặt
+                    </h3>
+                    
+                    <div class="space-y-4">
                                 <div class="flex items-center">
-                                    <input type="hidden" name="is_featured" value="0">
-                                    <input type="checkbox" name="is_featured" id="is_featured" value="1" 
-                                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
-                                           {{ old('is_featured') ? 'checked' : '' }}>
-                                    <label for="is_featured" class="ml-2 block text-sm text-gray-900">
-                                        <i class="fas fa-star text-yellow-500 mr-1"></i>
-                                        Nổi bật
+                            <input type="checkbox" 
+                                   name="is_active" 
+                                   value="1"
+                                   {{ old('is_active', true) ? 'checked' : '' }}
+                                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                            <label class="ml-3 text-sm text-gray-700">
+                                <span class="font-medium">Hiển thị</span>
+                                <p class="text-xs text-gray-500">Bài viết sẽ hiển thị trên website</p>
                                     </label>
-                                </div>
-                            </div>
                         </div>
 
                         <div class="flex items-center">
-                            <input type="hidden" name="is_published" value="0">
-                            <input type="checkbox" name="is_published" id="is_published" value="1" 
-                                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
-                                   {{ old('is_published', true) ? 'checked' : '' }}>
-                            <label for="is_published" class="ml-2 block text-sm text-gray-900">
-                                <i class="fas fa-globe text-green-500 mr-1"></i>
-                                Xuất bản ngay
+                            <input type="checkbox" 
+                                   name="is_featured" 
+                                   value="1"
+                                   {{ old('is_featured', false) ? 'checked' : '' }}
+                                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                            <label class="ml-3 text-sm text-gray-700">
+                                <span class="font-medium">Nổi bật</span>
+                                <p class="text-xs text-gray-500">Bài viết sẽ được ưu tiên hiển thị</p>
                             </label>
                         </div>
                     </div>
@@ -171,44 +163,196 @@
             </div>
         </div>
 
-        {{-- Action Buttons --}}
-        <div class="mt-8 pt-6 border-t border-gray-200">
-            <div class="flex items-center justify-end gap-4">
-                <a href="{{ route('admin.blogs.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-                    <i class="fas fa-times mr-2"></i>
-                    Hủy bỏ
-                </a>
-                <button type="submit" class="inline-flex items-center px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+        {{-- Actions --}}
+        <div class="mt-8 flex items-center justify-between pt-6 border-t border-gray-200">
+            <a href="{{ route('admin.blogs.index') }}" 
+               class="px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Hủy
+            </a>
+            <button type="submit" class="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
                     <i class="fas fa-save mr-2"></i>
-                    Lưu bài viết
+                Tạo
                 </button>
-            </div>
         </div>
     </form>
 </div>
 
 <script>
-// Image preview functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Preview image when selected
 document.getElementById('image_path').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (file) {
         const reader = new FileReader();
         reader.onload = function(e) {
-            // Create preview if doesn't exist
-            let preview = document.getElementById('image-preview');
-            if (!preview) {
-                preview = document.createElement('div');
-                preview.id = 'image-preview';
-                preview.className = 'mt-4';
-                e.target.closest('.space-y-1').appendChild(preview);
+                // Show image preview
+                const preview = document.getElementById('imagePreview');
+                const previewImg = document.getElementById('previewImg');
+                const uploadArea = document.getElementById('uploadArea');
+                const uploadText = document.getElementById('uploadText');
+                
+                previewImg.src = e.target.result;
+                preview.classList.remove('hidden');
+                
+                // Change upload text to "Thay đổi ảnh"
+                uploadText.textContent = 'Thay đổi ảnh';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // AJAX form submission
+    document.getElementById('blogForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Clear previous errors
+        clearErrors();
+        
+        // Client-side validation first
+        const validation = validateForm();
+        if (!validation.isValid) {
+            // Focus the field with error
+            if (validation.element) {
+                validation.element.focus();
+                validation.element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                // Add error styling
+                validation.element.classList.add('border-red-300');
+                validation.element.classList.remove('border-gray-300');
             }
-            preview.innerHTML = `
-                <div class="flex items-center justify-center">
-                    <img src="${e.target.result}" alt="Image preview" class="h-32 w-48 object-cover border border-gray-200 rounded-lg">
-                </div>
-            `;
-        };
-        reader.readAsDataURL(file);
+            
+            // Show specific flash message
+            if (window.showMessage) {
+                window.showMessage(validation.message, 'error');
+            }
+            return; // Stop submission
+        }
+        
+        // Show loading state - target the form's submit button specifically
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Đang xử lý...';
+        
+        // Prepare form data
+        const formData = new FormData(this);
+        
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    console.error('Server response:', text);
+                    try {
+                        const data = JSON.parse(text);
+                        throw { status: response.status, data: data };
+                    } catch (e) {
+                        throw { status: response.status, data: { message: 'Server error: ' + text.substring(0, 100) } };
+                    }
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Parsed response data:', data);
+            
+            // Show success message
+            if (window.showMessage) {
+                window.showMessage(data.message || 'Tạo bài viết thành công!', 'success');
+            }
+            
+            // Wait 2 seconds then redirect
+            setTimeout(() => {
+                window.location.href = data.redirect || '{{ route("admin.blogs.index") }}';
+            }, 2000);
+        })
+        .catch(error => {
+            console.error('Error details:', error);
+            
+            // Restore button state
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+            
+            // Show error message
+            if (window.showMessage) {
+                const errorMessage = error.data?.message || error.message || 'Có lỗi xảy ra khi tạo bài viết. Vui lòng thử lại.';
+                window.showMessage(errorMessage, 'error');
+            }
+        });
+    });
+
+    function validateForm() {
+        // 1. Tiêu đề (required)
+        const titleField = document.getElementById('title');
+        if (!titleField || !titleField.value.trim()) {
+            return {
+                isValid: false,
+                element: titleField,
+                message: 'Vui lòng nhập tiêu đề bài viết.'
+            };
+        }
+        if (titleField.value.trim().length < 3) {
+            return {
+                isValid: false,
+                element: titleField,
+                message: 'Tiêu đề bài viết phải có ít nhất 3 ký tự.'
+            };
+        }
+
+        // 2. Nội dung (required)
+        const contentField = document.getElementById('content');
+        if (!contentField || !contentField.value.trim()) {
+            return {
+                isValid: false,
+                element: contentField,
+                message: 'Vui lòng nhập nội dung bài viết.'
+            };
+        }
+
+        // 3. Hình ảnh (optional nhưng phải hợp lệ nếu có)
+        const imageField = document.getElementById('image_path');
+        if (imageField && imageField.files.length > 0) {
+            const file = imageField.files[0];
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/svg+xml'];
+            if (!allowedTypes.includes(file.type)) {
+                return {
+                    isValid: false,
+                    element: imageField,
+                    message: 'Hình ảnh phải có định dạng JPEG, PNG, JPG, GIF hoặc SVG.'
+                };
+            }
+            if (file.size > 2 * 1024 * 1024) { // 2MB
+                return {
+                    isValid: false,
+                    element: imageField,
+                    message: 'Kích thước hình ảnh không được vượt quá 2MB.'
+                };
+            }
+        }
+
+        return { isValid: true };
+    }
+
+    // Clear errors function
+    function clearErrors() {
+        document.querySelectorAll('.border-red-300').forEach(input => {
+            input.classList.remove('border-red-300');
+            input.classList.add('border-gray-300');
+        });
+    }
+
+    // Focus on first error field if validation fails
+    const firstError = document.querySelector('.border-red-300');
+    if (firstError) {
+        firstError.focus();
+        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 });
 </script>
