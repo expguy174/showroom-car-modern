@@ -3,17 +3,17 @@
         <table class="min-w-full divide-y divide-gray-200" style="table-layout: fixed;">
         <thead class="bg-gray-50">
             <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap" style="width: 22%;">Người gửi</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap" style="width: 18%;">Tiêu đề</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap" style="width: 35%;">Nội dung</th>
-                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase whitespace-nowrap" style="width: 12%;">Trạng thái</th>
-                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase whitespace-nowrap" style="width: 13%;">Thao tác</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap" style="width: 20%;">Người gửi</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap" style="width: 20%;">Tiêu đề</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap" style="width: 30%;">Nội dung</th>
+                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase whitespace-nowrap" style="width: 15%;">Trạng thái</th>
+                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase whitespace-nowrap" style="width: 15%;">Thao tác</th>
             </tr>
         </thead>
         <tbody class="divide-y divide-gray-200">
             <?php $__empty_1 = true; $__currentLoopData = $messages; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $message): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-            <tr class="hover:bg-gray-50">
-                <td class="px-6 py-4">
+            <tr class="hover:bg-gray-50" data-message-id="<?php echo e($message->id); ?>">
+                <td class="px-6 py-4 whitespace-nowrap">
                     <div class="flex items-center space-x-3">
                         
                         <div class="flex-shrink-0">
@@ -49,10 +49,10 @@
                         </div>
                     </div>
                 </td>
-                <td class="px-6 py-4">
+                <td class="px-6 py-4 whitespace-nowrap">
                     <div class="text-sm font-medium text-gray-900"><?php echo e($message->subject); ?></div>
                 </td>
-                <td class="px-6 py-4 max-w-md">
+                <td class="px-6 py-4 max-w-md whitespace-nowrap">
                     <p class="text-sm text-gray-900 truncate"><?php echo e($message->message); ?></p>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-center">
@@ -144,9 +144,12 @@
             </tr>
             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
             <tr>
-                <td colspan="5" class="px-6 py-12 text-center text-gray-500">
-                    <i class="fas fa-envelope text-4xl mb-2"></i>
-                    <p>Chưa có tin nhắn nào</p>
+                <td colspan="5" class="px-6 py-12 text-center">
+                    <div class="flex flex-col items-center justify-center">
+                        <i class="fas fa-envelope text-gray-300 text-5xl mb-4"></i>
+                        <p class="text-gray-500 text-lg font-medium">Không tìm thấy tin nhắn nào</p>
+                        <p class="text-gray-400 text-sm mt-1">Thử thay đổi bộ lọc hoặc tìm kiếm khác</p>
+                    </div>
                 </td>
             </tr>
             <?php endif; ?>

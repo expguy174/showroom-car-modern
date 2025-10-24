@@ -428,6 +428,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     // Contact Messages
     Route::prefix('contact-messages')->name('contact-messages.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\ContactMessageController::class, 'index'])->name('index');
+        Route::get('/stats', [\App\Http\Controllers\Admin\ContactMessageController::class, 'getStats'])->name('stats');
         Route::get('/{contactMessage}', [\App\Http\Controllers\Admin\ContactMessageController::class, 'show'])->name('show');
         Route::patch('/{contactMessage}/mark-read', [\App\Http\Controllers\Admin\ContactMessageController::class, 'markAsRead'])->name('mark-read');
         Route::patch('/{contactMessage}/update-status', [\App\Http\Controllers\Admin\ContactMessageController::class, 'updateStatus'])->name('update-status');

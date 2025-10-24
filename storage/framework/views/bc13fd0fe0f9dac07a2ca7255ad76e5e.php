@@ -246,14 +246,14 @@
                 
                 
                 <div class="pt-3 border-t border-gray-200">
-                    <form action="<?php echo e(route('admin.contact-messages.destroy', $contactMessage)); ?>" method="POST" 
-                          onsubmit="return confirm('Bạn có chắc chắn muốn xóa tin nhắn này?');">
-                        <?php echo csrf_field(); ?>
-                        <?php echo method_field('DELETE'); ?>
-                        <button type="submit" class="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
-                            <i class="fas fa-trash mr-2"></i>Xóa tin nhắn
-                        </button>
-                    </form>
+                    <button type="button" 
+                            class="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors delete-show-btn"
+                            data-message-id="<?php echo e($contactMessage->id); ?>"
+                            data-message-name="<?php echo e(addslashes($contactMessage->name)); ?>"
+                            data-message-subject="<?php echo e(addslashes($contactMessage->subject)); ?>"
+                            title="Xóa">
+                        <i class="fas fa-trash mr-2"></i>Xóa tin nhắn
+                    </button>
                 </div>
             </div>
         </div>
@@ -333,6 +333,99 @@
         </div>
     </div>
 </div>
+
+
+<?php if (isset($component)) { $__componentOriginalaa3b824e4662c5ae30529397669d1c1d = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalaa3b824e4662c5ae30529397669d1c1d = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.admin.delete-modal','data' => ['modalId' => 'deleteMessageModal','title' => 'Xác nhận xóa tin nhắn','confirmText' => 'Xóa','cancelText' => 'Hủy','deleteCallbackName' => 'confirmDeleteMessage','entityType' => 'message']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('admin.delete-modal'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['modal-id' => 'deleteMessageModal','title' => 'Xác nhận xóa tin nhắn','confirm-text' => 'Xóa','cancel-text' => 'Hủy','delete-callback-name' => 'confirmDeleteMessage','entity-type' => 'message']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalaa3b824e4662c5ae30529397669d1c1d)): ?>
+<?php $attributes = $__attributesOriginalaa3b824e4662c5ae30529397669d1c1d; ?>
+<?php unset($__attributesOriginalaa3b824e4662c5ae30529397669d1c1d); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalaa3b824e4662c5ae30529397669d1c1d)): ?>
+<?php $component = $__componentOriginalaa3b824e4662c5ae30529397669d1c1d; ?>
+<?php unset($__componentOriginalaa3b824e4662c5ae30529397669d1c1d); ?>
+<?php endif; ?>
+
+<?php $__env->startPush('scripts'); ?>
+<script>
+// Handle delete button from show page
+document.addEventListener('DOMContentLoaded', function() {
+    const deleteShowBtn = document.querySelector('.delete-show-btn');
+    if (deleteShowBtn) {
+        deleteShowBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const messageId = this.dataset.messageId;
+            const senderName = this.dataset.messageName;
+            const subject = this.dataset.messageSubject;
+            
+            if (window.deleteModalManager_deleteMessageModal) {
+                window.deleteModalManager_deleteMessageModal.show({
+                    entityName: `tin nhắn từ ${senderName}`,
+                    details: `<strong>Tiêu đề:</strong> ${subject}<br>Hành động này không thể hoàn tác.`,
+                    deleteUrl: `/admin/contact-messages/${messageId}`
+                });
+            }
+        });
+    }
+});
+
+// Delete confirmation function for show page
+window.confirmDeleteMessage = function(data) {
+    if (!data || !data.deleteUrl) return;
+    
+    if (window.deleteModalManager_deleteMessageModal) {
+        window.deleteModalManager_deleteMessageModal.setLoading(true);
+    }
+    
+    fetch(data.deleteUrl, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(responseData => {
+        if (responseData.success) {
+            if (window.deleteModalManager_deleteMessageModal) {
+                window.deleteModalManager_deleteMessageModal.hide();
+            }
+            
+            if (window.showMessage) {
+                window.showMessage(responseData.message || 'Đã xóa tin nhắn thành công!', 'success');
+            }
+            
+            // Redirect to index page after delete
+            setTimeout(() => {
+                window.location.href = '<?php echo e(route("admin.contact-messages.index")); ?>';
+            }, 1500);
+        } else {
+            throw new Error(responseData.message || 'Có lỗi xảy ra');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        if (window.deleteModalManager_deleteMessageModal) {
+            window.deleteModalManager_deleteMessageModal.setLoading(false);
+        }
+        if (window.showMessage) {
+            window.showMessage('Có lỗi xảy ra khi xóa tin nhắn!', 'error');
+        }
+    });
+};
+</script>
+<?php $__env->stopPush(); ?>
 
 <?php $__env->stopSection(); ?>
 

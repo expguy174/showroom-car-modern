@@ -36,6 +36,23 @@ class ContactMessageController extends Controller
         return view('admin.contact-messages.index', compact('messages'));
     }
 
+    public function getStats(Request $request)
+    {
+        $stats = [
+            'total' => ContactMessage::count(),
+            'new' => ContactMessage::where('status', 'new')->count(),
+            'in_progress' => ContactMessage::where('status', 'in_progress')->count(),
+            'resolved' => ContactMessage::where('status', 'resolved')->count(),
+            'closed' => ContactMessage::where('status', 'closed')->count(),
+        ];
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json($stats);
+        }
+
+        return $stats;
+    }
+
     public function show(ContactMessage $contactMessage)
     {
         // Load relationships
@@ -57,9 +74,19 @@ class ContactMessageController extends Controller
         }
         
         if ($request->ajax() || $request->wantsJson()) {
+            // Get updated stats
+            $stats = [
+                'total' => ContactMessage::count(),
+                'new' => ContactMessage::where('status', 'new')->count(),
+                'in_progress' => ContactMessage::where('status', 'in_progress')->count(),
+                'resolved' => ContactMessage::where('status', 'resolved')->count(),
+                'closed' => ContactMessage::where('status', 'closed')->count(),
+            ];
+            
             return response()->json([
                 'success' => true,
-                'message' => 'Đã chuyển sang đang xử lý!'
+                'message' => 'Đã chuyển sang đang xử lý!',
+                'stats' => $stats
             ]);
         }
         
@@ -74,14 +101,24 @@ class ContactMessageController extends Controller
         
         $contactMessage->update([
             'status' => $request->status,
-            'handled_by' => auth()->id(),
+            'handled_by' => auth()->guard()->id(),
             'handled_at' => now()
         ]);
         
         if ($request->ajax() || $request->wantsJson()) {
+            // Get updated stats
+            $stats = [
+                'total' => ContactMessage::count(),
+                'new' => ContactMessage::where('status', 'new')->count(),
+                'in_progress' => ContactMessage::where('status', 'in_progress')->count(),
+                'resolved' => ContactMessage::where('status', 'resolved')->count(),
+                'closed' => ContactMessage::where('status', 'closed')->count(),
+            ];
+            
             return response()->json([
                 'success' => true,
-                'message' => 'Đã cập nhật trạng thái thành công!'
+                'message' => 'Đã cập nhật trạng thái thành công!',
+                'stats' => $stats
             ]);
         }
         
@@ -93,9 +130,19 @@ class ContactMessageController extends Controller
         $contactMessage->delete();
         
         if ($request->ajax() || $request->wantsJson()) {
+            // Get updated stats
+            $stats = [
+                'total' => ContactMessage::count(),
+                'new' => ContactMessage::where('status', 'new')->count(),
+                'in_progress' => ContactMessage::where('status', 'in_progress')->count(),
+                'resolved' => ContactMessage::where('status', 'resolved')->count(),
+                'closed' => ContactMessage::where('status', 'closed')->count(),
+            ];
+            
             return response()->json([
                 'success' => true,
-                'message' => 'Đã xóa tin nhắn thành công!'
+                'message' => 'Đã xóa tin nhắn thành công!',
+                'stats' => $stats
             ]);
         }
         
