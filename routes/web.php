@@ -430,6 +430,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/', [\App\Http\Controllers\Admin\ContactMessageController::class, 'index'])->name('index');
         Route::get('/{contactMessage}', [\App\Http\Controllers\Admin\ContactMessageController::class, 'show'])->name('show');
         Route::patch('/{contactMessage}/mark-read', [\App\Http\Controllers\Admin\ContactMessageController::class, 'markAsRead'])->name('mark-read');
+        Route::patch('/{contactMessage}/update-status', [\App\Http\Controllers\Admin\ContactMessageController::class, 'updateStatus'])->name('update-status');
         Route::delete('/{contactMessage}', [\App\Http\Controllers\Admin\ContactMessageController::class, 'destroy'])->name('destroy');
     });
 

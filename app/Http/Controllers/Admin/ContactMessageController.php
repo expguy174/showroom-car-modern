@@ -23,7 +23,7 @@ class ContactMessageController extends Controller
         }
 
         if ($request->filled('status') && $request->status !== '') {
-            $query->where('is_read', $request->status === 'read');
+            $query->where('status', $request->status);
         }
 
         $messages = $query->orderBy('created_at', 'desc')->paginate(20);
@@ -38,9 +38,12 @@ class ContactMessageController extends Controller
 
     public function show(ContactMessage $contactMessage)
     {
-        // Mark as read when viewing
-        if (!$contactMessage->is_read) {
-            $contactMessage->update(['is_read' => true]);
+        // Load relationships
+        $contactMessage->load(['user.userProfile', 'showroom', 'handledBy']);
+        
+        // Mark as in_progress when viewing if status is new
+        if ($contactMessage->status === 'new') {
+            $contactMessage->update(['status' => 'in_progress']);
         }
 
         return view('admin.contact-messages.show', compact('contactMessage'));
@@ -48,16 +51,41 @@ class ContactMessageController extends Controller
 
     public function markAsRead(ContactMessage $contactMessage, Request $request)
     {
-        $contactMessage->update(['is_read' => true]);
+        // Change status from new to in_progress
+        if ($contactMessage->status === 'new') {
+            $contactMessage->update(['status' => 'in_progress']);
+        }
         
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => 'Đã đánh dấu đã đọc!'
+                'message' => 'Đã chuyển sang đang xử lý!'
             ]);
         }
         
-        return redirect()->back()->with('success', 'Đã đánh dấu đã đọc!');
+        return redirect()->back()->with('success', 'Đã chuyển sang đang xử lý!');
+    }
+
+    public function updateStatus(ContactMessage $contactMessage, Request $request)
+    {
+        $request->validate([
+            'status' => 'required|in:new,in_progress,resolved,closed'
+        ]);
+        
+        $contactMessage->update([
+            'status' => $request->status,
+            'handled_by' => auth()->id(),
+            'handled_at' => now()
+        ]);
+        
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã cập nhật trạng thái thành công!'
+            ]);
+        }
+        
+        return redirect()->back()->with('success', 'Đã cập nhật trạng thái thành công!');
     }
 
     public function destroy(ContactMessage $contactMessage, Request $request)

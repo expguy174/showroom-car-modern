@@ -11,85 +11,89 @@
             </tr>
         </thead>
         <tbody class="divide-y divide-gray-200">
-            @forelse($messages as $message)
+            <?php $__empty_1 = true; $__currentLoopData = $messages; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $message): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
             <tr class="hover:bg-gray-50">
                 <td class="px-6 py-4">
                     <div class="flex items-center space-x-3">
-                        {{-- Avatar --}}
+                        
                         <div class="flex-shrink-0">
-                            @if($message->user && $message->user->userProfile && $message->user->userProfile->avatar_path)
+                            <?php if($message->user && $message->user->userProfile && $message->user->userProfile->avatar_path): ?>
                                 <img class="h-10 w-10 rounded-full object-cover" 
-                                     src="{{ Storage::url($message->user->userProfile->avatar_path) }}" 
-                                     alt="{{ $message->name }}">
-                            @else
+                                     src="<?php echo e(Storage::url($message->user->userProfile->avatar_path)); ?>" 
+                                     alt="<?php echo e($message->name); ?>">
+                            <?php else: ?>
                                 <div class="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold">
-                                    {{ strtoupper(substr($message->name, 0, 1)) }}
+                                    <?php echo e(strtoupper(substr($message->name, 0, 1))); ?>
+
                                 </div>
-                            @endif
+                            <?php endif; ?>
                         </div>
                         
-                        {{-- Info --}}
+                        
                         <div class="min-w-0 flex-1">
-                            <div class="text-sm font-medium text-gray-900 truncate">{{ $message->name }}</div>
+                            <div class="text-sm font-medium text-gray-900 truncate"><?php echo e($message->name); ?></div>
                             <div class="text-xs text-gray-500 truncate">
-                                <i class="fas fa-envelope mr-1"></i>{{ $message->email }}
+                                <i class="fas fa-envelope mr-1"></i><?php echo e($message->email); ?>
+
                             </div>
-                            @if($message->phone)
+                            <?php if($message->phone): ?>
                             <div class="text-xs text-gray-500 truncate">
-                                <i class="fas fa-phone mr-1"></i>{{ $message->phone }}
+                                <i class="fas fa-phone mr-1"></i><?php echo e($message->phone); ?>
+
                             </div>
-                            @endif
+                            <?php endif; ?>
                             <div class="text-xs text-gray-500">
-                                <i class="far fa-clock mr-1"></i>{{ $message->created_at->format('d/m/Y H:i') }}
+                                <i class="far fa-clock mr-1"></i><?php echo e($message->created_at->format('d/m/Y H:i')); ?>
+
                             </div>
                         </div>
                     </div>
                 </td>
                 <td class="px-6 py-4">
-                    <div class="text-sm font-medium text-gray-900">{{ $message->subject }}</div>
+                    <div class="text-sm font-medium text-gray-900"><?php echo e($message->subject); ?></div>
                 </td>
                 <td class="px-6 py-4 max-w-md">
-                    <p class="text-sm text-gray-900 truncate">{{ $message->message }}</p>
+                    <p class="text-sm text-gray-900 truncate"><?php echo e($message->message); ?></p>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-center">
-                    @switch($message->status)
-                        @case('new')
+                    <?php switch($message->status):
+                        case ('new'): ?>
                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
                                 <i class="fas fa-envelope mr-1"></i>Mới
                             </span>
-                            @break
-                        @case('in_progress')
+                            <?php break; ?>
+                        <?php case ('in_progress'): ?>
                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                 <i class="fas fa-spinner mr-1"></i>Đang xử lý
                             </span>
-                            @break
-                        @case('resolved')
+                            <?php break; ?>
+                        <?php case ('resolved'): ?>
                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                 <i class="fas fa-check-circle mr-1"></i>Đã giải quyết
                             </span>
-                            @break
-                        @case('closed')
+                            <?php break; ?>
+                        <?php case ('closed'): ?>
                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                                 <i class="fas fa-times-circle mr-1"></i>Đã đóng
                             </span>
-                            @break
-                    @endswitch
+                            <?php break; ?>
+                    <?php endswitch; ?>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
                     <div class="flex items-center justify-center gap-2">
-                        {{-- View button --}}
-                        <a href="{{ route('admin.contact-messages.show', $message) }}" 
+                        
+                        <a href="<?php echo e(route('admin.contact-messages.show', $message)); ?>" 
                            class="text-blue-600 hover:text-blue-900" 
                            title="Xem chi tiết">
                             <i class="fas fa-eye"></i>
                         </a>
                         
-                        {{-- Workflow buttons based on status --}}
-                        @switch($message->status)
-                            @case('new')
-                                <form action="{{ route('admin.contact-messages.update-status', $message) }}" method="POST" class="inline status-form">
-                                    @csrf
-                                    @method('PATCH')
+                        
+                        <?php switch($message->status):
+                            case ('new'): ?>
+                                <form action="<?php echo e(route('admin.contact-messages.update-status', $message)); ?>" method="POST" class="inline status-form">
+                                    <?php echo csrf_field(); ?>
+                                    <?php echo method_field('PATCH'); ?>
                                     <input type="hidden" name="status" value="in_progress">
                                     <button type="submit" 
                                             class="text-blue-600 hover:text-blue-900" 
@@ -97,12 +101,12 @@
                                         <i class="fas fa-arrow-right"></i>
                                     </button>
                                 </form>
-                                @break
+                                <?php break; ?>
                                 
-                            @case('in_progress')
-                                <form action="{{ route('admin.contact-messages.update-status', $message) }}" method="POST" class="inline status-form">
-                                    @csrf
-                                    @method('PATCH')
+                            <?php case ('in_progress'): ?>
+                                <form action="<?php echo e(route('admin.contact-messages.update-status', $message)); ?>" method="POST" class="inline status-form">
+                                    <?php echo csrf_field(); ?>
+                                    <?php echo method_field('PATCH'); ?>
                                     <input type="hidden" name="status" value="resolved">
                                     <button type="submit" 
                                             class="text-green-600 hover:text-green-900" 
@@ -110,12 +114,12 @@
                                         <i class="fas fa-check-circle"></i>
                                     </button>
                                 </form>
-                                @break
+                                <?php break; ?>
                                 
-                            @case('resolved')
-                                <form action="{{ route('admin.contact-messages.update-status', $message) }}" method="POST" class="inline status-form">
-                                    @csrf
-                                    @method('PATCH')
+                            <?php case ('resolved'): ?>
+                                <form action="<?php echo e(route('admin.contact-messages.update-status', $message)); ?>" method="POST" class="inline status-form">
+                                    <?php echo csrf_field(); ?>
+                                    <?php echo method_field('PATCH'); ?>
                                     <input type="hidden" name="status" value="closed">
                                     <button type="submit" 
                                             class="text-purple-600 hover:text-purple-900" 
@@ -123,37 +127,57 @@
                                         <i class="fas fa-archive"></i>
                                     </button>
                                 </form>
-                                @break
-                        @endswitch
+                                <?php break; ?>
+                        <?php endswitch; ?>
                         
-                        {{-- Delete button --}}
+                        
                         <button type="button" 
                                 class="text-red-600 hover:text-red-900 delete-btn" 
-                                data-message-id="{{ $message->id }}"
-                                data-message-name="{{ addslashes($message->name) }}"
-                                data-message-subject="{{ addslashes($message->subject) }}"
+                                data-message-id="<?php echo e($message->id); ?>"
+                                data-message-name="<?php echo e(addslashes($message->name)); ?>"
+                                data-message-subject="<?php echo e(addslashes($message->subject)); ?>"
                                 title="Xóa">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
                 </td>
             </tr>
-            @empty
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
             <tr>
                 <td colspan="5" class="px-6 py-12 text-center text-gray-500">
                     <i class="fas fa-envelope text-4xl mb-2"></i>
                     <p>Chưa có tin nhắn nào</p>
                 </td>
             </tr>
-            @endforelse
+            <?php endif; ?>
         </tbody>
     </table>
     </div>
 
-    {{-- Pagination --}}
-    @if($messages->hasPages())
+    
+    <?php if($messages->hasPages()): ?>
     <div class="px-6 py-4 border-t border-gray-200">
-        <x-admin.pagination :paginator="$messages" />
+        <?php if (isset($component)) { $__componentOriginal1f9437379ffbb940ff05ba93353d3cd5 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal1f9437379ffbb940ff05ba93353d3cd5 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.admin.pagination','data' => ['paginator' => $messages]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('admin.pagination'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['paginator' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($messages)]); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal1f9437379ffbb940ff05ba93353d3cd5)): ?>
+<?php $attributes = $__attributesOriginal1f9437379ffbb940ff05ba93353d3cd5; ?>
+<?php unset($__attributesOriginal1f9437379ffbb940ff05ba93353d3cd5); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal1f9437379ffbb940ff05ba93353d3cd5)): ?>
+<?php $component = $__componentOriginal1f9437379ffbb940ff05ba93353d3cd5; ?>
+<?php unset($__componentOriginal1f9437379ffbb940ff05ba93353d3cd5); ?>
+<?php endif; ?>
     </div>
-    @endif
+    <?php endif; ?>
 </div>
+<?php /**PATH C:\Users\forev\showroom-car-modern\resources\views/admin/contact-messages/partials/table.blade.php ENDPATH**/ ?>

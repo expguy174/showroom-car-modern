@@ -19,7 +19,7 @@
     </x-admin.page-header>
 
     {{-- Stats Cards --}}
-    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 mb-6">
+    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-4 mb-6">
         <x-admin.stats-card 
             title="Tổng tin nhắn"
             :value="$messages->total()"
@@ -29,19 +29,36 @@
             dataStat="total" />
             
         <x-admin.stats-card 
-            title="Chưa đọc"
-            :value="\App\Models\ContactMessage::where('is_read', false)->count()"
+            title="Mới"
+            :value="\App\Models\ContactMessage::where('status', 'new')->count()"
             icon="fas fa-envelope"
             color="orange"
-            description="Tin nhắn chưa xử lý"
-            dataStat="unread" />
+            description="Tin nhắn mới"
+            dataStat="new" />
             
         <x-admin.stats-card 
-            title="Đã đọc"
-            :value="\App\Models\ContactMessage::where('is_read', true)->count()"
-            icon="fas fa-envelope-open"
+            title="Đang xử lý"
+            :value="\App\Models\ContactMessage::where('status', 'in_progress')->count()"
+            icon="fas fa-spinner"
+            color="blue"
+            description="Đang xử lý"
+            dataStat="in_progress" />
+            
+        <x-admin.stats-card 
+            title="Đã giải quyết"
+            :value="\App\Models\ContactMessage::where('status', 'resolved')->count()"
+            icon="fas fa-check-circle"
+            color="green"
+            description="Hoàn thành"
+            dataStat="resolved" />
+            
+        <x-admin.stats-card 
+            title="Đã đóng"
+            :value="\App\Models\ContactMessage::where('status', 'closed')->count()"
+            icon="fas fa-times-circle"
             color="gray"
-            description="Đã xử lý" />
+            description="Đã đóng"
+            dataStat="closed" />
     </div>
 
     {{-- Filters --}}
@@ -70,8 +87,10 @@
                 <x-admin.custom-dropdown
                     name="status"
                     :options="[
-                        'unread' => 'Chưa đọc',
-                        'read' => 'Đã đọc'
+                        'new' => 'Mới',
+                        'in_progress' => 'Đang xử lý',
+                        'resolved' => 'Đã giải quyết',
+                        'closed' => 'Đã đóng'
                     ]"
                     :selected="request('status')"
                     placeholder="Tất cả"
@@ -132,8 +151,8 @@ function initializeEventListeners() {
         });
     });
     
-    // Mark as read forms
-    document.querySelectorAll('.mark-read-form').forEach(form => {
+    // Status update forms
+    document.querySelectorAll('.status-form').forEach(form => {
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
             
