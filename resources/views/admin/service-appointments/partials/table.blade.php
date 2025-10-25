@@ -6,6 +6,7 @@
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[20%] whitespace-nowrap">Khách hàng</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[20%] whitespace-nowrap">Xe & Dịch vụ</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%] whitespace-nowrap">Ngày đặt</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%] whitespace-nowrap">Thời gian hẹn</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%] whitespace-nowrap">Showroom</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%] whitespace-nowrap">Số tiền</th>
@@ -65,6 +66,10 @@
                                 </div>
                             @endif
                         </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <div class="text-sm">{{ $appointment->created_at->format('d/m/Y') }}</div>
+                        <div class="text-gray-500 text-xs">{{ $appointment->created_at->format('H:i') }}</div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         <div class="text-sm">{{ $appointment->appointment_date ? $appointment->appointment_date->format('d/m/Y') : '-' }}</div>
@@ -183,7 +188,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="7" class="px-6 py-12 text-center">
+                    <td colspan="8" class="px-6 py-12 text-center">
                         <div class="flex flex-col items-center">
                             <i class="fas fa-calendar-alt text-gray-300 text-4xl mb-4"></i>
                             <h3 class="text-lg font-medium text-gray-900 mb-2">Chưa có lịch hẹn nào</h3>

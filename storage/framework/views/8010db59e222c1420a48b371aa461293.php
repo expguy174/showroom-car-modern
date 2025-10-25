@@ -721,13 +721,13 @@ function updateAppointmentStatus(appointmentId, newStatus) {
         if (!viewBtn) continue;
         
         // Update status badge
-        const statusCell = row.querySelectorAll('td')[5]; // Status column (index 5)
+        const statusCell = row.querySelectorAll('td')[6]; // Status column (index 6)
         if (statusCell) {
             statusCell.innerHTML = getStatusBadgeHTML(newStatus);
         }
         
         // Update action buttons
-        const actionsCell = row.querySelectorAll('td')[6]; // Actions column (index 6)
+        const actionsCell = row.querySelectorAll('td')[7]; // Actions column (index 7)
         if (actionsCell) {
             const actionsDiv = actionsCell.querySelector('.flex');
             if (actionsDiv) {
@@ -865,7 +865,7 @@ function updateStatsCards() {
             }
         }
     })
-    .catch(error => console.error('Error updating stats:', error));
+    .catch(error => {});
 }
 
 // Note: window.loadAppointments is created by ajax-table component
@@ -888,7 +888,7 @@ window.loadAppointmentsWithStats = function(url) {
             window.updateStatsFromServer(stats);
         }
     })
-    .catch(error => console.log('Stats update failed:', error));
+    .catch(error => {});
 };
 
 window.loadAppointmentsFromDropdown = function() {

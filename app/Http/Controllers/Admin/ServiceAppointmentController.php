@@ -47,7 +47,7 @@ class ServiceAppointmentController extends Controller
             });
         }
 
-        $appointments = $query->orderBy('appointment_date', 'desc')->paginate(15);
+        $appointments = $query->orderBy('created_at', 'desc')->orderBy('id', 'desc')->paginate(15);
         
         // Append query parameters to pagination links (exclude ajax and with_stats)
         $appointments->appends($request->except(['page', 'ajax', 'with_stats']));

@@ -8,6 +8,7 @@
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[20%] whitespace-nowrap">Xe lái thử</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[15%] whitespace-nowrap">Thời gian hẹn</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[15%] whitespace-nowrap">Showroom</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[15%] whitespace-nowrap">Ngày đặt</th>
                     <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[15%] whitespace-nowrap">Trạng thái</th>
                     <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[15%] whitespace-nowrap">Thao tác</th>
                 </tr>
@@ -77,6 +78,10 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         <?php echo e($testDrive->showroom->name ?? 'N/A'); ?>
 
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <div class="text-sm"><?php echo e($testDrive->created_at->format('d/m/Y')); ?></div>
+                        <div class="text-gray-500 text-xs"><?php echo e($testDrive->created_at->format('H:i')); ?></div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-center status-cell">
                         <?php switch($testDrive->status):
