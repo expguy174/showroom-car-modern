@@ -35,7 +35,7 @@ class BookTestDrive
             'special_requirements' => $payload['special_requirements'] ?? null,
             'has_experience' => $payload['has_experience'] ?? false,
             'experience_level' => $payload['experience_level'] ?? null,
-            'status' => 'pending',
+            'status' => 'scheduled',
             'test_drive_type' => $payload['test_drive_type'] ?? 'individual',
         ]);
 

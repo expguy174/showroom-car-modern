@@ -43,7 +43,7 @@ class DashboardController extends Controller
                 
                 // Business metrics
                 'totalTestDrives' => TestDrive::count(),
-                'pendingTestDrives' => TestDrive::where('status', 'pending')->count(),
+                'pendingTestDrives' => TestDrive::where('status', 'scheduled')->count(),
                 'totalServiceAppointments' => ServiceAppointment::count(),
                 'pendingServiceAppointments' => ServiceAppointment::where('status', 'pending')->count(),
                 'totalPromotions' => Promotion::where('is_active', true)->count(),

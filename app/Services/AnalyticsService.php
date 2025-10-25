@@ -108,7 +108,7 @@ class AnalyticsService
     {
         return [
             'total_test_drives' => TestDrive::count(),
-            'pending_test_drives' => TestDrive::where('status', 'pending')->count(),
+            'pending_test_drives' => TestDrive::where('status', 'scheduled')->count(),
             'completed_test_drives' => TestDrive::where('status', 'completed')->count(),
             'test_drives_this_month' => TestDrive::where('created_at', '>=', Carbon::now()->startOfMonth())->count(),
         ];
