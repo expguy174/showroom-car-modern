@@ -21,13 +21,13 @@
 					<span><i class="fas fa-clock mr-1"></i>{{ is_string($testDrive->preferred_time) ? substr($testDrive->preferred_time,0,5) : optional($testDrive->preferred_time)->format('H:i') }}</span>
 					@php
 						$statusColors = [
-							'pending' => 'bg-yellow-100 text-yellow-800',
+							'scheduled' => 'bg-yellow-100 text-yellow-800',
 							'confirmed' => 'bg-blue-100 text-blue-800', 
 							'completed' => 'bg-green-100 text-green-800',
 							'cancelled' => 'bg-red-100 text-red-800'
 						];
 						$statusLabels = [
-							'pending' => 'Chờ xác nhận',
+							'scheduled' => 'Chờ xác nhận',
 							'confirmed' => 'Đã xác nhận',
 							'completed' => 'Hoàn thành', 
 							'cancelled' => 'Đã hủy'

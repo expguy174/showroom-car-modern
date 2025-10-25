@@ -13,16 +13,16 @@
 			<div class="flex items-center gap-2 flex-wrap">
 				<h1 class="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight truncate">Lịch lái thử #{{ $testDrive->test_drive_number ?? $testDrive->id }}</h1>
 				<span class="px-2 py-0.5 rounded-full text-xs whitespace-nowrap inline-flex items-center 
-					@switch($testDrive->status ?? 'pending')
-						@case('pending') bg-yellow-100 text-yellow-800 @break
+					@switch($testDrive->status ?? 'scheduled')
+						@case('scheduled') bg-yellow-100 text-yellow-800 @break
 						@case('confirmed') bg-blue-100 text-blue-800 @break
 						@case('completed') bg-green-100 text-green-800 @break
 						@case('cancelled') bg-red-100 text-red-800 @break
 						@default bg-gray-100 text-gray-800
 					@endswitch
 				" data-role="status-badge">
-					@switch($testDrive->status ?? 'pending')
-						@case('pending') Chờ xác nhận @break
+					@switch($testDrive->status ?? 'scheduled')
+						@case('scheduled') Chờ xác nhận @break
 						@case('confirmed') Đã xác nhận @break
 						@case('completed') Hoàn thành @break
 						@case('cancelled') Đã hủy @break
@@ -80,16 +80,16 @@
 							<dl class="space-y-2 text-sm">
 								<div class="flex justify-between"><dt class="text-gray-500">Mã lịch:</dt><dd class="font-medium">{{ $testDrive->test_drive_number ?? ('TD-'.($testDrive->id)) }}</dd></div>
 								<div class="flex justify-between"><dt class="text-gray-500">Trạng thái:</dt><dd><span data-role="summary-status-badge" class="px-2 py-0.5 rounded-full text-xs 
-									@switch($testDrive->status ?? 'pending')
-										@case('pending') bg-yellow-100 text-yellow-800 @break
+									@switch($testDrive->status ?? 'scheduled')
+										@case('scheduled') bg-yellow-100 text-yellow-800 @break
 										@case('confirmed') bg-blue-100 text-blue-800 @break
 										@case('completed') bg-green-100 text-green-800 @break
 										@case('cancelled') bg-red-100 text-red-800 @break
 										@default bg-gray-100 text-gray-800
 									@endswitch
 								">
-									@switch($testDrive->status ?? 'pending')
-										@case('pending') Chờ xác nhận @break
+									@switch($testDrive->status ?? 'scheduled')
+										@case('scheduled') Chờ xác nhận @break
 										@case('confirmed') Đã xác nhận @break
 										@case('completed') Hoàn thành @break
 										@case('cancelled') Đã hủy @break
@@ -154,7 +154,7 @@
 		<div class="space-y-4 sm:space-y-6">
 			<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6">
 				<h2 class="text-base sm:text-lg font-semibold text-gray-900 mb-4">Hành động</h2>
-				@if(in_array($testDrive->status, ['pending','confirmed']))
+				@if(in_array($testDrive->status, ['scheduled','confirmed']))
 					<div class="flex flex-col gap-2">
 						<a href="{{ route('test-drives.edit', $testDrive) }}" class="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-600 font-semibold text-sm"><i class="fas fa-edit"></i> Sửa</a>
 						<button type="button" class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-rose-600 text-white hover:bg-rose-700 font-semibold text-sm js-cancel-one" data-id="{{ $testDrive->id }}" data-cancel-url="{{ url('/test-drives/'.$testDrive->id.'/cancel') }}"><i class="fas fa-times"></i> Hủy lịch</button>

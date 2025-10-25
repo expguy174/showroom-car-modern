@@ -101,7 +101,7 @@ class ServiceAppointmentController extends Controller
         $showrooms = Showroom::where('is_active', true)->get();
         $services = Service::where('is_active', true)->get();
         $users = User::with('userProfile')->get();
-        $statuses = ['scheduled', 'confirmed', 'in_progress', 'completed', 'cancelled'];
+        $statuses = ['pending', 'confirmed', 'in_progress', 'completed', 'cancelled'];
         $priorities = ['low', 'medium', 'high', 'urgent'];
         
         return view('admin.service-appointments.edit', compact('appointment', 'showrooms', 'services', 'users', 'statuses', 'priorities'));
@@ -124,7 +124,7 @@ class ServiceAppointmentController extends Controller
             'special_instructions' => 'nullable|string|max:65535',
             'estimated_cost' => 'nullable|numeric|min:0',
             'actual_cost' => 'nullable|numeric|min:0',
-            'status' => 'required|in:scheduled,confirmed,in_progress,completed,cancelled',
+            'status' => 'required|in:pending,confirmed,in_progress,completed,cancelled',
             'technician_notes' => 'nullable|string|max:65535',
         ]);
 
@@ -237,7 +237,7 @@ class ServiceAppointmentController extends Controller
     public function calendar()
     {
         $appointments = ServiceAppointment::with(['user', 'showroom', 'carVariant.carModel.carBrand'])
-            ->whereIn('status', ['scheduled', 'confirmed', 'in_progress'])
+            ->whereIn('status', ['pending', 'confirmed', 'in_progress'])
             ->get();
 
         $calendarData = [];
@@ -275,7 +275,7 @@ class ServiceAppointmentController extends Controller
 
         // Statistics
         $stats = [
-            'total_pending' => ServiceAppointment::where('status', 'scheduled')->count(),
+            'total_pending' => ServiceAppointment::where('status', 'pending')->count(),
             'total_confirmed' => ServiceAppointment::where('status', 'confirmed')->count(),
             'total_in_progress' => ServiceAppointment::where('status', 'in_progress')->count(),
             'total_completed' => ServiceAppointment::where('status', 'completed')->count(),
@@ -458,7 +458,7 @@ class ServiceAppointmentController extends Controller
     private function getStatusColor($status)
     {
         switch ($status) {
-            case 'scheduled':
+            case 'pending':
                 return '#3B82F6'; // Blue
             case 'confirmed':
                 return '#10B981'; // Green

@@ -10,7 +10,7 @@
 <div id="bookings-list" class="space-y-3 sm:space-y-4">
 	@foreach($testDrives as $td)
 		@php
-			$canCancel = in_array($td->status, ['pending','confirmed']);
+			$canCancel = in_array($td->status, ['scheduled','confirmed']);
 			$carModelName = optional(optional($td->carVariant)->carModel)->name;
 			$variantName = $td->carVariant->name ?? '';
 			$timeDisplay = is_string($td->preferred_time) ? $td->preferred_time : optional($td->preferred_time)->format('H:i');
