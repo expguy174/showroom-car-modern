@@ -45,7 +45,7 @@ class DashboardController extends Controller
                 'totalTestDrives' => TestDrive::count(),
                 'pendingTestDrives' => TestDrive::where('status', 'scheduled')->count(),
                 'totalServiceAppointments' => ServiceAppointment::count(),
-                'pendingServiceAppointments' => ServiceAppointment::where('status', 'pending')->count(),
+                'pendingServiceAppointments' => ServiceAppointment::where('status', 'scheduled')->count(),
                 'totalPromotions' => Promotion::where('is_active', true)->count(),
             ];
         });
