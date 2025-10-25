@@ -93,7 +93,7 @@
                     onchange="loadBlogsFromDropdown"
                     :searchable="false"
                     width="w-full" />
-            </div>
+    </div>
 
             {{-- Reset --}}
             <div>
