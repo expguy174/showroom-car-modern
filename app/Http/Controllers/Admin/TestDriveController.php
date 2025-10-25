@@ -47,7 +47,18 @@ class TestDriveController extends Controller
             $query->where('showroom_id', $request->showroom_id);
         }
 
-        $testDrives = $query->orderBy('created_at', 'desc')->paginate(20);
+        $testDrives = $query->orderBy('created_at', 'desc')->orderBy('id', 'desc')->paginate(20);
+        
+        // Debug: Log the first few test drives to check ordering
+        \Log::info('Test drives ordering check:', [
+            'first_3' => $testDrives->take(3)->map(function($td) {
+                return [
+                    'id' => $td->id,
+                    'created_at' => $td->created_at,
+                    'test_drive_number' => $td->test_drive_number
+                ];
+            })->toArray()
+        ]);
         
         // Append query parameters to pagination links (exclude ajax and with_stats)
         $testDrives->appends($request->except(['page', 'ajax', 'with_stats']));
