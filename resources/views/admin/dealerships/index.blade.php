@@ -3,272 +3,352 @@
 @section('title', 'Quản lý đại lý')
 
 @section('content')
-<div class="space-y-6">
-    {{-- Header --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-2xl font-bold text-gray-900">
-                    <i class="fas fa-handshake text-blue-600 mr-3"></i>
-                    Quản lý đại lý
-                </h1>
-                <p class="text-gray-600 mt-1">Quản lý thông tin các đại lý bán xe</p>
-            </div>
-            <a href="{{ route('admin.dealerships.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
-                <i class="fas fa-plus mr-2"></i>
-                Thêm đại lý
-            </a>
-        </div>
-    </div>
+{{-- Flash Messages Component --}}
+<x-admin.flash-messages
+    :show-icons="true"
+    :dismissible="true"
+    position="top-right"
+    :auto-hide="5000" />
 
-    {{-- Success/Error Messages --}}
-    @if(session('success'))
-    <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
-        <div class="flex items-center">
-            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-            </svg>
-            {{ session('success') }}
-        </div>
-    </div>
-    @endif
+<div class="space-y-6">
+    {{-- Page Header --}}
+    <x-admin.page-header
+        title="Quản lý đại lý"
+        description="Quản lý thông tin các đại lý phân phối xe"
+        icon="fas fa-handshake">
+        <a href="{{ route('admin.dealerships.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+            <i class="fas fa-plus mr-2"></i>
+            <span>Thêm đại lý</span>
+        </a>
+    </x-admin.page-header>
 
     {{-- Stats Cards --}}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div class="flex items-center">
-                <div class="p-3 rounded-full bg-blue-100">
-                    <i class="fas fa-handshake text-blue-600 text-xl"></i>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600">Tổng đại lý</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ $stats['total'] }}</p>
-                </div>
-            </div>
-        </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <x-admin.stats-card
+            title="Tổng đại lý"
+            :value="$stats['total']"
+            icon="fas fa-handshake"
+            color="blue"
+            description="Tất cả đại lý"
+            dataStat="total" />
 
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div class="flex items-center">
-                <div class="p-3 rounded-full bg-green-100">
-                    <i class="fas fa-check-circle text-green-600 text-xl"></i>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600">Đang hoạt động</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ $stats['active'] }}</p>
-                </div>
-            </div>
-        </div>
+        <x-admin.stats-card
+            title="Hoạt động"
+            :value="$stats['active']"
+            icon="fas fa-check-circle"
+            color="green"
+            description="Đại lý hoạt động"
+            dataStat="active" />
 
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div class="flex items-center">
-                <div class="p-3 rounded-full bg-red-100">
-                    <i class="fas fa-times-circle text-red-600 text-xl"></i>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600">Ngừng hoạt động</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ $stats['inactive'] }}</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div class="flex items-center">
-                <div class="p-3 rounded-full bg-yellow-100">
-                    <i class="fas fa-star text-yellow-600 text-xl"></i>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600">Nổi bật</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ $stats['featured'] }}</p>
-                </div>
-            </div>
-        </div>
+        <x-admin.stats-card
+            title="Tạm dừng"
+            :value="$stats['inactive']"
+            icon="fas fa-pause-circle"
+            color="red"
+            description="Đại lý tạm dừng"
+            dataStat="inactive" />
     </div>
 
     {{-- Filters --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <form method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+        <form id="filterForm"
+            class="grid grid-cols-1 md:grid-cols-[1fr_minmax(min-content,_auto)_auto] gap-4 items-end"
+            data-base-url="{{ route('admin.dealerships.index') }}">
+
+            {{-- Search --}}
             <div>
-                <label for="search" class="block text-sm font-medium text-gray-700 mb-2">Tìm kiếm</label>
-                <input type="text" name="search" id="search" value="{{ request('search') }}" 
-                       class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                       placeholder="Tên, mã, thành phố...">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Tìm kiếm</label>
+                <x-admin.search-input
+                    name="search"
+                    placeholder="Tìm theo tên, mã, thành phố..."
+                    :value="request('search')"
+                    callbackName="handleSearch"
+                    :debounceTime="500"
+                    size="small"
+                    :showIcon="true"
+                    :showClearButton="true" />
             </div>
 
+            {{-- Status Filter --}}
             <div>
-                <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label>
-                <select name="status" id="status" class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                    <option value="">Tất cả</option>
-                    <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Chờ duyệt</option>
-                    <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Đã duyệt</option>
-                    <option value="suspended" {{ request('status') == 'suspended' ? 'selected' : '' }}>Tạm ngừng</option>
-                    <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Từ chối</option>
-                </select>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label>
+                <x-admin.custom-dropdown
+                    name="is_active"
+                    :options="[
+                        '1' => 'Hoạt động',
+                        '0' => 'Tạm dừng'
+                    ]"
+                    :selected="request('is_active')"
+                    placeholder="Tất cả"
+                    onchange="loadDealershipsFromDropdown"
+                    :searchable="false"
+                    width="w-full" />
             </div>
 
+            {{-- Reset --}}
             <div>
-                <label for="type" class="block text-sm font-medium text-gray-700 mb-2">Loại đại lý</label>
-                <select name="type" id="type" class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                    <option value="">Tất cả</option>
-                    <option value="authorized" {{ request('type') == 'authorized' ? 'selected' : '' }}>Ủy quyền</option>
-                    <option value="independent" {{ request('type') == 'independent' ? 'selected' : '' }}>Độc lập</option>
-                    <option value="franchise" {{ request('type') == 'franchise' ? 'selected' : '' }}>Nhượng quyền</option>
-                </select>
-            </div>
-
-            <div>
-                <label for="is_active" class="block text-sm font-medium text-gray-700 mb-2">Hoạt động</label>
-                <select name="is_active" id="is_active" class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                    <option value="">Tất cả</option>
-                    <option value="1" {{ request('is_active') == '1' ? 'selected' : '' }}>Có</option>
-                    <option value="0" {{ request('is_active') == '0' ? 'selected' : '' }}>Không</option>
-                </select>
-            </div>
-
-            <div class="flex items-end">
-                <button type="submit" class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
-                    <i class="fas fa-search mr-2"></i>
-                    Lọc
-                </button>
+                <x-admin.reset-button
+                    formId="#filterForm"
+                    callback="loadDealerships" />
             </div>
         </form>
     </div>
 
-    {{-- Dealerships Table --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Đại lý</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loại</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Địa điểm</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Liên hệ</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    @forelse($dealerships as $dealership)
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0 h-12 w-12">
-                                    <img class="h-12 w-12 rounded-lg object-cover" src="{{ $dealership->logo_url }}" alt="{{ $dealership->name }}">
-                                </div>
-                                <div class="ml-4">
-                                    <div class="text-sm font-medium text-gray-900">{{ $dealership->name }}</div>
-                                    <div class="text-sm text-gray-500">{{ $dealership->code }}</div>
-                                    @if($dealership->is_featured)
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
-                                            <i class="fas fa-star mr-1"></i>
-                                            Nổi bật
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            @switch($dealership->type)
-                                @case('authorized')
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                        Ủy quyền
-                                    </span>
-                                    @break
-                                @case('independent')
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                        Độc lập
-                                    </span>
-                                    @break
-                                @case('franchise')
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                                        Nhượng quyền
-                                    </span>
-                                    @break
-                            @endswitch
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">{{ $dealership->city }}</div>
-                            <div class="text-sm text-gray-500">{{ Str::limit($dealership->address, 30) }}</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">{{ $dealership->phone }}</div>
-                            <div class="text-sm text-gray-500">{{ $dealership->email }}</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="flex flex-col space-y-1">
-                                @switch($dealership->status)
-                                    @case('pending')
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                            Chờ duyệt
-                                        </span>
-                                        @break
-                                    @case('approved')
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                            Đã duyệt
-                                        </span>
-                                        @break
-                                    @case('suspended')
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                            Tạm ngừng
-                                        </span>
-                                        @break
-                                    @case('rejected')
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                            Từ chối
-                                        </span>
-                                        @break
-                                @endswitch
-                                
-                                @if($dealership->is_active)
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                        Hoạt động
-                                    </span>
-                                @else
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                        Ngừng hoạt động
-                                    </span>
-                                @endif
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <div class="flex items-center space-x-2">
-                                <a href="{{ route('admin.dealerships.show', $dealership) }}" class="text-blue-600 hover:text-blue-900" title="Xem chi tiết">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                <a href="{{ route('admin.dealerships.edit', $dealership) }}" class="text-indigo-600 hover:text-indigo-900" title="Chỉnh sửa">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <form action="{{ route('admin.dealerships.destroy', $dealership) }}" method="POST" class="inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa đại lý này?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="text-red-600 hover:text-red-900" title="Xóa">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="6" class="px-6 py-12 text-center">
-                            <div class="flex flex-col items-center">
-                                <i class="fas fa-handshake text-gray-400 text-4xl mb-4"></i>
-                                <p class="text-gray-500 text-lg">Chưa có đại lý nào</p>
-                                <p class="text-gray-400 text-sm mt-1">Thêm đại lý đầu tiên để bắt đầu</p>
-                            </div>
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-
-        {{-- Pagination --}}
-        @if($dealerships->hasPages())
-        <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
-            {{ $dealerships->links() }}
-        </div>
-        @endif
-    </div>
+    {{-- AJAX Table Component --}}
+    <x-admin.ajax-table
+        table-id="dealerships-content"
+        loading-id="loading-state"
+        form-id="#filterForm"
+        base-url="{{ route('admin.dealerships.index') }}"
+        callback-name="loadDealerships"
+        empty-message="Không có đại lý nào"
+        empty-icon="fas fa-handshake"
+        after-load-callback="initializeEventListenersAndUpdateStats">
+        @include('admin.dealerships.partials.table', ['dealerships' => $dealerships])
+    </x-admin.ajax-table>
 </div>
+
+{{-- Delete Modal --}}
+<x-admin.delete-modal
+    modal-id="deleteDealershipModal"
+    title="Xác nhận xóa đại lý"
+    confirm-text="Xóa"
+    cancel-text="Hủy"
+    delete-callback-name="confirmDeleteDealership"
+    entity-type="dealership" />
+
+@push('scripts')
+<script>
+    // Update stats cards from toggle response (copy từ payment methods)
+    window.updateStatsFromServer = function(stats) {
+        const statsMapping = {
+            'total': 'total',
+            'active': 'active',
+            'inactive': 'inactive'
+        };
+
+        Object.entries(statsMapping).forEach(([serverKey, cardKey]) => {
+            if (stats[serverKey] !== undefined) {
+                const statElement = document.querySelector(`[data-stat="${cardKey}"]`);
+                if (statElement) {
+                    statElement.textContent = stats[serverKey];
+                }
+            }
+        });
+    };
+
+    // Initialize event listeners (copy từ payment methods)
+    function initializeEventListeners() {
+        // Status toggle buttons
+        document.querySelectorAll('.status-toggle').forEach(button => {
+            button.addEventListener('click', async function(e) {
+                e.preventDefault();
+                const dealershipId = this.dataset.dealershipId;
+                const newStatus = this.dataset.status === 'true';
+                const buttonElement = this;
+
+                // Show loading state
+                const originalIcon = buttonElement.querySelector('i').className;
+                buttonElement.querySelector('i').className = 'fas fa-spinner fa-spin w-4 h-4';
+                buttonElement.disabled = true;
+
+                try {
+                    const response = await fetch(`/admin/dealerships/${dealershipId}/toggle-status`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            is_active: newStatus ? 1 : 0
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        // Update button appearance
+                        if (newStatus) {
+                            buttonElement.className = 'text-orange-600 hover:text-orange-900 status-toggle w-4 h-4 flex items-center justify-center';
+                            buttonElement.title = 'Tạm dừng';
+                            buttonElement.dataset.status = 'false';
+                            buttonElement.querySelector('i').className = 'fas fa-pause w-4 h-4';
+                        } else {
+                            buttonElement.className = 'text-green-600 hover:text-green-900 status-toggle w-4 h-4 flex items-center justify-center';
+                            buttonElement.title = 'Kích hoạt';
+                            buttonElement.dataset.status = 'true';
+                            buttonElement.querySelector('i').className = 'fas fa-play w-4 h-4';
+                        }
+
+                        // Update status badge in table
+                        const dealershipId = buttonElement.dataset.dealershipId;
+                        const row = document.querySelector(`tr[data-dealership-id="${dealershipId}"]`);
+                        if (row) {
+                            const statusCell = row.querySelector('td:nth-child(4)');
+                            if (statusCell) {
+                                const statusBadge = statusCell.querySelector('span');
+                                if (statusBadge) {
+                                    if (newStatus) {
+                                        statusBadge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800';
+                                        statusBadge.innerHTML = '<i class="fas fa-check-circle mr-1"></i>Hoạt động';
+                                    } else {
+                                        statusBadge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800';
+                                        statusBadge.innerHTML = '<i class="fas fa-pause-circle mr-1"></i>Tạm dừng';
+                                    }
+                                }
+                            }
+                        }
+
+                        // Update stats cards if provided
+                        if (data.stats && window.updateStatsFromServer) {
+                            window.updateStatsFromServer(data.stats);
+                        }
+
+                        // Show message
+                        if (data.message && window.showMessage) {
+                            window.showMessage(data.message, 'success');
+                        }
+                    } else {
+                        throw new Error(data.message || 'Có lỗi xảy ra');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    buttonElement.querySelector('i').className = originalIcon;
+                    if (window.showMessage) {
+                        window.showMessage('Có lỗi xảy ra khi cập nhật trạng thái!', 'error');
+                    }
+                } finally {
+                    buttonElement.disabled = false;
+                }
+            });
+        });
+
+        // Delete buttons
+        document.querySelectorAll('.delete-btn').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const dealershipId = this.dataset.dealershipId;
+                const dealershipName = this.dataset.dealershipName;
+
+                if (window.deleteModalManager_deleteDealershipModal) {
+                    window.deleteModalManager_deleteDealershipModal.show({
+                        entityName: `đại lý ${dealershipName}`,
+                        details: 'Hành động này không thể hoàn tác.',
+                        deleteUrl: `/admin/dealerships/${dealershipId}`
+                    });
+                }
+            });
+        });
+    }
+
+    // Dropdown callback (giống contact messages)
+    window.loadDealershipsFromDropdown = function() {
+        const searchForm = document.getElementById('filterForm');
+        if (searchForm && window.loadDealerships) {
+            // Fix is_active value trước khi tạo FormData
+            const isActiveInput = searchForm.querySelector('input[name="is_active"]');
+            if (isActiveInput && isActiveInput.value) {
+                // Custom dropdown có thể set text value, cần map về actual value
+                const statusMap = {
+                    'Hoạt động': '1',
+                    'Tạm dừng': '0'
+                };
+
+                if (statusMap[isActiveInput.value]) {
+                    isActiveInput.value = statusMap[isActiveInput.value];
+                }
+            }
+
+            const formData = new FormData(searchForm);
+            const url = '{{ route("admin.dealerships.index") }}?' + new URLSearchParams(formData).toString();
+            window.loadDealerships(url);
+        }
+    };
+
+    // Search callback (giống contact messages)
+    window.handleSearch = function(searchTerm, inputElement) {
+        const searchForm = document.getElementById('filterForm');
+        if (searchForm && window.loadDealerships) {
+            const formData = new FormData(searchForm);
+            const url = '{{ route("admin.dealerships.index") }}?' + new URLSearchParams(formData).toString();
+            window.loadDealerships(url);
+        }
+    };
+
+    // Delete confirmation
+    window.confirmDeleteDealership = function(data) {
+        if (!data || !data.deleteUrl) return;
+
+        if (window.deleteModalManager_deleteDealershipModal) {
+            window.deleteModalManager_deleteDealershipModal.setLoading(true);
+        }
+
+        fetch(data.deleteUrl, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => {
+                return response.json().then(responseData => {
+                    if (!response.ok) {
+                        // Handle validation errors (422) or other errors
+                        throw {
+                            status: response.status,
+                            data: responseData
+                        };
+                    }
+                    return responseData;
+                });
+            })
+            .then(responseData => {
+                if (responseData.success) {
+                    if (window.deleteModalManager_deleteDealershipModal) {
+                        window.deleteModalManager_deleteDealershipModal.hide();
+                    }
+
+                    if (window.showMessage) {
+                        window.showMessage(responseData.message || 'Đã xóa đại lý thành công!', 'success');
+                    }
+
+                    if (responseData.stats) {
+                        window.updateStatsFromServer(responseData.stats);
+                    }
+
+                    if (window.loadDealerships) {
+                        window.loadDealerships();
+                    }
+                } else {
+                    throw new Error(responseData.message || 'Có lỗi xảy ra');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                if (window.deleteModalManager_deleteDealershipModal) {
+                    window.deleteModalManager_deleteDealershipModal.setLoading(false);
+                }
+                
+                // Show specific error message from server or default error
+                const errorMessage = error.data?.message || error.message || 'Có lỗi xảy ra khi xóa đại lý!';
+                
+                if (window.showMessage) {
+                    window.showMessage(errorMessage, 'error');
+                }
+            });
+    }
+
+    // Initialize event listeners and update stats after table load
+    window.initializeEventListenersAndUpdateStats = function() {
+        initializeEventListeners();
+    };
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeEventListeners();
+    });
+</script>
+@endpush
 @endsection

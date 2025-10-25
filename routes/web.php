@@ -478,6 +478,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/', [\App\Http\Controllers\Admin\DealershipController::class, 'index'])->name('index');
         Route::get('/create', [\App\Http\Controllers\Admin\DealershipController::class, 'create'])->name('create');
         Route::post('/', [\App\Http\Controllers\Admin\DealershipController::class, 'store'])->name('store');
+        Route::patch('/{dealership}/toggle-status', [\App\Http\Controllers\Admin\DealershipController::class, 'toggleStatus'])->name('toggle-status');
         Route::get('/{dealership}', [\App\Http\Controllers\Admin\DealershipController::class, 'show'])->name('show');
         Route::get('/{dealership}/edit', [\App\Http\Controllers\Admin\DealershipController::class, 'edit'])->name('edit');
         Route::put('/{dealership}', [\App\Http\Controllers\Admin\DealershipController::class, 'update'])->name('update');

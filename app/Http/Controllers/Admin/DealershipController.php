@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Dealership;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class DealershipController extends Controller
@@ -24,18 +25,8 @@ class DealershipController extends Controller
             });
         }
 
-        // Filter by status
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        // Filter by type
-        if ($request->filled('type')) {
-            $query->where('type', $request->type);
-        }
-
         // Filter by active status
-        if ($request->filled('is_active')) {
+        if ($request->filled('is_active') && $request->is_active !== '') {
             $query->where('is_active', $request->is_active);
         }
 
@@ -46,8 +37,12 @@ class DealershipController extends Controller
             'total' => Dealership::count(),
             'active' => Dealership::where('is_active', true)->count(),
             'inactive' => Dealership::where('is_active', false)->count(),
-            'featured' => Dealership::where('is_featured', true)->count(),
         ];
+
+        // Return partial view for AJAX requests
+        if ($request->ajax() || $request->wantsJson()) {
+            return view('admin.dealerships.partials.table', compact('dealerships'))->render();
+        }
 
         return view('admin.dealerships.index', compact('dealerships', 'stats'));
     }
@@ -61,56 +56,55 @@ class DealershipController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'code' => 'required|string|max:50|unique:dealerships,code',
-            'type' => 'required|in:authorized,independent,franchise',
+            'code' => 'required|string|max:50|unique:dealerships,code,NULL,id,deleted_at,NULL',
             'description' => 'nullable|string',
             'phone' => 'required|string|max:20',
-            'email' => 'required|email|max:255',
-            'website' => 'nullable|url|max:255',
+            'email' => 'nullable|email|max:255',
             'address' => 'required|string|max:500',
             'city' => 'required|string|max:100',
-            'state' => 'nullable|string|max:100',
-            'postal_code' => 'nullable|string|max:20',
-            'country' => 'required|string|max:100',
-            'latitude' => 'nullable|numeric|between:-90,90',
-            'longitude' => 'nullable|numeric|between:-180,180',
-            'business_license' => 'nullable|string|max:100',
-            'tax_code' => 'nullable|string|max:50',
-            'established_date' => 'nullable|date',
-            'owner_name' => 'required|string|max:255',
-            'owner_phone' => 'required|string|max:20',
-            'owner_email' => 'required|email|max:255',
-            'provides_sales' => 'boolean',
-            'provides_service' => 'boolean',
-            'provides_parts' => 'boolean',
-            'provides_finance' => 'boolean',
-            'provides_insurance' => 'boolean',
-            'opening_time' => 'nullable|string|max:10',
-            'closing_time' => 'nullable|string|max:10',
-            'working_days' => 'nullable|array',
+            'country' => 'nullable|string|max:100',
             'is_active' => 'boolean',
-            'is_featured' => 'boolean',
-            'status' => 'required|in:pending,approved,suspended,rejected',
-            'logo_path' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'banner_path' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
-            'meta_title' => 'nullable|string|max:255',
-            'meta_description' => 'nullable|string|max:500',
-            'meta_keywords' => 'nullable|string|max:255'
+        ], [
+            'name.required' => 'Vui lòng nhập tên đại lý.',
+            'name.max' => 'Tên đại lý không được vượt quá 255 ký tự.',
+            'code.required' => 'Vui lòng nhập mã đại lý.',
+            'code.unique' => 'Mã đại lý này đã tồn tại.',
+            'code.max' => 'Mã đại lý không được vượt quá 50 ký tự.',
+            'phone.required' => 'Vui lòng nhập số điện thoại.',
+            'phone.max' => 'Số điện thoại không được vượt quá 20 ký tự.',
+            'email.email' => 'Email không đúng định dạng.',
+            'address.required' => 'Vui lòng nhập địa chỉ.',
+            'address.max' => 'Địa chỉ không được vượt quá 500 ký tự.',
+            'city.required' => 'Vui lòng nhập thành phố.',
+            'city.max' => 'Thành phố không được vượt quá 100 ký tự.',
         ]);
 
-        // Handle file uploads
-        if ($request->hasFile('logo_path')) {
-            $validated['logo_path'] = $request->file('logo_path')->store('dealerships/logos', 'public');
+        // Check if a soft-deleted dealership with this code exists
+        $existingDealership = Dealership::onlyTrashed()
+            ->where('code', $validated['code'])
+            ->first();
+
+        if ($existingDealership) {
+            // Restore and update the soft-deleted dealership
+            $existingDealership->restore();
+            $existingDealership->update($validated);
+            
+            $message = "Đã khôi phục và cập nhật đại lý \"{$existingDealership->name}\" thành công!";
+        } else {
+            // Create new dealership
+            Dealership::create($validated);
+            $message = 'Đại lý đã được tạo thành công!';
         }
 
-        if ($request->hasFile('banner_path')) {
-            $validated['banner_path'] = $request->file('banner_path')->store('dealerships/banners', 'public');
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $message
+            ]);
         }
-
-        Dealership::create($validated);
 
         return redirect()->route('admin.dealerships.index')
-            ->with('success', 'Đại lý đã được tạo thành công!');
+            ->with('success', $message);
     }
 
     public function show(Dealership $dealership)
@@ -128,79 +122,148 @@ class DealershipController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'code' => 'required|string|max:50|unique:dealerships,code,' . $dealership->id,
-            'type' => 'required|in:authorized,independent,franchise',
+            'code' => 'required|string|max:50|unique:dealerships,code,' . $dealership->id . ',id,deleted_at,NULL',
             'description' => 'nullable|string',
             'phone' => 'required|string|max:20',
-            'email' => 'required|email|max:255',
-            'website' => 'nullable|url|max:255',
+            'email' => 'nullable|email|max:255',
             'address' => 'required|string|max:500',
             'city' => 'required|string|max:100',
-            'state' => 'nullable|string|max:100',
-            'postal_code' => 'nullable|string|max:20',
-            'country' => 'required|string|max:100',
-            'latitude' => 'nullable|numeric|between:-90,90',
-            'longitude' => 'nullable|numeric|between:-180,180',
-            'business_license' => 'nullable|string|max:100',
-            'tax_code' => 'nullable|string|max:50',
-            'established_date' => 'nullable|date',
-            'owner_name' => 'required|string|max:255',
-            'owner_phone' => 'required|string|max:20',
-            'owner_email' => 'required|email|max:255',
-            'provides_sales' => 'boolean',
-            'provides_service' => 'boolean',
-            'provides_parts' => 'boolean',
-            'provides_finance' => 'boolean',
-            'provides_insurance' => 'boolean',
-            'opening_time' => 'nullable|string|max:10',
-            'closing_time' => 'nullable|string|max:10',
-            'working_days' => 'nullable|array',
+            'country' => 'nullable|string|max:100',
             'is_active' => 'boolean',
-            'is_featured' => 'boolean',
-            'status' => 'required|in:pending,approved,suspended,rejected',
-            'logo_path' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'banner_path' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
-            'meta_title' => 'nullable|string|max:255',
-            'meta_description' => 'nullable|string|max:500',
-            'meta_keywords' => 'nullable|string|max:255'
+        ], [
+            'name.required' => 'Vui lòng nhập tên đại lý.',
+            'name.max' => 'Tên đại lý không được vượt quá 255 ký tự.',
+            'code.required' => 'Vui lòng nhập mã đại lý.',
+            'code.unique' => 'Mã đại lý này đã tồn tại.',
+            'code.max' => 'Mã đại lý không được vượt quá 50 ký tự.',
+            'phone.required' => 'Vui lòng nhập số điện thoại.',
+            'phone.max' => 'Số điện thoại không được vượt quá 20 ký tự.',
+            'email.email' => 'Email không đúng định dạng.',
+            'address.required' => 'Vui lòng nhập địa chỉ.',
+            'address.max' => 'Địa chỉ không được vượt quá 500 ký tự.',
+            'city.required' => 'Vui lòng nhập thành phố.',
+            'city.max' => 'Thành phố không được vượt quá 100 ký tự.',
         ]);
 
-        // Handle file uploads
-        if ($request->hasFile('logo_path')) {
-            // Delete old logo
-            if ($dealership->logo_path) {
-                Storage::disk('public')->delete($dealership->logo_path);
-            }
-            $validated['logo_path'] = $request->file('logo_path')->store('dealerships/logos', 'public');
-        }
-
-        if ($request->hasFile('banner_path')) {
-            // Delete old banner
-            if ($dealership->banner_path) {
-                Storage::disk('public')->delete($dealership->banner_path);
-            }
-            $validated['banner_path'] = $request->file('banner_path')->store('dealerships/banners', 'public');
-        }
-
         $dealership->update($validated);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Đại lý đã được cập nhật thành công!'
+            ]);
+        }
 
         return redirect()->route('admin.dealerships.index')
             ->with('success', 'Đại lý đã được cập nhật thành công!');
     }
 
-    public function destroy(Dealership $dealership)
+    public function toggleStatus(Dealership $dealership, Request $request)
     {
-        // Delete associated files
-        if ($dealership->logo_path) {
-            Storage::disk('public')->delete($dealership->logo_path);
-        }
-        if ($dealership->banner_path) {
-            Storage::disk('public')->delete($dealership->banner_path);
-        }
+        $request->validate([
+            'is_active' => 'required|boolean'
+        ]);
 
-        $dealership->delete();
+        $dealership->update([
+            'is_active' => $request->is_active
+        ]);
+
+        $statusText = $request->is_active ? 'kích hoạt' : 'tạm dừng';
+
+        if ($request->ajax() || $request->wantsJson()) {
+            // Get updated stats
+            $stats = [
+                'total' => Dealership::count(),
+                'active' => Dealership::where('is_active', true)->count(),
+                'inactive' => Dealership::where('is_active', false)->count(),
+            ];
+            
+            return response()->json([
+                'success' => true,
+                'message' => "Đã {$statusText} đại lý thành công!",
+                'stats' => $stats
+            ]);
+        }
 
         return redirect()->route('admin.dealerships.index')
-            ->with('success', 'Đại lý đã được xóa thành công!');
+            ->with('success', "Đã {$statusText} đại lý thành công!");
+    }
+
+    public function destroy(Dealership $dealership, Request $request)
+    {
+        try {
+            // Check if dealership is currently active
+            if ($dealership->is_active) {
+                $message = "Không thể xóa đại lý \"{$dealership->name}\" vì đang ở trạng thái HOẠT ĐỘNG. Vui lòng tạm dừng đại lý trước khi xóa.";
+                
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $message,
+                        'action_suggestion' => 'deactivate'
+                    ], 400);
+                }
+                return redirect()->route('admin.dealerships.index')->with('error', $message);
+            }
+
+            // Check if dealership has showrooms
+            $showroomsCount = $dealership->showrooms()->count();
+            
+            if ($showroomsCount > 0) {
+                $message = "KHÔNG THỂ XÓA đại lý \"{$dealership->name}\" vì còn {$showroomsCount} showroom liên quan. " .
+                          "Đây là dữ liệu kinh doanh quan trọng! Vui lòng xóa các showroom trước hoặc chỉ 'Tạm dừng' để ngừng sử dụng.";
+                
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $message,
+                        'action_suggestion' => 'deactivate',
+                        'business_data' => [
+                            'showroom_count' => $showroomsCount
+                        ]
+                    ], 400);
+                }
+
+                return redirect()->route('admin.dealerships.index')->with('error', $message);
+            }
+
+            // Safe to delete - inactive and no business data
+            $dealershipName = $dealership->name;
+            $dealershipCode = $dealership->code;
+            
+            $dealership->delete();
+
+            $message = "Đã xóa đại lý \"{$dealershipName}\" ({$dealershipCode}) thành công!";
+
+            if ($request->ajax() || $request->wantsJson()) {
+                // Get updated stats
+                $stats = [
+                    'total' => Dealership::count(),
+                    'active' => Dealership::where('is_active', true)->count(),
+                    'inactive' => Dealership::where('is_active', false)->count(),
+                ];
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => $message,
+                    'stats' => $stats
+                ]);
+            }
+
+            return redirect()->route('admin.dealerships.index')->with('success', $message);
+        } catch (\Exception $e) {
+            \Log::error('Error deleting dealership: ' . $e->getMessage());
+            
+            $message = 'Có lỗi xảy ra khi xóa đại lý!';
+            
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $message
+                ], 500);
+            }
+
+            return redirect()->route('admin.dealerships.index')->with('error', $message);
+        }
     }
 }

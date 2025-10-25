@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Blog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class BlogController extends Controller
@@ -186,32 +187,68 @@ class BlogController extends Controller
 
     public function destroy($id)
     {
-        $blog = Blog::findOrFail($id);
+        try {
+            $blog = Blog::findOrFail($id);
 
-        // Xoá ảnh nếu có
-        if ($blog->image_path && Storage::disk('public')->exists($blog->image_path)) {
-            Storage::disk('public')->delete($blog->image_path);
+            // Check if blog is currently active
+            if ($blog->is_active) {
+                $message = "Không thể xóa bài viết \"{$blog->title}\" vì đang ở trạng thái HIỂN THỊ. Vui lòng ẩn bài viết trước khi xóa.";
+                
+                if (request()->ajax() || request()->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $message,
+                        'action_suggestion' => 'deactivate'
+                    ], 400);
+                }
+                return redirect()->route('admin.blogs.index')->with('error', $message);
+            }
+
+            // Store info before deletion
+            $blogTitle = $blog->title;
+            $imagePath = $blog->image_path;
+
+            // Xoá ảnh nếu có
+            if ($imagePath && Storage::disk('public')->exists($imagePath)) {
+                Storage::disk('public')->delete($imagePath);
+            }
+
+            // Delete blog
+            $blog->delete();
+
+            // Get updated stats
+            $stats = [
+                'total' => Blog::count(),
+                'active' => Blog::where('is_active', true)->count(),
+                'inactive' => Blog::where('is_active', false)->count(),
+                'featured' => Blog::where('is_featured', true)->count(),
+            ];
+
+            $message = "Đã xóa bài viết \"{$blogTitle}\" thành công!";
+
+            // Return JSON for AJAX requests
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $message,
+                    'stats' => $stats
+                ]);
+            }
+
+            return redirect()->route('admin.blogs.index')->with('success', $message);
+        } catch (\Exception $e) {
+            Log::error('Error deleting blog: ' . $e->getMessage());
+            
+            $message = 'Có lỗi xảy ra khi xóa bài viết!';
+            
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $message
+                ], 500);
+            }
+
+            return redirect()->route('admin.blogs.index')->with('error', $message);
         }
-
-        $blog->delete();
-
-        // Get updated stats
-        $stats = [
-            'total' => Blog::count(),
-            'active' => Blog::where('is_active', true)->count(),
-            'inactive' => Blog::where('is_active', false)->count(),
-            'featured' => Blog::where('is_featured', true)->count(),
-        ];
-
-        // Return JSON for AJAX requests
-        if (request()->ajax() || request()->wantsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Xóa bài viết thành công!',
-                'stats' => $stats
-            ]);
-        }
-
-        return redirect()->route('admin.blogs.index')->with('success', 'Xóa bài viết thành công!');
     }
 }

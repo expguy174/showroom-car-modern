@@ -13,18 +13,18 @@ return new class extends Migration
     {
         Schema::create('dealerships', function (Blueprint $table) {
             $table->id();
-            $table->string('name'); // Tên đại lý
-            $table->string('code')->unique(); // Mã đại lý
+            $table->string('name');
+            $table->string('code')->unique();
             $table->text('description')->nullable();
             
             // Thông tin liên hệ
-			$table->string('phone', 20);
+            $table->string('phone', 20);
             $table->string('email')->nullable();
             
             // Địa chỉ
             $table->string('address');
             $table->string('city');
-            $table->string('country')->default('Vietnam');
+            $table->string('country')->nullable()->default('Vietnam');
             
             // Trạng thái
             $table->boolean('is_active')->default(true);
