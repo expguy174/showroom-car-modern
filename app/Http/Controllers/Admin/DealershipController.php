@@ -17,11 +17,11 @@ class DealershipController extends Controller
         // Search functionality
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('code', 'like', "%{$search}%")
-                  ->orWhere('city', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('code', 'like', "%{$search}%")
+                    ->orWhere('city', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
@@ -88,7 +88,7 @@ class DealershipController extends Controller
             // Restore and update the soft-deleted dealership
             $existingDealership->restore();
             $existingDealership->update($validated);
-            
+
             $message = "Đã khôi phục và cập nhật đại lý \"{$existingDealership->name}\" thành công!";
         } else {
             // Create new dealership
@@ -177,7 +177,7 @@ class DealershipController extends Controller
                 'active' => Dealership::where('is_active', true)->count(),
                 'inactive' => Dealership::where('is_active', false)->count(),
             ];
-            
+
             return response()->json([
                 'success' => true,
                 'message' => "Đã {$statusText} đại lý thành công!",
@@ -195,7 +195,7 @@ class DealershipController extends Controller
             // Check if dealership is currently active
             if ($dealership->is_active) {
                 $message = "Không thể xóa đại lý \"{$dealership->name}\" vì đang ở trạng thái HOẠT ĐỘNG. Vui lòng tạm dừng đại lý trước khi xóa.";
-                
+
                 if ($request->ajax() || $request->wantsJson()) {
                     return response()->json([
                         'success' => false,
@@ -208,11 +208,11 @@ class DealershipController extends Controller
 
             // Check if dealership has showrooms
             $showroomsCount = $dealership->showrooms()->count();
-            
+
             if ($showroomsCount > 0) {
                 $message = "KHÔNG THỂ XÓA đại lý \"{$dealership->name}\" vì còn {$showroomsCount} showroom liên quan. " .
-                          "Đây là dữ liệu kinh doanh quan trọng! Vui lòng xóa các showroom trước hoặc chỉ 'Tạm dừng' để ngừng sử dụng.";
-                
+                    "Đây là dữ liệu kinh doanh quan trọng! Vui lòng xóa các showroom trước hoặc chỉ 'Tạm dừng' để ngừng sử dụng.";
+
                 if ($request->ajax() || $request->wantsJson()) {
                     return response()->json([
                         'success' => false,
@@ -230,7 +230,7 @@ class DealershipController extends Controller
             // Safe to delete - inactive and no business data
             $dealershipName = $dealership->name;
             $dealershipCode = $dealership->code;
-            
+
             $dealership->delete();
 
             $message = "Đã xóa đại lý \"{$dealershipName}\" ({$dealershipCode}) thành công!";
@@ -242,7 +242,7 @@ class DealershipController extends Controller
                     'active' => Dealership::where('is_active', true)->count(),
                     'inactive' => Dealership::where('is_active', false)->count(),
                 ];
-                
+
                 return response()->json([
                     'success' => true,
                     'message' => $message,
@@ -253,9 +253,9 @@ class DealershipController extends Controller
             return redirect()->route('admin.dealerships.index')->with('success', $message);
         } catch (\Exception $e) {
             \Log::error('Error deleting dealership: ' . $e->getMessage());
-            
+
             $message = 'Có lỗi xảy ra khi xóa đại lý!';
-            
+
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'success' => false,
