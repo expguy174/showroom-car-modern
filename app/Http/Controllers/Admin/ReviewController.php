@@ -30,7 +30,7 @@ class ReviewController extends Controller
             $query->where('is_approved', $request->status === 'approved');
         }
 
-        $reviews = $query->orderBy('created_at', 'desc')->paginate(20);
+        $reviews = $query->orderBy('created_at', 'desc')->paginate(15);
         
         // Append query parameters to pagination links
         $reviews->appends($request->except(['page', 'ajax', 'with_stats']));

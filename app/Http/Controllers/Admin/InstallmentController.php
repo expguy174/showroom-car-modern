@@ -42,9 +42,10 @@ class InstallmentController extends Controller
             $query->where('finance_option_id', $request->finance_option_id);
         }
 
-        $orders = $query->orderByDesc('created_at')
-                       ->paginate(20)
-                       ->withQueryString();
+        $orders = $query->orderByDesc('created_at')->paginate(15);
+        
+        // Append query parameters to pagination links
+        $orders->appends($request->except(['page', 'ajax', 'with_stats']));
 
         // Calculate statistics
         $totalOrders = Order::whereHas('installments')->count();

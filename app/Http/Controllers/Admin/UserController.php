@@ -47,6 +47,9 @@ class UserController extends Controller
 
         $users = $query->orderByDesc('created_at')->paginate(15);
         
+        // Append query parameters to pagination links
+        $users->appends($request->except(['page', 'ajax', 'with_stats']));
+        
         // Calculate stats
         $stats = [
             'total' => User::count(),

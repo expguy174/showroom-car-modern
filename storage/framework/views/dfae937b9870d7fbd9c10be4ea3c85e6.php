@@ -201,7 +201,7 @@
 <?php $component = $__componentOriginal42eccf6ae0cbd0d224265b5df2422179; ?>
 <?php unset($__componentOriginal42eccf6ae0cbd0d224265b5df2422179); ?>
 <?php endif; ?>
-            </div>
+    </div>
 
             
             <div>

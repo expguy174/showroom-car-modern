@@ -31,6 +31,10 @@ class UserProfileController extends Controller
         }
 
         $customerProfiles = $query->orderBy('created_at', 'desc')->paginate(15);
+        
+        // Append query parameters to pagination links
+        $customerProfiles->appends($request->except(['page', 'ajax', 'with_stats']));
+        
         $customerTypes = ['new', 'returning', 'vip', 'prospect'];
 
         return view('admin.customer-profiles.index', compact('customerProfiles', 'customerTypes'));

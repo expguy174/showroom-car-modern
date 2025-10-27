@@ -26,7 +26,10 @@ class ContactMessageController extends Controller
             $query->where('status', $request->status);
         }
 
-        $messages = $query->orderBy('created_at', 'desc')->paginate(20);
+        $messages = $query->orderBy('created_at', 'desc')->paginate(15);
+        
+        // Append query parameters to pagination links
+        $messages->appends($request->except(['page', 'ajax', 'with_stats']));
         
         // Return partial view for AJAX requests
         if ($request->ajax() || $request->wantsJson()) {

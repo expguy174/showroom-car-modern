@@ -3,243 +3,367 @@
 @section('title', 'Quản lý showroom')
 
 @section('content')
-<div class="bg-white rounded-xl shadow-sm border border-gray-200">
-    {{-- Header --}}
-    <div class="px-6 py-4 border-b border-gray-200">
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-xl font-semibold text-gray-900">
-                    <i class="fas fa-building text-blue-600 mr-3"></i>
-                    Quản lý showroom
-                </h1>
-                <p class="text-sm text-gray-600 mt-1">Danh sách tất cả showroom và đại lý</p>
-            </div>
-            <a href="{{ route('admin.showrooms.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
-                <i class="fas fa-plus mr-2"></i>
-                Thêm showroom
-            </a>
-        </div>
-    </div>
+{{-- Flash Messages Component --}}
+<x-admin.flash-messages
+    :show-icons="true"
+    :dismissible="true"
+    position="top-right"
+    :auto-dismiss="5000" />
+
+<div class="space-y-6">
+    {{-- Page Header --}}
+    <x-admin.page-header
+        title="Quản lý showroom"
+        description="Quản lý thông tin các showroom trưng bày xe"
+        icon="fas fa-building">
+        <a href="{{ route('admin.showrooms.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+            <i class="fas fa-plus mr-2"></i>
+            <span>Thêm showroom</span>
+        </a>
+    </x-admin.page-header>
 
     {{-- Stats Cards --}}
-    <div class="p-6 border-b border-gray-200">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-4 text-white">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <i class="fas fa-building text-2xl"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-blue-100 text-sm">Tổng showroom</p>
-                        <p class="text-2xl font-semibold">{{ $totalShowrooms ?? 0 }}</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-lg p-4 text-white">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <i class="fas fa-check-circle text-2xl"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-green-100 text-sm">Đang hoạt động</p>
-                        <p class="text-2xl font-semibold">{{ $activeShowrooms ?? 0 }}</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-lg p-4 text-white">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <i class="fas fa-map-marker-alt text-2xl"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-yellow-100 text-sm">Tỉnh/Thành phố</p>
-                        <p class="text-2xl font-semibold">{{ $totalCities ?? 0 }}</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg p-4 text-white">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <i class="fas fa-calendar-alt text-2xl"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-purple-100 text-sm">Lịch hẹn tháng này</p>
-                        <p class="text-2xl font-semibold">{{ $monthlyAppointments ?? 0 }}</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <x-admin.stats-card
+            title="Tổng showroom"
+            :value="$stats['total']"
+            icon="fas fa-building"
+            color="blue"
+            description="Tất cả showroom"
+            dataStat="total" />
+
+        <x-admin.stats-card
+            title="Hoạt động"
+            :value="$stats['active']"
+            icon="fas fa-check-circle"
+            color="green"
+            description="Showroom hoạt động"
+            dataStat="active" />
+
+        <x-admin.stats-card
+            title="Tạm dừng"
+            :value="$stats['inactive']"
+            icon="fas fa-pause-circle"
+            color="red"
+            description="Showroom tạm dừng"
+            dataStat="inactive" />
     </div>
 
     {{-- Filters --}}
-    <div class="p-6 border-b border-gray-200 bg-gray-50">
-        <form method="GET" class="flex flex-wrap items-center gap-4">
-            <div class="flex-1 min-w-64">
-                <input type="text" name="search" value="{{ request('search') }}" 
-                       placeholder="Tìm kiếm theo tên, địa chỉ, số điện thoại..." 
-                       class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+        <form method="GET" id="filterForm" class="grid grid-cols-1 md:grid-cols-[1fr_minmax(min-content,_auto)_auto] gap-4 items-end">
+
+            {{-- Search --}}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Tìm kiếm</label>
+                <x-admin.search-input
+                    name="search"
+                    placeholder="Tìm theo tên, địa chỉ, điện thoại..."
+                    :value="request('search')"
+                    callbackName="handleSearch"
+                    :debounceTime="500"
+                    size="small"
+                    :showIcon="true"
+                    :showClearButton="true" />
             </div>
-            
-            <select name="city" class="px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                <option value="">Tất cả tỉnh/thành</option>
-                @foreach($cities ?? [] as $city)
-                    <option value="{{ $city }}" {{ request('city') == $city ? 'selected' : '' }}>{{ $city }}</option>
-                @endforeach
-            </select>
-            
-            <select name="status" class="px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                <option value="">Tất cả trạng thái</option>
-                <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Hoạt động</option>
-                <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>Tạm dừng</option>
-            </select>
-            
-            <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
-                <i class="fas fa-search mr-2"></i>
-                Tìm kiếm
-            </button>
-            
-            <a href="{{ route('admin.showrooms.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
-                <i class="fas fa-redo mr-2"></i>
-                Đặt lại
-            </a>
+
+            {{-- Status Filter --}}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label>
+                <x-admin.custom-dropdown
+                    name="is_active"
+                    :options="[
+                        '1' => 'Hoạt động',
+                        '0' => 'Tạm dừng'
+                    ]"
+                    :selected="request('is_active')"
+                    placeholder="Tất cả"
+                    onchange="submitFilterForm"
+                    :searchable="false"
+                    width="w-full" />
+            </div>
+
+            {{-- Reset --}}
+            <div>
+                <x-admin.reset-button
+                    formId="#filterForm"
+                    callback="resetFilters" />
+            </div>
         </form>
     </div>
 
-    {{-- Table --}}
-    <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Showroom</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Địa chỉ</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Liên hệ</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Giờ làm việc</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                @forelse($showrooms ?? [] as $showroom)
-                <tr class="hover:bg-gray-50 transition-colors">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        #{{ $showroom->id }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="flex items-center">
-                            <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold mr-3">
-                                {{ strtoupper(substr($showroom->name, 0, 1)) }}
-                            </div>
-                            <div>
-                                <div class="text-sm font-medium text-gray-900">{{ $showroom->name }}</div>
-                                @if($showroom->code)
-                                    <div class="text-sm text-gray-500">{{ $showroom->code }}</div>
-                                @endif
-                            </div>
-                        </div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm text-gray-900">
-                            <div>{{ $showroom->address }}</div>
-                            <div class="text-gray-500">{{ $showroom->district }}, {{ $showroom->city }}</div>
-                        </div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <div>
-                            @if($showroom->phone)
-                                <div class="flex items-center">
-                                    <i class="fas fa-phone text-gray-400 mr-2"></i>
-                                    {{ $showroom->phone }}
-                                </div>
-                            @endif
-                            @if($showroom->email)
-                                <div class="flex items-center text-gray-500">
-                                    <i class="fas fa-envelope text-gray-400 mr-2"></i>
-                                    {{ $showroom->email }}
-                                </div>
-                            @endif
-                        </div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        @if($showroom->opening_hours)
-                            {{ $showroom->opening_hours }}
-                        @else
-                            <span class="text-gray-500">Chưa cập nhật</span>
-                        @endif
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        @if($showroom->is_active)
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                <i class="fas fa-check-circle mr-1"></i>
-                                Hoạt động
-                            </span>
-                        @else
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                <i class="fas fa-times-circle mr-1"></i>
-                                Tạm dừng
-                            </span>
-                        @endif
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div class="flex items-center gap-2">
-                            <a href="{{ route('admin.showrooms.show', $showroom) }}" 
-                               class="text-blue-600 hover:text-blue-900 transition-colors p-1 rounded hover:bg-blue-50" 
-                               title="Xem chi tiết">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                            <a href="{{ route('admin.showrooms.edit', $showroom) }}" 
-                               class="text-green-600 hover:text-green-900 transition-colors p-1 rounded hover:bg-green-50" 
-                               title="Chỉnh sửa">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            @if($showroom->latitude && $showroom->longitude)
-                                <a href="https://maps.google.com/?q={{ $showroom->latitude }},{{ $showroom->longitude }}" 
-                                   target="_blank"
-                                   class="text-purple-600 hover:text-purple-900 transition-colors p-1 rounded hover:bg-purple-50" 
-                                   title="Xem trên bản đồ">
-                                    <i class="fas fa-map-marker-alt"></i>
-                                </a>
-                            @endif
-                            <form action="{{ route('admin.showrooms.destroy', $showroom) }}" method="POST" class="inline"
-                                  onsubmit="return confirm('Bạn có chắc muốn xóa showroom này? Thao tác này không thể hoàn tác.')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" 
-                                        class="text-red-600 hover:text-red-900 transition-colors p-1 rounded hover:bg-red-50" 
-                                        title="Xóa">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="7" class="px-6 py-12 text-center">
-                        <div class="flex flex-col items-center">
-                            <i class="fas fa-building text-gray-300 text-4xl mb-4"></i>
-                            <h3 class="text-lg font-medium text-gray-900 mb-2">Chưa có showroom nào</h3>
-                            <p class="text-gray-500 mb-4">Hệ thống chưa có showroom nào được tạo.</p>
-                            <a href="{{ route('admin.showrooms.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
-                                <i class="fas fa-plus mr-2"></i>
-                                Thêm showroom đầu tiên
-                            </a>
-                        </div>
-                    </td>
-                </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-
-    {{-- Pagination --}}
-    @if(isset($showrooms) && $showrooms->hasPages())
-    <div class="px-6 py-4 border-t border-gray-200">
-        {{ $showrooms->links() }}
-    </div>
-    @endif
+    {{-- AJAX Table Component --}}
+    <x-admin.ajax-table
+        table-id="showrooms-content"
+        loading-id="loading-state"
+        form-id="filterForm"
+        base-url="{{ route('admin.showrooms.index') }}"
+        callback-name="loadShowrooms"
+        empty-message="Không có showroom nào"
+        empty-icon="fas fa-building"
+        after-load-callback="initializeEventListeners">
+        @include('admin.showrooms.partials.table', ['showrooms' => $showrooms])
+    </x-admin.ajax-table>
 </div>
+
+{{-- Delete Modal --}}
+<x-admin.delete-modal
+    modal-id="deleteShowroomModal"
+    title="Xác nhận xóa showroom"
+    confirm-text="Xóa"
+    cancel-text="Hủy"
+    delete-callback-name="confirmDeleteShowroom"
+    entity-type="showroom" />
+
+@push('scripts')
+<script>
+    // Update stats cards from toggle response
+    window.updateStatsFromServer = function(stats) {
+        const statsMapping = {
+            'total': 'total',
+            'active': 'active',
+            'inactive': 'inactive'
+        };
+
+        Object.entries(statsMapping).forEach(([serverKey, cardKey]) => {
+            if (stats[serverKey] !== undefined) {
+                const statElement = document.querySelector(`[data-stat="${cardKey}"]`);
+                if (statElement) {
+                    statElement.textContent = stats[serverKey];
+                }
+            }
+        });
+    };
+
+    // Initialize event listeners
+    function initializeEventListeners() {
+        // Status toggle buttons
+        document.querySelectorAll('.status-toggle').forEach(button => {
+            button.addEventListener('click', async function(e) {
+                e.preventDefault();
+                const showroomId = this.dataset.showroomId;
+                const newStatus = this.dataset.status === 'true';
+                const buttonElement = this;
+
+                // Show loading state
+                const originalIcon = buttonElement.querySelector('i').className;
+                buttonElement.querySelector('i').className = 'fas fa-spinner fa-spin w-4 h-4';
+                buttonElement.disabled = true;
+
+                try {
+                    const response = await fetch(`/admin/showrooms/${showroomId}/toggle-status`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            is_active: newStatus ? 1 : 0
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        // Update button appearance
+                        if (newStatus) {
+                            buttonElement.className = 'text-orange-600 hover:text-orange-900 status-toggle w-4 h-4 flex items-center justify-center';
+                            buttonElement.title = 'Tạm dừng';
+                            buttonElement.dataset.status = 'false';
+                            buttonElement.querySelector('i').className = 'fas fa-pause w-4 h-4';
+                        } else {
+                            buttonElement.className = 'text-green-600 hover:text-green-900 status-toggle w-4 h-4 flex items-center justify-center';
+                            buttonElement.title = 'Kích hoạt';
+                            buttonElement.dataset.status = 'true';
+                            buttonElement.querySelector('i').className = 'fas fa-play w-4 h-4';
+                        }
+
+                        // Update status badge in table
+                        const showroomId = buttonElement.dataset.showroomId;
+                        const row = document.querySelector(`tr[data-showroom-id="${showroomId}"]`);
+                        if (row) {
+                            const statusCell = row.querySelector('td:nth-child(4)');
+                            if (statusCell) {
+                                const statusBadge = statusCell.querySelector('span');
+                                if (statusBadge) {
+                                    if (newStatus) {
+                                        statusBadge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800';
+                                        statusBadge.innerHTML = '<i class="fas fa-check-circle mr-1"></i>Hoạt động';
+                                    } else {
+                                        statusBadge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800';
+                                        statusBadge.innerHTML = '<i class="fas fa-pause-circle mr-1"></i>Tạm dừng';
+                                    }
+                                }
+                            }
+                        }
+
+                        // Update stats cards if provided
+                        if (data.stats && window.updateStatsFromServer) {
+                            window.updateStatsFromServer(data.stats);
+                        }
+
+                        // Show message
+                        if (data.message && window.showMessage) {
+                            window.showMessage(data.message, 'success');
+                        }
+                    } else {
+                        throw new Error(data.message || 'Có lỗi xảy ra');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    buttonElement.querySelector('i').className = originalIcon;
+                    if (window.showMessage) {
+                        window.showMessage('Có lỗi xảy ra khi cập nhật trạng thái!', 'error');
+                    }
+                } finally {
+                    buttonElement.disabled = false;
+                }
+            });
+        });
+
+        // Delete buttons
+        document.querySelectorAll('.delete-btn').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const showroomId = this.dataset.showroomId;
+                const showroomName = this.dataset.showroomName;
+
+                if (window.deleteModalManager_deleteShowroomModal) {
+                    window.deleteModalManager_deleteShowroomModal.show({
+                        entityName: `showroom ${showroomName}`,
+                        details: 'Hành động này không thể hoàn tác.',
+                        deleteUrl: `/admin/showrooms/${showroomId}`
+                    });
+                }
+            });
+        });
+    }
+
+    // Dropdown callback
+    window.submitFilterForm = function() {
+        // Wait for ajax table to be ready
+        setTimeout(() => {
+            if (window.loadShowrooms) {
+                const searchForm = document.getElementById('filterForm');
+                if (searchForm) {
+                    // Fix is_active value before creating FormData
+                    const isActiveInput = searchForm.querySelector('input[name="is_active"]');
+                    if (isActiveInput && isActiveInput.value) {
+                        // Custom dropdown might set text value, need to map to actual value
+                        const statusMap = {
+                            'Hoạt động': '1',
+                            'Tạm dừng': '0'
+                        };
+
+                        if (statusMap[isActiveInput.value]) {
+                            isActiveInput.value = statusMap[isActiveInput.value];
+                        }
+                    }
+
+                    const formData = new FormData(searchForm);
+                    const url = '{{ route("admin.showrooms.index") }}?' + new URLSearchParams(formData).toString();
+                    window.loadShowrooms(url);
+                }
+            }
+        }, 100);
+    };
+
+    // Search callback
+    window.handleSearch = function(searchTerm, inputElement) {
+        // Wait for ajax table to be ready
+        setTimeout(() => {
+            if (window.loadShowrooms) {
+                const searchForm = document.getElementById('filterForm');
+                if (searchForm) {
+                    const formData = new FormData(searchForm);
+                    const url = '{{ route("admin.showrooms.index") }}?' + new URLSearchParams(formData).toString();
+                    window.loadShowrooms(url);
+                }
+            }
+        }, 100);
+    };
+
+    // Reset filters
+    window.resetFilters = function() {
+        // Wait for ajax table to be ready
+        setTimeout(() => {
+            if (window.loadShowrooms) {
+                window.loadShowrooms('{{ route("admin.showrooms.index") }}');
+            }
+        }, 100);
+    };
+
+    // Delete confirmation
+    window.confirmDeleteShowroom = function(data) {
+        if (!data || !data.deleteUrl) return;
+
+        if (window.deleteModalManager_deleteShowroomModal) {
+            window.deleteModalManager_deleteShowroomModal.setLoading(true);
+        }
+
+        fetch(data.deleteUrl, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => {
+                return response.json().then(responseData => {
+                    if (!response.ok) {
+                        throw {
+                            status: response.status,
+                            data: responseData
+                        };
+                    }
+                    return responseData;
+                });
+            })
+            .then(responseData => {
+                if (responseData.success) {
+                    if (window.deleteModalManager_deleteShowroomModal) {
+                        window.deleteModalManager_deleteShowroomModal.hide();
+                    }
+
+                    if (window.showMessage) {
+                        window.showMessage(responseData.message || 'Đã xóa showroom thành công!', 'success');
+                    }
+
+                    // Update stats cards if provided
+                    if (responseData.stats && window.updateStatsFromServer) {
+                        window.updateStatsFromServer(responseData.stats);
+                    }
+
+                    if (window.loadShowrooms) {
+                        window.loadShowrooms();
+                    }
+                } else {
+                    throw new Error(responseData.message || 'Có lỗi xảy ra');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                if (window.deleteModalManager_deleteShowroomModal) {
+                    window.deleteModalManager_deleteShowroomModal.setLoading(false);
+                }
+
+                const errorMessage = error.data?.message || error.message || 'Có lỗi xảy ra khi xóa showroom!';
+
+                if (window.showMessage) {
+                    window.showMessage(errorMessage, 'error');
+                }
+            });
+    };
+
+    // Make it globally accessible for ajax-table callback
+    window.initializeEventListeners = initializeEventListeners;
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeEventListeners();
+    });
+</script>
+@endpush
 @endsection

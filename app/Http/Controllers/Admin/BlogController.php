@@ -38,6 +38,9 @@ class BlogController extends Controller
 
         $blogs = $query->orderBy('created_at', 'desc')->paginate(15);
 
+        // Append query parameters to pagination links
+        $blogs->appends($request->except(['page', 'ajax', 'with_stats']));
+
         // Calculate stats for initial load
         $stats = [
             'total' => Blog::count(),

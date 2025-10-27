@@ -51,7 +51,7 @@ class OrderController extends Controller
             $query->where('payment_status', $request->payment_status);
         }
 
-        $orders = $query->orderByDesc('created_at')->paginate(10);
+        $orders = $query->orderByDesc('created_at')->paginate(15);
         
         // Append query parameters to pagination links
         $orders->appends($request->except(['page', 'ajax', 'with_stats']));

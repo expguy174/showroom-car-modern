@@ -35,7 +35,10 @@ class OrderLogController extends Controller
             });
         }
 
-        $logs = $query->paginate(20);
+        $logs = $query->paginate(15);
+        
+        // Append query parameters to pagination links
+        $logs->appends($request->except(['page', 'ajax', 'with_stats']));
 
         return view('admin.orders.logs', compact('order', 'logs'));
     }

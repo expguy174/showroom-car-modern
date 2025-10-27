@@ -470,6 +470,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/{showroom}', [\App\Http\Controllers\Admin\ShowroomController::class, 'show'])->name('show');
         Route::get('/{showroom}/edit', [\App\Http\Controllers\Admin\ShowroomController::class, 'edit'])->name('edit');
         Route::put('/{showroom}', [\App\Http\Controllers\Admin\ShowroomController::class, 'update'])->name('update');
+        Route::patch('/{showroom}/toggle-status', [\App\Http\Controllers\Admin\ShowroomController::class, 'toggleStatus'])->name('toggle-status');
         Route::delete('/{showroom}', [\App\Http\Controllers\Admin\ShowroomController::class, 'destroy'])->name('destroy');
     });
 

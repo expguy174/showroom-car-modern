@@ -181,11 +181,14 @@ class PaymentController extends Controller
         return view('admin.payments.dashboard', compact('todayTransactions', 'monthTransactions', 'stats', 'recentTransactions', 'paymentMethodStats'));
     }
 
-    public function installments()
+    public function installments(Request $request)
     {
         $installments = Installment::with(['user', 'order'])
             ->orderBy('due_date', 'asc')
             ->paginate(15);
+        
+        // Append query parameters to pagination links
+        $installments->appends($request->except(['page', 'ajax', 'with_stats']));
 
         return view('admin.payments.installments', compact('installments'));
     }

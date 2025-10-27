@@ -32,6 +32,9 @@ class DealershipController extends Controller
 
         $dealerships = $query->orderBy('created_at', 'desc')->paginate(15);
 
+        // Append query parameters to pagination links
+        $dealerships->appends($request->except(['page', 'ajax', 'with_stats']));
+
         // Stats for cards
         $stats = [
             'total' => Dealership::count(),
