@@ -6,8 +6,11 @@
 {{-- Header --}}
 <div class="flex items-center justify-between mb-6">
     <div>
-        <h1 class="text-2xl font-semibold text-gray-900">Hiệu suất nhân viên</h1>
-        <p class="text-gray-600 mt-1">Theo dõi và đánh giá hiệu quả làm việc của đội ngũ</p>
+        <h1 class="text-2xl font-semibold text-gray-900">
+            <i class="fas fa-chart-line text-blue-600 mr-2"></i>
+            Hiệu suất nhân viên
+        </h1>
+        <p class="text-gray-600 mt-1">Dữ liệu tracking từ order logs - Cập nhật theo thời gian thực</p>
     </div>
     <div class="flex items-center space-x-3">
         <a href="{{ route('admin.analytics.dashboard') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors">
@@ -17,158 +20,151 @@
     </div>
 </div>
 
-{{-- Performance Overview --}}
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-    {{-- Sales Performance --}}
+{{-- Performance Summary Cards --}}
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div class="flex items-center justify-between mb-6">
-            <h3 class="text-lg font-semibold text-gray-900">Hiệu suất bán hàng</h3>
-            <div class="text-sm text-gray-500">
-                <i class="fas fa-info-circle mr-1"></i>
-                Theo nhân viên bán hàng
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-600 mb-2">Đơn hàng xử lý</p>
+                <p class="text-3xl font-bold text-gray-900">{{ $staffStats['total_orders_handled'] }}</p>
+            </div>
+            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-shopping-cart text-blue-600 text-xl"></i>
             </div>
         </div>
-        
-        @if($salesStaffPerformance->count() > 0)
-            <div class="overflow-x-auto">
-                <table class="min-w-full">
-                    <thead>
-                        <tr class="border-b border-gray-200">
-                            <th class="text-left py-3 px-4 font-medium text-gray-900">Nhân viên</th>
-                            <th class="text-center py-3 px-4 font-medium text-gray-900">Đơn hàng</th>
-                            <th class="text-right py-3 px-4 font-medium text-gray-900">Doanh thu</th>
-                            <th class="text-right py-3 px-4 font-medium text-gray-900">Trung bình</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200">
-                        @foreach($salesStaffPerformance as $staff)
-                        <tr class="hover:bg-gray-50">
-                            <td class="py-3 px-4">
-                                <div class="flex items-center">
-                                    <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-600 font-semibold text-sm mr-3">
-                                        {{ substr($staff->sales_staff_id, -2) }}
-                                    </div>
-                                    <span class="text-gray-900">NV #{{ $staff->sales_staff_id }}</span>
-                                </div>
-                            </td>
-                            <td class="py-3 px-4 text-center">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                    {{ $staff->orders_handled }}
-                                </span>
-                            </td>
-                            <td class="py-3 px-4 text-right font-medium text-gray-900">{{ number_format($staff->total_sales) }} VNĐ</td>
-                            <td class="py-3 px-4 text-right text-gray-600">{{ number_format($staff->average_sale) }} VNĐ</td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        @else
-            <div class="text-center py-12">
-                <i class="fas fa-user-tie text-gray-300 text-4xl mb-4"></i>
-                <p class="text-gray-500 text-lg mb-2">Chưa có dữ liệu hiệu suất bán hàng</p>
-                <p class="text-gray-400 text-sm">Dữ liệu sẽ xuất hiện khi có đơn hàng được xử lý bởi nhân viên</p>
-            </div>
-        @endif
     </div>
-
-    {{-- Test Drive Performance --}}
+    
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div class="flex items-center justify-between mb-6">
-            <h3 class="text-lg font-semibold text-gray-900">Hiệu suất lái thử</h3>
-            <div class="text-sm text-gray-500">
-                <i class="fas fa-info-circle mr-1"></i>
-                Theo showroom
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-600 mb-2">Tổng doanh thu</p>
+                <p class="text-3xl font-bold text-green-600">{{ format_currency_short($staffStats['total_revenue']) }}</p>
+            </div>
+            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-dollar-sign text-green-600 text-xl"></i>
             </div>
         </div>
-        
-        @if($testDrivePerformance->count() > 0)
-            <div class="overflow-x-auto">
-                <table class="min-w-full">
-                    <thead>
-                        <tr class="border-b border-gray-200">
-                            <th class="text-left py-3 px-4 font-medium text-gray-900">Showroom</th>
-                            <th class="text-center py-3 px-4 font-medium text-gray-900">Lái thử</th>
-                            <th class="text-center py-3 px-4 font-medium text-gray-900">Hoàn thành</th>
-                            <th class="text-right py-3 px-4 font-medium text-gray-900">Tỷ lệ</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200">
-                        @foreach($testDrivePerformance as $performance)
-                        <tr class="hover:bg-gray-50">
-                            <td class="py-3 px-4">
-                                <div class="flex items-center">
-                                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold text-sm mr-3">
-                                        {{ substr($performance->showroom_id, -2) }}
-                                    </div>
-                                    <span class="text-gray-900">Showroom #{{ $performance->showroom_id }}</span>
-                                </div>
-                            </td>
-                            <td class="py-3 px-4 text-center">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                    {{ $performance->test_drives_handled }}
-                                </span>
-                            </td>
-                            <td class="py-3 px-4 text-center">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                    {{ $performance->conversions }}
-                                </span>
-                            </td>
-                            <td class="py-3 px-4 text-right">
-                                <div class="flex items-center justify-end">
-                                    @php
-                                        $rate = $performance->conversion_rate;
-                                        $color = $rate >= 70 ? 'text-green-600' : ($rate >= 50 ? 'text-yellow-600' : 'text-red-600');
-                                        $bgColor = $rate >= 70 ? 'bg-green-100' : ($rate >= 50 ? 'bg-yellow-100' : 'bg-red-100');
-                                    @endphp
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $bgColor }} {{ $color }}">
-                                        {{ number_format($rate, 1) }}%
-                                    </span>
-                                </div>
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+    </div>
+    
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-600 mb-2">Nhân viên</p>
+                <p class="text-3xl font-bold text-purple-600">{{ $staffStats['total'] }}</p>
             </div>
-        @else
-            <div class="text-center py-12">
-                <i class="fas fa-car-side text-gray-300 text-4xl mb-4"></i>
-                <p class="text-gray-500 text-lg mb-2">Chưa có dữ liệu lái thử</p>
-                <p class="text-gray-400 text-sm">Dữ liệu sẽ xuất hiện khi có lịch lái thử được xử lý</p>
+            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-users text-purple-600 text-xl"></i>
             </div>
-        @endif
+        </div>
     </div>
 </div>
 
-{{-- Performance Insights --}}
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-    <h3 class="text-lg font-semibold text-gray-900 mb-6">Thông tin hiệu suất</h3>
-    
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="text-center p-4 bg-blue-50 rounded-lg">
-            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                <i class="fas fa-chart-line text-blue-600 text-xl"></i>
+{{-- Staff List by Role --}}
+<div class="space-y-6 mb-8">
+    @forelse($staffByRole as $roleKey => $roleGroup)
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center">
+                @php
+                    $roleIcon = match($roleKey) {
+                        'admin' => 'fa-user-shield',
+                        'sales_person' => 'fa-handshake',
+                        'technician' => 'fa-wrench',
+                        'manager' => 'fa-user-tie',
+                        default => 'fa-user'
+                    };
+                    $roleColor = match($roleKey) {
+                        'admin' => 'text-purple-600',
+                        'sales_person' => 'text-green-600',
+                        'technician' => 'text-orange-600',
+                        'manager' => 'text-blue-600',
+                        default => 'text-gray-600'
+                    };
+                @endphp
+                <i class="fas {{ $roleIcon }} {{ $roleColor }} text-xl mr-3"></i>
+                <h3 class="text-lg font-semibold text-gray-900">{{ $roleGroup['role_name'] }}</h3>
+                <span class="ml-3 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                    {{ $roleGroup['count'] }} người
+                </span>
             </div>
-            <h4 class="font-medium text-gray-900 mb-2">Theo dõi hiệu suất</h4>
-            <p class="text-sm text-gray-600">Dữ liệu được cập nhật theo thời gian thực để đánh giá hiệu quả làm việc</p>
         </div>
         
-        <div class="text-center p-4 bg-green-50 rounded-lg">
-            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                <i class="fas fa-target text-green-600 text-xl"></i>
-            </div>
-            <h4 class="font-medium text-gray-900 mb-2">Mục tiêu KPI</h4>
-            <p class="text-sm text-gray-600">Đặt mục tiêu và theo dõi tiến độ đạt được của từng nhân viên</p>
-        </div>
-        
-        <div class="text-center p-4 bg-purple-50 rounded-lg">
-            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                <i class="fas fa-award text-purple-600 text-xl"></i>
-            </div>
-            <h4 class="font-medium text-gray-900 mb-2">Đánh giá & Thưởng</h4>
-            <p class="text-sm text-gray-600">Hệ thống đánh giá công bằng dựa trên dữ liệu hiệu suất thực tế</p>
+        <div class="overflow-x-auto">
+            <table class="min-w-full">
+                <thead>
+                    <tr class="border-b border-gray-200">
+                        <th class="text-left py-3 px-4 font-medium text-gray-900">Nhân viên</th>
+                        <th class="text-center py-3 px-4 font-medium text-gray-900">Đơn hàng</th>
+                        <th class="text-right py-3 px-4 font-medium text-gray-900">Doanh thu</th>
+                        <th class="text-center py-3 px-4 font-medium text-gray-900">Tỷ lệ hoàn thành</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    @foreach($roleGroup['staff'] as $staff)
+                    <tr class="hover:bg-gray-50">
+                        <td class="py-3 px-4">
+                            <div class="flex items-center space-x-3">
+                                {{-- Avatar --}}
+                                <div class="flex-shrink-0">
+                                    @php
+                                        $currentStaff = $allStaff->firstWhere('id', $staff->id);
+                                    @endphp
+                                    @if($currentStaff && $currentStaff->userProfile && $currentStaff->userProfile->avatar_path)
+                                        <img class="h-10 w-10 rounded-full object-cover border-2 border-gray-200" 
+                                             src="{{ Storage::url($currentStaff->userProfile->avatar_path) }}" 
+                                             alt="{{ $currentStaff->userProfile->name ?? $currentStaff->email }}">
+                                    @else
+                                        <div class="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
+                                            <span class="text-white font-semibold text-sm">
+                                                {{ strtoupper(mb_substr($staff->name ?? 'ST', 0, 2, 'UTF-8')) }}
+                                            </span>
+                                        </div>
+                                    @endif
+                                </div>
+                                
+                                {{-- Staff Details --}}
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-sm font-medium text-gray-900 truncate">
+                                        {{ $staff->name }}
+                                    </div>
+                                    <div class="text-sm text-gray-500 truncate">
+                                        <i class="fas fa-id-badge text-gray-400 mr-1"></i>
+                                        Mã: {{ $staff->employee_id }}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-3 px-4 text-center">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {{ $staff->orders_handled }}
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 text-right font-medium text-gray-900">
+                            {{ $staff->total_revenue > 0 ? format_currency_short($staff->total_revenue) : '-' }}
+                        </td>
+                        <td class="py-3 px-4 text-center">
+                            @php
+                                $rate = $staff->completion_rate;
+                                $color = $rate >= 80 ? 'text-green-600 bg-green-100' : ($rate >= 50 ? 'text-yellow-600 bg-yellow-100' : 'text-red-600 bg-red-100');
+                            @endphp
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $color }}">
+                                {{ format_percentage($rate) }}
+                            </span>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
         </div>
     </div>
+    @empty
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-12">
+        <div class="text-center">
+            <i class="fas fa-users text-gray-300 text-5xl mb-4"></i>
+            <p class="text-gray-500 text-lg mb-2">Chưa có nhân viên nào</p>
+            <p class="text-gray-400 text-sm">Vui lòng thêm nhân viên vào hệ thống</p>
+        </div>
+    </div>
+    @endforelse
 </div>
 @endsection

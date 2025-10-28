@@ -152,17 +152,7 @@
                         <i class="fas fa-chart-line"></i>
                     </a>
                 </div>
-                @php
-                    $monthlyRevenueValue = $monthlyRevenue ?? 0;
-                    if ($monthlyRevenueValue >= 1000000000) {
-                        $displayRevenue = number_format($monthlyRevenueValue / 1000000000, 1) . ' Tỷ Đ';
-                    } elseif ($monthlyRevenueValue >= 1000000) {
-                        $displayRevenue = number_format($monthlyRevenueValue / 1000000, 0) . ' Tr Đ';
-                    } else {
-                        $displayRevenue = number_format($monthlyRevenueValue) . ' Đ';
-                    }
-                @endphp
-                <p class="text-3xl font-bold text-gray-900 mb-2">{{ $displayRevenue }}</p>
+                <p class="text-3xl font-bold text-gray-900 mb-2">{{ format_currency_short($monthlyRevenue ?? 0) }}</p>
                 
                 {{-- Breakdown --}}
                 <div class="space-y-1">
@@ -170,29 +160,15 @@
                         <span class="text-gray-500">Tuần này:</span>
                         @php
                             $weeklyRevenue = \App\Models\Order::where('created_at', '>=', now()->subDays(7))->where('status', 'delivered')->sum('grand_total');
-                            if ($weeklyRevenue >= 1000000000) {
-                                $weeklyDisplay = number_format($weeklyRevenue / 1000000000, 1) . ' Tỷ Đ';
-                            } elseif ($weeklyRevenue >= 1000000) {
-                                $weeklyDisplay = number_format($weeklyRevenue / 1000000, 0) . ' Tr Đ';
-                            } else {
-                                $weeklyDisplay = number_format($weeklyRevenue) . ' Đ';
-                            }
                         @endphp
-                        <span class="font-medium">{{ $weeklyDisplay }}</span>
+                        <span class="font-medium">{{ format_currency_short($weeklyRevenue) }}</span>
                     </div>
                     <div class="flex justify-between text-xs">
                         <span class="text-gray-500">Hôm nay:</span>
                         @php
                             $dailyRevenue = \App\Models\Order::whereDate('created_at', today())->where('status', 'delivered')->sum('grand_total');
-                            if ($dailyRevenue >= 1000000000) {
-                                $dailyDisplay = number_format($dailyRevenue / 1000000000, 1) . ' Tỷ Đ';
-                            } elseif ($dailyRevenue >= 1000000) {
-                                $dailyDisplay = number_format($dailyRevenue / 1000000, 0) . ' Tr Đ';
-                            } else {
-                                $dailyDisplay = number_format($dailyRevenue) . ' Đ';
-                            }
                         @endphp
-                        <span class="font-medium">{{ $dailyDisplay }}</span>
+                        <span class="font-medium">{{ format_currency_short($dailyRevenue) }}</span>
                     </div>
                 </div>
                 

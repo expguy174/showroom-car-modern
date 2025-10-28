@@ -244,7 +244,7 @@ class AnalyticsController extends Controller
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->where('order_items.item_type', 'car_variant')
             ->whereBetween('orders.created_at', [$startDate, $endDate])
-            ->where('orders.status', 'completed')
+            ->where('orders.status', 'delivered')
             ->selectRaw('
                 car_brands.name as brand,
                 car_models.name as model,
@@ -284,7 +284,8 @@ class AnalyticsController extends Controller
         ->first();
 
         // Customer lifetime value
-        $customerLifetimeValue = Order::where('status', 'completed')
+        $customerLifetimeValue = Order::where('status', 'delivered')
+            ->with('user.userProfile')
             ->selectRaw('
                 user_id,
                 COUNT(*) as total_orders,
@@ -332,25 +333,131 @@ class AnalyticsController extends Controller
      */
     public function staffPerformance()
     {
-        // Sales staff performance - using user_id as proxy since no sales_staff_id
-        $salesStaffPerformance = collect(); // Empty collection since no sales_staff_id field
+        // Get all staff (exclude customers with role = 'user')
+        $allStaff = User::whereIn('role', ['admin', 'sales_person', 'technician', 'manager'])
+            ->where('is_active', true)
+            ->with('userProfile')
+            ->get();
 
-        // Test drive performance - by showroom since no staff_id
-        $testDrivePerformance = TestDrive::selectRaw('
-            showroom_id,
-            COUNT(*) as test_drives_handled,
-            COUNT(CASE WHEN status = "completed" THEN 1 END) as conversions,
-            (COUNT(CASE WHEN status = "completed" THEN 1 END) / COUNT(*)) * 100 as conversion_rate
-        ')
-        ->whereNotNull('showroom_id')
-        ->groupBy('showroom_id')
-        ->orderBy('conversion_rate', 'desc')
-        ->get();
+        // Calculate performance metrics from order_logs
+        $staffPerformance = $allStaff->map(function($staff) {
+            // Get distinct order IDs that this staff worked on
+            $orderIds = DB::table('order_logs')
+                ->where('user_id', $staff->id)
+                ->distinct()
+                ->pluck('order_id');
+
+            $ordersHandled = $orderIds->count();
+
+            // Total revenue from orders this staff handled (delivered only)
+            $totalRevenue = Order::whereIn('id', $orderIds)
+                ->where('status', 'delivered')
+                ->sum('grand_total');
+
+            // Completed orders count
+            $completedOrders = Order::whereIn('id', $orderIds)
+                ->where('status', 'delivered')
+                ->count();
+
+            // Activity breakdown
+            $activities = DB::table('order_logs')
+                ->where('user_id', $staff->id)
+                ->select('action', DB::raw('COUNT(*) as count'))
+                ->groupBy('action')
+                ->get()
+                ->pluck('count', 'action')
+                ->toArray();
+
+            return (object)[
+                'id' => $staff->id,
+                'employee_id' => $staff->employee_id ?? 'N/A',
+                'name' => $staff->userProfile->name ?? $staff->email,
+                'email' => $staff->email,
+                'role' => $staff->role,
+                'role_display' => $this->getRoleName($staff->role),
+                'department' => $staff->department ?? $this->getDefaultDepartment($staff->role),
+                'position' => $staff->position ?? $this->getDefaultPosition($staff->role),
+                'orders_handled' => $ordersHandled,
+                'total_revenue' => $totalRevenue,
+                'completed_orders' => $completedOrders,
+                'completion_rate' => $ordersHandled > 0 ? round(($completedOrders / $ordersHandled) * 100, 1) : 0,
+                'activities' => $activities,
+                'last_login_at' => $staff->last_login_at,
+                'is_active' => $staff->is_active,
+            ];
+        })->sortByDesc('orders_handled');
+
+        // Group by role
+        $staffByRole = $staffPerformance->groupBy('role')->map(function($staffGroup, $role) {
+            return [
+                'role_name' => $this->getRoleName($role),
+                'count' => $staffGroup->count(),
+                'staff' => $staffGroup->values(),
+                'total_orders' => $staffGroup->sum('orders_handled'),
+                'total_revenue' => $staffGroup->sum('total_revenue'),
+            ];
+        });
+
+        // Staff statistics
+        $staffStats = [
+            'total' => $allStaff->count(),
+            'total_orders_handled' => $staffPerformance->sum('orders_handled'),
+            'total_revenue' => $staffPerformance->sum('total_revenue'),
+            'by_role' => [
+                'admin' => $allStaff->where('role', 'admin')->count(),
+                'sales_person' => $allStaff->where('role', 'sales_person')->count(),
+                'technician' => $allStaff->where('role', 'technician')->count(),
+                'manager' => $allStaff->where('role', 'manager')->count(),
+            ],
+        ];
 
         return view('admin.analytics.staff_performance', compact(
-            'salesStaffPerformance',
-            'testDrivePerformance'
+            'staffByRole',
+            'staffStats',
+            'allStaff'
         ));
+    }
+
+    /**
+     * Get role display name
+     */
+    private function getRoleName($role)
+    {
+        return match($role) {
+            'admin' => 'Quản trị viên',
+            'sales_person' => 'Nhân viên kinh doanh',
+            'technician' => 'Kỹ thuật viên',
+            'manager' => 'Quản lý',
+            default => ucfirst($role),
+        };
+    }
+
+    /**
+     * Get default department for role
+     */
+    private function getDefaultDepartment($role)
+    {
+        return match($role) {
+            'admin' => 'Quản trị',
+            'sales_person' => 'Kinh doanh',
+            'technician' => 'Kỹ thuật',
+            'manager' => 'Quản lý',
+            default => 'Khác',
+        };
+    }
+
+    /**
+     * Get default position for role
+     */
+    private function getDefaultPosition($role)
+    {
+        return match($role) {
+            'admin' => 'Quản trị viên hệ thống',
+            'sales_person' => 'Nhân viên bán hàng',
+            'technician' => 'Kỹ thuật viên',
+            'manager' => 'Trưởng phòng',
+            default => 'Nhân viên',
+        };
     }
 
     /**

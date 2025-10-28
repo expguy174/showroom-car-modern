@@ -51,7 +51,7 @@
         <div class="flex items-center justify-between">
             <div>
                 <p class="text-gray-600 text-sm font-medium">Tỷ lệ giữ chân</p>
-                <p class="text-3xl font-bold text-gray-900 mt-2">{{ number_format($retentionRate ?? 0, 1) }}%</p>
+                <p class="text-3xl font-bold text-gray-900 mt-2">{{ format_percentage($retentionRate ?? 0) }}</p>
             </div>
             <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                 <i class="fas fa-heart text-purple-600 text-xl"></i>
@@ -82,11 +82,32 @@
                     @forelse($customerLifetimeValue ?? [] as $customer)
                     <tr class="hover:bg-gray-50">
                         <td class="py-3 px-4">
-                            <div class="flex items-center">
-                                <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold text-sm mr-3">
-                                    {{ substr($customer->user_id, -2) }}
+                            <div class="flex items-center space-x-3">
+                                {{-- Avatar --}}
+                                <div class="flex-shrink-0">
+                                    @if($customer->user && $customer->user->userProfile && $customer->user->userProfile->avatar_path)
+                                        <img class="h-10 w-10 rounded-full object-cover border-2 border-gray-200" 
+                                             src="{{ Storage::url($customer->user->userProfile->avatar_path) }}" 
+                                             alt="{{ $customer->user->userProfile->name ?? $customer->user->email }}">
+                                    @else
+                                        <div class="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
+                                            <span class="text-white font-semibold text-sm">
+                                                {{ strtoupper(mb_substr(optional($customer->user->userProfile)->name ?? optional($customer->user)->email ?? 'KH', 0, 2, 'UTF-8')) }}
+                                            </span>
+                                        </div>
+                                    @endif
                                 </div>
-                                <span class="text-gray-900">Khách hàng #{{ $customer->user_id }}</span>
+                                
+                                {{-- Customer Details --}}
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-sm font-medium text-gray-900 truncate">
+                                        {{ optional($customer->user->userProfile)->name ?? 'Khách vãng lai' }}
+                                    </div>
+                                    <div class="text-sm text-gray-500 truncate">
+                                        <i class="fas fa-envelope text-gray-400 mr-1"></i>
+                                        {{ optional($customer->user)->email ?? '-' }}
+                                    </div>
+                                </div>
                             </div>
                         </td>
                         <td class="py-3 px-4 text-center">
@@ -94,8 +115,8 @@
                                 {{ $customer->total_orders }}
                             </span>
                         </td>
-                        <td class="py-3 px-4 text-right font-medium text-gray-900">{{ number_format($customer->total_spent) }} VNĐ</td>
-                        <td class="py-3 px-4 text-right text-gray-600">{{ number_format($customer->average_order_value) }} VNĐ</td>
+                        <td class="py-3 px-4 text-right font-medium text-gray-900">{{ format_currency($customer->total_spent) }}</td>
+                        <td class="py-3 px-4 text-right text-gray-600">{{ format_currency($customer->average_order_value) }}</td>
                     </tr>
                     @empty
                     <tr>
@@ -156,7 +177,7 @@
                     </div>
                     <div>
                         <p class="font-medium text-gray-900">Đánh giá</p>
-                        <p class="text-sm text-gray-500">Reviews và feedback</p>
+                        <p class="text-sm text-gray-500">Phản hồi và đánh giá</p>
                     </div>
                 </div>
                 <div class="text-right">
