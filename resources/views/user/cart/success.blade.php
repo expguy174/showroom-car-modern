@@ -249,7 +249,7 @@
                                             @if(session('payment_method') === 'bank_transfer' || $order->paymentMethod?->code === 'bank_transfer')
                                             <li>• Sau khi chuyển khoản, ngân hàng sẽ liên hệ để hoàn tất thủ tục vay</li>
                                             @else
-                                            <li>• Bạn đã thanh toán khoản trả trước qua {{ $order->paymentMethod->name ?? 'phương thức đã chọn' }}</li>
+                                            <li>• Bạn phải thanh toán khoản trả trước qua {{ $order->paymentMethod->name ?? 'phương thức đã chọn' }}</li>
                                             @endif
                                             <li>• Ngân hàng sẽ liên hệ để hoàn tất thủ tục vay trong 1-2 ngày làm việc</li>
                                             <li>• Vui lòng chuẩn bị đầy đủ hồ sơ theo yêu cầu của ngân hàng</li>
@@ -363,7 +363,7 @@
                             @endif
                             <div class="border-t pt-3 flex items-center justify-between text-base font-bold text-gray-900">
                                 @if($order->finance_option_id)
-                                    <span>Đã thanh toán (trả trước)</span>
+                                    <span>Phải thanh toán (trả trước)</span>
                                     <span>{{ number_format($order->down_payment_amount ?? 0, 0, ',', '.') }} đ</span>
                                 @else
                                     <span>Tổng cộng</span>

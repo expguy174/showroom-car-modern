@@ -388,6 +388,17 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::delete('/{promotion}', [\App\Http\Controllers\Admin\PromotionController::class, 'destroy'])->name('destroy');
     });
 
+    // Admin Notifications
+    Route::prefix('notifications')->name('notifications.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\NotificationController::class, 'index'])->name('index');
+        Route::get('/unread-count', [\App\Http\Controllers\Admin\NotificationController::class, 'unreadCount'])->name('unread-count');
+        Route::post('/{id}/read', [\App\Http\Controllers\Admin\NotificationController::class, 'markAsRead'])->name('read');
+        Route::post('/read-all', [\App\Http\Controllers\Admin\NotificationController::class, 'markAllAsRead'])->name('read-all');
+        Route::delete('/{id}', [\App\Http\Controllers\Admin\NotificationController::class, 'destroy'])->name('destroy');
+        Route::delete('/', [\App\Http\Controllers\Admin\NotificationController::class, 'deleteAll'])->name('delete-all');
+        Route::delete('/read/delete', [\App\Http\Controllers\Admin\NotificationController::class, 'deleteRead'])->name('delete-read');
+    });
+
     // Payment Methods
     Route::prefix('payment-methods')->name('payment-methods.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\PaymentMethodController::class, 'index'])->name('index');

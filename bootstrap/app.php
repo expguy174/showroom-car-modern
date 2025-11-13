@@ -22,11 +22,19 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\IsAdmin::class,
             'staff' => \App\Http\Middleware\IsStaff::class,
             'role' => \App\Http\Middleware\RoleMiddleware::class,
+            
+            // Email verification
+            'require.email.verification' => \App\Http\Middleware\RequireEmailVerification::class,
         ]);
         
-        // Global middleware
+        // Global middleware - RequireEmailVerification should run after auth middleware
         $middleware->append(\App\Http\Middleware\SecurityHeadersMiddleware::class);
         $middleware->append(\App\Http\Middleware\PerformanceOptimization::class);
+        
+        // Apply RequireEmailVerification to web routes only (after auth is resolved)
+        $middleware->web(append: [
+            \App\Http\Middleware\RequireEmailVerification::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

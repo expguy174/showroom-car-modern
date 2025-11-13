@@ -39,7 +39,7 @@ class OrderSeeder extends Seeder
             elseif($statusRand<=90) $status = 'delivered';
             else $status = 'cancelled';
             
-            // Random payment status
+            // Random payment status (non-installment default)
             $paymentRand = rand(1,100);
             if($paymentRand<=60) $paymentStatus = 'completed';
             elseif($paymentRand<=90) $paymentStatus = 'pending';
@@ -85,6 +85,9 @@ class OrderSeeder extends Seeder
             // Random promotion (20% có promotion)
             $promotionId = (rand(1,100) <= 20 && $promotions->isNotEmpty()) ? $promotions->random()->id : null;
             
+            // For installment orders, force payment_status to pending (down payment not auto-collected here)
+            $effectivePaymentStatus = ($isInstallment && $financeOption) ? 'pending' : $paymentStatus;
+
             $order = Order::create([
                 'order_number' => 'ORD-' . date('Ymd') . '-' . str_pad((string) $i, 4, '0', STR_PAD_LEFT),
                 'user_id' => $user->id,
@@ -101,12 +104,12 @@ class OrderSeeder extends Seeder
                 'down_payment_amount' => $downPayment,
                 'tenure_months' => $tenureMonths,
                 'monthly_payment_amount' => $monthlyPayment,
-                'payment_status' => $paymentStatus,
+                'payment_status' => $effectivePaymentStatus,
                 'status' => $status,
                 'billing_address_id' => $billingAddressId,
                 'shipping_address_id' => $shippingAddressId,
-                'transaction_id' => $paymentStatus == 'completed' ? 'TXN-' . strtoupper(uniqid()) : null,
-                'paid_at' => $paymentStatus == 'completed' ? Carbon::now()->subDays(rand(1, 30)) : null,
+                'transaction_id' => $effectivePaymentStatus == 'completed' ? 'TXN-' . strtoupper(uniqid()) : null,
+                'paid_at' => $effectivePaymentStatus == 'completed' ? Carbon::now()->subDays(rand(1, 30)) : null,
                 'tracking_number' => in_array($status, ['shipping', 'delivered']) ? 'TRACK-' . strtoupper(uniqid()) : null,
                 'estimated_delivery' => in_array($status, ['confirmed', 'shipping']) ? Carbon::now()->addDays(rand(3, 7)) : null,
                 'promotion_id' => $promotionId,
@@ -116,6 +119,8 @@ class OrderSeeder extends Seeder
 
             $numItems = rand(1, 3);
             $subtotal = 0;
+            $carSubtotal = 0;
+            $hasCarVariant = false;
             for ($j = 0; $j < $numItems; $j++) {
                 if (rand(0,1) || $accessories->isEmpty()) {
                     $variant = $variants->random();
@@ -185,6 +190,8 @@ class OrderSeeder extends Seeder
                         'discount_amount' => 0,
                         'line_total' => $finalPrice,
                     ];
+                    $carSubtotal += $finalPrice;
+                    $hasCarVariant = true;
                 } else {
                     $acc = $accessories->random();
                     $price = $acc->current_price;
@@ -218,14 +225,33 @@ class OrderSeeder extends Seeder
             $taxTotal = round($subtotal * 0.1, 2); // 10% tax
             $totalPrice = $subtotal - $discountTotal + $taxTotal + $shippingFee;
             
-            // Calculate finance amounts if installment
-            if ($isInstallment && $financeOption) {
-                $downPaymentPercent = $financeOption->down_payment_percent / 100;
-                $downPayment = round($totalPrice * $downPaymentPercent, 2);
-                $remainingAmount = $totalPrice - $downPayment;
-                $monthlyPayment = round($remainingAmount / $tenureMonths, 2);
+            // If no car in order, disable installment fields
+            if (!$hasCarVariant) {
+                $financeOption = null;
+                $tenureMonths = null;
+            }
+
+            // Calculate finance amounts if installment (only on car portion)
+            if ($hasCarVariant && $financeOption) {
+                // Pro-rate discount & tax to car portion
+                $carRatio = $subtotal > 0 ? ($carSubtotal / $subtotal) : 0;
+                $carDiscount = round($discountTotal * $carRatio, 2);
+                $carTax = round($taxTotal * $carRatio, 2);
+                $carTotal = $carSubtotal - $carDiscount + $carTax; // exclude shipping/payment fee
+
+                // Use configured minimum down payment percent
+                $downPaymentPercent = (float) $financeOption->min_down_payment / 100;
+                $downPayment = max(0, round($carTotal * $downPaymentPercent, 2));
+                $remainingAmount = max(0, $carTotal - $downPayment);
+                $monthlyPayment = $tenureMonths ? round($remainingAmount / $tenureMonths, 2) : 0;
+            } else {
+                // Not an installment order
+                $downPayment = null;
+                $monthlyPayment = null;
             }
             
+            $finalPaymentStatus = ($hasCarVariant && $financeOption) ? 'pending' : $effectivePaymentStatus;
+
             $order->update([
                 'subtotal' => $subtotal,
                 'discount_total' => $discountTotal,
@@ -234,6 +260,9 @@ class OrderSeeder extends Seeder
                 'grand_total' => $totalPrice,
                 'down_payment_amount' => $downPayment,
                 'monthly_payment_amount' => $monthlyPayment,
+                'finance_option_id' => $financeOption?->id,
+                'tenure_months' => $tenureMonths,
+                'payment_status' => $finalPaymentStatus,
             ]);
         }
         

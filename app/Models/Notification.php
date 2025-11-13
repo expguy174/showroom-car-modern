@@ -32,12 +32,14 @@ class Notification extends Model
     {
         $icons = [
             'order_status' => 'fas fa-shopping-cart',
+            'new_order' => 'fas fa-shopping-cart',
             'promotion' => 'fas fa-gift',
             'test_drive' => 'fas fa-car',
             'lead' => 'fas fa-file-signature',
             'system' => 'fas fa-info-circle',
             'payment' => 'fas fa-credit-card',
             'installment' => 'fas fa-calendar-check',
+            'installment_overdue' => 'fas fa-exclamation-triangle',
             'payment_completed' => 'fas fa-check-circle',
             'installments_completed' => 'fas fa-trophy',
         ];
@@ -49,12 +51,14 @@ class Notification extends Model
     {
         $colors = [
             'order_status' => 'text-blue-600',
+            'new_order' => 'text-blue-600',
             'promotion' => 'text-green-600',
             'test_drive' => 'text-purple-600',
             'lead' => 'text-indigo-600',
             'system' => 'text-gray-600',
             'payment' => 'text-orange-600',
             'installment' => 'text-amber-600',
+            'installment_overdue' => 'text-red-600',
             'payment_completed' => 'text-emerald-600',
             'installments_completed' => 'text-yellow-600',
         ];

@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use App\Events\OrderCreated;
 use App\Listeners\SendOrderCreatedNotifications;
 use App\Listeners\LogOrderCreated;
@@ -17,6 +19,11 @@ use App\Listeners\SendServiceAppointmentNotifications;
 class EventServiceProvider extends ServiceProvider
 {
     protected $listen = [
+        // Disable Laravel's default email verification listener
+        // We send email verification manually in RegisteredUserController
+        // Registered::class => [
+        //     SendEmailVerificationNotification::class,
+        // ],
         OrderCreated::class => [
             SendOrderCreatedNotifications::class,
             LogOrderCreated::class,
@@ -35,6 +42,10 @@ class EventServiceProvider extends ServiceProvider
     public function boot(): void
     {
         parent::boot();
+        
+        // Disable Laravel's default SendEmailVerificationNotification listener
+        // We handle email verification manually in RegisteredUserController
+        Event::forget(Registered::class);
     }
 }
 

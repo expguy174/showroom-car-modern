@@ -57,8 +57,20 @@ class OrderController extends Controller
 
     public function show(Request $request, Order $order)
     {
-        if (Auth::id() !== $order->user_id) {
+        // Allow access if:
+        // 1. User is authenticated and owns the order, OR
+        // 2. Request has valid signed URL (from email links)
+        $isSignedRequest = $request->hasValidSignature();
+        $isOwner = Auth::check() && Auth::id() === $order->user_id;
+        
+        if (!$isOwner && !$isSignedRequest) {
             abort(403);
+        }
+        
+        // If accessed via signed URL and user is not logged in, redirect to login
+        // but preserve the signed URL so they can access after login
+        if ($isSignedRequest && !Auth::check()) {
+            return redirect()->route('login')->with('intended', $request->fullUrl());
         }
         $order->load([
             'items.item', 

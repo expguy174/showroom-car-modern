@@ -114,8 +114,18 @@
         </div>
         @php
             $orderSteps = ['pending' => 'Đặt hàng', 'confirmed' => 'Xác nhận', 'shipping' => 'Vận chuyển', 'delivered' => 'Hoàn tất'];
-            // Bỏ chữ "Đã" trong nhãn tiến trình
+            
+            // Tiến trình thanh toán khác nhau cho đơn trả góp và đơn thanh toán 1 lần
+            if ($order->finance_option_id) {
+                // Đơn trả góp: Trả trước - Đang trả góp - Hoàn tất
+                // Flow: pending (chưa trả trước) → partial (đã trả trước, đang trả góp) → completed (hoàn tất)
+                $paySteps = ['pending' => 'Trả trước', 'partial' => 'Đang trả góp', 'completed' => 'Hoàn tất'];
+            } else {
+                // Đơn thanh toán 1 lần: Chờ thanh toán - Đang xử lý - Thanh toán
+                // Flow: pending (chờ thanh toán) → processing (đang xử lý) → completed (đã thanh toán)
             $paySteps = ['pending' => 'Chờ thanh toán', 'processing' => 'Đang xử lý', 'completed' => 'Thanh toán'];
+            }
+            
             $orderKeys = array_keys($orderSteps);
             $payKeys = array_keys($paySteps);
             
@@ -127,8 +137,32 @@
             } else {
                 $orderIndex = array_search($order->status, $orderKeys);
                 if ($orderIndex === false) { $orderIndex = 0; }
+                
+                // Xử lý đặc biệt cho đơn trả góp
+                if ($order->finance_option_id) {
+                    // Với trả góp: 
+                    // - pending = chưa trả trước (bước 0)
+                    // - partial = đã trả trước và đang trả góp (bước 1)
+                    // - completed = hoàn tất tất cả kỳ (bước 2)
+                    // - processing = xử lý trả trước (coi như bước 0, chưa xác nhận)
+                    if ($order->payment_status === 'pending' || $order->payment_status === 'processing') {
+                        $payIndex = 0; // Chưa trả trước hoặc đang xử lý trả trước
+                    } elseif ($order->payment_status === 'partial') {
+                        $payIndex = 1; // Đang trả góp
+                    } elseif ($order->payment_status === 'completed') {
+                        $payIndex = 2; // Hoàn tất
+                    } else {
+                        // Các trạng thái khác (failed, cancelled, refunded) - hiển thị ở bước 0
+                        $payIndex = 0;
+                    }
+                } else {
+                    // Đơn thanh toán 1 lần: xử lý bình thường
                 $payIndex = array_search($order->payment_status, $payKeys);
-                if ($payIndex === false) { $payIndex = 0; }
+                    if ($payIndex === false) { 
+                        // Nếu không tìm thấy (failed, cancelled, refunded), hiển thị ở bước 0
+                        $payIndex = 0; 
+                    }
+                }
             }
         @endphp
         <div class="px-4 sm:px-6 py-4 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -438,7 +472,7 @@
                                             <span>Màu:</span>
                                             @if($colorName)
                                                 <span class="inline-flex items-center gap-1">
-                                                    <span class="inline-block w-3 h-3 rounded-full border border-gray-200 bg-gray-200"></span>
+                                                    <span class="inline-block w-3 h-3 rounded-full border border-gray-300" style="background-color: {{ $colorHex ?? '#d1d5db' }};"></span>
                                                     <span class="text-gray-700">{{ $colorName }}</span>
                                                 </span>
                                             @else

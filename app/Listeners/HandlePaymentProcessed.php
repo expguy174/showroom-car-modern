@@ -48,6 +48,22 @@ class HandlePaymentProcessed implements ShouldQueue
                         'amount' => $transaction->amount,
                     ],
                 ]);
+
+                // Notify admin about payment status
+                try {
+                    \App\Models\Notification::create([
+                        'user_id' => null,
+                        'type' => 'payment',
+                        'title' => $transaction->status === 'completed' ? 'Thanh toán thành công' : 'Thanh toán thất bại',
+                        'message' => 'Đơn hàng #' . ($order->order_number ?? $order->id) . ' - ' . ($transaction->status === 'completed' ? 'Đã thanh toán' : 'Thanh toán thất bại') . ' số tiền ' . number_format($transaction->amount) . ' VNĐ',
+                        'is_read' => false,
+                    ]);
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::error('PaymentProcessed listener: admin notification failed', [
+                        'transaction_id' => $transaction->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
             }
         }
     }

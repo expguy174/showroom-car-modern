@@ -259,29 +259,59 @@
 </div>
 
 <script>
-// Logo preview functionality
-document.getElementById('logo_path').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            // Create preview if doesn't exist
-            let preview = document.getElementById('logo-preview');
-            if (!preview) {
-                preview = document.createElement('div');
-                preview.id = 'logo-preview';
-                preview.className = 'mt-4';
-                e.target.closest('.space-y-1').appendChild(preview);
-            }
-            preview.innerHTML = `
-                <div class="flex items-center justify-center">
-                    <img src="${e.target.result}" alt="Logo preview" class="h-20 w-20 object-contain border border-gray-200 rounded-lg">
-                </div>
-            `;
-        };
-        reader.readAsDataURL(file);
+// Logo preview functionality (uses existing #logoPreview and #logoPreviewImage)
+function previewLogo(input) {
+    const previewWrapper = document.getElementById('logoPreview');
+    const previewImage = document.getElementById('logoPreviewImage');
+    if (!input || !input.files || !input.files[0]) {
+        // Hide preview if no file
+        if (previewWrapper) previewWrapper.classList.add('hidden');
+        if (previewImage) previewImage.src = '';
+        return;
     }
-});
+    const file = input.files[0];
+
+    // Optional: basic validation
+    const isImage = file.type && file.type.startsWith('image/');
+    if (!isImage) {
+        alert('Vui lòng chọn tệp hình ảnh hợp lệ (PNG, JPG, GIF).');
+        input.value = '';
+        if (previewWrapper) previewWrapper.classList.add('hidden');
+        if (previewImage) previewImage.src = '';
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+        if (previewImage) {
+            previewImage.src = ev.target.result;
+            // simple fade-in
+            previewImage.style.opacity = '0';
+            if (previewWrapper) previewWrapper.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                previewImage.style.transition = 'opacity 200ms ease';
+                previewImage.style.opacity = '1';
+            });
+        }
+    };
+    reader.readAsDataURL(file);
+}
+
+// Remove selected logo and hide preview
+function removeLogo() {
+    const input = document.getElementById('logo_path');
+    const previewWrapper = document.getElementById('logoPreview');
+    const previewImage = document.getElementById('logoPreviewImage');
+    if (previewImage) {
+        previewImage.style.transition = 'opacity 150ms ease';
+        previewImage.style.opacity = '0';
+    }
+    setTimeout(() => {
+        if (input) input.value = '';
+        if (previewImage) previewImage.src = '';
+        if (previewWrapper) previewWrapper.classList.add('hidden');
+    }, 150);
+}
 
 // AJAX Form submission with flash message
 document.getElementById('carBrandForm').addEventListener('submit', function(e) {

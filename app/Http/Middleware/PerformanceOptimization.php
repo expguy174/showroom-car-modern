@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 class PerformanceOptimization
@@ -27,9 +28,14 @@ class PerformanceOptimization
             $response->headers->set('Cache-Control', 'public, max-age=31536000, immutable');
         }
         
-        // Cache HTML pages for a short time
-        if ($request->is('/') || $request->is('home')) {
+        // Cache HTML pages for a short time (only for guests)
+        if (($request->is('/') || $request->is('home')) && !Auth::check()) {
             $response->headers->set('Cache-Control', 'public, max-age=300'); // 5 minutes
+        } elseif (($request->is('/') || $request->is('home')) && Auth::check()) {
+            // Don't cache for authenticated users - ensure fresh content after login
+            $response->headers->set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+            $response->headers->set('Pragma', 'no-cache');
+            $response->headers->set('Expires', '0');
         }
 
         return $response;

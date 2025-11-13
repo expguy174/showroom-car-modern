@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Order;
 use App\Models\Installment;
+use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\OrderStatusChanged;
@@ -12,11 +13,12 @@ use App\Mail\PaymentStatusChanged;
 use App\Mail\InstallmentPaid;
 use App\Mail\InstallmentReminder;
 use App\Mail\InstallmentOverdue;
+use App\Mail\VerifyEmailNotification;
 
 class TestEmailNotifications extends Command
 {
     protected $signature = 'email:test {email} {--type=all}';
-    protected $description = 'Test email notifications';
+    protected $description = 'Test email notifications (including email verification)';
 
     public function handle()
     {
@@ -45,6 +47,9 @@ class TestEmailNotifications extends Command
                     break;
                 case 'installment-overdue':
                     $this->testInstallmentOverdue($email);
+                    break;
+                case 'verify-email':
+                    $this->testVerifyEmail($email);
                     break;
                 case 'all':
                 default:
@@ -136,6 +141,18 @@ class TestEmailNotifications extends Command
         $this->line('→ Sent: InstallmentOverdue');
     }
 
+    private function testVerifyEmail($email)
+    {
+        $user = User::first();
+        if (!$user) {
+            $this->warn('No users found. Skipping VerifyEmail test.');
+            return;
+        }
+
+        Mail::to($email)->send(new VerifyEmailNotification($user));
+        $this->line('→ Sent: VerifyEmailNotification');
+    }
+
     private function testAll($email)
     {
         $this->testOrderStatusChanged($email);
@@ -159,5 +176,9 @@ class TestEmailNotifications extends Command
         sleep(5);
         
         $this->testInstallmentOverdue($email);
+        $this->info('⏳ Waiting 5 seconds...');
+        sleep(5);
+        
+        $this->testVerifyEmail($email);
     }
 }

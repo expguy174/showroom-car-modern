@@ -113,13 +113,18 @@ class DashboardController extends Controller
     }
 
     /**
-     * Clear dashboard cache
+     * Clear dashboard cache and response cache
      */
     public function clearCache()
     {
         Cache::forget('admin.dashboard.stats');
         Cache::forget('admin.dashboard.revenue');
         Cache::forget('admin.dashboard.recent_orders');
+        
+        // Clear response cache (for homepage and other cached pages)
+        if (class_exists(\Spatie\ResponseCache\Facades\ResponseCache::class)) {
+            \Spatie\ResponseCache\Facades\ResponseCache::clear();
+        }
         
         return response()->json(['message' => 'Cache cleared successfully']);
     }

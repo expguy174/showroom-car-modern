@@ -110,6 +110,7 @@ class PlaceOrder
                 'payment_method_id' => $payload['payment_method_id'] ?? null,
                 'finance_option_id' => $payload['finance_option_id'] ?? null,
                 'down_payment_amount' => $payload['down_payment_amount'] ?? null,
+                'down_payment_percentage' => $payload['down_payment_percentage'] ?? null,
                 'tenure_months' => $payload['tenure_months'] ?? null,
                 'monthly_payment_amount' => $payload['monthly_payment_amount'] ?? null,
                 'status' => 'pending',

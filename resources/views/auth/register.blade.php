@@ -35,7 +35,7 @@
 
         <!-- Email Address -->
         <div>
-            <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+            <label for="email" class="block text-sm font-medium text-gray-700">Email <span class="text-red-500">*</span></label>
             <div class="mt-1 relative">
                 <input id="email" type="text" name="email" value="{{ old('email') }}" autocomplete="username" placeholder="you@example.com"
                        class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-4 py-2.5" />
@@ -48,7 +48,7 @@
 
         <!-- Password -->
         <div>
-            <label for="password" class="block text-sm font-medium text-gray-700">Mật khẩu</label>
+            <label for="password" class="block text-sm font-medium text-gray-700">Mật khẩu <span class="text-red-500">*</span></label>
             <div class="mt-1 relative">
                 <input :type="show1 ? 'text' : 'password'" id="password" name="password" autocomplete="new-password" placeholder="••••••••"
                        class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-4 py-2.5 pr-12" />
@@ -63,7 +63,7 @@
 
         <!-- Confirm Password -->
         <div>
-            <label for="password_confirmation" class="block text-sm font-medium text-gray-700">Xác nhận mật khẩu</label>
+            <label for="password_confirmation" class="block text-sm font-medium text-gray-700">Xác nhận mật khẩu <span class="text-red-500">*</span></label>
             <div class="mt-1 relative">
                 <input :type="show2 ? 'text' : 'password'" id="password_confirmation" name="password_confirmation" autocomplete="new-password" placeholder="••••••••"
                        class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-4 py-2.5 pr-12" />

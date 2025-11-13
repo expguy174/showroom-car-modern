@@ -328,6 +328,22 @@ class OrderController extends Controller
             ]);
         }
 
+        // Notify admin about order cancellation
+        try {
+            \App\Models\Notification::create([
+                'user_id' => null,
+                'type' => 'order_status',
+                'title' => 'Đơn hàng bị hủy',
+                'message' => 'Đơn hàng #' . ($order->order_number ?? $order->id) . ' từ ' . ($order->user->userProfile->name ?? 'Khách hàng') . ' đã bị hủy. Tổng tiền: ' . number_format($order->grand_total) . ' VNĐ',
+                'is_read' => false,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Failed to send admin cancellation notification', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage()
+            ]);
+        }
+
             DB::commit();
 
             $successMessage = $oldStatus === 'shipping'
@@ -855,15 +871,19 @@ class OrderController extends Controller
             ]);
         }
 
-        // Notify user
+        // Notify user (in-app + email)
         try {
             if ($order->user_id) {
+                // In-app notification
                 app(\App\Services\NotificationService::class)->send(
                     $order->user_id,
                     'order_refund',
                     'Đơn hàng đã được hoàn tiền',
                     'Đơn hàng ' . ($order->order_number ?? '#'.$order->id) . ' đã được hoàn ' . number_format($refundAmount, 0, ',', '.') . ' VNĐ. Lý do: ' . $validated['refund_reason']
                 );
+                
+                // Email notification using PaymentStatusChanged
+                $this->notifyPaymentStatusChanged($order, $oldPaymentStatus, 'refunded');
             }
         } catch (\Throwable $e) {
             Log::error('Failed to send refund notification', [
@@ -1030,6 +1050,18 @@ class OrderController extends Controller
             // Clear notification cache for user
             $this->clearUserNotificationCache($order->user_id);
 
+            // 5. Send email notification for down payment confirmation
+            try {
+                if ($order->user && $order->user->email) {
+                    $this->notifyPaymentStatusChanged($order, $oldPaymentStatus, 'partial');
+                }
+            } catch (\Throwable $e) {
+                Log::error('Failed to send down payment confirmation email', [
+                    'order_id' => $order->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+
             DB::commit();
 
             return redirect()->back()->with('success', 
@@ -1096,22 +1128,35 @@ class OrderController extends Controller
         // Build notification message
         $notificationMessage = "Đơn hàng {$orderNumber} đã bị hủy bởi quản trị viên. Vui lòng liên hệ bộ phận chăm sóc khách hàng để biết thêm chi tiết.";
         
+        // Build reason for email
+        $reason = "Đơn hàng đã bị hủy bởi quản trị viên";
+        
         // Add refund information if applicable
         if ($paymentTransactionsSummary && isset($paymentTransactionsSummary['refund_required']) && $paymentTransactionsSummary['refund_required']) {
             $refundAmount = number_format($paymentTransactionsSummary['total_completed_amount'], 0, ',', '.');
             $notificationMessage .= " Số tiền {$refundAmount}₫ sẽ được hoàn lại trong vòng 3-5 ngày làm việc.";
+            $reason .= ". Số tiền {$refundAmount}₫ sẽ được hoàn lại trong vòng 3-5 ngày làm việc";
         }
         
         // Add installment information if applicable
         if ($installmentsSummary && isset($installmentsSummary['cancelled_installments']) && $installmentsSummary['cancelled_installments'] > 0) {
             $notificationMessage .= " Đã hủy {$installmentsSummary['cancelled_installments']} kỳ trả góp còn lại.";
+            $reason .= ". Đã hủy {$installmentsSummary['cancelled_installments']} kỳ trả góp còn lại";
         }
         
+        // Send in-app notification
         app(\App\Services\NotificationService::class)->send(
             $order->user_id,
             'order_status',
             $notificationTitle,
             $notificationMessage
         );
+        
+        // Send email notification using trait method
+        if ($order->user && $order->user->email) {
+            \Illuminate\Support\Facades\Mail::to($order->user->email)->send(
+                new \App\Mail\OrderCancelled($order, $reason)
+            );
+        }
     }
 }

@@ -15,13 +15,25 @@ class VerifyEmailController extends Controller
     public function __invoke(EmailVerificationRequest $request): RedirectResponse
     {
         if ($request->user()->hasVerifiedEmail()) {
-            return redirect()->intended(route('dashboard', absolute: false).'?verified=1');
+            // Clear response cache after email verification
+            if (class_exists(\Spatie\ResponseCache\Facades\ResponseCache::class)) {
+                \Spatie\ResponseCache\Facades\ResponseCache::clear();
+            }
+            return redirect()->route('verification.notice')->with('status', 'email-verified');
         }
 
         if ($request->user()->markEmailAsVerified()) {
             event(new Verified($request->user()));
+            
+            // Clear response cache after email verification
+            if (class_exists(\Spatie\ResponseCache\Facades\ResponseCache::class)) {
+                \Spatie\ResponseCache\Facades\ResponseCache::clear();
+            }
+            
+            // Regenerate session to ensure fresh state
+            $request->session()->regenerate();
         }
 
-        return redirect()->intended(route('dashboard', absolute: false).'?verified=1');
+        return redirect()->route('verification.notice')->with('status', 'email-verified');
     }
 }

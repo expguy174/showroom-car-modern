@@ -63,7 +63,7 @@ class ContactMessage extends Model
     public function getTopicDisplayAttribute()
     {
         $topics = [
-            'sales' => 'Bán hàng',
+            'sales' => 'Tư vấn mua hàng',
             'service' => 'Dịch vụ',
             'test_drive' => 'Lái thử',
             'warranty' => 'Bảo hành',

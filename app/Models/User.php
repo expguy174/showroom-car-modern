@@ -204,5 +204,24 @@ class User extends Authenticatable implements MustVerifyEmail
         return $colors[$this->role] ?? 'bg-gray-100 text-gray-800';
     }
 
+    /**
+     * Determine if the user has verified their email address.
+     * Override to check both email_verified boolean and email_verified_at timestamp.
+     */
+    public function hasVerifiedEmail(): bool
+    {
+        return $this->email_verified || !is_null($this->email_verified_at);
+    }
+
+    /**
+     * Mark the given user's email as verified.
+     * Override to set both email_verified boolean and email_verified_at timestamp.
+     */
+    public function markEmailAsVerified(): bool
+    {
+        $this->email_verified = true;
+        $this->email_verified_at = $this->freshTimestamp();
+        return $this->save();
+    }
 
 }

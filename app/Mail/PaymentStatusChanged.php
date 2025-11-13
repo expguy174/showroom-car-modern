@@ -29,9 +29,12 @@ class PaymentStatusChanged extends Mailable implements ShouldQueue
     {
         $statusLabels = [
             'pending' => 'Chờ thanh toán',
+            'processing' => 'Đang xử lý',
+            'partial' => 'Thanh toán một phần',
             'completed' => 'Đã thanh toán',
             'failed' => 'Thanh toán thất bại',
             'refunded' => 'Đã hoàn tiền',
+            'cancelled' => 'Đã hủy',
         ];
 
         return new Envelope(

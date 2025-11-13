@@ -17,15 +17,45 @@ class SendTestDriveBookedNotifications implements ShouldQueue
     {
         $testDrive = $event->testDrive;
 
+        // Prevent duplicate processing using cache lock
+        $lockKey = "test_drive_notifications_{$testDrive->id}";
+        $lock = \Illuminate\Support\Facades\Cache::lock($lockKey, 60); // 60 seconds lock
+        
+        if (!$lock->get()) {
+            Log::warning('SendTestDriveBookedNotifications: Already processing for test drive', [
+                'test_drive_id' => $testDrive->id,
+            ]);
+            return;
+        }
+
+        try {
+            // Check if email already sent
+            $emailSentKey = "test_drive_confirmation_email_sent_{$testDrive->id}";
+            if (!\Illuminate\Support\Facades\Cache::has($emailSentKey)) {
         try {
             app(EmailService::class)->sendTestDriveConfirmation($testDrive);
+                    \Illuminate\Support\Facades\Cache::put($emailSentKey, true, 3600); // Cache for 1 hour
         } catch (\Throwable $e) {
             Log::error('TestDriveBooked listener: email failed', [
                 'test_drive_id' => $testDrive->id,
                 'error' => $e->getMessage(),
             ]);
         }
+            } else {
+                Log::info('TestDriveBooked listener: Email already sent, skipping', [
+                    'test_drive_id' => $testDrive->id,
+                ]);
+            }
 
+            // Check if admin notification already exists to prevent duplicates
+            $existingAdminNotification = Notification::whereNull('user_id')
+                ->where('type', 'test_drive')
+                ->where('title', 'Đặt lịch lái thử mới')
+                ->where('message', 'like', "%Khách hàng {$testDrive->name}%")
+                ->where('created_at', '>=', now()->subMinutes(5)) // Within last 5 minutes
+                ->first();
+
+            if (!$existingAdminNotification) {
         try {
             // Create an admin notification entry
             Notification::create([
@@ -44,6 +74,15 @@ class SendTestDriveBookedNotifications implements ShouldQueue
                 'test_drive_id' => $testDrive->id,
                 'error' => $e->getMessage(),
             ]);
+                }
+            } else {
+                Log::info('Duplicate admin notification prevented for test drive', [
+                    'test_drive_id' => $testDrive->id,
+                    'existing_notification_id' => $existingAdminNotification->id,
+                ]);
+            }
+        } finally {
+            $lock->release();
         }
     }
 }

@@ -198,8 +198,7 @@ class CartController extends Controller
 
     public function update(Request $request, CartItem $cartItem)
     {
-        Log::info('Cart update request:', $request->all());
-
+        // Removed logging for performance - only log errors
         try {
             $request->validate([
                 'quantity' => 'nullable|integer|min:1',
@@ -252,9 +251,9 @@ class CartController extends Controller
             }
 
             $cartItem->update($updateData);
-            $cartItem->load(['item', 'color']);
-
+            // Only load relationships if needed (for AJAX requests)
             if ($request->ajax()) {
+                $cartItem->load(['item', 'color']);
                 // Invalidate nav cached counts so first paint is correct
                 $this->invalidateNavCountsCache();
                 $cartCount = $this->computeCartCount(Auth::id(), session()->getId());
@@ -279,10 +278,8 @@ class CartController extends Controller
                     $featIds = collect($meta['feature_ids'] ?? [])->filter()->map(fn($v)=> (int)$v)->unique()->all();
                     $featSum = 0.0;
                     if (!empty($featIds)) {
-                        $features = CarVariantFeature::whereIn('id', $featIds)->get(['price']);
-                        foreach ($features as $f) {
-                            $featSum += (float) ($f->price ?? 0);
-                        }
+                        // Use sum() for better performance - only get price column
+                        $featSum = (float) CarVariantFeature::whereIn('id', $featIds)->sum('price');
                     }
 
                     $itemPrice = max(0.0, $currentPrice + $colorPriceAdjustment + $featSum);
@@ -614,6 +611,8 @@ class CartController extends Controller
 
             $total = 0;
             $orderItems = [];
+            $carSubtotal = 0.0;
+            $accSubtotal = 0.0;
             
                 foreach ($cartItems as $item) {
                 if (!$item->item) {
@@ -735,6 +734,7 @@ class CartController extends Controller
                 $unitPrice += ($featSum + $optSum);
                 $itemTotal = $unitPrice * $item->quantity;
                 $total += $itemTotal;
+                if ($item->item_type === 'car_variant') { $carSubtotal += $itemTotal; } else { $accSubtotal += $itemTotal; }
                 
                 // Prepare metadata matching seeder format
                 $metadata = [
@@ -895,12 +895,7 @@ class CartController extends Controller
                     if ($promotion->min_order_amount && $total < $promotion->min_order_amount) $isValid = false;
                     
                     if ($isValid) {
-                        // Calculate discount using promotion logic
-                        $cartItems = \App\Models\CartItem::where('user_id', $userId ?? null)
-                            ->orWhere('session_id', $sessionId)
-                            ->with(['item'])
-                            ->get();
-                            
+                        // Calculate discount using promotion logic on current cart items
                         // Simple discount calculation based on promotion type
                         switch ($promotion->type) {
                             case 'percentage':
@@ -937,8 +932,19 @@ class CartController extends Controller
             
             $grandTotal = $total + $taxTotal + $shippingFee + $paymentFee - $discountTotal;
 
+            // Finance eligibility: must contain at least one car item
+            $hasCarVariant = ($carSubtotal > 0);
+            if (($validated['payment_type'] ?? null) === 'finance' && !$hasCarVariant) {
+                return back()->with('error', 'Trả góp chỉ áp dụng cho xe. Vui lòng thêm xe vào giỏ hàng.')->withInput();
+            }
+
             $methodCode = optional($paymentMethod)->code;
-            
+
+            // Disallow online gateways for installment orders (finance)
+            if (($validated['payment_type'] ?? null) === 'finance' && in_array($methodCode, ['vnpay', 'momo'])) {
+                return back()->with('error', 'Trả góp không hỗ trợ VNPay/MoMo. Vui lòng chọn Tiền mặt hoặc Chuyển khoản.')->withInput();
+            }
+
             // Store payment method in session for mock gateway
             session(['selected_payment_method' => $methodCode]);
             
@@ -951,40 +957,46 @@ class CartController extends Controller
             $placeOrder = app(PlaceOrder::class);
             // Calculate finance data if applicable
             $financeData = [];
-            if ($validated['payment_type'] === 'finance' && !empty($validated['finance_option_id'])) {
+            if (($validated['payment_type'] ?? null) === 'finance' && !empty($validated['finance_option_id']) && ($carSubtotal > 0)) {
                 $financeOption = \App\Models\FinanceOption::find($validated['finance_option_id']);
-                $downPaymentPercent = $validated['down_payment_percent'] ?? 30;
-                $tenureMonths = $validated['tenure_months'] ?? 36;
-                
-                // Finance calculation should be based on product value only (excluding tax, shipping, and discount)
-                $financeableAmount = $total - $discountTotal; // Product value after discount
-                $downPaymentAmount = round($financeableAmount * ($downPaymentPercent / 100));
-                $loanAmount = $financeableAmount - $downPaymentAmount;
-                
+                $tenureMonths = (int) ($validated['tenure_months'] ?? 36);
+                $inputDownPercent = (float) ($validated['down_payment_percent'] ?? $financeOption->min_down_payment);
+                $downPaymentPercent = max((float) $financeOption->min_down_payment, min(80.0, $inputDownPercent));
+
+                // Pro-rate discount & tax to car portion only; exclude shipping/payment fees from financed base
+                $carRatio = $total > 0 ? ($carSubtotal / $total) : 0;
+                $carDiscount = round($discountTotal * $carRatio, 2);
+                $carTax = round($taxTotal * $carRatio, 2);
+                $financeableAmount = max(0, round($carSubtotal - $carDiscount + $carTax, 2));
+
+                $downPaymentAmount = round($financeableAmount * ($downPaymentPercent / 100), 2);
+                $loanAmount = max(0, round($financeableAmount - $downPaymentAmount, 2));
+
                 // Validate loan amount against finance option limits
-                if ($loanAmount < $financeOption->min_loan_amount) {
-                    return back()->with('error', 
+                if ($loanAmount < (float) $financeOption->min_loan_amount) {
+                    return back()->with('error',
                         "Số tiền vay tối thiểu cho gói này là " . number_format($financeOption->min_loan_amount) . " đ. " .
                         "Vui lòng giảm tỷ lệ trả trước hoặc chọn gói vay khác."
                     )->withInput();
                 }
-                
-                if ($loanAmount > $financeOption->max_loan_amount) {
-                    return back()->with('error', 
+
+                if ($loanAmount > (float) $financeOption->max_loan_amount) {
+                    return back()->with('error',
                         "Số tiền vay tối đa cho gói này là " . number_format($financeOption->max_loan_amount) . " đ. " .
                         "Vui lòng tăng tỷ lệ trả trước hoặc chọn gói vay khác."
                     )->withInput();
                 }
-                
-                // Calculate monthly payment
-                $monthlyRate = ($financeOption->interest_rate / 100) / 12;
-                $monthlyPayment = $monthlyRate > 0 
+
+                // Calculate monthly payment (annuity if interest exists)
+                $monthlyRate = ((float) $financeOption->interest_rate / 100) / 12;
+                $monthlyPayment = $monthlyRate > 0
                     ? round($loanAmount * ($monthlyRate * pow(1 + $monthlyRate, $tenureMonths)) / (pow(1 + $monthlyRate, $tenureMonths) - 1))
-                    : round($loanAmount / $tenureMonths);
-                
+                    : ($tenureMonths > 0 ? round($loanAmount / $tenureMonths) : 0);
+
                 $financeData = [
                     'finance_option_id' => $validated['finance_option_id'],
                     'down_payment_amount' => $downPaymentAmount,
+                    'down_payment_percentage' => $downPaymentPercent,
                     'tenure_months' => $tenureMonths,
                     'monthly_payment_amount' => $monthlyPayment,
                 ];
@@ -1028,11 +1040,23 @@ class CartController extends Controller
 
             // Increment promotion usage count if promotion was applied
             if ($promotionId) {
-                \App\Models\Promotion::find($promotionId)->increment('used_count');
+                try {
+                    $promotion = \App\Models\Promotion::find($promotionId);
+                    if ($promotion) {
+                        $promotion->increment('used_count');
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Failed to increment promotion usage count', [
+                        'promotion_id' => $promotionId,
+                        'order_id' => $order->id ?? null,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
             }
 
             // Create initial payment log for COD and Bank Transfer
             if (in_array($methodCode, ['cod', 'bank_transfer'])) {
+                try {
                 \App\Models\OrderLog::create([
                     'order_id' => $order->id,
                     'user_id' => \Illuminate\Support\Facades\Auth::id() ?? $order->user_id,
@@ -1048,6 +1072,12 @@ class CartController extends Controller
                     'ip_address' => request()->ip(),
                     'user_agent' => request()->userAgent(),
                 ]);
+                } catch (\Exception $e) {
+                    Log::warning('Failed to create order log after order creation', [
+                        'order_id' => $order->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
             }
 
             // Notifications are handled by OrderCreated event listener
@@ -1075,31 +1105,12 @@ class CartController extends Controller
 
     private function processOnlinePayment($methodCode, $validated, $orderItems, $cartItems, $userId, $sessionId, $total, $taxTotal, $shippingFee, $paymentFee, $grandTotal, $billingAddressId, $shippingAddressId, $billingAddressText, $shippingAddressText, $promotionId = null, $discountTotal = 0)
     {
-        // Calculate finance data if applicable
-        $financeData = [];
-        if ($validated['payment_type'] === 'finance' && !empty($validated['finance_option_id'])) {
-            $financeOption = \App\Models\FinanceOption::find($validated['finance_option_id']);
-            $downPaymentPercent = $validated['down_payment_percent'] ?? 30;
-            $tenureMonths = $validated['tenure_months'] ?? 36;
-            
-            // Finance calculation should be based on product value only (excluding tax, shipping, and discount)
-            $financeableAmount = $total - $discountTotal; // Product value after discount
-            $downPaymentAmount = round($financeableAmount * ($downPaymentPercent / 100));
-            $loanAmount = $financeableAmount - $downPaymentAmount;
-            
-            // Calculate monthly payment
-            $monthlyRate = ($financeOption->interest_rate / 100) / 12;
-            $monthlyPayment = $monthlyRate > 0 
-                ? round($loanAmount * ($monthlyRate * pow(1 + $monthlyRate, $tenureMonths)) / (pow(1 + $monthlyRate, $tenureMonths) - 1))
-                : round($loanAmount / $tenureMonths);
-            
-            $financeData = [
-                'finance_option_id' => $validated['finance_option_id'],
-                'down_payment_amount' => $downPaymentAmount,
-                'tenure_months' => $tenureMonths,
-                'monthly_payment_amount' => $monthlyPayment,
-            ];
+        // Safety: disallow online gateway for installment orders
+        if (($validated['payment_type'] ?? null) === 'finance') {
+            return back()->with('error', 'Trả góp không hỗ trợ thanh toán online. Vui lòng chọn Tiền mặt hoặc Chuyển khoản.')->withInput();
         }
+        // Online payments don't support finance; ensure no finance data included
+        $financeData = [];
 
         // Store order data in session for later creation
         $orderData = array_merge([
@@ -1168,10 +1179,17 @@ class CartController extends Controller
     private function processBankTransfer($order, $cartItems, $userId, $sessionId)
     {
         // Clear cart items to prevent duplicate orders
+        try {
         CartItem::where(function ($q) use ($userId, $sessionId) {
             if ($userId) $q->where('user_id', $userId);
             else $q->where('session_id', $sessionId);
         })->delete();
+        } catch (\Exception $e) {
+            Log::warning('Failed to clear cart items after order creation', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         // Email + notifications for bank transfer are already triggered by OrderCreated listener
 
@@ -1182,10 +1200,18 @@ class CartController extends Controller
 
     private function processCODPayment($order, $cartItems, $userId, $sessionId)
     {
+        // Clear cart items to prevent duplicate orders
+        try {
         CartItem::where(function ($q) use ($userId, $sessionId) {
             if ($userId) $q->where('user_id', $userId);
             else $q->where('session_id', $sessionId);
         })->delete();
+        } catch (\Exception $e) {
+            Log::warning('Failed to clear cart items after order creation', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         // Email + notifications for COD are already triggered by OrderCreated listener
 
@@ -1200,6 +1226,35 @@ class CartController extends Controller
             if ($userId) $q->where('user_id', $userId);
             else $q->where('session_id', $sessionId);
         })->delete();
+
+        // If installment order and has down payment, mark as partial and record payment transaction
+        try {
+            $order->refresh();
+            if ($order->finance_option_id && (float) ($order->down_payment_amount ?? 0) > 0) {
+                // Create a payment transaction for the down payment
+                \App\Models\PaymentTransaction::create([
+                    'order_id' => $order->id,
+                    'user_id' => $order->user_id,
+                    'payment_method_id' => $order->payment_method_id,
+                    'transaction_number' => 'TXN-DP-' . strtoupper(uniqid()),
+                    'amount' => (float) $order->down_payment_amount,
+                    'currency' => 'VND',
+                    'status' => 'completed',
+                    'payment_date' => now(),
+                    'notes' => 'Thanh toán tiền trả trước (MOCK ' . $gateway . ')',
+                ]);
+
+                // Update order payment status to partial and confirm down payment
+                $order->payment_status = 'partial';
+                $order->down_payment_confirmed_at = now();
+                $order->save();
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('Failed to mark partial/down payment in mock payment', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         \Log::info('Mock online payment success', [
             'gateway' => $gateway,

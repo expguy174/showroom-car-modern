@@ -39,7 +39,15 @@
     <p>✅ Cảm ơn bạn đã thanh toán đúng hạn!</p>
 @endif
 
-<a href="{{ route('user.orders.show', $installment->order_id) }}" class="button">Xem lịch trả góp</a>
+@php
+    // Create signed URL that works without requiring login check
+    $orderUrl = \Illuminate\Support\Facades\URL::signedRoute(
+        'user.orders.show',
+        ['order' => $installment->order_id],
+        now()->addDays(30) // Valid for 30 days
+    );
+@endphp
+<a href="{{ $orderUrl }}" class="button">Xem lịch trả góp</a>
 
 <p>Trân trọng,<br>{{ config('app.name') }}</p>
 @endsection

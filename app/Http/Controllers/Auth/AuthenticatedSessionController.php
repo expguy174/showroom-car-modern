@@ -79,6 +79,11 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        // Clear response cache after login
+        if (class_exists(\Spatie\ResponseCache\Facades\ResponseCache::class)) {
+            \Spatie\ResponseCache\Facades\ResponseCache::clear();
+        }
+
         // Update last login time
         if (Auth::user()) {
             $user = Auth::user();
@@ -86,29 +91,30 @@ class AuthenticatedSessionController extends Controller
             $user->save();
         }
 
-        // Role-based redirect after login (no session flash messages)
-        $user = Auth::user();
+        // Role-based redirect after login
         if ($user) {
             switch ($user->role) {
                 case 'admin':
-                    return redirect()->intended('/admin/dashboard');
-                
                 case 'manager':
-                    return redirect()->intended('/admin/dashboard');
-                
                 case 'sales_person':
-                    return redirect()->intended('/admin/dashboard');
-                
                 case 'technician':
                     return redirect()->intended('/admin/dashboard');
                 
                 case 'user':
                 default:
-                    return redirect()->intended('/dashboard');
+                    // Clear response cache before redirect
+                    if (class_exists(\Spatie\ResponseCache\Facades\ResponseCache::class)) {
+                        \Spatie\ResponseCache\Facades\ResponseCache::clear();
+                    }
+                    return redirect()->route('home');
             }
         }
 
-        return redirect()->intended('/dashboard');
+        // Clear response cache before redirect
+        if (class_exists(\Spatie\ResponseCache\Facades\ResponseCache::class)) {
+            \Spatie\ResponseCache\Facades\ResponseCache::clear();
+        }
+        return redirect()->route('home');
     }
 
     /**

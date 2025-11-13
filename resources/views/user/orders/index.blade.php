@@ -39,7 +39,7 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Trạng thái thanh toán</label>
                     <select name="payment_status" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
                         <option value="">Tất cả</option>
-                        @php($__allowedPaymentStatuses = ['pending','processing','completed','failed','cancelled'])
+                        @php($__allowedPaymentStatuses = ['pending','processing','partial','completed','failed','cancelled','refunded'])
                         @foreach($__allowedPaymentStatuses as $pst)
                             <option value="{{ $pst }}" @selected(($payment_status ?? request('payment_status')) === $pst)>{{ (new \App\Models\Order(['payment_status'=>$pst]))->payment_status_display }}</option>
                         @endforeach

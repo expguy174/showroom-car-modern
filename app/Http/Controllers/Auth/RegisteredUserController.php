@@ -54,6 +54,9 @@ class RegisteredUserController extends Controller
         $user = User::create([
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            // Don't auto-verify - user must verify email
+            'email_verified' => false,
+            'email_verified_at' => null,
         ]);
 
         // Create minimal user profile with optional name/phone
@@ -63,12 +66,34 @@ class RegisteredUserController extends Controller
             'phone' => $request->input('phone') ?: null,
         ]);
 
-        event(new Registered($user));
-
         Auth::login($user);
 
-        // Soft onboarding: user can browse; missing info will be enforced before checkout
-        return redirect()->route('user.addresses.index')
-            ->with('status', 'Đăng ký thành công! Vui lòng thêm và đặt một địa chỉ mặc định để mua hàng.');
+        // Send email verification using custom Mailable
+        // Wrapped in try-catch to prevent registration failure if email fails
+        $emailSent = false;
+        try {
+            \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\VerifyEmailNotification($user));
+            $emailSent = true;
+        } catch (\Exception $e) {
+            // Log error but don't fail registration
+            \Illuminate\Support\Facades\Log::error('Failed to send email verification during registration', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+        
+        // Don't fire Registered event to prevent duplicate email sending
+        // We handle email verification manually above
+
+        // Redirect to email verification notice page
+        $message = $emailSent 
+            ? 'Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.'
+            : 'Đăng ký thành công! Tuy nhiên, không thể gửi email xác thực. Vui lòng nhấn "Gửi lại email xác thực" sau.';
+        
+        return redirect()->route('verification.notice')
+            ->with('status', $message)
+            ->with('email_sent', $emailSent);
     }
 }

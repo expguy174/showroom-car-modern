@@ -272,12 +272,6 @@
                                         <span class="whitespace-nowrap">Thuế VAT (10%)</span>
                                         <span class="font-semibold text-gray-900 whitespace-nowrap text-right"><span id="tax-total">{{ number_format($taxTotal, 0, ',', '.') }}</span> đ</span>
                                     </div>
-                                    
-                                    <!-- Shipping -->
-                                    <div class="flex justify-between items-center gap-2 text-gray-600 text-sm">
-                                        <span class="whitespace-nowrap">Phí vận chuyển</span>
-                                        <span class="font-semibold text-emerald-600 whitespace-nowrap">Miễn phí</span>
-                                    </div>
                                 </div>
 
                                 <!-- Total -->

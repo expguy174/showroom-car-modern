@@ -46,7 +46,18 @@
                     </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm font-medium text-gray-900">{{ $message->subject }}</div>
+                    @php
+                        $subjectLabels = [
+                            'general' => 'Thông tin chung',
+                            'sales' => 'Tư vấn mua hàng',
+                            'service' => 'Dịch vụ bảo dưỡng',
+                            'finance' => 'Tư vấn tài chính',
+                            'complaint' => 'Khiếu nại',
+                            'other' => 'Khác',
+                        ];
+                        $subjectDisplay = $subjectLabels[$message->subject] ?? ucfirst($message->subject);
+                    @endphp
+                    <div class="text-sm font-medium text-gray-900">{{ $subjectDisplay }}</div>
                 </td>
                 <td class="px-6 py-4 max-w-md whitespace-nowrap">
                     <p class="text-sm text-gray-900 truncate">{{ $message->message }}</p>
@@ -131,7 +142,7 @@
                                 class="text-red-600 hover:text-red-900 delete-btn" 
                                 data-message-id="{{ $message->id }}"
                                 data-message-name="{{ addslashes($message->name) }}"
-                                data-message-subject="{{ addslashes($message->subject) }}"
+                                data-message-subject="{{ addslashes($subjectDisplay) }}"
                                 title="Xóa">
                             <i class="fas fa-trash"></i>
                         </button>

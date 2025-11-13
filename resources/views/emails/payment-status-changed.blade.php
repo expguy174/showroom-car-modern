@@ -12,9 +12,12 @@
         @php
             $statusLabels = [
                 'pending' => 'Chờ thanh toán',
+            'processing' => 'Đang xử lý',
+            'partial' => 'Thanh toán một phần',
                 'completed' => 'Đã thanh toán',
                 'failed' => 'Thanh toán thất bại',
                 'refunded' => 'Đã hoàn tiền',
+            'cancelled' => 'Đã hủy',
             ];
         @endphp
         {{ $statusLabels[$newStatus] ?? $newStatus }}
@@ -27,6 +30,8 @@
 
 @if($newStatus === 'completed')
 <p>✅ Cảm ơn bạn đã thanh toán! Đơn hàng của bạn đang được xử lý.</p>
+@elseif($newStatus === 'partial')
+<p>💳 Tiền cọc đã được xác nhận. Đơn hàng có thể giao hàng. Bạn có thể thanh toán các kỳ trả góp theo lịch.</p>
 @elseif($newStatus === 'failed')
 <p>⚠️ Thanh toán không thành công. Vui lòng thử lại hoặc liên hệ với chúng tôi.</p>
 @elseif($newStatus === 'refunded')

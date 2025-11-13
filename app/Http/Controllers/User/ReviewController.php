@@ -29,6 +29,23 @@ class ReviewController extends Controller
             'comment' => $request->comment,
         ]);
 
+        // Notify admin about new review (needs approval)
+        try {
+            $reviewable = $review->reviewable;
+            \App\Models\Notification::create([
+                'user_id' => null,
+                'type' => 'system',
+                'title' => 'Đánh giá mới cần duyệt',
+                'message' => 'Khách hàng ' . (Auth::user()->userProfile->name ?? 'Khách hàng') . ' đã đánh giá ' . ($reviewable->name ?? 'sản phẩm') . ' - ' . $request->rating . ' sao',
+                'is_read' => false,
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to send admin review notification', [
+                'review_id' => $review->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Đánh giá đã được gửi thành công!',

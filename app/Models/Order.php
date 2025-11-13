@@ -26,6 +26,8 @@ class Order extends Model
         'payment_method_id',
         'finance_option_id',
         'down_payment_amount',
+        'down_payment_percentage',
+        'down_payment_confirmed_at',
         'tenure_months',
         'monthly_payment_amount',
         'payment_status',
@@ -53,6 +55,7 @@ class Order extends Model
         'monthly_payment_amount' => 'decimal:2',
         'tax_rate' => 'decimal:4',
         'paid_at' => 'datetime',
+        'down_payment_confirmed_at' => 'datetime',
         'estimated_delivery' => 'date',
     ];
 

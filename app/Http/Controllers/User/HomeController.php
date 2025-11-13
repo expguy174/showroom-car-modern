@@ -16,8 +16,26 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class HomeController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        // Check email verification for authenticated users
+        if (Auth::check()) {
+            $user = Auth::user();
+            if ($user->role === 'user' && !$user->hasVerifiedEmail()) {
+                return redirect()->route('verification.notice');
+            }
+            
+            // Refresh user data from database to ensure we have latest verification status
+            $user->refresh();
+            
+            // Clear response cache if _nocache parameter is present (from verification page)
+            if ($request->has('_nocache')) {
+                if (class_exists(\Spatie\ResponseCache\Facades\ResponseCache::class)) {
+                    \Spatie\ResponseCache\Facades\ResponseCache::clear();
+                }
+            }
+        }
+        
         // Featured brands for homepage (only featured brands)
         $brands = CarBrand::where('is_active', 1)
             ->where('is_featured', 1)
@@ -108,7 +126,7 @@ class HomeController extends Controller
 
 
 
-        return view('user.home', compact(
+        $response = response()->view('user.home', compact(
             'brands',
             'featuredVariants',
             'featuredAccessories',
@@ -118,5 +136,13 @@ class HomeController extends Controller
             'recentReviews',
             'promotions'
         ));
+
+        // Always set no-cache headers for homepage to ensure fresh content
+        // This is simpler and more reliable than using timestamps
+        $response->headers->set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+        $response->headers->set('Pragma', 'no-cache');
+        $response->headers->set('Expires', '0');
+
+        return $response;
     }
 }

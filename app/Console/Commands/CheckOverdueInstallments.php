@@ -96,6 +96,22 @@ class CheckOverdueInstallments extends Command
                     }
                 }
                 
+                // Notify admin about overdue installment
+                try {
+                    \App\Models\Notification::create([
+                        'user_id' => null,
+                        'type' => 'installment',
+                        'title' => 'Trả góp quá hạn',
+                        'message' => 'Đơn hàng #' . ($installment->order->order_number ?? $installment->order_id) . ' - Kỳ ' . $installment->installment_number . ' đã quá hạn ' . $daysOverdue . ' ngày. Số tiền: ' . number_format($installment->amount) . ' VNĐ',
+                        'is_read' => false,
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Failed to send admin overdue notification', [
+                        'installment_id' => $installment->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+                
                 $updatedCount++;
                 $this->info("✓ Updated installment #{$installment->id} - Order: {$installment->order->order_number} - {$daysOverdue} days overdue");
                 

@@ -102,7 +102,7 @@
                                 
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div>
-                                        <label for="state" class="block text-sm font-medium text-gray-700 mb-1">Quận/Huyện</label>
+                                        <label for="state" class="block text-sm font-medium text-gray-700 mb-1">Quận/Huyện *</label>
                                         <input id="state" name="state" type="text" autocomplete="address-level2" class="w-full px-3.5 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 @error('state') border-red-500 focus:border-red-500 focus:ring-red-200 @enderror" placeholder="VD: Hoàn Kiếm" value="{{ old('state') }}"/>
                                         @error('state')
                                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>

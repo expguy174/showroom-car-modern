@@ -99,7 +99,18 @@
                 <i class="fas fa-heading text-blue-600 mr-2"></i>
                 Tiêu đề
             </h2>
-            <p class="text-gray-900 text-lg">{{ $contactMessage->subject }}</p>
+            @php
+                $subjectLabels = [
+                    'general' => 'Thông tin chung',
+                    'sales' => 'Tư vấn mua hàng',
+                    'service' => 'Dịch vụ bảo dưỡng',
+                    'finance' => 'Tư vấn tài chính',
+                    'complaint' => 'Khiếu nại',
+                    'other' => 'Khác',
+                ];
+                $subjectDisplay = $subjectLabels[$contactMessage->subject] ?? ucfirst($contactMessage->subject);
+            @endphp
+            <p class="text-gray-900 text-lg">{{ $subjectDisplay }}</p>
         </div>
         @endif
         
